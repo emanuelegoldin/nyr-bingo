@@ -29,3 +29,32 @@ New expression: `(resolution_id IS NULL AND team_provided_resolution_id IS NULL 
 
 This ensures only cells explicitly inserted with `source_type = 'empty'` are
 considered empty, while team-goal cells render normally.
+
+## 3.0.0 - Resolution Rework: Typed Resolutions
+
+Introduces a typed resolution system supporting three personal resolution
+variants: **base**, **compound** (subtask checklist), and **iterative**
+(counter-based).
+
+### Schema changes
+
+- `resolutions`: adds `title VARCHAR(255) NOT NULL` column.  Existing rows are
+  backfilled by truncating `text` to 255 characters.
+- `team_provided_resolutions`: adds `title VARCHAR(255) NOT NULL` column with
+  the same backfill strategy.
+- New table `compound_resolutions` — stores a JSON array of subtasks.
+  Completion is automatic: all subtasks done → COMPLETED.
+- New table `iterative_resolutions` — tracks `number_of_repetition` and
+  `completed_times`.  Completion is automatic when
+  `completed_times >= number_of_repetition`.
+- `bingo_cells`: adds `resolution_type ENUM('base','team','compound','iterative')`
+  as a polymorphic discriminator.  Existing rows default to `'base'`; cells
+  with `source_type = 'team'` are backfilled to `'team'`.
+
+### Design notes
+
+- Compound and iterative resolutions are personal-only (owned by a user).
+- `resolution_id` on `bingo_cells` is reused for compound/iterative types;
+  because MariaDB foreign keys can only reference a single table, referential
+  integrity for compound/iterative is enforced at the application layer.
+- The `is_empty` generated column expression is unchanged.

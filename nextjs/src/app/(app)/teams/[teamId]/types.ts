@@ -3,7 +3,7 @@
  * Spec Reference: 04-bingo-teams.md, 06-bingo-gameplay.md
  */
 
-import { CellSourceType, CellState, ProofStatus } from "@/lib/shared/types";
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 
 /** Team member shape as returned by the team detail API. */
 export interface TeamMember {
@@ -39,7 +39,10 @@ export interface BingoCellData {
   id: string;
   cardId: string;
   position: number;
+  resolutionId: string | null;
+  resolutionType: ResolutionType;
   resolutionText: string;
+  resolutionTitle: string;
   isJoker: boolean;
   isEmpty: boolean;
   sourceType: CellSourceType;

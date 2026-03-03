@@ -3,7 +3,11 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { TeamStatus, TeamRole, InvitationStatus, CellSourceType, CellState, ProofStatus, ReviewDecision, DuplicateReportStatus, ThreadStatus, VoteType } from "../shared/types";
+import { TeamStatus, TeamRole, InvitationStatus, CellSourceType, CellState, ProofStatus, ReviewDecision, DuplicateReportStatus, ThreadStatus, VoteType, ResolutionType, Subtask } from "../shared/types";
+
+// Re-export shared enums/types so consumers can import from db/types
+export { TeamStatus, TeamRole, InvitationStatus, CellSourceType, CellState, ProofStatus, ReviewDecision, DuplicateReportStatus, ThreadStatus, VoteType, ResolutionType };
+export type { Subtask };
 
 // User entity
 // Spec: 00-system-overview.md, 01-authentication.md
@@ -63,11 +67,12 @@ export interface Session {
   createdAt: Date;
 }
 
-// Personal resolution
-// Spec: 03-personal-resolutions.md
+// Personal resolution (base type)
+// Spec: 03-personal-resolutions.md, Resolution Rework
 export interface Resolution {
   id: string;
   ownerUserId: string;
+  title: string;
   text: string;
   createdAt: Date;
   updatedAt: Date;
@@ -109,12 +114,13 @@ export interface TeamInvitation {
 }
 
 // Team-provided resolution
-// Spec: 04-bingo-teams.md
+// Spec: 04-bingo-teams.md, Resolution Rework
 export interface TeamProvidedResolution {
   id: string;
   teamId: string;
   fromUserId: string;
   toUserId: string;
+  title: string;
   text: string;
   createdAt: Date;
   updatedAt: Date;
@@ -131,14 +137,16 @@ export interface BingoCard {
 }
 
 // Bingo cell
-// Spec: 05-bingo-card-generation.md, 06-bingo-gameplay.md
+// Spec: 05-bingo-card-generation.md, 06-bingo-gameplay.md, Resolution Rework
 export interface BingoCell {
   id: string;
   cardId: string;
   position: number;
   resolutionId: string | null;
   teamProvidedResolutionId: string | null;
+  resolutionType: ResolutionType;
   resolutionText: string;
+  resolutionTitle: string;
   isJoker: boolean;
   isEmpty: boolean;
   sourceType: CellSourceType;
@@ -245,6 +253,31 @@ export interface TeamLeaderboardEntry {
   teamId: string;
   firstBingoAt: Date | null;
   completedTasks: number;
+  updatedAt: Date;
+}
+
+// Compound resolution (checklist-based)
+// Spec: Resolution Rework — compound type
+export interface CompoundResolutionEntity {
+  id: string;
+  ownerUserId: string;
+  title: string;
+  description: string | null;
+  subtasks: Subtask[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Iterative resolution (counter-based)
+// Spec: Resolution Rework — iterative type
+export interface IterativeResolutionEntity {
+  id: string;
+  ownerUserId: string;
+  title: string;
+  description: string | null;
+  numberOfRepetition: number;
+  completedTimes: number;
+  createdAt: Date;
   updatedAt: Date;
 }
 

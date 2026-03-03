@@ -17,6 +17,7 @@ import { useSetAppHeaderTitle } from "@/components/app-header-title";
 interface Resolution {
   id: string;
   ownerUserId: string;
+  title: string;
   text: string;
   createdAt: string;
   updatedAt: string;
@@ -221,7 +222,12 @@ function ResolutionsManager() {
                   disabled={savingId === res.id}
                 />
               ) : (
-                <span className="text-sm">{res.text}</span>
+                <div className="min-w-0">
+                  <span className="text-sm font-medium block truncate">{res.title}</span>
+                  {res.text !== res.title && (
+                    <span className="text-xs text-muted-foreground block truncate">{res.text}</span>
+                  )}
+                </div>
               )}
 
               <div className="flex items-center gap-1">

@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 interface ResolutionRow {
   id: string;
   owner_user_id: string;
+  title: string;
   text: string;
   created_at: Date;
   updated_at: Date;
@@ -21,6 +22,7 @@ function rowToResolution(row: ResolutionRow): Resolution {
   return {
     id: row.id,
     ownerUserId: row.owner_user_id,
+    title: row.title,
     text: row.text,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -29,11 +31,16 @@ function rowToResolution(row: ResolutionRow): Resolution {
 
 /**
  * Create a new personal resolution
- * Spec: 03-personal-resolutions.md - Create
+ * Spec: 03-personal-resolutions.md - Create, Resolution Rework
+ * @param ownerUserId - The ID of the user who owns the resolution
+ * @param text - The full description text of the resolution
+ * @param title - Short title (max 255 chars); if omitted, derived from text
+ * @returns The created Resolution entity
  */
 export async function createResolution(
   ownerUserId: string,
-  text: string
+  text: string,
+  title?: string
 ): Promise<Resolution> {
   // Spec: 03-personal-resolutions.md - Resolution text must be non-empty
   if (!text || text.trim().length === 0) {
@@ -42,10 +49,15 @@ export async function createResolution(
 
   const id = uuidv4();
   const trimmedText = text.trim();
+  const resolvedTitle = title ? title.trim().slice(0, 255) : trimmedText.slice(0, 255);
+
+  if (!resolvedTitle) {
+    throw new Error('Resolution title must be non-empty');
+  }
 
   await query(
-    `INSERT INTO resolutions (id, owner_user_id, text) VALUES (?, ?, ?)`,
-    [id, ownerUserId, trimmedText]
+    `INSERT INTO resolutions (id, owner_user_id, title, text) VALUES (?, ?, ?, ?)`,
+    [id, ownerUserId, resolvedTitle, trimmedText]
   );
 
   const rows = await query<ResolutionRow[]>(
@@ -83,12 +95,18 @@ export async function getResolutionById(id: string): Promise<Resolution | null> 
 
 /**
  * Update a resolution
- * Spec: 03-personal-resolutions.md - Update
+ * Spec: 03-personal-resolutions.md - Update, Resolution Rework
+ * @param id - The resolution ID
+ * @param ownerUserId - The owner user ID (for authorization)
+ * @param text - Updated description text
+ * @param title - Updated title; if omitted, derived from text
+ * @returns The updated Resolution entity or null if not found/unauthorized
  */
 export async function updateResolution(
   id: string,
   ownerUserId: string,
-  text: string
+  text: string,
+  title?: string
 ): Promise<Resolution | null> {
   // Spec: 03-personal-resolutions.md - Resolution text must be non-empty
   if (!text || text.trim().length === 0) {
@@ -96,12 +114,17 @@ export async function updateResolution(
   }
 
   const trimmedText = text.trim();
+  const resolvedTitle = title ? title.trim().slice(0, 255) : trimmedText.slice(0, 255);
+
+  if (!resolvedTitle) {
+    throw new Error('Resolution title must be non-empty');
+  }
 
   // Only update if the user owns the resolution
   // Spec: 03-personal-resolutions.md - Only the resolution owner can update
   await query(
-    `UPDATE resolutions SET text = ? WHERE id = ? AND owner_user_id = ?`,
-    [trimmedText, id, ownerUserId]
+    `UPDATE resolutions SET title = ?, text = ? WHERE id = ? AND owner_user_id = ?`,
+    [resolvedTitle, trimmedText, id, ownerUserId]
   );
 
   // Check if any row was updated

@@ -18,7 +18,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "./ui/button";
-import { CellSourceType, CellState, ProofStatus } from "@/lib/shared/types";
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { hasBingo } from "@/lib/shared/bingo-utils";
 import { JokerCell } from "./cell/joker";
 import { ResolutionCell } from "./cell/resolution-cell";
@@ -49,7 +49,10 @@ interface BingoCell {
   id: string;
   cardId: string;
   position: number;
+  resolutionId: string | null;
+  resolutionType: ResolutionType;
   resolutionText: string;
+  resolutionTitle: string;
   isJoker: boolean;
   isEmpty: boolean;
   sourceType: CellSourceType;

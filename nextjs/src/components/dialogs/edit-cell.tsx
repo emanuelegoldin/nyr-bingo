@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CellState, ProofStatus, CellSourceType } from "@/lib/shared/types";
+import { CellState, ProofStatus, CellSourceType, ResolutionType } from "@/lib/shared/types";
 
 interface BingoCell {
       id: string;
@@ -13,7 +13,9 @@ interface BingoCell {
       position: number;
       resolutionId?: string | null;
       teamProvidedResolutionId?: string | null;
+      resolutionType: ResolutionType;
       resolutionText: string;
+      resolutionTitle: string;
       isJoker: boolean;
       isEmpty: boolean;
       sourceType: CellSourceType;
@@ -102,7 +104,7 @@ export const EditCellDialog = ({
             const personalOptions: EditOption[] = (personalData?.resolutions || [])
               .map((r: any) => ({
               key: `personal:${r.id}`,
-              label: r.text,
+              label: r.title || r.text,
               resolutionText: r.text,
               resolutionId: typeof r.id === 'string' ? r.id : null,
               teamProvidedResolutionId: null,
@@ -129,7 +131,7 @@ export const EditCellDialog = ({
               teamOptions = (teamData?.resolutions || [])
                 .map((r: any) => ({
                 key: `member_provided:${r.id}`,
-                label: r.text,
+                label: r.title || r.text,
                 resolutionText: r.text,
                 resolutionId: null,
                 teamProvidedResolutionId: typeof r.id === 'string' ? r.id : null,

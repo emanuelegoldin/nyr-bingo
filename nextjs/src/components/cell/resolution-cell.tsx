@@ -1,4 +1,4 @@
-import { CellSourceType, CellState, ProofStatus } from "@/lib/shared/types";
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Check, Hourglass, ThumbsUp, X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -6,6 +6,7 @@ import { MarkCellCompleteDialog } from "../dialogs/complete-dialog";
 import { EditCellDialog } from "../dialogs/edit-cell";
 import { RequestProofDialog } from "../dialogs/request-proof";
 import { CellThreadDialog } from "../dialogs/thread-dialog";
+import { ResolutionDetailDialog } from "../dialogs/resolution-detail-dialog";
 import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
@@ -35,7 +36,8 @@ export const ResolutionCell = ({
     onRefresh
 }: ResolutionCellProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState<'complete' | 'request_proof' | 'thread' | 'edit_cell' | null>(null);
+    const [modalMode, setModalMode] = useState<'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | null>(null);
+    const [detailData, setDetailData] = useState<Parameters<typeof ResolutionDetailDialog>[0]['data'] | null>(null);
     const usernames = useTeamMembers();
 
     const handleClick = () => {
@@ -46,7 +48,13 @@ export const ResolutionCell = ({
             return;
         }  
         if (isOwner) {
-            if (cell.state === CellState.PENDING) {
+            // Compound/iterative resolutions open the detail dialog for progress tracking
+            const isAutomatic = cell.resolutionType === ResolutionType.COMPOUND || cell.resolutionType === ResolutionType.ITERATIVE;
+            if (isAutomatic && cell.state !== CellState.PENDING_REVIEW) {
+                openDetailDialog();
+                return;
+            }
+            if (cell.state === CellState.PENDING && !isAutomatic) {
                 setModalMode('complete');
                 setIsModalOpen(true);
                 return;
@@ -56,13 +64,18 @@ export const ResolutionCell = ({
                 setIsModalOpen(true);
                 return;
             }
-            // isOwner && completed --> set pending
-            if (cell.state === CellState.COMPLETED){
+            // isOwner && completed --> set pending (only for base/team types)
+            if (cell.state === CellState.COMPLETED && !isAutomatic){
                 onUpdate?.(cell.id, CellState.PENDING);
                 return;
             }
         }
-        // Viewing someone else's card
+        // Viewing someone else's card — allow viewing detail for compound/iterative
+        const isAutomatic = cell.resolutionType === ResolutionType.COMPOUND || cell.resolutionType === ResolutionType.ITERATIVE;
+        if (isAutomatic) {
+            openDetailDialog();
+            return;
+        }
         if (cell.state === CellState.COMPLETED) {
             setModalMode('request_proof');
             setIsModalOpen(true);
@@ -71,6 +84,52 @@ export const ResolutionCell = ({
         if (cell.state === CellState.PENDING_REVIEW) {
             setModalMode('thread');
             setIsModalOpen(true);
+        }
+    };
+
+    /**
+     * Fetch compound or iterative resolution data and open the detail dialog.
+     */
+    const openDetailDialog = async () => {
+        const resType = cell.resolutionType;
+        if (resType === ResolutionType.COMPOUND) {
+            try {
+                const res = await fetch(`/api/resolutions/compound?id=${cell.resolutionId}`);
+                if (!res.ok) return;
+                const { resolutions, resolution } = await res.json();
+                // API may return list or single — handle both
+                const data = resolution ?? (resolutions?.find?.((r: { id: string }) => r.id === cell.resolutionId));
+                if (data) {
+                    setDetailData({
+                        type: ResolutionType.COMPOUND,
+                        id: data.id,
+                        title: data.title,
+                        description: data.description,
+                        subtasks: data.subtasks,
+                    });
+                    setModalMode('detail');
+                    setIsModalOpen(true);
+                }
+            } catch { /* ignore */ }
+        } else if (resType === ResolutionType.ITERATIVE) {
+            try {
+                const res = await fetch(`/api/resolutions/iterative?id=${cell.resolutionId}`);
+                if (!res.ok) return;
+                const { resolutions, resolution } = await res.json();
+                const data = resolution ?? (resolutions?.find?.((r: { id: string }) => r.id === cell.resolutionId));
+                if (data) {
+                    setDetailData({
+                        type: ResolutionType.ITERATIVE,
+                        id: data.id,
+                        title: data.title,
+                        description: data.description,
+                        numberOfRepetition: data.numberOfRepetition,
+                        completedTimes: data.completedTimes,
+                    });
+                    setModalMode('detail');
+                    setIsModalOpen(true);
+                }
+            } catch { /* ignore */ }
         }
     };
 
@@ -96,13 +155,21 @@ export const ResolutionCell = ({
     }
 
     const config = stateConfig[visualState] || stateConfig.pending;
+    // Resolution title for cell display (truncated with CSS ellipsis)
+    const displayTitle = cell.resolutionTitle || cell.resolutionText;
     // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell is selectable (including empty)
     const canEditContent = Boolean(editMode && isOwner && cell.sourceType !== CellSourceType.TEAM);
+    // Compound/iterative types disable manual complete — state is automatic
+    const isAutomatic = cell.resolutionType === ResolutionType.COMPOUND || cell.resolutionType === ResolutionType.ITERATIVE;
     const canInteract =
         cell.state !== CellState.ACCOMPLISHED &&    // Accomplished cells have no interactions
         (
             canEditContent ||
-            (!editMode && !cell.isEmpty && (isOwner || cell.state === CellState.COMPLETED || cell.state === CellState.PENDING_REVIEW))
+            (!editMode && !cell.isEmpty && (
+                isOwner
+                  ? true  // Owner can always interact (detail dialog for automatic, complete/undo for manual)
+                  : (isAutomatic || cell.state === CellState.COMPLETED || cell.state === CellState.PENDING_REVIEW)
+            ))
         );
     return (
         <>
@@ -121,8 +188,8 @@ export const ResolutionCell = ({
                     isDisabled={!canInteract}
                     onClick={handleClick}>
 
-                    <p className={cn("text-xs md:text-sm font-medium", config.text)}>
-                        {cell.resolutionText}
+                    <p className={cn("text-xs md:text-sm font-medium truncate max-w-full", config.text)}>
+                        {displayTitle}
                     </p>
                     <div className="absolute top-1 right-1">
                         {visualState !== 'pending' && config.icon}
@@ -184,6 +251,14 @@ export const ResolutionCell = ({
                     isOwner={isOwner}
                     isOpen={isModalOpen}
                     setIsOpen={setIsModalOpen}
+                    onRefresh={onRefresh} />
+            }
+            {modalMode === "detail" && detailData &&
+                <ResolutionDetailDialog
+                    data={detailData}
+                    isOpen={isModalOpen}
+                    setIsOpen={setIsModalOpen}
+                    isOwner={isOwner}
                     onRefresh={onRefresh} />
             }
         </>

@@ -52,6 +52,7 @@ interface TeamProvidedResolutionRow extends RowDataPacket {
   team_id: string;
   from_user_id: string;
   to_user_id: string;
+  title: string;
   text: string;
   created_at: Date;
   updated_at: Date;
@@ -99,6 +100,7 @@ function rowToTeamProvidedResolution(row: TeamProvidedResolutionRow): TeamProvid
     teamId: row.team_id,
     fromUserId: row.from_user_id,
     toUserId: row.to_user_id,
+    title: row.title,
     text: row.text,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -365,7 +367,8 @@ export async function createTeamProvidedResolution(
   teamId: string,
   fromUserId: string,
   toUserId: string,
-  text: string
+  text: string,
+  title?: string
 ): Promise<TeamProvidedResolution | null> {
   // Verify both users are team members
   const fromIsMember = await isTeamMember(teamId, fromUserId);
@@ -383,13 +386,14 @@ export async function createTeamProvidedResolution(
 
   const id = uuidv4();
   const trimmedText = text.trim();
+  const resolvedTitle = title ? title.trim().slice(0, 255) : trimmedText.slice(0, 255);
 
   // Use ON DUPLICATE KEY UPDATE to allow updating existing resolutions
   await query(
-    `INSERT INTO team_provided_resolutions (id, team_id, from_user_id, to_user_id, text)
-     VALUES (?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE text = ?, updated_at = NOW()`,
-    [id, teamId, fromUserId, toUserId, trimmedText, trimmedText]
+    `INSERT INTO team_provided_resolutions (id, team_id, from_user_id, to_user_id, title, text)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE title = ?, text = ?, updated_at = NOW()`,
+    [id, teamId, fromUserId, toUserId, resolvedTitle, trimmedText, resolvedTitle, trimmedText]
   );
 
   const rows = await query<TeamProvidedResolutionRow[]>(

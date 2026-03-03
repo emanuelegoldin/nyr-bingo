@@ -15,13 +15,16 @@ import { Loader2, Users, Plus } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { useSetAppHeaderTitle } from "@/components/app-header-title";
-import { CellSourceType, CellState, ProofStatus } from '@/lib/shared/types';
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from '@/lib/shared/types';
 
 interface BingoCell {
   id: string;
   cardId: string;
   position: number;
+  resolutionId: string | null;
+  resolutionType: ResolutionType;
   resolutionText: string;
+  resolutionTitle: string;
   isJoker: boolean;
   isEmpty: boolean;
   sourceType: CellSourceType;
