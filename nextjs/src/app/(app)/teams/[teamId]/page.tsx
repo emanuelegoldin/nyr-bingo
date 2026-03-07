@@ -488,10 +488,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
                   </DialogContent>
                 </Dialog>
 
-                <Button onClick={handleStartBingo} disabled={isStarting}>
-                  {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Swords className="h-4 w-4 mr-2" /> Start Bingo
-                </Button>
+                {team.status !== 'started' && (
+                  <Button onClick={handleStartBingo} disabled={isStarting}>
+                    {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Swords className="h-4 w-4 mr-2" /> Start Bingo
+                  </Button>
+                )}
               </>
             )}
 
