@@ -22,7 +22,7 @@ import type { Subtask } from '@/lib/shared/types';
 /**
  * GET /api/resolutions/compound - Get compound resolutions
  * Without ?id: returns all compound resolutions for the current user.
- * With ?id=...: returns a single compound resolution by ID (must own it).
+ * With ?id=...: returns a single compound resolution by ID (any authenticated user).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -38,9 +38,6 @@ export async function GET(request: NextRequest) {
       const resolution = await getCompoundResolutionById(id);
       if (!resolution) {
         return NextResponse.json({ error: 'Resolution not found' }, { status: 404 });
-      }
-      if (resolution.ownerUserId !== currentUser.id) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       }
       return NextResponse.json({ resolution });
     }

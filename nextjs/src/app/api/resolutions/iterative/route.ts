@@ -21,7 +21,7 @@ import {
 /**
  * GET /api/resolutions/iterative - Get iterative resolutions
  * Without ?id: returns all iterative resolutions for the current user.
- * With ?id=...: returns a single iterative resolution by ID (must own it).
+ * With ?id=...: returns a single iterative resolution by ID (any authenticated user).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -37,9 +37,6 @@ export async function GET(request: NextRequest) {
       const resolution = await getIterativeResolutionById(id);
       if (!resolution) {
         return NextResponse.json({ error: 'Resolution not found' }, { status: 404 });
-      }
-      if (resolution.ownerUserId !== currentUser.id) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       }
       return NextResponse.json({ resolution });
     }

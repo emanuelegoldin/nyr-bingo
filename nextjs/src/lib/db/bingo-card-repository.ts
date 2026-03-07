@@ -597,6 +597,7 @@ export async function updateCellContent(
   userId: string,
   update: {
     resolutionId: string | null;
+    resolutionType?: ResolutionType;
     teamProvidedResolutionId: string | null;
     sourceType: CellSourceType;
     sourceUserId: string | null;
@@ -653,15 +654,27 @@ export async function updateCellContent(
   const teamProvidedResolutionId =
     update.sourceType === 'member_provided' ? update.teamProvidedResolutionId : null;
 
+  // Determine the resolution type for the cell.
+  // Personal cells carry the type from the resolution; team/member_provided default to 'base'; empty has no resolution.
+  let resolutionType: ResolutionType = ResolutionType.BASE;
+  if (update.sourceType === 'team') {
+    resolutionType = ResolutionType.TEAM;
+  } else if (update.sourceType === 'empty') {
+    resolutionType = ResolutionType.BASE;
+  } else if (update.resolutionType) {
+    resolutionType = update.resolutionType;
+  }
+
   await query(
     `UPDATE bingo_cells
      SET resolution_id = ?,
          team_provided_resolution_id = ?,
+         resolution_type = ?,
          source_type = ?,
          source_user_id = ?,
          state = 'pending'
      WHERE id = ?`,
-    [resolutionId, teamProvidedResolutionId, update.sourceType, sourceUserId, cellId]
+    [resolutionId, teamProvidedResolutionId, resolutionType, update.sourceType, sourceUserId, cellId]
   );
 
   const updatedRow = await getResolvedCellRowById(cellId);

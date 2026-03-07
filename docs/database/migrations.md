@@ -58,3 +58,16 @@ variants: **base**, **compound** (subtask checklist), and **iterative**
   because MariaDB foreign keys can only reference a single table, referential
   integrity for compound/iterative is enforced at the application layer.
 - The `is_empty` generated column expression is unchanged.
+
+## 3.1.0 - Drop resolution_id FK for Polymorphic Types
+
+Drops the `fk_bingo_cells_resolution_id` foreign key constraint added in V2.0.0.
+
+Since V3.0.0, `bingo_cells.resolution_id` is polymorphic — it can reference
+`resolutions`, `compound_resolutions`, or `iterative_resolutions` depending on
+the `resolution_type` discriminator column. MariaDB foreign keys can only target
+a single table, so the old FK that referenced only `resolutions` must be removed
+to allow compound and iterative resolution IDs to be stored in cells.
+
+Referential integrity for compound/iterative types is enforced at the
+application layer.

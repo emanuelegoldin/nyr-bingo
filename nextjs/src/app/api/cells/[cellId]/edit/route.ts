@@ -6,6 +6,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { updateCellContent } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { ResolutionType } from "@/lib/shared/types";
 
 
 /**
@@ -33,6 +34,10 @@ export async function PUT(
     const sourceUserId = typeof body?.sourceUserId === 'string' ? body.sourceUserId : null;
     const resolutionId = typeof body?.resolutionId === 'string' ? body.resolutionId : null;
     const teamProvidedResolutionId = typeof body?.teamProvidedResolutionId === 'string' ? body.teamProvidedResolutionId : null;
+    const resolutionType = typeof body?.resolutionType === 'string'
+      && [ResolutionType.BASE, ResolutionType.COMPOUND, ResolutionType.ITERATIVE, ResolutionType.TEAM].includes(body.resolutionType as ResolutionType)
+      ? (body.resolutionType as ResolutionType)
+      : ResolutionType.BASE;
 
     const validSourceTypes = ['team', 'member_provided', 'personal', 'empty'] as const;
     if (!validSourceTypes.includes(sourceType)) {
@@ -58,6 +63,7 @@ export async function PUT(
 
     const result = await updateCellContent(cellId, currentUser.id, {
       resolutionId,
+      resolutionType,
       teamProvidedResolutionId,
       sourceType,
       sourceUserId,

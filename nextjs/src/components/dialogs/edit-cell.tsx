@@ -43,6 +43,7 @@ type EditOption = {
   label: string;
   resolutionText: string;
   resolutionId: string | null;
+  resolutionType: ResolutionType;
   teamProvidedResolutionId: string | null;
   sourceType: CellSourceType;
   sourceUserId: string | null;
@@ -81,7 +82,8 @@ export const EditCellDialog = ({
     
           setIsEditOptionsLoading(true);
           try {
-            const personalReq = fetch('/api/resolutions');
+            // Fetch ALL resolution types (base + compound + iterative) via the unified endpoint
+            const personalReq = fetch('/api/resolutions/all');
             const teamReq = teamId && currentUserId
               ? fetch(`/api/teams/${teamId}/resolutions?toUserId=${encodeURIComponent(currentUserId)}`)
               : null;
@@ -104,9 +106,10 @@ export const EditCellDialog = ({
             const personalOptions: EditOption[] = (personalData?.resolutions || [])
               .map((r: any) => ({
               key: `personal:${r.id}`,
-              label: r.title || r.text,
-              resolutionText: r.text,
+              label: r.title || r.text || r.title,
+              resolutionText: r.text || r.title,
               resolutionId: typeof r.id === 'string' ? r.id : null,
+              resolutionType: (r.type as ResolutionType) ?? ResolutionType.BASE,
               teamProvidedResolutionId: null,
               sourceType: CellSourceType.PERSONAL,
               sourceUserId: currentUserId ?? null,
@@ -134,6 +137,7 @@ export const EditCellDialog = ({
                 label: r.title || r.text,
                 resolutionText: r.text,
                 resolutionId: null,
+                resolutionType: ResolutionType.BASE,
                 teamProvidedResolutionId: typeof r.id === 'string' ? r.id : null,
                 sourceType: CellSourceType.MEMBER_PROVIDED,
                 sourceUserId: typeof r.fromUserId === 'string' ? r.fromUserId : null,
@@ -185,6 +189,7 @@ export const EditCellDialog = ({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
             resolutionId: opt.resolutionId,
+            resolutionType: opt.resolutionType,
             teamProvidedResolutionId: opt.teamProvidedResolutionId,
             sourceType: opt.sourceType,
             sourceUserId: opt.sourceUserId,
@@ -251,6 +256,8 @@ export const EditCellDialog = ({
                             .map((opt) => {
                                 const isMemberProvided = opt.sourceType === CellSourceType.MEMBER_PROVIDED;
                                 const providerName = opt.sourceUserId ? (usernames[opt.sourceUserId] ?? 'Team member') : null;
+                                const typeLabel = opt.resolutionType === ResolutionType.COMPOUND ? 'Complex'
+                                  : opt.resolutionType === ResolutionType.ITERATIVE ? 'Iterative' : null;
                                 return (
                                     <button
                                         key={opt.key}
@@ -263,9 +270,14 @@ export const EditCellDialog = ({
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <p className="font-medium leading-snug">{opt.label}</p>
-                                            <Badge variant="outline" className="shrink-0">
-                                                {isMemberProvided ? (providerName ?? 'Member') : 'Personal'}
-                                            </Badge>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                {typeLabel && (
+                                                    <Badge variant="secondary" className="text-xs">{typeLabel}</Badge>
+                                                )}
+                                                <Badge variant="outline" className="shrink-0">
+                                                    {isMemberProvided ? (providerName ?? 'Member') : 'Personal'}
+                                                </Badge>
+                                            </div>
                                         </div>
                                     </button>
                                 );

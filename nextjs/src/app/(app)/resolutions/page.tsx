@@ -3,46 +3,83 @@
 /**
  * Resolutions Page
  * Spec Reference: 02-user-profile-and-privacy.md, 03-personal-resolutions.md
+ *
+ * Shows the user's personal resolutions across all types (base, compound, iterative).
+ * Creation and editing are handled via the ResolutionCreateEditDialog.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { useSetAppHeaderTitle } from "@/components/app-header-title";
+import {
+  ResolutionCreateEditDialog,
+  type ResolutionFormData,
+} from "@/components/dialogs/resolution-create-edit-dialog";
+import type { Subtask } from "@/lib/shared/types";
 
-interface Resolution {
+/* ─── Types ──────────────────────────────────────────────────────── */
+
+type ResolutionTypeValue = "base" | "compound" | "iterative";
+
+interface UnifiedResolution {
   id: string;
+  type: ResolutionTypeValue;
   ownerUserId: string;
   title: string;
   text: string;
+  subtasks?: Subtask[];
+  numberOfRepetition?: number;
+  completedTimes?: number;
   createdAt: string;
   updatedAt: string;
 }
 
+/** Human-readable labels for resolution types. */
+const TYPE_LABELS: Record<ResolutionTypeValue, string> = {
+  base: "Common",
+  compound: "Complex",
+  iterative: "Iterative",
+};
+
+/** Badge variant per type for visual distinction. */
+const TYPE_VARIANT: Record<ResolutionTypeValue, "default" | "secondary" | "outline"> = {
+  base: "secondary",
+  compound: "default",
+  iterative: "outline",
+};
+
+/* ─── Manager Component ──────────────────────────────────────────── */
+
 function ResolutionsManager() {
   const { toast } = useToast();
-  const [resolutions, setResolutions] = useState<Resolution[]>([]);
-  const [newResolution, setNewResolution] = useState("");
+  const [resolutions, setResolutions] = useState<UnifiedResolution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState("");
-  const [savingId, setSavingId] = useState<string | null>(null);
 
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingResolution, setEditingResolution] = useState<ResolutionFormData | undefined>(undefined);
+
+  /** Fetch all resolution types from the unified endpoint. */
   const loadResolutions = useCallback(async () => {
     try {
-      const response = await fetch('/api/resolutions');
+      const response = await fetch("/api/resolutions/all");
       const data = await response.json();
-      
       if (response.ok) {
         setResolutions(data.resolutions || []);
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load resolutions",
@@ -57,57 +94,49 @@ function ResolutionsManager() {
     loadResolutions();
   }, [loadResolutions]);
 
-  const handleAddResolution = async () => {
-    if (!newResolution.trim()) return;
-    
-    setIsAdding(true);
-    try {
-      const response = await fetch('/api/resolutions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: newResolution }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setResolutions((prev) => [data.resolution, ...prev]);
-        setNewResolution("");
-        toast({
-          title: "Success",
-          description: "Resolution added",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to add resolution",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAdding(false);
-    }
+  /** Open dialog in create mode. */
+  const handleCreate = () => {
+    setEditingResolution(undefined);
+    setDialogOpen(true);
   };
-  
-  const handleDeleteResolution = async (id: string) => {
-    setDeletingId(id);
+
+  /** Open dialog in edit mode with existing data. */
+  const handleEdit = (res: UnifiedResolution) => {
+    setEditingResolution({
+      id: res.id,
+      type: res.type,
+      title: res.title,
+      text: res.text,
+      subtasks: res.subtasks,
+      numberOfRepetition: res.numberOfRepetition,
+    });
+    setDialogOpen(true);
+  };
+
+  /**
+   * Delete a resolution using the appropriate type-specific endpoint.
+   * Base resolutions use /api/resolutions, compound/iterative use their own routes.
+   */
+  const handleDelete = async (res: UnifiedResolution) => {
+    setDeletingId(res.id);
     try {
-      const response = await fetch(`/api/resolutions?id=${id}`, {
-        method: 'DELETE',
-      });
+      let url: string;
+      switch (res.type) {
+        case "compound":
+          url = `/api/resolutions/compound?id=${res.id}`;
+          break;
+        case "iterative":
+          url = `/api/resolutions/iterative?id=${res.id}`;
+          break;
+        default:
+          url = `/api/resolutions?id=${res.id}`;
+      }
+
+      const response = await fetch(url, { method: "DELETE" });
 
       if (response.ok) {
-        setResolutions((prev) => prev.filter(res => res.id !== id));
-        toast({
-          title: "Success",
-          description: "Resolution deleted",
-        });
+        setResolutions((prev) => prev.filter((r) => r.id !== res.id));
+        toast({ title: "Success", description: "Resolution deleted" });
       } else {
         const data = await response.json();
         toast({
@@ -116,7 +145,7 @@ function ResolutionsManager() {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "An error occurred",
@@ -127,56 +156,13 @@ function ResolutionsManager() {
     }
   };
 
-  const handleStartEdit = (resolution: Resolution) => {
-    setEditingId(resolution.id);
-    setEditingText(resolution.text);
+  /** Called when a resolution is saved (created or updated) via the dialog. */
+  const handleSaved = () => {
+    // Reload the full list to keep it in sync (type changes, etc.)
+    loadResolutions();
   };
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditingText("");
-  };
-
-  const handleSaveEdit = async (id: string) => {
-    const text = editingText.trim();
-    if (!text) return;
-
-    setSavingId(id);
-    try {
-      const response = await fetch('/api/resolutions', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, text }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setResolutions((prev) => prev.map(res => (res.id === id ? data.resolution : res)));
-        setEditingId(null);
-        setEditingText("");
-        toast({
-          title: "Success",
-          description: "Resolution updated",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to update resolution",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingId(null);
-    }
-  };
-
+  /* ── Loading state ───────────────────────────────────────────── */
   if (isLoading) {
     return (
       <Card>
@@ -187,110 +173,103 @@ function ResolutionsManager() {
     );
   }
 
+  /* ── Render ──────────────────────────────────────────────────── */
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">My Personal Resolutions</CardTitle>
-        <CardDescription>Add, edit, or delete your personal resolutions. These can be used to fill your bingo cards.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Input 
-            placeholder="e.g., Run a marathon"
-            value={newResolution}
-            onChange={(e) => setNewResolution(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !isAdding && handleAddResolution()}
-            disabled={isAdding}
-          />
-          <Button onClick={handleAddResolution} disabled={isAdding || !newResolution.trim()}>
-            {isAdding ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <><Plus className="h-4 w-4 mr-2"/>Add</>
-            )}
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle className="font-headline">My Personal Resolutions</CardTitle>
+            <CardDescription>
+              Manage your personal resolutions. These can be used to fill your bingo cards.
+            </CardDescription>
+          </div>
+          <Button size="icon" onClick={handleCreate} aria-label="Add resolution">
+            <Plus className="h-4 w-4" />
           </Button>
-        </div>
-        <Separator />
-        <ul className="space-y-2">
-          {resolutions.map(res => (
-            <li key={res.id} className="flex items-center justify-between p-2 rounded-md bg-secondary/50">
-              {editingId === res.id ? (
-                <Input
-                  value={editingText}
-                  onChange={(e) => setEditingText(e.target.value)}
-                  className="h-8 text-sm"
-                  disabled={savingId === res.id}
-                />
-              ) : (
-                <div className="min-w-0">
-                  <span className="text-sm font-medium block truncate">{res.title}</span>
-                  {res.text !== res.title && (
-                    <span className="text-xs text-muted-foreground block truncate">{res.text}</span>
-                  )}
-                </div>
-              )}
+        </CardHeader>
 
-              <div className="flex items-center gap-1">
-                {editingId === res.id ? (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-green-600"
-                      onClick={() => handleSaveEdit(res.id)}
-                      disabled={savingId === res.id || !editingText.trim()}
-                    >
-                      {savingId === res.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                      onClick={handleCancelEdit}
-                      disabled={savingId === res.id}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      onClick={() => handleStartEdit(res)}
-                      disabled={deletingId === res.id}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDeleteResolution(res.id)}
-                      disabled={deletingId === res.id}
-                    >
-                      {deletingId === res.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </li>
-          ))}
-          {resolutions.length === 0 && (
-            <p className="text-sm text-center text-muted-foreground py-4">You haven't added any resolutions yet.</p>
-          )}
-        </ul>
-      </CardContent>
-    </Card>
+        <CardContent className="space-y-4">
+          <Separator />
+          <ul className="space-y-2">
+            {resolutions.map((res) => (
+              <li
+                key={res.id}
+                className="flex items-center justify-between p-2 rounded-md bg-secondary/50"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium truncate">{res.title}</span>
+                    <Badge variant={TYPE_VARIANT[res.type]} className="text-xs flex-shrink-0">
+                      {TYPE_LABELS[res.type]}
+                    </Badge>
+                  </div>
+                  {res.text && res.text !== res.title && (
+                    <span className="text-xs text-muted-foreground block truncate mt-0.5">
+                      {res.text}
+                    </span>
+                  )}
+                  {/* Compound: show subtask count */}
+                  {res.type === "compound" && res.subtasks && (
+                    <span className="text-xs text-muted-foreground block mt-0.5">
+                      {res.subtasks.filter((s) => s.completed).length} / {res.subtasks.length} subtasks
+                    </span>
+                  )}
+                  {/* Iterative: show progress */}
+                  {res.type === "iterative" &&
+                    res.numberOfRepetition !== undefined &&
+                    res.completedTimes !== undefined && (
+                      <span className="text-xs text-muted-foreground block mt-0.5">
+                        {res.completedTimes} / {res.numberOfRepetition} repetitions
+                      </span>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => handleEdit(res)}
+                    disabled={deletingId === res.id}
+                    aria-label="Edit resolution"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => handleDelete(res)}
+                    disabled={deletingId === res.id}
+                    aria-label="Delete resolution"
+                  >
+                    {deletingId === res.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </li>
+            ))}
+            {resolutions.length === 0 && (
+              <p className="text-sm text-center text-muted-foreground py-4">
+                You haven&apos;t added any resolutions yet. Click the + button to create one.
+              </p>
+            )}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <ResolutionCreateEditDialog
+        key={editingResolution?.id ?? "create"}
+        initialData={editingResolution}
+        isOpen={dialogOpen}
+        setIsOpen={setDialogOpen}
+        onSaved={handleSaved}
+      />
+    </>
   );
 }
 
