@@ -85,6 +85,8 @@ interface TeamWsProviderProps {
 
 export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderProps) {
   const wsRef = useRef<WebSocket | null>(null);
+  /** Messages queued while the socket is still CONNECTING. */
+  const pendingMessagesRef = useRef<object[]>([]);
 
   // Stable ref so we don't re-open the socket when onRefresh identity changes.
   const onRefreshRef = useRef(onRefresh);
@@ -111,6 +113,12 @@ export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderPr
           body: { teamId },
         })
       );
+
+      // Flush any messages that were queued while CONNECTING
+      for (const msg of pendingMessagesRef.current) {
+        ws.send(JSON.stringify(msg));
+      }
+      pendingMessagesRef.current = [];
     };
 
     ws.onmessage = (event) => {
@@ -146,6 +154,7 @@ export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderPr
 
     return () => {
       if (wsRef.current === ws) wsRef.current = null;
+      pendingMessagesRef.current = [];
       try {
         ws.close();
       } catch {
@@ -159,6 +168,8 @@ export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderPr
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(msg));
+    } else if (ws && ws.readyState === WebSocket.CONNECTING) {
+      pendingMessagesRef.current.push(msg);
     }
   }, []);
 
