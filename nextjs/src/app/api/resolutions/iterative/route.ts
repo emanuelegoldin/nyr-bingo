@@ -67,9 +67,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    if (typeof numberOfRepetition !== 'number' || numberOfRepetition < 1) {
+    if (typeof numberOfRepetition !== 'number' || numberOfRepetition < 2) {
       return NextResponse.json(
-        { error: 'numberOfRepetition must be a positive integer' },
+        { error: 'numberOfRepetition must be a positive integer greater than 1' },
         { status: 400 }
       );
     }
@@ -118,9 +118,9 @@ export async function PUT(request: NextRequest) {
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
     if (numberOfRepetition !== undefined) {
-      if (typeof numberOfRepetition !== 'number' || numberOfRepetition < 1) {
+      if (typeof numberOfRepetition !== 'number' || numberOfRepetition < 2) {
         return NextResponse.json(
-          { error: 'numberOfRepetition must be a positive integer' },
+          { error: 'numberOfRepetition must be a positive integer greater than 1' },
           { status: 400 }
         );
       }
