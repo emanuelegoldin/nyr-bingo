@@ -19,7 +19,7 @@ This project is a web application that allows users to create and manage resolut
   - `nyr-bingo.conf`: Contains the Nginx configuration for the project, which is used to serve the frontend and backend applications.
   - `docker-compose.yml`: Contains the Docker Compose configuration for the project, which defines how the different services (Next.js application, database, etc.) are orchestrated together. Used for local development and testing. The Dockerfiles in the `docker/` directory are used to build the individual images for each service.
 - `ws-server/`: Websocket server for real-time behavior in the application.
-  - `serevr.ts`: Contains the source code for the websocket server.
+  - `server.ts`: Contains the source code for the websocket server.
   - `messages/`: Contains the message definitions for the websocket communication.
 - `docs/`: Contains documentation for the project.
   - `database/`: Contains descriptions of the migration files (`migrations.md`).
