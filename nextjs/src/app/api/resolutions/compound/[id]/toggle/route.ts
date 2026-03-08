@@ -48,7 +48,7 @@ export async function PATCH(
     }
 
     // Auto-transition bingo cells: all subtasks done → completed, otherwise → pending
-    const allDone = resolution.subtasks.every((s) => s.completed);
+    const allDone = resolution.subtasks?.every((s) => s.completed) ?? false;
     const updatedCells = await autoTransitionCellState(
       id,
       ResolutionType.COMPOUND,

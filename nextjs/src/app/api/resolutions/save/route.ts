@@ -16,12 +16,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { getConnection, query } from '@/lib/db';
-import {
-  getResolutionById,
-  getCompoundResolutionById,
-  getIterativeResolutionById,
-} from '@/lib/db';
+import { getConnection, query, isTeamLeader, isTeamMember } from '@/lib/db';
+import { getResolutionById } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '@/lib/shared/types';
 
@@ -83,6 +79,9 @@ export async function POST(request: NextRequest) {
       text,
       subtasks,
       numberOfRepetition,
+      scope: rawScope,
+      teamId,
+      toUserId,
     } = body as {
       id?: string;
       previousType?: string;
@@ -91,7 +90,15 @@ export async function POST(request: NextRequest) {
       text?: string;
       subtasks?: Subtask[];
       numberOfRepetition?: number;
+      scope?: string;
+      teamId?: string;
+      toUserId?: string;
     };
+
+    const scope = rawScope || 'personal';
+    if (!['personal', 'team', 'member_provided'].includes(scope)) {
+      return NextResponse.json({ error: 'Invalid scope' }, { status: 400 });
+    }
 
     if (!type || !['base', 'compound', 'iterative'].includes(type)) {
       return NextResponse.json({ error: 'Invalid resolution type' }, { status: 400 });
@@ -114,9 +121,61 @@ export async function POST(request: NextRequest) {
     const trimmedTitle = title.trim().slice(0, 255);
     const trimmedText = text?.trim() || '';
 
+    // ── Scope authorization ────────────────────────────────────
+    if (scope === 'team') {
+      if (!teamId) {
+        return NextResponse.json({ error: 'Team ID is required for team scope' }, { status: 400 });
+      }
+      const leader = await isTeamLeader(teamId, currentUser.id);
+      if (!leader) {
+        return NextResponse.json({ error: 'Only the team leader can set the team goal' }, { status: 403 });
+      }
+    }
+
+    if (scope === 'member_provided') {
+      if (!teamId || !toUserId) {
+        return NextResponse.json({ error: 'Team ID and target user ID are required' }, { status: 400 });
+      }
+      if (toUserId === currentUser.id) {
+        return NextResponse.json({ error: 'You cannot create a resolution for yourself' }, { status: 400 });
+      }
+      const member = await isTeamMember(teamId, currentUser.id);
+      if (!member) {
+        return NextResponse.json({ error: 'You must be a team member' }, { status: 403 });
+      }
+      const targetMember = await isTeamMember(teamId, toUserId);
+      if (!targetMember) {
+        return NextResponse.json({ error: 'Target user is not a team member' }, { status: 400 });
+      }
+    }
+
     // ── CREATE (no id) ─────────────────────────────────────────
     if (!id) {
-      return handleCreate(currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition);
+      // For team scope, if a goal already exists, update it instead
+      if (scope === 'team') {
+        const [existingGoal] = await query<Array<Record<string, unknown>>>(
+          `SELECT id FROM resolutions WHERE team_id = ? AND scope = 'team' LIMIT 1`,
+          [teamId]
+        );
+        if (existingGoal) {
+          return handleSameTypeUpdate(
+            existingGoal.id as string, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition
+          );
+        }
+      }
+      // For member_provided scope, if a resolution from→to already exists, update it
+      if (scope === 'member_provided') {
+        const [existingMp] = await query<Array<Record<string, unknown>>>(
+          `SELECT id FROM resolutions WHERE team_id = ? AND owner_user_id = ? AND to_user_id = ? AND scope = 'member_provided' LIMIT 1`,
+          [teamId, currentUser.id, toUserId]
+        );
+        if (existingMp) {
+          return handleSameTypeUpdate(
+            existingMp.id as string, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition
+          );
+        }
+      }
+      return handleCreate(currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition, scope, teamId, toUserId);
     }
 
     // ── UPDATE (with id) ───────────────────────────────────────
@@ -132,7 +191,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Type changed → atomic delete-from-old + insert-into-new
-    return handleTypeChange(id, currentUser.id, effectivePrevType, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition);
+    return handleTypeChange(id, currentUser.id, effectivePrevType, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition, scope, teamId, toUserId);
   } catch (error) {
     console.error('Resolution save error:', error);
     return NextResponse.json({ error: 'An error occurred' }, { status: 500 });
@@ -142,15 +201,7 @@ export async function POST(request: NextRequest) {
 /* ─── Helpers ──────────────────────────────────────────────────────── */
 
 async function verifyOwnership(id: string, type: string, userId: string): Promise<NextResponse | null> {
-  let existing: { ownerUserId: string } | null = null;
-
-  if (type === 'base') {
-    existing = await getResolutionById(id);
-  } else if (type === 'compound') {
-    existing = await getCompoundResolutionById(id);
-  } else if (type === 'iterative') {
-    existing = await getIterativeResolutionById(id);
-  }
+  const existing = await getResolutionById(id);
 
   if (!existing) {
     return NextResponse.json({ error: 'Resolution not found' }, { status: 404 });
@@ -162,7 +213,7 @@ async function verifyOwnership(id: string, type: string, userId: string): Promis
 }
 
 /**
- * Create a new resolution in the appropriate table.
+ * Create a new resolution in the unified resolutions table.
  */
 async function handleCreate(
   userId: string,
@@ -171,44 +222,39 @@ async function handleCreate(
   text: string,
   subtasks?: Subtask[],
   numberOfRepetition?: number,
+  scope: string = 'personal',
+  teamId?: string,
+  toUserId?: string,
 ) {
   const id = uuidv4();
+  const description = type === 'base' ? (text || title) : (text || null);
 
   if (type === 'base') {
-    const descOrTitle = text || title;
     await query(
-      `INSERT INTO resolutions (id, owner_user_id, title, text) VALUES (?, ?, ?, ?)`,
-      [id, userId, title, descOrTitle]
+      `INSERT INTO resolutions (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id)
+       VALUES (?, ?, ?, ?, 'base', ?, ?, ?)`,
+      [id, userId, title, description, scope, teamId || null, toUserId || null]
     );
-    const rows = await query<Array<Record<string, unknown>>>(
-      `SELECT * FROM resolutions WHERE id = ?`, [id]
-    );
-    return NextResponse.json({ resolution: toUnifiedResponse(rows[0], 'base') }, { status: 201 });
-  }
-
-  if (type === 'compound') {
+  } else if (type === 'compound') {
     const normalizedSubtasks = normalizeSubtasks(subtasks!);
     await query(
-      `INSERT INTO compound_resolutions (id, owner_user_id, title, description, subtasks)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id, userId, title, text || null, JSON.stringify(normalizedSubtasks)]
+      `INSERT INTO resolutions (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, subtasks)
+       VALUES (?, ?, ?, ?, 'compound', ?, ?, ?, ?)`,
+      [id, userId, title, description, scope, teamId || null, toUserId || null, JSON.stringify(normalizedSubtasks)]
     );
-    const rows = await query<Array<Record<string, unknown>>>(
-      `SELECT * FROM compound_resolutions WHERE id = ?`, [id]
+  } else {
+    // iterative
+    await query(
+      `INSERT INTO resolutions (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, number_of_repetition, completed_times)
+       VALUES (?, ?, ?, ?, 'iterative', ?, ?, ?, ?, 0)`,
+      [id, userId, title, description, scope, teamId || null, toUserId || null, numberOfRepetition!]
     );
-    return NextResponse.json({ resolution: toUnifiedResponse(rows[0], 'compound') }, { status: 201 });
   }
 
-  // iterative
-  await query(
-    `INSERT INTO iterative_resolutions (id, owner_user_id, title, description, number_of_repetition, completed_times)
-     VALUES (?, ?, ?, ?, ?, 0)`,
-    [id, userId, title, text || null, numberOfRepetition!]
-  );
   const rows = await query<Array<Record<string, unknown>>>(
-    `SELECT * FROM iterative_resolutions WHERE id = ?`, [id]
+    `SELECT * FROM resolutions WHERE id = ?`, [id]
   );
-  return NextResponse.json({ resolution: toUnifiedResponse(rows[0], 'iterative') }, { status: 201 });
+  return NextResponse.json({ resolution: toUnifiedResponse(rows[0], type) }, { status: 201 });
 }
 
 /**
@@ -223,46 +269,38 @@ async function handleSameTypeUpdate(
   subtasks?: Subtask[],
   numberOfRepetition?: number,
 ) {
-  if (type === 'base') {
-    const descOrTitle = text || title;
-    await query(
-      `UPDATE resolutions SET title = ?, text = ? WHERE id = ? AND owner_user_id = ?`,
-      [title, descOrTitle, id, userId]
-    );
-    const rows = await query<Array<Record<string, unknown>>>(
-      `SELECT * FROM resolutions WHERE id = ?`, [id]
-    );
-    return NextResponse.json({ resolution: toUnifiedResponse(rows[0], 'base') });
-  }
+  const description = type === 'base' ? (text || title) : (text || null);
 
-  if (type === 'compound') {
+  if (type === 'base') {
+    await query(
+      `UPDATE resolutions SET title = ?, description = ? WHERE id = ? AND owner_user_id = ?`,
+      [title, description, id, userId]
+    );
+  } else if (type === 'compound') {
     const normalizedSubtasks = normalizeSubtasks(subtasks!);
     await query(
-      `UPDATE compound_resolutions SET title = ?, description = ?, subtasks = ?
+      `UPDATE resolutions SET title = ?, description = ?, subtasks = ?
        WHERE id = ? AND owner_user_id = ?`,
-      [title, text || null, JSON.stringify(normalizedSubtasks), id, userId]
+      [title, description, JSON.stringify(normalizedSubtasks), id, userId]
     );
-    const rows = await query<Array<Record<string, unknown>>>(
-      `SELECT * FROM compound_resolutions WHERE id = ?`, [id]
+  } else {
+    // iterative
+    await query(
+      `UPDATE resolutions SET title = ?, description = ?, number_of_repetition = ?
+       WHERE id = ? AND owner_user_id = ?`,
+      [title, description, numberOfRepetition!, id, userId]
     );
-    return NextResponse.json({ resolution: toUnifiedResponse(rows[0], 'compound') });
   }
 
-  // iterative
-  await query(
-    `UPDATE iterative_resolutions SET title = ?, description = ?, number_of_repetition = ?
-     WHERE id = ? AND owner_user_id = ?`,
-    [title, text || null, numberOfRepetition!, id, userId]
-  );
   const rows = await query<Array<Record<string, unknown>>>(
-    `SELECT * FROM iterative_resolutions WHERE id = ?`, [id]
+    `SELECT * FROM resolutions WHERE id = ?`, [id]
   );
-  return NextResponse.json({ resolution: toUnifiedResponse(rows[0], 'iterative') });
+  return NextResponse.json({ resolution: toUnifiedResponse(rows[0], type) });
 }
 
 /**
- * Atomically change resolution type: delete from old table, insert with the SAME id into new table,
- * and update any bingo_cells referencing this resolution.
+ * Change resolution type: update the single resolutions row and any bingo_cells referencing it.
+ * Since all types live in the same table, this is a single UPDATE + cell update.
  */
 async function handleTypeChange(
   id: string,
@@ -273,38 +311,43 @@ async function handleTypeChange(
   text: string,
   subtasks?: Subtask[],
   numberOfRepetition?: number,
+  _scope?: string,
+  _teamId?: string,
+  _toUserId?: string,
 ) {
   const conn = await getConnection();
+  const description = newType === 'base' ? (text || title) : (text || null);
 
   try {
     await conn.beginTransaction();
 
-    // 1. Delete from old table
-    const oldTable = tableForType(oldType);
-    await conn.execute(`DELETE FROM ${oldTable} WHERE id = ? AND owner_user_id = ?`, [id, userId]);
-
-    // 2. Insert into new table with SAME id
+    // Update the resolution row: change type and type-specific fields
     if (newType === 'base') {
-      const descOrTitle = text || title;
       await conn.execute(
-        `INSERT INTO resolutions (id, owner_user_id, title, text) VALUES (?, ?, ?, ?)`,
-        [id, userId, title, descOrTitle]
+        `UPDATE resolutions SET title = ?, description = ?, resolution_type = 'base',
+         subtasks = NULL, number_of_repetition = NULL, completed_times = 0
+         WHERE id = ? AND owner_user_id = ?`,
+        [title, description, id, userId]
       );
     } else if (newType === 'compound') {
       const normalizedSubtasks = normalizeSubtasks(subtasks!);
       await conn.execute(
-        `INSERT INTO compound_resolutions (id, owner_user_id, title, description, subtasks) VALUES (?, ?, ?, ?, ?)`,
-        [id, userId, title, text || null, JSON.stringify(normalizedSubtasks)]
+        `UPDATE resolutions SET title = ?, description = ?, resolution_type = 'compound',
+         subtasks = ?, number_of_repetition = NULL, completed_times = 0
+         WHERE id = ? AND owner_user_id = ?`,
+        [title, description, JSON.stringify(normalizedSubtasks), id, userId]
       );
     } else {
       // iterative
       await conn.execute(
-        `INSERT INTO iterative_resolutions (id, owner_user_id, title, description, number_of_repetition, completed_times) VALUES (?, ?, ?, ?, ?, 0)`,
-        [id, userId, title, text || null, numberOfRepetition!]
+        `UPDATE resolutions SET title = ?, description = ?, resolution_type = 'iterative',
+         subtasks = NULL, number_of_repetition = ?, completed_times = 0
+         WHERE id = ? AND owner_user_id = ?`,
+        [title, description, numberOfRepetition!, id, userId]
       );
     }
 
-    // 3. Update bingo_cells.resolution_type for any cells referencing this resolution
+    // Update bingo_cells.resolution_type for any cells referencing this resolution
     await conn.execute(
       `UPDATE bingo_cells SET resolution_type = ? WHERE resolution_id = ?`,
       [newType, id]
@@ -318,10 +361,8 @@ async function handleTypeChange(
     conn.release();
   }
 
-  // Fetch the newly inserted row
-  const newTable = tableForType(newType);
   const rows = await query<Array<Record<string, unknown>>>(
-    `SELECT * FROM ${newTable} WHERE id = ?`, [id]
+    `SELECT * FROM resolutions WHERE id = ?`, [id]
   );
 
   if (rows.length === 0) {
@@ -329,18 +370,6 @@ async function handleTypeChange(
   }
 
   return NextResponse.json({ resolution: toUnifiedResponse(rows[0], newType) });
-}
-
-/**
- * Map a resolution type to its database table name.
- */
-function tableForType(type: string): string {
-  switch (type) {
-    case 'base': return 'resolutions';
-    case 'compound': return 'compound_resolutions';
-    case 'iterative': return 'iterative_resolutions';
-    default: throw new Error(`Unknown resolution type: ${type}`);
-  }
 }
 
 /**
@@ -364,7 +393,7 @@ function toUnifiedResponse(row: Record<string, unknown>, type: string) {
     type,
     ownerUserId: row.owner_user_id,
     title: row.title,
-    text: (row.text as string) ?? (row.description as string) ?? '',
+    text: (row.description as string) ?? '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

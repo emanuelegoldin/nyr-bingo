@@ -45,7 +45,7 @@ export async function PATCH(
     }
 
     // Auto-transition bingo cells: dropped below threshold → revert to pending
-    const isComplete = resolution.completedTimes >= resolution.numberOfRepetition;
+    const isComplete = resolution.completedTimes >= (resolution.numberOfRepetition ?? Infinity);
     const updatedCells = await autoTransitionCellState(
       id,
       ResolutionType.ITERATIVE,

@@ -12,7 +12,6 @@ interface BingoCell {
       cardId: string;
       position: number;
       resolutionId?: string | null;
-      teamProvidedResolutionId?: string | null;
       resolutionType: ResolutionType;
       resolutionText: string;
       resolutionTitle: string;
@@ -44,7 +43,6 @@ type EditOption = {
   resolutionText: string;
   resolutionId: string | null;
   resolutionType: ResolutionType;
-  teamProvidedResolutionId: string | null;
   sourceType: CellSourceType;
   sourceUserId: string | null;
   isEmpty: boolean;
@@ -73,7 +71,7 @@ export const EditCellDialog = ({
               .filter((c: BingoCell) => !c.isJoker && !c.isEmpty)
               .map((c: BingoCell) => {
                 if (c.sourceType === CellSourceType.PERSONAL && c.resolutionId) return `personal:${c.resolutionId}`;
-                if (c.sourceType === CellSourceType.MEMBER_PROVIDED && c.teamProvidedResolutionId) return `member_provided:${c.teamProvidedResolutionId}`;
+                if (c.sourceType === CellSourceType.MEMBER_PROVIDED && c.resolutionId) return `member_provided:${c.resolutionId}`;
                 // "team" and "empty" cells do not have a stable resolution id reference.
                 return null;
               })
@@ -110,7 +108,6 @@ export const EditCellDialog = ({
               resolutionText: r.text || r.title,
               resolutionId: typeof r.id === 'string' ? r.id : null,
               resolutionType: (r.type as ResolutionType) ?? ResolutionType.BASE,
-              teamProvidedResolutionId: null,
               sourceType: CellSourceType.PERSONAL,
               sourceUserId: currentUserId ?? null,
               isEmpty: false,
@@ -134,13 +131,12 @@ export const EditCellDialog = ({
               teamOptions = (teamData?.resolutions || [])
                 .map((r: any) => ({
                 key: `member_provided:${r.id}`,
-                label: r.title || r.text,
-                resolutionText: r.text,
-                resolutionId: null,
-                resolutionType: ResolutionType.BASE,
-                teamProvidedResolutionId: typeof r.id === 'string' ? r.id : null,
+                label: r.title || r.description,
+                resolutionText: r.description || r.title,
+                resolutionId: typeof r.id === 'string' ? r.id : null,
+                resolutionType: (r.resolutionType as ResolutionType) ?? ResolutionType.BASE,
                 sourceType: CellSourceType.MEMBER_PROVIDED,
-                sourceUserId: typeof r.fromUserId === 'string' ? r.fromUserId : null,
+                sourceUserId: typeof r.ownerUserId === 'string' ? r.ownerUserId : null,
                 isEmpty: false,
               }))
                 // Prevent duplicates: do not allow selecting texts already used in other non-empty cells
@@ -190,7 +186,6 @@ export const EditCellDialog = ({
             body: JSON.stringify({
             resolutionId: opt.resolutionId,
             resolutionType: opt.resolutionType,
-            teamProvidedResolutionId: opt.teamProvidedResolutionId,
             sourceType: opt.sourceType,
             sourceUserId: opt.sourceUserId,
             isEmpty: opt.isEmpty,

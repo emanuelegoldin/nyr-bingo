@@ -57,6 +57,14 @@ interface ResolutionCreateEditDialogProps {
   setIsOpen: (open: boolean) => void;
   /** Called after a successful save with the saved resolution data. */
   onSaved?: (resolution: ResolutionFormData & { id: string }) => void;
+  /** Resolution scope. Defaults to 'personal'. */
+  scope?: "personal" | "team" | "member_provided";
+  /** Required when scope is 'team' or 'member_provided'. */
+  teamId?: string;
+  /** Required when scope is 'member_provided'. */
+  toUserId?: string;
+  /** Display name of the recipient (for member_provided scope). */
+  recipientName?: string;
 }
 
 /* ─── Human-readable labels ──────────────────────────────────────── */
@@ -78,6 +86,10 @@ export const ResolutionCreateEditDialog = ({
   isOpen,
   setIsOpen,
   onSaved,
+  scope = "personal",
+  teamId,
+  toUserId,
+  recipientName,
 }: ResolutionCreateEditDialogProps) => {
   const { toast } = useToast();
   const isEdit = Boolean(initialData?.id);
@@ -117,6 +129,12 @@ export const ResolutionCreateEditDialog = ({
         title: title.trim(),
         text: text.trim() || undefined,
       };
+
+      if (scope !== "personal") {
+        body.scope = scope;
+        if (teamId) body.teamId = teamId;
+        if (toUserId) body.toUserId = toUserId;
+      }
 
       if (isEdit && initialData?.id) {
         body.id = initialData.id;
@@ -173,19 +191,29 @@ export const ResolutionCreateEditDialog = ({
       setIsSaving(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, title, text, subtasks, numberOfRepetition, isSaving, initialData, isEdit, originalType]);
+  }, [type, title, text, subtasks, numberOfRepetition, isSaving, initialData, isEdit, originalType, scope, teamId, toUserId]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-headline">
-            {isEdit ? "Edit Resolution" : "New Resolution"}
+            {scope === "team"
+              ? isEdit ? "Edit Team Goal" : "Set Team Goal"
+              : scope === "member_provided"
+                ? isEdit
+                  ? `Edit Resolution for ${recipientName ?? "Member"}`
+                  : `New Resolution for ${recipientName ?? "Member"}`
+                : isEdit ? "Edit Resolution" : "New Resolution"}
           </DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? "Update the resolution details below."
-              : "Create a new personal resolution."}
+            {scope === "team"
+              ? "Set the team goal that will appear in the center of everyone's bingo card."
+              : scope === "member_provided"
+                ? `Create a resolution for ${recipientName ?? "this member"}.`
+                : isEdit
+                  ? "Update the resolution details below."
+                  : "Create a new personal resolution."}
           </DialogDescription>
         </DialogHeader>
 

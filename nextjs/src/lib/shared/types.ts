@@ -73,17 +73,24 @@ export enum VoteType {
   DENY = 'deny'
 }
 
-// Resolution type discriminator
+// Resolution type discriminator (content type)
 // Spec: Resolution Rework — polymorphic resolution types
 export enum ResolutionType {
   BASE = 'base',
-  TEAM = 'team',
   COMPOUND = 'compound',
   ITERATIVE = 'iterative',
 }
 
+// Resolution scope (ownership context)
+// A resolution can be personal, a team-wide goal, or written by one member for another.
+export enum ResolutionScope {
+  PERSONAL = 'personal',
+  TEAM = 'team',
+  MEMBER_PROVIDED = 'member_provided',
+}
+
 /**
- * Subtask shape stored as JSON in compound_resolutions.subtasks.
+ * Subtask shape stored as JSON in resolutions.subtasks.
  */
 export interface Subtask {
   title: string;
@@ -93,43 +100,32 @@ export interface Subtask {
 
 // --- Discriminated union for typed resolutions (frontend consumption) ---
 
-export interface BaseResolution {
-  type: 'base';
-  id: string;
-  title: string;
-  description: string;
-  ownerUserId: string;
-}
-
-export interface CompoundResolution {
-  type: 'compound';
+/** Fields shared by every resolution regardless of type. */
+export interface ResolutionBase {
   id: string;
   title: string;
   description: string | null;
   ownerUserId: string;
+  scope: ResolutionScope;
+  teamId?: string | null;
+  toUserId?: string | null;
+}
+
+export interface BaseResolution extends ResolutionBase {
+  type: 'base';
+}
+
+export interface CompoundResolution extends ResolutionBase {
+  type: 'compound';
   subtasks: Subtask[];
   completedTasks: number;
   numberOfTasks: number;
 }
 
-export interface IterativeResolution {
+export interface IterativeResolution extends ResolutionBase {
   type: 'iterative';
-  id: string;
-  title: string;
-  description: string | null;
-  ownerUserId: string;
   numberOfRepetition: number;
   completedTimes: number;
-}
-
-export interface TeamResolution {
-  type: 'team';
-  id: string;
-  title: string;
-  description: string;
-  teamId?: string;
-  fromUserId?: string;
-  toUserId?: string;
 }
 
 /**
@@ -139,5 +135,4 @@ export interface TeamResolution {
 export type TypedResolution =
   | BaseResolution
   | CompoundResolution
-  | IterativeResolution
-  | TeamResolution;
+  | IterativeResolution;

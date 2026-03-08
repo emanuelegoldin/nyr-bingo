@@ -32,7 +32,7 @@ import type { WsIncomingMessage } from "../team-ws-provider";
 /* ─── Data types ─────────────────────────────────────────────────── */
 
 interface BaseData {
-  type: ResolutionType.BASE | ResolutionType.TEAM;
+  type: ResolutionType.BASE;
   id: string;
   title: string;
   description?: string | null;
@@ -74,6 +74,8 @@ interface ResolutionDetailDialogProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   isOwner: boolean;
+  /** Human-readable source label, e.g. "Personal", "Team Goal", or a username */
+  sourceLabel?: string;
   /** Called after a mutation so the parent can refresh the bingo card */
   onRefresh?: () => void;
   /** Called when the owner wants to mark a base/team cell as complete */
@@ -106,7 +108,6 @@ const STATE_CONFIG: Record<string, {
 /** Human-readable type labels */
 const TYPE_LABELS: Record<string, string> = {
   [ResolutionType.BASE]: "Common",
-  [ResolutionType.TEAM]: "Team Goal",
   [ResolutionType.COMPOUND]: "Complex",
   [ResolutionType.ITERATIVE]: "Iterative",
 };
@@ -121,6 +122,7 @@ export const ResolutionDetailDialog = ({
   isOpen,
   setIsOpen,
   isOwner,
+  sourceLabel,
   onRefresh,
   onComplete,
   onUndo,
@@ -155,6 +157,9 @@ export const ResolutionDetailDialog = ({
             {effectiveConfig.label}
           </span>
           <Badge variant="outline">{TYPE_LABELS[data.type] ?? data.type}</Badge>
+          {sourceLabel && (
+            <Badge variant="secondary">{sourceLabel}</Badge>
+          )}
         </div>
 
         {/* Type-specific content */}
@@ -177,7 +182,7 @@ export const ResolutionDetailDialog = ({
           />
         )}
 
-        {(data.type === ResolutionType.BASE || data.type === ResolutionType.TEAM) && (
+        {data.type === ResolutionType.BASE && (
           <div className="py-2">
             {!data.description && (
               <p className="text-sm text-muted-foreground italic">No description provided.</p>

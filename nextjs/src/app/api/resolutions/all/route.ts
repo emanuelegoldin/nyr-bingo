@@ -6,11 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import {
-  getResolutionsByUser,
-  getCompoundResolutionsByUser,
-  getIterativeResolutionsByUser,
-} from '@/lib/db';
+import { getResolutionsByUser } from '@/lib/db';
 import type { Subtask } from '@/lib/shared/types';
 
 interface UnifiedResolution {
@@ -36,44 +32,27 @@ export async function GET() {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const [base, compound, iterative] = await Promise.all([
-      getResolutionsByUser(currentUser.id),
-      getCompoundResolutionsByUser(currentUser.id),
-      getIterativeResolutionsByUser(currentUser.id),
-    ]);
+    const allResolutions = await getResolutionsByUser(currentUser.id);
 
-    const resolutions: UnifiedResolution[] = [
-      ...base.map((r) => ({
+    const resolutions: UnifiedResolution[] = allResolutions.map((r) => {
+      const base = {
         id: r.id,
-        type: 'base' as const,
-        ownerUserId: r.ownerUserId,
-        title: r.title,
-        text: r.text,
-        createdAt: r.createdAt,
-        updatedAt: r.updatedAt,
-      })),
-      ...compound.map((r) => ({
-        id: r.id,
-        type: 'compound' as const,
+        type: r.resolutionType as 'base' | 'compound' | 'iterative',
         ownerUserId: r.ownerUserId,
         title: r.title,
         text: r.description ?? '',
-        subtasks: r.subtasks,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
-      })),
-      ...iterative.map((r) => ({
-        id: r.id,
-        type: 'iterative' as const,
-        ownerUserId: r.ownerUserId,
-        title: r.title,
-        text: r.description ?? '',
-        numberOfRepetition: r.numberOfRepetition,
-        completedTimes: r.completedTimes,
-        createdAt: r.createdAt,
-        updatedAt: r.updatedAt,
-      })),
-    ];
+      };
+
+      if (r.resolutionType === 'compound') {
+        return { ...base, subtasks: r.subtasks ?? undefined };
+      }
+      if (r.resolutionType === 'iterative') {
+        return { ...base, numberOfRepetition: r.numberOfRepetition ?? undefined, completedTimes: r.completedTimes };
+      }
+      return base;
+    });
 
     // Sort by creation date (newest first)
     resolutions.sort((a, b) => {

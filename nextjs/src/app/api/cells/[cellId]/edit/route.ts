@@ -33,9 +33,8 @@ export async function PUT(
     const sourceType = body?.sourceType;
     const sourceUserId = typeof body?.sourceUserId === 'string' ? body.sourceUserId : null;
     const resolutionId = typeof body?.resolutionId === 'string' ? body.resolutionId : null;
-    const teamProvidedResolutionId = typeof body?.teamProvidedResolutionId === 'string' ? body.teamProvidedResolutionId : null;
     const resolutionType = typeof body?.resolutionType === 'string'
-      && [ResolutionType.BASE, ResolutionType.COMPOUND, ResolutionType.ITERATIVE, ResolutionType.TEAM].includes(body.resolutionType as ResolutionType)
+      && [ResolutionType.BASE, ResolutionType.COMPOUND, ResolutionType.ITERATIVE].includes(body.resolutionType as ResolutionType)
       ? (body.resolutionType as ResolutionType)
       : ResolutionType.BASE;
 
@@ -54,9 +53,9 @@ export async function PUT(
       );
     }
 
-    if (sourceType === 'member_provided' && !teamProvidedResolutionId) {
+    if (sourceType === 'member_provided' && !resolutionId) {
       return NextResponse.json(
-        { error: 'teamProvidedResolutionId is required for member_provided cells' },
+        { error: 'resolutionId is required for member_provided cells' },
         { status: 400 }
       );
     }
@@ -64,7 +63,6 @@ export async function PUT(
     const result = await updateCellContent(cellId, currentUser.id, {
       resolutionId,
       resolutionType,
-      teamProvidedResolutionId,
       sourceType,
       sourceUserId,
     });

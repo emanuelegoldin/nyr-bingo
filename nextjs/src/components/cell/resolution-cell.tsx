@@ -110,7 +110,7 @@ export const ResolutionCell = ({
         } else {
             // Base or Team: no extra fetch needed, use cell data directly
             setDetailData({
-                type: resType === ResolutionType.TEAM ? ResolutionType.TEAM : ResolutionType.BASE,
+                type: ResolutionType.BASE,
                 id: cell.resolutionId ?? cell.id,
                 title: cell.resolutionTitle || cell.resolutionText,
                 description: cell.resolutionText !== cell.resolutionTitle ? cell.resolutionText : null,
@@ -211,7 +211,7 @@ export const ResolutionCell = ({
                     <div className="absolute top-1 right-1">
                         {visualState !== 'pending' && config.icon}
                     </div>
-                    <Badge variant="outline" className="absolute bottom-1 right-1 text-xs">
+                    <Badge variant="outline" className="absolute bottom-1 right-1 text-xs hidden sm:inline-flex">
                         {cell.sourceType === CellSourceType.TEAM && "Team Goal"}
                         {cell.sourceType === CellSourceType.MEMBER_PROVIDED && (
                           cell.sourceUserId ? (
@@ -277,6 +277,13 @@ export const ResolutionCell = ({
                     isOpen={isModalOpen}
                     setIsOpen={setIsModalOpen}
                     isOwner={isOwner}
+                    sourceLabel={
+                      cell.sourceType === CellSourceType.TEAM
+                        ? "Team Goal"
+                        : cell.sourceType === CellSourceType.MEMBER_PROVIDED
+                          ? (cell.sourceUserId ? (usernames[cell.sourceUserId] ?? "Team member") : "Team member")
+                          : "Personal"
+                    }
                     onRefresh={onRefresh}
                     onComplete={handleCompleteFromDetail}
                     onUndo={handleUndoFromDetail}
