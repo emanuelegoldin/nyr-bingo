@@ -183,7 +183,7 @@ export async function getTeamWithMembers(teamId: string): Promise<TeamWithMember
  */
 export async function getTeamsForUser(userId: string): Promise<Team[]> {
   const rows = await query<TeamRow[]>(
-    `SELECT t.*, r.description AS team_resolution_text
+    `SELECT t.*, COALESCE(r.description, r.title) AS team_resolution_text
      FROM teams t
      JOIN team_memberships m ON t.id = m.team_id
      LEFT JOIN resolutions r ON r.team_id = t.id AND r.scope = 'team'
