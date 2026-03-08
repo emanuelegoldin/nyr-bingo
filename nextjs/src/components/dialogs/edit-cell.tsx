@@ -131,7 +131,7 @@ export const EditCellDialog = ({
               teamOptions = (teamData?.resolutions || [])
                 .map((r: any) => ({
                 key: `member_provided:${r.id}`,
-                label: r.title || r.description || r.title,
+                label: r.title || r.description,
                 resolutionText: r.description || r.title,
                 resolutionId: typeof r.id === 'string' ? r.id : null,
                 resolutionType: (r.resolutionType as ResolutionType) ?? ResolutionType.BASE,
