@@ -140,7 +140,7 @@ export async function createTeam(
  */
 export async function getTeamById(id: string): Promise<Team | null> {
   const rows = await query<TeamRow[]>(
-    `SELECT t.*, r.description AS team_resolution_text
+    `SELECT t.*, COALESCE(r.description, r.title) AS team_resolution_text
      FROM teams t
      LEFT JOIN resolutions r ON r.team_id = t.id AND r.scope = 'team'
      WHERE t.id = ?`,

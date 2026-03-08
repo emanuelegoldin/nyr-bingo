@@ -241,7 +241,7 @@ async function generateCardForUser(
       resolutionId: teamGoalResolutionId,
       sourceType: CellSourceType.TEAM,
       sourceUserId: null,
-      resolutionType: ResolutionType.BASE,
+      resolutionType: teamGoalResolution?.resolutionType ?? ResolutionType.BASE,
     });
   }
 
