@@ -74,6 +74,8 @@ interface ResolutionDetailDialogProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   isOwner: boolean;
+  /** Human-readable source label, e.g. "Personal", "Team Goal", or a username */
+  sourceLabel?: string;
   /** Called after a mutation so the parent can refresh the bingo card */
   onRefresh?: () => void;
   /** Called when the owner wants to mark a base/team cell as complete */
@@ -121,6 +123,7 @@ export const ResolutionDetailDialog = ({
   isOpen,
   setIsOpen,
   isOwner,
+  sourceLabel,
   onRefresh,
   onComplete,
   onUndo,
@@ -155,6 +158,9 @@ export const ResolutionDetailDialog = ({
             {effectiveConfig.label}
           </span>
           <Badge variant="outline">{TYPE_LABELS[data.type] ?? data.type}</Badge>
+          {sourceLabel && (
+            <Badge variant="secondary">{sourceLabel}</Badge>
+          )}
         </div>
 
         {/* Type-specific content */}
