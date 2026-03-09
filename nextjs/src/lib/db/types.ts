@@ -3,7 +3,11 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { TeamStatus, TeamRole, InvitationStatus, CellSourceType, CellState, ProofStatus, ReviewDecision, DuplicateReportStatus, ThreadStatus, VoteType } from "../shared/types";
+import { TeamStatus, TeamRole, InvitationStatus, CellSourceType, CellState, ProofStatus, ReviewDecision, DuplicateReportStatus, ThreadStatus, VoteType, ResolutionType, ResolutionScope, Subtask } from "../shared/types";
+
+// Re-export shared enums/types so consumers can import from db/types
+export { TeamStatus, TeamRole, InvitationStatus, CellSourceType, CellState, ProofStatus, ReviewDecision, DuplicateReportStatus, ThreadStatus, VoteType, ResolutionType, ResolutionScope };
+export type { Subtask };
 
 // User entity
 // Spec: 00-system-overview.md, 01-authentication.md
@@ -63,12 +67,20 @@ export interface Session {
   createdAt: Date;
 }
 
-// Personal resolution
-// Spec: 03-personal-resolutions.md
+// Unified resolution entity
+// Spec: 03-personal-resolutions.md, 04-bingo-teams.md, Resolution Rework
 export interface Resolution {
   id: string;
   ownerUserId: string;
-  text: string;
+  title: string;
+  description: string | null;
+  resolutionType: ResolutionType;
+  scope: ResolutionScope;
+  teamId: string | null;
+  toUserId: string | null;
+  subtasks: Subtask[] | null;
+  numberOfRepetition: number | null;
+  completedTimes: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +91,7 @@ export interface Team {
   id: string;
   name: string;
   leaderUserId: string;
+  /** Team goal resolution text, derived from the associated resolution entity. */
   teamResolutionText: string | null;
   status: TeamStatus;
   createdAt: Date;
@@ -108,18 +121,6 @@ export interface TeamInvitation {
   createdAt: Date;
 }
 
-// Team-provided resolution
-// Spec: 04-bingo-teams.md
-export interface TeamProvidedResolution {
-  id: string;
-  teamId: string;
-  fromUserId: string;
-  toUserId: string;
-  text: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // Bingo card
 // Spec: 05-bingo-card-generation.md
 export interface BingoCard {
@@ -131,14 +132,15 @@ export interface BingoCard {
 }
 
 // Bingo cell
-// Spec: 05-bingo-card-generation.md, 06-bingo-gameplay.md
+// Spec: 05-bingo-card-generation.md, 06-bingo-gameplay.md, Resolution Rework
 export interface BingoCell {
   id: string;
   cardId: string;
   position: number;
   resolutionId: string | null;
-  teamProvidedResolutionId: string | null;
+  resolutionType: ResolutionType;
   resolutionText: string;
+  resolutionTitle: string;
   isJoker: boolean;
   isEmpty: boolean;
   sourceType: CellSourceType;

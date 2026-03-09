@@ -1,0 +1,106 @@
+# Production Docker Compose
+#
+# Usage:
+#   VERSION=1.2.3 docker compose -f docker-compose.prod.yml pull
+#   VERSION=1.2.3 docker compose -f docker-compose.prod.yml up -d
+#
+# Or set VERSION in a .env file alongside this file:
+#   echo "VERSION=1.2.3" > .env
+#   docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
+#
+# VERSION defaults to "latest" if not set.
+
+name: nyr-bingo
+services:
+  mariadb:
+    image: ghcr.io/${IMAGE_NAMESPACE}/mariadb:${VERSION:-latest}
+    container_name: nyr-bingo-mariadb
+    ports:
+      - "3306:3306"
+    env_file:
+      - nextjs/.env
+    environment:
+      MARIADB_DATABASE: resolution_bingo
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-u", "${DB_USER}", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  flyway:
+    image: ghcr.io/${IMAGE_NAMESPACE}/flyway:${VERSION:-latest}
+    container_name: nyr-bingo-db-migrator
+    env_file:
+      - nextjs/.env
+    command: >
+      -url=jdbc:mariadb://mariadb:3306/resolution_bingo
+      -user=${DB_USER}
+      -password=${DB_PASSWORD}
+      -baselineOnMigrate=true
+      migrate
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  nextjs-app:
+    image: ghcr.io/${IMAGE_NAMESPACE}/nextjs-app:${VERSION:-latest}
+    container_name: nyr-bingo-nextjs
+    volumes:
+      - ./nextjs/uploads:/app/uploads
+    env_file:
+      - nextjs/.env
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      APP_BASE_URL: http://localhost
+    restart: always
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      ws-server:
+        condition: service_started
+      mariadb:
+        condition: service_healthy
+
+  ws-server:
+    image: ghcr.io/${IMAGE_NAMESPACE}/ws-server:${VERSION:-latest}
+    container_name: nyr-bingo-ws-server
+    env_file:
+      - ws-server/.env
+    environment:
+      - HOSTNAME=0.0.0.0
+    ports:
+      - "8888:8888"
+
+  nginx:
+    image: ghcr.io/${IMAGE_NAMESPACE}/nginx:${VERSION:-latest}
+    container_name: nyr-bingo-nginx
+    volumes:
+      - ./nextjs/uploads:/uploads:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NGINX_HOST: localhost
+      NGINX_PORT: 80
+    restart: always
+    depends_on:
+      nextjs-app:
+        condition: service_healthy
+
+volumes:
+  mariadb_data:

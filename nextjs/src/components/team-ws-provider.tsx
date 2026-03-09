@@ -18,6 +18,11 @@
  * which the server will broadcast to every *other* client in the same room.
  * Incoming messages from the server invoke the `onRefresh` callback once,
  * no matter how many cards are rendered.
+ *
+ * Components that need resolution-level real-time updates (e.g.
+ * the detail dialog showing compound subtasks or iterative counters)
+ * can use `sendWsMessage()` and `addMessageListener()` to join
+ * resolution rooms and react to `refresh-resolution` events.
  */
 
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
@@ -32,18 +37,38 @@ function getWsUrl(): string | null {
   return null;
 }
 
+// ── Types for parsed incoming WS messages ─────────────────────────
+
+/** Shape of a parsed WS message received from the server. */
+export interface WsIncomingMessage {
+  type: string;
+  [key: string]: unknown;
+}
+
+/** Callback signature for message listeners. */
+export type WsMessageHandler = (msg: WsIncomingMessage) => void;
+
 // ── Context ───────────────────────────────────────────────────────
 
 interface TeamWsContextValue {
   /** Send a card-refresh message so other viewers re-fetch. */
   broadcastCardRefresh: () => void;
+  /** Send an arbitrary JSON message over the shared WebSocket. */
+  sendWsMessage: (msg: object) => void;
+  /**
+   * Register a listener for incoming WS messages.
+   * Returns an unsubscribe function.
+   */
+  addMessageListener: (handler: WsMessageHandler) => () => void;
 }
 
 const TeamWsContext = createContext<TeamWsContextValue>({
   broadcastCardRefresh: () => {},
+  sendWsMessage: () => {},
+  addMessageListener: () => () => {},
 });
 
-/** Hook for child components to broadcast a card refresh. */
+/** Hook for child components to interact with the team WebSocket. */
 export function useTeamWs(): TeamWsContextValue {
   return useContext(TeamWsContext);
 }
@@ -60,12 +85,17 @@ interface TeamWsProviderProps {
 
 export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderProps) {
   const wsRef = useRef<WebSocket | null>(null);
+  /** Messages queued while the socket is still CONNECTING. */
+  const pendingMessagesRef = useRef<object[]>([]);
 
   // Stable ref so we don't re-open the socket when onRefresh identity changes.
   const onRefreshRef = useRef(onRefresh);
   useEffect(() => {
     onRefreshRef.current = onRefresh;
   }, [onRefresh]);
+
+  // Registered message listeners (for resolution-level updates, etc.)
+  const listenersRef = useRef<Set<WsMessageHandler>>(new Set());
 
   // ── Open a single WS for the lifetime of this provider ────────
   useEffect(() => {
@@ -83,11 +113,39 @@ export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderPr
           body: { teamId },
         })
       );
+
+      // Flush any messages that were queued while CONNECTING
+      for (const msg of pendingMessagesRef.current) {
+        ws.send(JSON.stringify(msg));
+      }
+      pendingMessagesRef.current = [];
     };
 
-    ws.onmessage = () => {
-      // Any inbound message in this room means "refresh".
-      onRefreshRef.current?.();
+    ws.onmessage = (event) => {
+      // Parse the incoming message
+      let parsed: WsIncomingMessage | null = null;
+      try {
+        parsed = JSON.parse(event.data as string) as WsIncomingMessage;
+      } catch {
+        /* ignore malformed messages */
+      }
+
+      // Card-level refresh: invoke the onRefresh callback
+      // (backward compatible — fires for any card-level event)
+      if (!parsed || parsed.type === "refresh-card" || parsed.type === "refresh-thread") {
+        onRefreshRef.current?.();
+      }
+
+      // Dispatch to all registered listeners (resolution-level, etc.)
+      if (parsed) {
+        for (const handler of listenersRef.current) {
+          try {
+            handler(parsed);
+          } catch (err) {
+            console.error("[TeamWsProvider] listener error:", err);
+          }
+        }
+      }
     };
 
     ws.onerror = (e) => {
@@ -96,6 +154,7 @@ export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderPr
 
     return () => {
       if (wsRef.current === ws) wsRef.current = null;
+      pendingMessagesRef.current = [];
       try {
         ws.close();
       } catch {
@@ -104,22 +163,32 @@ export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderPr
     };
   }, [teamId]);
 
+  // ── Send an arbitrary message over the shared WebSocket ───────
+  const sendWsMessage = useCallback((msg: object) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
+    } else if (ws && ws.readyState === WebSocket.CONNECTING) {
+      pendingMessagesRef.current.push(msg);
+    }
+  }, []);
+
   // ── Broadcast helper (stable identity) ────────────────────────
   const broadcastCardRefresh = useCallback(() => {
     if (!teamId) return;
-    const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: "card-refresh",
-          body: { teamId },
-        })
-      );
-    }
-  }, [teamId]);
+    sendWsMessage({ type: "card-refresh", body: { teamId } });
+  }, [teamId, sendWsMessage]);
+
+  // ── Listener subscribe/unsubscribe (stable identity) ──────────
+  const addMessageListener = useCallback((handler: WsMessageHandler): (() => void) => {
+    listenersRef.current.add(handler);
+    return () => {
+      listenersRef.current.delete(handler);
+    };
+  }, []);
 
   return (
-    <TeamWsContext.Provider value={{ broadcastCardRefresh }}>
+    <TeamWsContext.Provider value={{ broadcastCardRefresh, sendWsMessage, addMessageListener }}>
       {children}
     </TeamWsContext.Provider>
   );

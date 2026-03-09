@@ -64,10 +64,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Personal resolutions
--- Spec: 03-personal-resolutions.md - Resolution CRUD
+-- Spec: 03-personal-resolutions.md - Resolution CRUD, Resolution Rework
 CREATE TABLE IF NOT EXISTS resolutions (
   id VARCHAR(36) PRIMARY KEY,
   owner_user_id VARCHAR(36) NOT NULL,
+  title VARCHAR(255) NOT NULL,
   text VARCHAR(1000) NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -120,12 +121,13 @@ CREATE TABLE IF NOT EXISTS team_invitations (
 );
 
 -- Team-provided resolutions (member-to-member)
--- Spec: 04-bingo-teams.md - Member-Provided Resolutions
+-- Spec: 04-bingo-teams.md - Member-Provided Resolutions, Resolution Rework
 CREATE TABLE IF NOT EXISTS team_provided_resolutions (
   id VARCHAR(36) PRIMARY KEY,
   team_id VARCHAR(36) NOT NULL,
   from_user_id VARCHAR(36) NOT NULL,
   to_user_id VARCHAR(36) NOT NULL,
+  title VARCHAR(255) NOT NULL,
   text VARCHAR(1000) NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -153,15 +155,16 @@ CREATE TABLE IF NOT EXISTS bingo_cards (
 );
 
 -- Bingo card cells
--- Spec: 05-bingo-card-generation.md, 06-bingo-gameplay.md - BingoCellState
+-- Spec: 05-bingo-card-generation.md, 06-bingo-gameplay.md - BingoCellState, Resolution Rework
 -- Updated: Added pending, pending_review, accomplished states for proof workflow
 CREATE TABLE IF NOT EXISTS bingo_cells (
   id VARCHAR(36) PRIMARY KEY,
   card_id VARCHAR(36) NOT NULL,
   position INT NOT NULL, -- 0-24 for 5x5 grid
-  resolution_text VARCHAR(1000) NOT NULL,
-  is_joker BOOLEAN DEFAULT FALSE,
-  is_empty BOOLEAN DEFAULT FALSE,
+  resolution_id VARCHAR(36) NULL,
+  team_provided_resolution_id VARCHAR(36) NULL,
+  resolution_type ENUM('base', 'team', 'compound', 'iterative') NOT NULL DEFAULT 'base',
+  is_empty TINYINT(1) AS (resolution_id IS NULL AND team_provided_resolution_id IS NULL AND source_type = 'empty') VIRTUAL,
   source_type ENUM('team', 'member_provided', 'personal', 'empty') NOT NULL,
   source_user_id VARCHAR(36) NULL, -- who provided this resolution
   state ENUM('pending', 'completed', 'pending_review', 'accomplished') DEFAULT 'pending',
@@ -169,8 +172,39 @@ CREATE TABLE IF NOT EXISTS bingo_cells (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY unique_cell (card_id, position),
   FOREIGN KEY (card_id) REFERENCES bingo_cards(id) ON DELETE CASCADE,
+  FOREIGN KEY (resolution_id) REFERENCES resolutions(id) ON DELETE SET NULL,
+  FOREIGN KEY (team_provided_resolution_id) REFERENCES team_provided_resolutions(id) ON DELETE SET NULL,
   FOREIGN KEY (source_user_id) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_card (card_id)
+);
+
+-- Compound resolutions (checklist-based)
+-- Spec: Resolution Rework — compound type
+CREATE TABLE IF NOT EXISTS compound_resolutions (
+  id VARCHAR(36) PRIMARY KEY,
+  owner_user_id VARCHAR(36) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  subtasks JSON NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_owner (owner_user_id)
+);
+
+-- Iterative resolutions (counter-based)
+-- Spec: Resolution Rework — iterative type
+CREATE TABLE IF NOT EXISTS iterative_resolutions (
+  id VARCHAR(36) PRIMARY KEY,
+  owner_user_id VARCHAR(36) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  number_of_repetition INT NOT NULL,
+  completed_times INT NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_owner (owner_user_id)
 );
 
 -- Proofs for bingo cells

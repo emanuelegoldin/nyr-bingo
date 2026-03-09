@@ -228,17 +228,13 @@ export async function getPendingProofsForTeam(
       bc.user_id as card_user_id,
       CASE
         WHEN c.is_empty THEN 'Empty'
-        WHEN c.source_type = 'team' THEN COALESCE(t.team_resolution_text, 'Team Goal')
-        WHEN c.team_provided_resolution_id IS NOT NULL THEN tpr.text
-        WHEN c.resolution_id IS NOT NULL THEN r.text
+        WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.description, r.title, '')
         ELSE ''
       END as cell_resolution_text
     FROM cell_proofs p
     JOIN bingo_cells c ON p.cell_id = c.id
     JOIN bingo_cards bc ON c.card_id = bc.id
-    JOIN teams t ON bc.team_id = t.id
     LEFT JOIN resolutions r ON c.resolution_id = r.id
-    LEFT JOIN team_provided_resolutions tpr ON c.team_provided_resolution_id = tpr.id
     WHERE bc.team_id = ? AND p.status = 'pending'
   `;
   const params: unknown[] = [teamId];

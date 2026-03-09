@@ -7,7 +7,7 @@ Agents must treat the specifications in the `specs/` directory as the **single s
 
 ## General Rules
 
-- ALWAYS read the relevant specification file(s) in `specs/` before writing or modifying code.
+- ALWAYS read the relevant specification file(s) in `**/specs/` before writing or modifying code.
 - DO NOT implement functionality that is not explicitly described in a specification.
 - DO NOT infer requirements from code comments or incomplete implementations.
 - If a requirement is unclear or missing, STOP and report the ambiguity instead of guessing.
@@ -51,40 +51,6 @@ When working on a feature, the agent MUST follow this sequence:
 - Users may ONLY modify their own data
 - Team-based actions MUST verify team membership and role
 - Unauthorized actions MUST fail safely
-
----
-
-## Bingo Domain Rules (Critical)
-
-Agents MUST enforce the following domain invariants:
-
-- A bingo game can only start when:
-  - All team members have created resolutions for all other members
-- Bingo cards:
-  - Have a fixed size
-  - Include a Joker in the center with the team resolution
-  - Can be updated by the user
-    - Cells can be replaced with a compatible resolution (personal resolution or a resolution provided by a team member)
-    - Edits to resolutions existing in a card shall be reflected in the card
-- Duplicate resolutions in a bingo card:
-  - Can be reported
-  - Must be replaced according to the spec rules
-- Empty resolutions:
-  - Cannot be marked as completed
-
----
-
-## State Management
-
-- Resolution states:
-  - `to_complete`
-  - `completed`
-- Proof states:
-  - `pending`
-  - `approved`
-  - `declined`
-
-State transitions MUST follow the rules in the specs.
 
 ---
 

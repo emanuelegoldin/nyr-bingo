@@ -1,4 +1,4 @@
-import { CellSourceType, CellState, ProofStatus } from "@/lib/shared/types";
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Check, Hourglass, ThumbsUp, X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -6,6 +6,11 @@ import { MarkCellCompleteDialog } from "../dialogs/complete-dialog";
 import { EditCellDialog } from "../dialogs/edit-cell";
 import { RequestProofDialog } from "../dialogs/request-proof";
 import { CellThreadDialog } from "../dialogs/thread-dialog";
+import {
+  ResolutionDetailDialog,
+  type ResolutionDetailData,
+  type CellContext,
+} from "../dialogs/resolution-detail-dialog";
 import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
@@ -35,43 +40,109 @@ export const ResolutionCell = ({
     onRefresh
 }: ResolutionCellProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState<'complete' | 'request_proof' | 'thread' | 'edit_cell' | null>(null);
+    const [modalMode, setModalMode] = useState<'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | null>(null);
+    const [detailData, setDetailData] = useState<ResolutionDetailData | null>(null);
     const usernames = useTeamMembers();
 
+    /**
+     * Primary click handler — all non-edit clicks now route through the detail dialog.
+     * The detail dialog contains action buttons (Mark Complete, Undo, Request Proof, View Thread).
+     */
     const handleClick = () => {
         if (!canInteract) return;
+
+        // Edit mode: open the edit cell dialog
         if (canEditContent) {
             setModalMode('edit_cell');
             setIsModalOpen(true);
             return;
-        }  
-        if (isOwner) {
-            if (cell.state === CellState.PENDING) {
-                setModalMode('complete');
-                setIsModalOpen(true);
-                return;
-            }
-            if (cell.state === CellState.PENDING_REVIEW) {
-                setModalMode('thread');
-                setIsModalOpen(true);
-                return;
-            }
-            // isOwner && completed --> set pending
-            if (cell.state === CellState.COMPLETED){
-                onUpdate?.(cell.id, CellState.PENDING);
-                return;
-            }
         }
-        // Viewing someone else's card
-        if (cell.state === CellState.COMPLETED) {
-            setModalMode('request_proof');
+
+        // All other clicks: open the detail dialog
+        openDetailDialog();
+    };
+
+    /**
+     * Fetch resolution data and open the detail dialog.
+     * For base/team: uses the cell's existing data (no extra fetch needed).
+     * For compound/iterative: fetches full data from the API.
+     */
+    const openDetailDialog = async () => {
+        const resType = cell.resolutionType;
+
+        if (resType === ResolutionType.COMPOUND) {
+            try {
+                const res = await fetch(`/api/resolutions/compound?id=${cell.resolutionId}`);
+                if (!res.ok) return;
+                const { resolutions, resolution } = await res.json();
+                const data = resolution ?? (resolutions?.find?.((r: { id: string }) => r.id === cell.resolutionId));
+                if (data) {
+                    setDetailData({
+                        type: ResolutionType.COMPOUND,
+                        id: data.id,
+                        title: data.title,
+                        description: data.description,
+                        subtasks: data.subtasks,
+                    });
+                    setModalMode('detail');
+                    setIsModalOpen(true);
+                }
+            } catch { /* ignore */ }
+        } else if (resType === ResolutionType.ITERATIVE) {
+            try {
+                const res = await fetch(`/api/resolutions/iterative?id=${cell.resolutionId}`);
+                if (!res.ok) return;
+                const { resolutions, resolution } = await res.json();
+                const data = resolution ?? (resolutions?.find?.((r: { id: string }) => r.id === cell.resolutionId));
+                if (data) {
+                    setDetailData({
+                        type: ResolutionType.ITERATIVE,
+                        id: data.id,
+                        title: data.title,
+                        description: data.description,
+                        numberOfRepetition: data.numberOfRepetition,
+                        completedTimes: data.completedTimes,
+                    });
+                    setModalMode('detail');
+                    setIsModalOpen(true);
+                }
+            } catch { /* ignore */ }
+        } else {
+            // Base or Team: no extra fetch needed, use cell data directly
+            setDetailData({
+                type: ResolutionType.BASE,
+                id: cell.resolutionId ?? cell.id,
+                title: cell.resolutionTitle || cell.resolutionText,
+                description: cell.resolutionText !== cell.resolutionTitle ? cell.resolutionText : null,
+            });
+            setModalMode('detail');
             setIsModalOpen(true);
-            return;
         }
-        if (cell.state === CellState.PENDING_REVIEW) {
-            setModalMode('thread');
-            setIsModalOpen(true);
-        }
+    };
+
+    /* ── Detail dialog action callbacks ──────────────────────────── */
+
+    /** Owner wants to mark a base/team cell as complete — open the complete dialog. */
+    const handleCompleteFromDetail = () => {
+        setModalMode('complete');
+        setIsModalOpen(true);
+    };
+
+    /** Owner wants to undo a completed base/team cell. */
+    const handleUndoFromDetail = () => {
+        onUpdate?.(cell.id, CellState.PENDING);
+    };
+
+    /** Non-owner wants to request proof for a completed cell. */
+    const handleRequestProofFromDetail = () => {
+        setModalMode('request_proof');
+        setIsModalOpen(true);
+    };
+
+    /** Anyone wants to view the review thread. */
+    const handleViewThreadFromDetail = () => {
+        setModalMode('thread');
+        setIsModalOpen(true);
     };
 
     useEffect(() => {
@@ -96,14 +167,27 @@ export const ResolutionCell = ({
     }
 
     const config = stateConfig[visualState] || stateConfig.pending;
+    // Resolution title for cell display (truncated with CSS ellipsis)
+    const displayTitle = cell.resolutionTitle || cell.resolutionText;
     // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell is selectable (including empty)
     const canEditContent = Boolean(editMode && isOwner && cell.sourceType !== CellSourceType.TEAM);
+    // Compound/iterative types disable manual complete — state is automatic
+    const isAutomatic = cell.resolutionType === ResolutionType.COMPOUND || cell.resolutionType === ResolutionType.ITERATIVE;
     const canInteract =
         cell.state !== CellState.ACCOMPLISHED &&    // Accomplished cells have no interactions
         (
             canEditContent ||
-            (!editMode && !cell.isEmpty && (isOwner || cell.state === CellState.COMPLETED || cell.state === CellState.PENDING_REVIEW))
+            (!editMode && !cell.isEmpty)  // Any non-empty cell can be clicked to open detail view
         );
+
+    /** Build cell context for the detail dialog */
+    const cellContext: CellContext = {
+        cellId: cell.id,
+        state: cell.state,
+        proofStatus: cell.proof?.status ?? null,
+        reviewThreadId: cell.reviewThreadId ?? null,
+    };
+
     return (
         <>
             {cell.isEmpty ?
@@ -121,13 +205,13 @@ export const ResolutionCell = ({
                     isDisabled={!canInteract}
                     onClick={handleClick}>
 
-                    <p className={cn("text-xs md:text-sm font-medium", config.text)}>
-                        {cell.resolutionText}
+                    <p className={cn("text-xs md:text-sm font-medium truncate max-w-full", config.text)}>
+                        {displayTitle}
                     </p>
                     <div className="absolute top-1 right-1">
                         {visualState !== 'pending' && config.icon}
                     </div>
-                    <Badge variant="outline" className="absolute bottom-1 right-1 text-xs">
+                    <Badge variant="outline" className="absolute bottom-1 right-1 text-xs hidden sm:inline-flex">
                         {cell.sourceType === CellSourceType.TEAM && "Team Goal"}
                         {cell.sourceType === CellSourceType.MEMBER_PROVIDED && (
                           cell.sourceUserId ? (
@@ -185,6 +269,27 @@ export const ResolutionCell = ({
                     isOpen={isModalOpen}
                     setIsOpen={setIsModalOpen}
                     onRefresh={onRefresh} />
+            }
+            {modalMode === "detail" && detailData &&
+                <ResolutionDetailDialog
+                    data={detailData}
+                    cell={cellContext}
+                    isOpen={isModalOpen}
+                    setIsOpen={setIsModalOpen}
+                    isOwner={isOwner}
+                    sourceLabel={
+                      cell.sourceType === CellSourceType.TEAM
+                        ? "Team Goal"
+                        : cell.sourceType === CellSourceType.MEMBER_PROVIDED
+                          ? (cell.sourceUserId ? (usernames[cell.sourceUserId] ?? "Team member") : "Team member")
+                          : "Personal"
+                    }
+                    onRefresh={onRefresh}
+                    onComplete={handleCompleteFromDetail}
+                    onUndo={handleUndoFromDetail}
+                    onRequestProof={handleRequestProofFromDetail}
+                    onViewThread={handleViewThreadFromDetail}
+                />
             }
         </>
     );

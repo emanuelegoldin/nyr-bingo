@@ -13,9 +13,8 @@ import {
 } from './types';
 import { randomUUID } from 'crypto';
 import { getTeamById, getTeamMembers, isTeamMember } from './team-repository';
-import { getTeamProvidedResolutionsForUser } from './team-repository';
-import { getRandomResolutions } from './resolution-repository';
-import { CellSourceType, CellState, ProofStatus } from '../shared/types';
+import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution } from './resolution-repository';
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from '../shared/types';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 
 // Row types from database
@@ -32,9 +31,10 @@ interface CellRow {
   card_id: string;
   position: number;
   resolution_id: string | null;
-  team_provided_resolution_id: string | null;
-  // Derived display text (resolved from joins)
+  resolution_type: ResolutionType;
+  // Derived display text (resolved from join with unified resolutions table)
   resolution_text: string;
+  resolution_title: string;
   is_empty: boolean | number;
   source_type: CellSourceType;
   source_user_id: string | null;
@@ -70,8 +70,9 @@ function rowToCell(row: CellRow): BingoCell {
     cardId: row.card_id,
     position: row.position,
     resolutionId: row.resolution_id,
-    teamProvidedResolutionId: row.team_provided_resolution_id,
+    resolutionType: row.resolution_type,
     resolutionText: row.resolution_text,
+    resolutionTitle: row.resolution_title,
     // Spec: 05-bingo-card-generation.md - Joker is implicit and not stored in the DB.
     isJoker: false,
     isEmpty: Boolean(row.is_empty),
@@ -89,14 +90,17 @@ const SELECT_CELL_WITH_RESOLVED_TEXT = `
     c.card_id,
     c.position,
     c.resolution_id,
-    c.team_provided_resolution_id,
+    c.resolution_type,
     CASE
       WHEN c.is_empty THEN 'Empty'
-      WHEN c.source_type = 'team' THEN COALESCE(t.team_resolution_text, 'Team Goal')
-      WHEN c.team_provided_resolution_id IS NOT NULL THEN tpr.text
-      WHEN c.resolution_id IS NOT NULL THEN r.text
+      WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.description, '')
       ELSE ''
     END AS resolution_text,
+    CASE
+      WHEN c.is_empty THEN 'Empty'
+      WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.title, '')
+      ELSE ''
+    END AS resolution_title,
     c.is_empty,
     c.source_type,
     c.source_user_id,
@@ -105,9 +109,7 @@ const SELECT_CELL_WITH_RESOLVED_TEXT = `
     c.updated_at
   FROM bingo_cells c
   JOIN bingo_cards bc ON c.card_id = bc.id
-  JOIN teams t ON bc.team_id = t.id
   LEFT JOIN resolutions r ON c.resolution_id = r.id
-  LEFT JOIN team_provided_resolutions tpr ON c.team_provided_resolution_id = tpr.id
 `;
 
 async function getResolvedCellRowById(cellId: string): Promise<CellRow | null> {
@@ -145,6 +147,12 @@ export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCa
     throw new Error('Team resolution must be set');
   }
 
+  // Fetch the team goal resolution entity (needed for resolution_id on cells)
+  const teamGoalResolution = await getTeamGoalResolution(teamId);
+  if (!teamGoalResolution) {
+    throw new Error('Team goal resolution entity not found');
+  }
+
   const members = await getTeamMembers(teamId);
   const cards: BingoCard[] = [];
 
@@ -158,7 +166,8 @@ export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCa
         connection,
         teamId,
         member.userId,
-        team.teamResolutionText
+        teamGoalResolution.id,
+        teamGoalResolution.description || teamGoalResolution.title
       );
       cards.push(card);
     }
@@ -181,6 +190,7 @@ async function generateCardForUser(
   connection: Awaited<ReturnType<typeof getConnection>>,
   teamId: string,
   userId: string,
+  teamGoalResolutionId: string,
   teamResolutionText: string
 ): Promise<BingoCard> {
   const gridSize = 5;
@@ -196,17 +206,14 @@ async function generateCardForUser(
 
   // Get member-provided resolutions for this user
   // Spec: 05-bingo-card-generation.md - Step 3
-  const providedResolutions = await getTeamProvidedResolutionsForUser(teamId, userId);
+  const providedResolutions = await getMemberProvidedResolutionsForUser(teamId, userId);
   
-  // Collect resolution texts with source info
+  // Collect resolution data with source info
   const cellData: {
-    text: string;
     resolutionId: string | null;
-    teamProvidedResolutionId: string | null;
     sourceType: CellSourceType;
     sourceUserId: string | null;
-    isJoker: boolean;
-    isEmpty: boolean;
+    resolutionType: ResolutionType;
   }[] = [];
 
   const usedTexts = new Set<string>();
@@ -216,30 +223,25 @@ async function generateCardForUser(
   // Spec: 05-bingo-card-generation.md - Step 3
   for (const res of providedResolutions) {
     if (cellData.length >= totalCells - 1) break; // Leave room for joker
-    if (!usedTexts.has(res.text.toLowerCase())) {
+    const resText = (res.description || res.title).toLowerCase();
+    if (!usedTexts.has(resText)) {
       cellData.push({
-        text: res.text,
-        resolutionId: null,
-        teamProvidedResolutionId: res.id,
+        resolutionId: res.id,
         sourceType: CellSourceType.MEMBER_PROVIDED,
-        sourceUserId: res.fromUserId,
-        isJoker: false,
-        isEmpty: false,
+        sourceUserId: res.ownerUserId,
+        resolutionType: res.resolutionType,
       });
-      usedTexts.add(res.text.toLowerCase());
+      usedTexts.add(resText);
     }
   }
 
   // Add team resolution as a completable cell (second priority)
   if (cellData.length < totalCells - 1) {
     cellData.push({
-      text: teamResolutionText,
-      resolutionId: null,
-      teamProvidedResolutionId: null,
+      resolutionId: teamGoalResolutionId,
       sourceType: CellSourceType.TEAM,
       sourceUserId: null,
-      isJoker: false,
-      isEmpty: false,
+      resolutionType: teamGoalResolution?.resolutionType ?? ResolutionType.BASE,
     });
   }
 
@@ -255,17 +257,15 @@ async function generateCardForUser(
 
     for (const res of personalResolutions) {
       if (cellData.length >= totalCells - 1) break;
-      if (!usedTexts.has(res.text.toLowerCase())) {
+      const resText = (res.description || res.title).toLowerCase();
+      if (!usedTexts.has(resText)) {
         cellData.push({
-          text: res.text,
           resolutionId: res.id,
-          teamProvidedResolutionId: null,
           sourceType: CellSourceType.PERSONAL,
           sourceUserId: userId,
-          isJoker: false,
-          isEmpty: false,
+          resolutionType: res.resolutionType,
         });
-        usedTexts.add(res.text.toLowerCase());
+        usedTexts.add(resText);
       }
     }
   }
@@ -274,13 +274,10 @@ async function generateCardForUser(
   // Spec: 05-bingo-card-generation.md - Step 5
   while (cellData.length < totalCells - 1) {
     cellData.push({
-      text: 'Empty',
       resolutionId: null,
-      teamProvidedResolutionId: null,
       sourceType: CellSourceType.EMPTY,
       sourceUserId: null,
-      isJoker: false,
-      isEmpty: true,
+      resolutionType: ResolutionType.BASE,
     });
   }
 
@@ -301,14 +298,14 @@ async function generateCardForUser(
 
     await connection.execute(
       `INSERT INTO bingo_cells 
-       (id, card_id, position, resolution_id, team_provided_resolution_id, source_type, source_user_id, state)
+       (id, card_id, position, resolution_id, resolution_type, source_type, source_user_id, state)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
       [
         cellId,
         cardId,
         position,
         data.resolutionId,
-        data.teamProvidedResolutionId,
+        data.resolutionType,
         data.sourceType,
         data.sourceUserId,
       ]
@@ -387,10 +384,19 @@ export async function ensureBingoCardForUser(
     return { created: false, error: 'Team resolution must be set' };
   }
 
+  const teamGoalResolution = await getTeamGoalResolution(teamId);
+  if (!teamGoalResolution) {
+    return { created: false, error: 'Team goal resolution entity not found' };
+  }
+
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
-    const card = await generateCardForUser(connection, teamId, userId, team.teamResolutionText);
+    const card = await generateCardForUser(
+      connection, teamId, userId,
+      teamGoalResolution.id,
+      teamGoalResolution.description || teamGoalResolution.title
+    );
     await connection.commit();
     return { created: true, card };
   } catch (error) {
@@ -465,8 +471,9 @@ async function getCellsWithProofs(cardId: string): Promise<BingoCellWithProof[]>
       cardId,
       position: centerPosition,
       resolutionId: null,
-      teamProvidedResolutionId: null,
+      resolutionType: ResolutionType.BASE,
       resolutionText: 'Joker',
+      resolutionTitle: 'Joker',
       isJoker: true,
       isEmpty: false,
       sourceType: CellSourceType.TEAM,
@@ -576,7 +583,7 @@ export async function updateCellContent(
   userId: string,
   update: {
     resolutionId: string | null;
-    teamProvidedResolutionId: string | null;
+    resolutionType?: ResolutionType;
     sourceType: CellSourceType;
     sourceUserId: string | null;
   }
@@ -587,12 +594,8 @@ export async function updateCellContent(
     return { success: false, error: 'Joker cell cannot be modified' };
   }
 
-  if (update.sourceType === 'personal' && !update.resolutionId) {
-    return { success: false, error: 'resolutionId is required for personal cells' };
-  }
-
-  if (update.sourceType === 'member_provided' && !update.teamProvidedResolutionId) {
-    return { success: false, error: 'teamProvidedResolutionId is required for member_provided cells' };
+  if ((update.sourceType === 'personal' || update.sourceType === 'member_provided') && !update.resolutionId) {
+    return { success: false, error: 'resolutionId is required for personal/member_provided cells' };
   }
 
   // Get the cell (and card owner) for authorization and joker protection
@@ -621,26 +624,33 @@ export async function updateCellContent(
 
   // Prevent storing ids for types that shouldn't have them
   if (update.sourceType === 'team' || update.sourceType === 'empty') {
-    if (update.resolutionId || update.teamProvidedResolutionId) {
+    if (update.resolutionId) {
       return { success: false, error: 'Team/empty cells cannot reference a resolution id' };
     }
   }
 
   const sourceUserId = update.sourceUserId ? update.sourceUserId : null;
 
-  const resolutionId = update.sourceType === 'personal' ? update.resolutionId : null;
-  const teamProvidedResolutionId =
-    update.sourceType === 'member_provided' ? update.teamProvidedResolutionId : null;
+  const resolutionId = (update.sourceType === 'personal' || update.sourceType === 'member_provided')
+    ? update.resolutionId : null;
+
+  // Determine the resolution type for the cell.
+  let resolutionType: ResolutionType = ResolutionType.BASE;
+  if (update.sourceType === 'empty') {
+    resolutionType = ResolutionType.BASE;
+  } else if (update.resolutionType) {
+    resolutionType = update.resolutionType;
+  }
 
   await query(
     `UPDATE bingo_cells
      SET resolution_id = ?,
-         team_provided_resolution_id = ?,
+         resolution_type = ?,
          source_type = ?,
          source_user_id = ?,
          state = 'pending'
      WHERE id = ?`,
-    [resolutionId, teamProvidedResolutionId, update.sourceType, sourceUserId, cellId]
+    [resolutionId, resolutionType, update.sourceType, sourceUserId, cellId]
   );
 
   const updatedRow = await getResolvedCellRowById(cellId);
@@ -849,23 +859,19 @@ export async function reportDuplicate(
   if (replacementText && replacementText.trim()) {
     const trimmed = replacementText.trim();
 
+    // Look up the resolution in the unified table
     const resolutionRows = await query<Array<{ id: string }>>(
-      `SELECT id FROM resolutions WHERE text = ? LIMIT 1`,
-      [trimmed]
-    );
-    const teamProvidedRows = await query<Array<{ id: string }>>(
-      `SELECT id FROM team_provided_resolutions WHERE text = ? LIMIT 1`,
+      `SELECT id FROM resolutions WHERE description = ? LIMIT 1`,
       [trimmed]
     );
 
     const resolutionId = resolutionRows.length > 0 ? resolutionRows[0].id : null;
-    const teamProvidedResolutionId = teamProvidedRows.length > 0 ? teamProvidedRows[0].id : null;
 
     await query(
       `UPDATE bingo_cells
-       SET resolution_id = ?, team_provided_resolution_id = ?
+       SET resolution_id = ?
        WHERE id = ?`,
-      [resolutionId, teamProvidedResolutionId, cellId]
+      [resolutionId, cellId]
     );
 
     await query(
@@ -875,4 +881,67 @@ export async function reportDuplicate(
   }
 
   return { success: true };
+}
+
+/**
+ * Auto-transition bingo cell state for compound/iterative resolutions.
+ * When the resolution is fully completed (all subtasks done or counter reached),
+ * the cell transitions from pending → completed.
+ * When the resolution becomes incomplete again, the cell transitions from completed → pending.
+ *
+ * This skips cells in pending_review or accomplished states (controlled by voting system).
+ *
+ * @param resolutionId - The compound or iterative resolution ID
+ * @param resolutionType - 'compound' or 'iterative'
+ * @param isComplete - Whether the resolution is now fully completed
+ * @returns Array of updated cells, or empty if no transitions occurred
+ */
+export async function autoTransitionCellState(
+  resolutionId: string,
+  resolutionType: ResolutionType,
+  isComplete: boolean
+): Promise<BingoCell[]> {
+  // Find all bingo cells linked to this resolution
+  const cellRows = await query<Array<{ id: string; state: CellState; team_id: string; user_id: string }>>(
+    `SELECT c.id, c.state, bc.team_id, bc.user_id
+     FROM bingo_cells c
+     JOIN bingo_cards bc ON c.card_id = bc.id
+     WHERE c.resolution_id = ? AND c.resolution_type = ?`,
+    [resolutionId, resolutionType]
+  );
+
+  if (cellRows.length === 0) {
+    return [];
+  }
+
+  const updatedCells: BingoCell[] = [];
+
+  for (const cellRow of cellRows) {
+    let newState: CellState | null = null;
+
+    if (isComplete && cellRow.state === CellState.PENDING) {
+      // Auto-complete: pending → completed
+      newState = CellState.COMPLETED;
+    } else if (!isComplete && cellRow.state === CellState.COMPLETED) {
+      // Auto-revert: completed → pending
+      newState = CellState.PENDING;
+    }
+
+    if (newState) {
+      await query(
+        `UPDATE bingo_cells SET state = ? WHERE id = ? AND state = ?`,
+        [newState, cellRow.id, cellRow.state]
+      );
+
+      // Refresh leaderboard for this user/team
+      await refreshLeaderboardEntry(cellRow.team_id, cellRow.user_id);
+
+      const updatedRow = await getResolvedCellRowById(cellRow.id);
+      if (updatedRow) {
+        updatedCells.push(rowToCell(updatedRow));
+      }
+    }
+  }
+
+  return updatedCells;
 }

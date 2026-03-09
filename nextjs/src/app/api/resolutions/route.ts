@@ -1,6 +1,6 @@
 /**
  * Personal Resolutions API
- * Spec Reference: 03-personal-resolutions.md
+ * Spec Reference: 03-personal-resolutions.md, Resolution Rework
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { text } = body;
+    const { text, title } = body;
 
     // Spec: 03-personal-resolutions.md - Resolution text must be non-empty
     if (!text || text.trim().length === 0) {
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const resolution = await createResolution(currentUser.id, text);
+    const resolution = await createResolution(currentUser.id, text, title);
     
     return NextResponse.json({ resolution }, { status: 201 });
   } catch (error) {
@@ -94,7 +94,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, text } = body;
+    const { id, text, title } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -128,7 +128,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const resolution = await updateResolution(id, currentUser.id, text);
+    const resolution = await updateResolution(id, currentUser.id, text, title);
     
     if (!resolution) {
       return NextResponse.json(

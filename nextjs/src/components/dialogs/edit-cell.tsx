@@ -5,15 +5,16 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CellState, ProofStatus, CellSourceType } from "@/lib/shared/types";
+import { CellState, ProofStatus, CellSourceType, ResolutionType } from "@/lib/shared/types";
 
 interface BingoCell {
       id: string;
       cardId: string;
       position: number;
       resolutionId?: string | null;
-      teamProvidedResolutionId?: string | null;
+      resolutionType: ResolutionType;
       resolutionText: string;
+      resolutionTitle: string;
       isJoker: boolean;
       isEmpty: boolean;
       sourceType: CellSourceType;
@@ -41,7 +42,7 @@ type EditOption = {
   label: string;
   resolutionText: string;
   resolutionId: string | null;
-  teamProvidedResolutionId: string | null;
+  resolutionType: ResolutionType;
   sourceType: CellSourceType;
   sourceUserId: string | null;
   isEmpty: boolean;
@@ -70,7 +71,7 @@ export const EditCellDialog = ({
               .filter((c: BingoCell) => !c.isJoker && !c.isEmpty)
               .map((c: BingoCell) => {
                 if (c.sourceType === CellSourceType.PERSONAL && c.resolutionId) return `personal:${c.resolutionId}`;
-                if (c.sourceType === CellSourceType.MEMBER_PROVIDED && c.teamProvidedResolutionId) return `member_provided:${c.teamProvidedResolutionId}`;
+                if (c.sourceType === CellSourceType.MEMBER_PROVIDED && c.resolutionId) return `member_provided:${c.resolutionId}`;
                 // "team" and "empty" cells do not have a stable resolution id reference.
                 return null;
               })
@@ -79,7 +80,8 @@ export const EditCellDialog = ({
     
           setIsEditOptionsLoading(true);
           try {
-            const personalReq = fetch('/api/resolutions');
+            // Fetch ALL resolution types (base + compound + iterative) via the unified endpoint
+            const personalReq = fetch('/api/resolutions/all');
             const teamReq = teamId && currentUserId
               ? fetch(`/api/teams/${teamId}/resolutions?toUserId=${encodeURIComponent(currentUserId)}`)
               : null;
@@ -102,10 +104,10 @@ export const EditCellDialog = ({
             const personalOptions: EditOption[] = (personalData?.resolutions || [])
               .map((r: any) => ({
               key: `personal:${r.id}`,
-              label: r.text,
-              resolutionText: r.text,
+              label: r.title || r.text || r.title,
+              resolutionText: r.text || r.title,
               resolutionId: typeof r.id === 'string' ? r.id : null,
-              teamProvidedResolutionId: null,
+              resolutionType: (r.type as ResolutionType) ?? ResolutionType.BASE,
               sourceType: CellSourceType.PERSONAL,
               sourceUserId: currentUserId ?? null,
               isEmpty: false,
@@ -129,12 +131,12 @@ export const EditCellDialog = ({
               teamOptions = (teamData?.resolutions || [])
                 .map((r: any) => ({
                 key: `member_provided:${r.id}`,
-                label: r.text,
-                resolutionText: r.text,
-                resolutionId: null,
-                teamProvidedResolutionId: typeof r.id === 'string' ? r.id : null,
+                label: r.title || r.description,
+                resolutionText: r.description || r.title,
+                resolutionId: typeof r.id === 'string' ? r.id : null,
+                resolutionType: (r.resolutionType as ResolutionType) ?? ResolutionType.BASE,
                 sourceType: CellSourceType.MEMBER_PROVIDED,
-                sourceUserId: typeof r.fromUserId === 'string' ? r.fromUserId : null,
+                sourceUserId: typeof r.ownerUserId === 'string' ? r.ownerUserId : null,
                 isEmpty: false,
               }))
                 // Prevent duplicates: do not allow selecting texts already used in other non-empty cells
@@ -183,7 +185,7 @@ export const EditCellDialog = ({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
             resolutionId: opt.resolutionId,
-            teamProvidedResolutionId: opt.teamProvidedResolutionId,
+            resolutionType: opt.resolutionType,
             sourceType: opt.sourceType,
             sourceUserId: opt.sourceUserId,
             isEmpty: opt.isEmpty,
@@ -249,6 +251,8 @@ export const EditCellDialog = ({
                             .map((opt) => {
                                 const isMemberProvided = opt.sourceType === CellSourceType.MEMBER_PROVIDED;
                                 const providerName = opt.sourceUserId ? (usernames[opt.sourceUserId] ?? 'Team member') : null;
+                                const typeLabel = opt.resolutionType === ResolutionType.COMPOUND ? 'Complex'
+                                  : opt.resolutionType === ResolutionType.ITERATIVE ? 'Iterative' : null;
                                 return (
                                     <button
                                         key={opt.key}
@@ -261,9 +265,14 @@ export const EditCellDialog = ({
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <p className="font-medium leading-snug">{opt.label}</p>
-                                            <Badge variant="outline" className="shrink-0">
-                                                {isMemberProvided ? (providerName ?? 'Member') : 'Personal'}
-                                            </Badge>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                {typeLabel && (
+                                                    <Badge variant="secondary" className="text-xs">{typeLabel}</Badge>
+                                                )}
+                                                <Badge variant="outline" className="shrink-0">
+                                                    {isMemberProvided ? (providerName ?? 'Member') : 'Personal'}
+                                                </Badge>
+                                            </div>
                                         </div>
                                     </button>
                                 );

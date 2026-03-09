@@ -15,9 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,11 +28,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Crown, Send, Settings, Swords, Copy, UserPlus, Loader2, Check, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Crown, Send, Settings, Swords, Copy, UserPlus, Loader2, Check, Trash2, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useSetAppHeaderTitle } from "@/components/app-header-title";
+import {
+  ResolutionCreateEditDialog,
+  type ResolutionFormData,
+} from "@/components/dialogs/resolution-create-edit-dialog";
 
 import { CardsTab } from "./cards-tab";
 import { MembersTab } from "./members-tab";
@@ -56,10 +60,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Team resolution dialog
-  const [resolutionDialogOpen, setResolutionDialogOpen] = useState(false);
-  const [teamResolutionText, setTeamResolutionText] = useState('');
-  const [isSavingResolution, setIsSavingResolution] = useState(false);
+  // Team goal resolution
+  const [teamGoal, setTeamGoal] = useState<ResolutionFormData | null>(null);
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   
   // Invite dialog
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -69,9 +72,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
   
   // Member resolutions dialog
   const [memberResolutionsOpen, setMemberResolutionsOpen] = useState(false);
-  const [memberResolutions, setMemberResolutions] = useState<Record<string, string>>({});
-  const [isSavingMemberResolutions, setIsSavingMemberResolutions] = useState(false);
   const [existingResolutions, setExistingResolutions] = useState<TeamProvidedResolution[]>([]);
+  // Per-member edit dialog
+  const [editingMemberUserId, setEditingMemberUserId] = useState<string | null>(null);
+  const [editingMemberName, setEditingMemberName] = useState<string>('');
+  const [editingMemberData, setEditingMemberData] = useState<ResolutionFormData | undefined>(undefined);
+  const [memberEditDialogOpen, setMemberEditDialogOpen] = useState(false);
 
   useEffect(() => {
     params.then(p => setTeamId(p.teamId));
@@ -94,7 +100,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
       
       if (response.ok) {
         setTeam(data.team);
-        setTeamResolutionText(data.team.teamResolutionText || '');
         
         // Get bingo cards if game started
         if (data.team.status === 'started') {
@@ -105,16 +110,27 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
           }
         }
         
+        // Get team goal resolution
+        const goalRes = await fetch(`/api/teams/${teamId}/goal`);
+        const goalData = await goalRes.json();
+        if (goalRes.ok && goalData.goal) {
+          setTeamGoal({
+            id: goalData.goal.id,
+            type: goalData.goal.type,
+            title: goalData.goal.title,
+            text: goalData.goal.text ?? '',
+            subtasks: goalData.goal.subtasks,
+            numberOfRepetition: goalData.goal.numberOfRepetition,
+          });
+        } else {
+          setTeamGoal(null);
+        }
+        
         // Get existing member-provided resolutions
         const resRes = await fetch(`/api/teams/${teamId}/resolutions`);
         const resData = await resRes.json();
         if (resRes.ok) {
           setExistingResolutions(resData.createdByUser || []);
-          const initial: Record<string, string> = {};
-          (resData.createdByUser || []).forEach((r: TeamProvidedResolution) => {
-            initial[r.toUserId] = r.text;
-          });
-          setMemberResolutions(initial);
         }
       } else {
         toast({
@@ -143,45 +159,36 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
   const isLeader = team?.leaderUserId === currentUserId;
   const leader = team?.members.find(m => m.membership.role === 'leader');
 
-  const handleSaveTeamResolution = async () => {
-    if (!teamResolutionText.trim()) return;
-    
-    setIsSavingResolution(true);
-    try {
-      const response = await fetch('/api/teams', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          teamId,
-          teamResolutionText,
-        }),
-      });
+  /** Called when team goal is saved via the resolution dialog. */
+  const handleGoalSaved = () => {
+    setGoalDialogOpen(false);
+    loadTeam();
+  };
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setTeam(data.team);
-        setResolutionDialogOpen(false);
-        toast({
-          title: "Success",
-          description: "Team resolution saved",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to save resolution",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
+  /** Open the edit dialog for a specific member's proposed resolution. */
+  const handleEditMemberResolution = (memberId: string, memberName: string) => {
+    const existing = existingResolutions.find(r => r.toUserId === memberId);
+    setEditingMemberUserId(memberId);
+    setEditingMemberName(memberName);
+    if (existing) {
+      setEditingMemberData({
+        id: existing.id,
+        type: existing.resolutionType as ResolutionFormData['type'],
+        title: existing.title,
+        text: existing.description ?? '',
+        subtasks: existing.subtasks ?? undefined,
+        numberOfRepetition: existing.numberOfRepetition ?? undefined,
       });
-    } finally {
-      setIsSavingResolution(false);
+    } else {
+      setEditingMemberData(undefined);
     }
+    setMemberEditDialogOpen(true);
+  };
+
+  /** Called when a member-provided resolution is saved. */
+  const handleMemberResolutionSaved = () => {
+    setMemberEditDialogOpen(false);
+    loadTeam();
   };
 
   const handleCreateInvite = async () => {
@@ -224,37 +231,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSaveMemberResolutions = async () => {
-    setIsSavingMemberResolutions(true);
-    try {
-      // Save resolutions for each member
-      for (const [toUserId, text] of Object.entries(memberResolutions)) {
-        if (text.trim() && toUserId !== currentUserId) {
-          await fetch(`/api/teams/${teamId}/resolutions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ toUserId, text }),
-          });
-        }
-      }
-      
-      setMemberResolutionsOpen(false);
-      toast({
-        title: "Success",
-        description: "Resolutions saved",
-      });
-      loadTeam(); // Reload to get updated status
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingMemberResolutions(false);
-    }
   };
 
   const handleStartBingo = async () => {
@@ -403,11 +379,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
               <Crown className="h-4 w-4 text-amber-500" />
               Team Leader: {leader?.user.displayName || leader?.user.username || 'Unknown'}
             </CardDescription>
-            {team.teamResolutionText && (
-              <p className="text-sm text-muted-foreground mt-2">
-                <span className="font-semibold text-foreground">Team Goal:</span> {team.teamResolutionText}
-              </p>
-            )}
             <div className="mt-2">
               <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                 team.status === 'started' 
@@ -458,40 +429,16 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
                   </DialogContent>
                 </Dialog>
 
-                <Dialog open={resolutionDialogOpen} onOpenChange={setResolutionDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4 mr-2" /> Set Goal
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Team Resolution</DialogTitle>
-                      <DialogDescription>
-                        Set the team goal that will appear in the center of everyone's bingo card.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <Textarea
-                        placeholder="e.g., Complete a team charity walk"
-                        value={teamResolutionText}
-                        onChange={(e) => setTeamResolutionText(e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleSaveTeamResolution} disabled={isSavingResolution || !teamResolutionText.trim()}>
-                        {isSavingResolution && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                <Button onClick={handleStartBingo} disabled={isStarting}>
-                  {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Swords className="h-4 w-4 mr-2" /> Start Bingo
+                <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
+                  <Settings className="h-4 w-4 mr-2" /> Set Goal
                 </Button>
+
+                {team.status !== 'started' && (
+                  <Button onClick={handleStartBingo} disabled={isStarting}>
+                    {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Swords className="h-4 w-4 mr-2" /> Start Bingo
+                  </Button>
+                )}
               </>
             )}
 
@@ -531,53 +478,76 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            <Dialog
-              open={memberResolutionsOpen}
-              onOpenChange={(open) => {
-                setMemberResolutionsOpen(open);
-                if (open) loadTeam();
-              }}
-            >
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Send className="h-4 w-4 mr-2"/> Propose Resolutions
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Propose Resolutions</DialogTitle>
-                    <DialogDescription>
-                      Create or update a resolution for each team member. You can do this at any time.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4 max-h-96 overflow-y-auto">
-                    {team.members
-                      .filter(m => m.user.userId !== currentUserId)
-                      .map(member => (
-                        <div key={member.user.userId} className="space-y-2">
-                          <Label>For {member.user.displayName || member.user.username}</Label>
-                          <Input
-                            placeholder="e.g., Learn to cook a new dish"
-                            value={memberResolutions[member.user.userId] || ''}
-                            onChange={(e) => setMemberResolutions({
-                              ...memberResolutions,
-                              [member.user.userId]: e.target.value,
-                            })}
-                          />
-                        </div>
-                      ))}
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleSaveMemberResolutions} disabled={isSavingMemberResolutions}>
-                      {isSavingMemberResolutions && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Resolutions
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+
+            <Button variant="outline" onClick={() => { setMemberResolutionsOpen(true); loadTeam(); }}>
+              <Send className="h-4 w-4 mr-2"/> Propose Resolutions
+            </Button>
           </div>
         </CardHeader>
+
+        {/* ── Team Goal Display ─────────────────────────────────── */}
+        <CardContent>
+          <TeamGoalDisplay
+            goal={teamGoal}
+            isLeader={isLeader}
+            onEdit={() => setGoalDialogOpen(true)}
+          />
+        </CardContent>
       </Card>
+
+      {/* ── Team Goal Resolution Dialog ────────────────────────── */}
+      <ResolutionCreateEditDialog
+        key={teamGoal?.id ?? 'new-goal'}
+        initialData={teamGoal ?? undefined}
+        isOpen={goalDialogOpen}
+        setIsOpen={setGoalDialogOpen}
+        onSaved={handleGoalSaved}
+        scope="team"
+        teamId={teamId}
+      />
+
+      {/* ── Propose Resolutions Dialog ─────────────────────────── */}
+      <Dialog open={memberResolutionsOpen} onOpenChange={setMemberResolutionsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Propose Resolutions</DialogTitle>
+            <DialogDescription>
+              Create or update a resolution for each team member. You can do this at any time.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4 max-h-96 overflow-y-auto">
+            {team.members
+              .filter(m => m.user.userId !== currentUserId)
+              .map(member => {
+                const existing = existingResolutions.find(r => r.toUserId === member.user.userId);
+                const memberName = member.user.displayName || member.user.username;
+                return (
+                  <MemberResolutionRow
+                    key={member.user.userId}
+                    memberName={memberName}
+                    resolution={existing ?? null}
+                    onEdit={() => handleEditMemberResolution(member.user.userId, memberName)}
+                  />
+                );
+              })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Member Resolution Edit Dialog ──────────────────────── */}
+      {editingMemberUserId && (
+        <ResolutionCreateEditDialog
+          key={editingMemberData?.id ?? `new-${editingMemberUserId}`}
+          initialData={editingMemberData}
+          isOpen={memberEditDialogOpen}
+          setIsOpen={setMemberEditDialogOpen}
+          onSaved={handleMemberResolutionSaved}
+          scope="member_provided"
+          teamId={teamId}
+          toUserId={editingMemberUserId}
+          recipientName={editingMemberName}
+        />
+      )}
 
       {/* ── Tab navigation ────────────────────────────────────── */}
       <Tabs defaultValue="cards">
@@ -605,6 +575,126 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
           <LeaderboardTab teamId={teamId} />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+/* ─── Human-readable labels ──────────────────────────────────────── */
+
+type ResolutionTypeValue = "base" | "compound" | "iterative";
+
+const TYPE_LABELS: Record<ResolutionTypeValue, string> = {
+  base: "Common",
+  compound: "Complex",
+  iterative: "Iterative",
+};
+
+const TYPE_VARIANT: Record<ResolutionTypeValue, "default" | "secondary" | "outline"> = {
+  base: "secondary",
+  compound: "default",
+  iterative: "outline",
+};
+
+/* ─── TeamGoalDisplay ────────────────────────────────────────────── */
+
+interface TeamGoalDisplayProps {
+  goal: ResolutionFormData | null;
+  isLeader: boolean;
+  onEdit: () => void;
+}
+
+/**
+ * Shows the team goal inline. Leader sees an edit button.
+ * All members see the title, type badge, description, and type-specific details.
+ */
+function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps) {
+  if (!goal) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {isLeader
+          ? 'No team goal set yet. Click "Set Goal" to define one.'
+          : "No team goal set yet."}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-foreground">Team Goal:</span>
+        <span className="text-sm font-medium">{goal.title}</span>
+        <Badge variant={TYPE_VARIANT[goal.type]} className="text-xs">
+          {TYPE_LABELS[goal.type]}
+        </Badge>
+        {isLeader && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={onEdit}
+            aria-label="Edit team goal"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
+      {goal.text && goal.text !== goal.title && (
+        <p className="text-xs text-muted-foreground">{goal.text}</p>
+      )}
+      {goal.type === "compound" && goal.subtasks && (
+        <p className="text-xs text-muted-foreground">
+          {goal.subtasks.filter(s => s.completed).length} / {goal.subtasks.length} subtasks
+        </p>
+      )}
+      {goal.type === "iterative" && goal.numberOfRepetition !== undefined && (
+        <p className="text-xs text-muted-foreground">
+          Target: {goal.numberOfRepetition} repetitions
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ─── MemberResolutionRow ────────────────────────────────────────── */
+
+interface MemberResolutionRowProps {
+  memberName: string;
+  resolution: TeamProvidedResolution | null;
+  onEdit: () => void;
+}
+
+/**
+ * A single row in the Propose Resolutions dialog.
+ * Shows member name and their resolution (title + type badge), or a prompt to add one.
+ */
+function MemberResolutionRow({ memberName, resolution, onEdit }: MemberResolutionRowProps) {
+  return (
+    <div className="flex items-center justify-between p-2 rounded-md bg-secondary/50">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">For {memberName}</p>
+        {resolution ? (
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-sm truncate">{resolution.title}</span>
+            <Badge
+              variant={TYPE_VARIANT[resolution.resolutionType as ResolutionTypeValue]}
+              className="text-xs flex-shrink-0"
+            >
+              {TYPE_LABELS[resolution.resolutionType as ResolutionTypeValue]}
+            </Badge>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground mt-0.5">No resolution proposed yet</p>
+        )}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0 ml-2"
+        onClick={onEdit}
+        aria-label={resolution ? "Edit resolution" : "Add resolution"}
+      >
+        {resolution ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+      </Button>
     </div>
   );
 }

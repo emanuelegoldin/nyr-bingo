@@ -8,20 +8,27 @@ import type {
   Team,
   TeamMembership,
   TeamInvitation,
-  TeamProvidedResolution,
   TeamWithMembers,
   TeamMemberWithProfile,
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { getPublicUserProfile } from './user-repository';
+import {
+  getTeamGoalResolution,
+  setTeamGoalResolution,
+  getMemberProvidedResolutionsByUser,
+  getMemberProvidedResolutionsForUser,
+  createOrUpdateMemberProvidedResolution,
+} from './resolution-repository';
 import type { RowDataPacket } from 'mysql2/promise';
-import { TeamStatus, TeamRole, InvitationStatus } from '../shared/types';
+import { TeamStatus, TeamRole, InvitationStatus, ResolutionType } from '../shared/types';
 
 // Row types from database (snake_case)
 interface TeamRow extends RowDataPacket {
   id: string;
   name: string;
   leader_user_id: string;
+  // Derived from LEFT JOIN with resolutions (scope='team')
   team_resolution_text: string | null;
   status: TeamStatus;
   created_at: Date;
@@ -45,16 +52,6 @@ interface InvitationRow extends RowDataPacket {
   status: InvitationStatus;
   expires_at: Date;
   created_at: Date;
-}
-
-interface TeamProvidedResolutionRow extends RowDataPacket {
-  id: string;
-  team_id: string;
-  from_user_id: string;
-  to_user_id: string;
-  text: string;
-  created_at: Date;
-  updated_at: Date;
 }
 
 // Convert functions
@@ -90,18 +87,6 @@ function rowToInvitation(row: InvitationRow): TeamInvitation {
     status: row.status,
     expiresAt: row.expires_at,
     createdAt: row.created_at,
-  };
-}
-
-function rowToTeamProvidedResolution(row: TeamProvidedResolutionRow): TeamProvidedResolution {
-  return {
-    id: row.id,
-    teamId: row.team_id,
-    fromUserId: row.from_user_id,
-    toUserId: row.to_user_id,
-    text: row.text,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
   };
 }
 
@@ -151,10 +136,14 @@ export async function createTeam(
 
 /**
  * Get team by ID
+ * Derives teamResolutionText from the team goal resolution entity.
  */
 export async function getTeamById(id: string): Promise<Team | null> {
   const rows = await query<TeamRow[]>(
-    `SELECT * FROM teams WHERE id = ?`,
+    `SELECT t.*, COALESCE(r.description, r.title) AS team_resolution_text
+     FROM teams t
+     LEFT JOIN resolutions r ON r.team_id = t.id AND r.scope = 'team'
+     WHERE t.id = ?`,
     [id]
   );
   return rows.length > 0 ? rowToTeam(rows[0]) : null;
@@ -194,8 +183,10 @@ export async function getTeamWithMembers(teamId: string): Promise<TeamWithMember
  */
 export async function getTeamsForUser(userId: string): Promise<Team[]> {
   const rows = await query<TeamRow[]>(
-    `SELECT t.* FROM teams t
+    `SELECT t.*, COALESCE(r.description, r.title) AS team_resolution_text
+     FROM teams t
      JOIN team_memberships m ON t.id = m.team_id
+     LEFT JOIN resolutions r ON r.team_id = t.id AND r.scope = 'team'
      WHERE m.user_id = ?
      ORDER BY t.created_at DESC`,
     [userId]
@@ -228,24 +219,28 @@ export async function isTeamLeader(teamId: string, userId: string): Promise<bool
 }
 
 /**
- * Set team resolution (joker)
+ * Set team resolution (goal)
  * Spec: 04-bingo-teams.md - Team Resolution
+ * Creates or updates a resolution entity with scope='team'.
  */
 export async function setTeamResolution(
   teamId: string,
   leaderUserId: string,
-  resolutionText: string
+  resolutionText: string,
+  resolutionType: ResolutionType = ResolutionType.BASE,
+  subtasks?: import('../shared/types').Subtask[],
+  numberOfRepetition?: number
 ): Promise<Team | null> {
   // Only team leader can set the team resolution
-  const isLeader = await isTeamLeader(teamId, leaderUserId);
-  if (!isLeader) {
+  const leader = await isTeamLeader(teamId, leaderUserId);
+  if (!leader) {
     return null;
   }
 
-  await query(
-    `UPDATE teams SET team_resolution_text = ? WHERE id = ?`,
-    [resolutionText.trim(), teamId]
-  );
+  const trimmed = resolutionText.trim();
+  const title = trimmed.slice(0, 255);
+
+  await setTeamGoalResolution(teamId, leaderUserId, title, trimmed, resolutionType, subtasks, numberOfRepetition);
 
   return getTeamById(teamId);
 }
@@ -360,13 +355,18 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
 /**
  * Create a team-provided resolution (member to member)
  * Spec: 04-bingo-teams.md - Member-Provided Resolutions
+ * Delegates to the unified resolution repository.
  */
 export async function createTeamProvidedResolution(
   teamId: string,
   fromUserId: string,
   toUserId: string,
-  text: string
-): Promise<TeamProvidedResolution | null> {
+  text: string,
+  title?: string,
+  resolutionType: ResolutionType = ResolutionType.BASE,
+  subtasks?: import('../shared/types').Subtask[],
+  numberOfRepetition?: number
+): Promise<import('./types').Resolution | null> {
   // Verify both users are team members
   const fromIsMember = await isTeamMember(teamId, fromUserId);
   const toIsMember = await isTeamMember(teamId, toUserId);
@@ -375,29 +375,13 @@ export async function createTeamProvidedResolution(
     return null;
   }
 
-  // Cannot create resolution for yourself
-  // Spec: 04-bingo-teams.md - A member cannot create a "for myself" entry
-  if (fromUserId === toUserId) {
-    return null;
-  }
-
-  const id = uuidv4();
   const trimmedText = text.trim();
+  const resolvedTitle = title ? title.trim().slice(0, 255) : trimmedText.slice(0, 255);
 
-  // Use ON DUPLICATE KEY UPDATE to allow updating existing resolutions
-  await query(
-    `INSERT INTO team_provided_resolutions (id, team_id, from_user_id, to_user_id, text)
-     VALUES (?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE text = ?, updated_at = NOW()`,
-    [id, teamId, fromUserId, toUserId, trimmedText, trimmedText]
+  return createOrUpdateMemberProvidedResolution(
+    teamId, fromUserId, toUserId, resolvedTitle, trimmedText,
+    resolutionType, subtasks, numberOfRepetition
   );
-
-  const rows = await query<TeamProvidedResolutionRow[]>(
-    `SELECT * FROM team_provided_resolutions WHERE team_id = ? AND from_user_id = ? AND to_user_id = ?`,
-    [teamId, fromUserId, toUserId]
-  );
-
-  return rowToTeamProvidedResolution(rows[0]);
 }
 
 /**
@@ -406,12 +390,8 @@ export async function createTeamProvidedResolution(
 export async function getTeamProvidedResolutionsForUser(
   teamId: string,
   toUserId: string
-): Promise<TeamProvidedResolution[]> {
-  const rows = await query<TeamProvidedResolutionRow[]>(
-    `SELECT * FROM team_provided_resolutions WHERE team_id = ? AND to_user_id = ?`,
-    [teamId, toUserId]
-  );
-  return rows.map(rowToTeamProvidedResolution);
+): Promise<import('./types').Resolution[]> {
+  return getMemberProvidedResolutionsForUser(teamId, toUserId);
 }
 
 /**
@@ -420,12 +400,8 @@ export async function getTeamProvidedResolutionsForUser(
 export async function getTeamProvidedResolutionsByUser(
   teamId: string,
   fromUserId: string
-): Promise<TeamProvidedResolution[]> {
-  const rows = await query<TeamProvidedResolutionRow[]>(
-    `SELECT * FROM team_provided_resolutions WHERE team_id = ? AND from_user_id = ?`,
-    [teamId, fromUserId]
-  );
-  return rows.map(rowToTeamProvidedResolution);
+): Promise<import('./types').Resolution[]> {
+  return getMemberProvidedResolutionsByUser(teamId, fromUserId);
 }
 
 /**
@@ -447,14 +423,15 @@ export async function checkAllResolutionsProvided(teamId: string): Promise<{
     return { ready: true, missing: [] };
   }
 
-  // Get all provided resolutions
-  const providedRows = await query<{ from_user_id: string; to_user_id: string }[]>(
-    `SELECT from_user_id, to_user_id FROM team_provided_resolutions WHERE team_id = ?`,
+  // Get all provided resolutions (from unified resolutions table)
+  const providedRows = await query<{ owner_user_id: string; to_user_id: string }[]>(
+    `SELECT owner_user_id, to_user_id FROM resolutions
+     WHERE scope = 'member_provided' AND team_id = ?`,
     [teamId]
   );
 
   const providedSet = new Set(
-    providedRows.map(r => `${r.from_user_id}->${r.to_user_id}`)
+    providedRows.map(r => `${r.owner_user_id}->${r.to_user_id}`)
   );
 
   // Check each pair
@@ -497,8 +474,9 @@ export async function startBingoGame(
     return { success: false, error: 'Team is not in forming status' };
   }
 
-  // Check if team resolution is set
-  if (!team.teamResolutionText) {
+  // Check if team resolution is set (via resolution entity)
+  const teamGoal = await getTeamGoalResolution(teamId);
+  if (!teamGoal) {
     return { success: false, error: 'Team resolution must be set before starting' };
   }
 

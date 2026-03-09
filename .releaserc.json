@@ -1,0 +1,18 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    ["@semantic-release/commit-analyzer", {
+      "parserOpts": {
+        "headerPattern": "^(.*)$",
+        "headerCorrespondence": ["subject"]
+      },
+      "releaseRules": [
+        { "subject": "*\\[MAJOR\\]*", "release": "major" },
+        { "subject": "*\\[MINOR\\]*", "release": "minor" },
+        { "subject": "*\\[MICRO\\]*", "release": "patch" }
+      ]
+    }],
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/github"
+  ]
+}

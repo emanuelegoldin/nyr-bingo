@@ -118,9 +118,7 @@ async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
         c.card_id,
         CASE
           WHEN c.is_empty THEN 'Empty'
-          WHEN c.source_type = 'team' THEN COALESCE(t.team_resolution_text, 'Team Goal')
-          WHEN c.team_provided_resolution_id IS NOT NULL THEN tpr.text
-          WHEN c.resolution_id IS NOT NULL THEN r.text
+          WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.description, r.title, '')
           ELSE ''
         END as resolution_text,
         c.state,
@@ -128,9 +126,7 @@ async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
         bc.team_id
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
-     JOIN teams t ON bc.team_id = t.id
      LEFT JOIN resolutions r ON c.resolution_id = r.id
-     LEFT JOIN team_provided_resolutions tpr ON c.team_provided_resolution_id = tpr.id
      WHERE c.id = ?`,
     [cellId]
   );
