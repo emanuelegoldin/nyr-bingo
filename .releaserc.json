@@ -7,9 +7,9 @@
         "headerCorrespondence": ["subject"]
       },
       "releaseRules": [
-        { "subject": "*\\[MAJOR\\]*", "release": "major" },
-        { "subject": "*\\[MINOR\\]*", "release": "minor" },
-        { "subject": "*\\[MICRO\\]*", "release": "patch" }
+        { "subject": "\\[MAJOR\\]**", "release": "major" },
+        { "subject": "\\[MINOR\\]**", "release": "minor" },
+        { "subject": "\\[MICRO\\]**", "release": "patch" }
       ]
     }],
     "@semantic-release/release-notes-generator",
