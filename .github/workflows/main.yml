@@ -31,7 +31,85 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: nextjs/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: nextjs
+
+      - name: Build Next.js application
+        run: pnpm build
+        working-directory: nextjs
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: |
+            nextjs/.next
+            !nextjs/.next/cache
+          retention-days: 1
+
+  # ── Test jobs (run in parallel after build) ──────────────────────
+
+  e2e-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: nextjs/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: nextjs
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+          path: nextjs/.next
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: nextjs
+
+      - name: Run Playwright tests
+        run: pnpm test:e2e
+        working-directory: nextjs
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: nextjs/playwright-report
+          retention-days: 30
+
+  # ── Release (only after all test jobs pass) ─────────────────────
+
+  release:
+    needs: [e2e-tests]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,13 +146,13 @@ jobs:
 
             if [ "$NEW_RELEASE" = "true" ]; then
               tags="$tags -t $REGISTRY/$IMAGE_NAMESPACE/$name:$VERSION"
-              echo "📦 Releasing $name version $VERSION"
+              echo "Releasing $name version $VERSION"
             fi
 
-            echo "🔨 Building $name..."
+            echo "Building $name..."
             docker build $tags -f "$dockerfile" "$context"
 
-            echo "🚀 Pushing $name..."
+            echo "Pushing $name..."
             docker push --all-tags "$REGISTRY/$IMAGE_NAMESPACE/$name"
           }
 

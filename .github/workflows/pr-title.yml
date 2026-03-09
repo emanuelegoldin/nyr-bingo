@@ -40,6 +40,6 @@ jobs:
             exit 1
           fi
 
-          echo "✅ PR title contains a valid version keyword."
+          echo "PR title contains a valid version keyword."
           echo "   Title: \"$PR_TITLE\""
           echo "   Release type: $([ $MAJOR -eq 1 ] && echo "MAJOR" || ([ $MINOR -eq 1 ] && echo "MINOR" || echo "MICRO"))"
