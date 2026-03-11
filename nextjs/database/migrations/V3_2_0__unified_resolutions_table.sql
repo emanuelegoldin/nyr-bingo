@@ -22,7 +22,7 @@
 --   - team and member-provided resolutions gain compound/iterative support
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 1 — Extend the resolutions table                           ║
+-- ║ Step 1 — Extend the resolutions table                             ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 -- Rename `text` → `description` (also widen to TEXT NULL to match compound/iterative)
@@ -50,7 +50,7 @@ ALTER TABLE resolutions
   ADD INDEX idx_resolutions_type (resolution_type);
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 2 — Migrate compound_resolutions                           ║
+-- ║ Step 2 — Migrate compound_resolutions                             ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 INSERT INTO resolutions
@@ -60,7 +60,7 @@ SELECT
 FROM compound_resolutions;
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 3 — Migrate iterative_resolutions                          ║
+-- ║ Step 3 — Migrate iterative_resolutions                            ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 INSERT INTO resolutions
@@ -72,7 +72,7 @@ SELECT
 FROM iterative_resolutions;
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 4 — Migrate team_provided_resolutions                      ║
+-- ║ Step 4 — Migrate team_provided_resolutions                        ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 INSERT INTO resolutions
@@ -84,7 +84,7 @@ SELECT
 FROM team_provided_resolutions;
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 5 — Create resolution entities for team goals              ║
+-- ║ Step 5 — Create resolution entities for team goals                ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 -- Each team with a non-empty team_resolution_text gets a proper resolution row.
@@ -101,7 +101,7 @@ FROM teams
 WHERE team_resolution_text IS NOT NULL AND TRIM(team_resolution_text) != '';
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 6 — Update bingo_cells references                          ║
+-- ║ Step 6 — Update bingo_cells references                            ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 -- 6a. Point member-provided cells to the (now-migrated) resolution_id.
@@ -125,7 +125,7 @@ ALTER TABLE bingo_cells
   MODIFY COLUMN resolution_type ENUM('base', 'compound', 'iterative') NOT NULL DEFAULT 'base';
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 7 — Drop team_provided_resolution_id from bingo_cells      ║
+-- ║ Step 7 — Drop team_provided_resolution_id from bingo_cells        ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 -- 7a. Drop FK (idempotent)
@@ -158,7 +158,7 @@ ALTER TABLE bingo_cells
     AS (resolution_id IS NULL AND source_type = 'empty') VIRTUAL;
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 8 — Re-add FK from bingo_cells.resolution_id → resolutions ║
+-- ║ Step 8 — Re-add FK from bingo_cells.resolution_id → resolutions   ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 -- The FK was dropped in V3.1.0 because resolution_id was polymorphic across
@@ -168,7 +168,7 @@ ALTER TABLE bingo_cells
     FOREIGN KEY (resolution_id) REFERENCES resolutions(id) ON DELETE SET NULL;
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 9 — Unique constraint for member-provided resolutions      ║
+-- ║ Step 9 — Unique constraint for member-provided resolutions        ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 -- Enforces one resolution per (team, author, target) triplet.
@@ -178,13 +178,13 @@ ALTER TABLE resolutions
   ADD UNIQUE KEY unique_member_provided (team_id, owner_user_id, to_user_id);
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 10 — Remove teams.team_resolution_text                     ║
+-- ║ Step 10 — Remove teams.team_resolution_text                       ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 ALTER TABLE teams DROP COLUMN team_resolution_text;
 
 -- ╔═══════════════════════════════════════════════════════════════════╗
--- ║ Step 11 — Drop legacy tables                                    ║
+-- ║ Step 11 — Drop legacy tables                                      ║
 -- ╚═══════════════════════════════════════════════════════════════════╝
 
 DROP TABLE IF EXISTS compound_resolutions;
