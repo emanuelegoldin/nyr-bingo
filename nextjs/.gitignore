@@ -54,3 +54,7 @@ firestore-debug.log
 # uploads
 uploads/review-files/*
 !uploads/review-files/.gitkeep
+
+# playwright
+/playwright-report/
+/test-results/

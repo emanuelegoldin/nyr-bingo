@@ -9,7 +9,8 @@
       "releaseRules": [
         { "subject": "*\\[MAJOR\\]*", "release": "major" },
         { "subject": "*\\[MINOR\\]*", "release": "minor" },
-        { "subject": "*\\[MICRO\\]*", "release": "patch" }
+        { "subject": "*\\[PATCH\\]*", "release": "patch" },
+        { "subject": "*\\[NO-RELEASE\\]*", "release": false }
       ]
     }],
     "@semantic-release/release-notes-generator",

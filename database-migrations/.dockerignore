@@ -1,0 +1,3 @@
+# Shall be placed in the root of the provided context
+docker/
+.dockerignore

@@ -24,9 +24,22 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Backfill title from text (truncate to 255 chars)
-UPDATE resolutions
-  SET title = LEFT(text, 255)
-  WHERE title IS NULL;
+-- Check whether text column exists before backfill (it may have been removed in a later migration)
+SET @has_text := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'resolutions'
+    AND COLUMN_NAME = 'text'
+);
+SET @update_title_stmt := IF(
+  @has_text > 0,
+  'UPDATE resolutions SET title = LEFT(text, 255) WHERE title IS NULL',
+  'UPDATE resolutions SET title = ''Title Placeholder'' WHERE title IS NULL'
+);
+PREPARE stmt FROM @update_title_stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Make title NOT NULL after backfill
 SET @title_nullable := (
@@ -46,6 +59,14 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- 2. Add 'title' column to team_provided_resolutions
+-- Check whether team_provided_resolutions table exists before attempting to modify it (it may not exist in a fresh install at this point in the migration history)
+SET @has_tpr_table := (
+  SELECT 1
+  FROM information_schema.TABLES
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'team_provided_resolutions'
+);
+
 SET @has_tpr_title := (
   SELECT COUNT(*)
   FROM information_schema.COLUMNS
@@ -54,7 +75,8 @@ SET @has_tpr_title := (
     AND COLUMN_NAME = 'title'
 );
 SET @add_tpr_title_stmt := IF(
-  @has_tpr_title = 0,
+  @has_tpr_title = 0
+  AND @has_tpr_table = 1,
   'ALTER TABLE team_provided_resolutions ADD COLUMN title VARCHAR(255) NULL AFTER to_user_id',
   'SELECT 1'
 );
@@ -63,9 +85,22 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Backfill
-UPDATE team_provided_resolutions
-  SET title = LEFT(text, 255)
-  WHERE title IS NULL;
+
+SET @has_tpr_text := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'team_provided_resolutions'
+    AND COLUMN_NAME = 'text'
+);
+SET @update_tpr_title_stmt := IF(
+  @has_tpr_table = 1 AND @has_tpr_text > 0,
+  'UPDATE team_provided_resolutions SET title = LEFT(text, 255) WHERE title IS NULL',
+  'SELECT 1'
+);
+PREPARE stmt FROM @update_tpr_title_stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET @tpr_title_nullable := (
   SELECT IS_NULLABLE
@@ -75,7 +110,8 @@ SET @tpr_title_nullable := (
     AND COLUMN_NAME = 'title'
 );
 SET @modify_tpr_title_stmt := IF(
-  @tpr_title_nullable = 'YES',
+  @has_tpr_table = 1
+  AND @tpr_title_nullable = 'YES',
   'ALTER TABLE team_provided_resolutions MODIFY COLUMN title VARCHAR(255) NOT NULL',
   'SELECT 1'
 );
@@ -128,4 +164,20 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Backfill: team source_type cells get resolution_type = 'team'
-UPDATE bingo_cells SET resolution_type = 'team' WHERE source_type = 'team';
+-- Read current enum definition
+SET @resolution_type_column_type := (
+  SELECT COLUMN_TYPE
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'bingo_cells'
+    AND COLUMN_NAME = 'resolution_type'
+);
+SET @can_store_team := IF(@resolution_type_column_type LIKE '%team%', 1, 0);
+SET @update_resolution_type_stmt := IF(
+  @can_store_team = 1,
+  'UPDATE bingo_cells SET resolution_type = ''team'' WHERE source_type = ''team''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @update_resolution_type_stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
