@@ -1,94 +1,24 @@
 -- Replace resolution_text column in cells table with resolution_id foreign key
 -- 1. Add resolution_id and team_provided_resolution_id columns (guarded for reruns/partial state)
-SET @has_resolution_id := (
-  SELECT COUNT(*)
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'bingo_cells'
-    AND COLUMN_NAME = 'resolution_id'
-);
-SET @add_resolution_id_stmt := IF(
-  @has_resolution_id = 0,
-  'ALTER TABLE bingo_cells ADD COLUMN resolution_id VARCHAR(36) NULL',
-  'SELECT 1'
-);
-PREPARE stmt FROM @add_resolution_id_stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-SET @has_bingo_cells_team_provided_resolution_id := (
-  SELECT COUNT(*)
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'bingo_cells'
-    AND COLUMN_NAME = 'team_provided_resolution_id'
-);
-
-SET @add_team_provided_resolution_id_stmt := IF(
-  @has_bingo_cells_team_provided_resolution_id = 0,
-  'ALTER TABLE bingo_cells ADD COLUMN team_provided_resolution_id VARCHAR(36) NULL',
-  'SELECT 1'
-);
-PREPARE stmt FROM @add_team_provided_resolution_id_stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
 -- Add FKs only if they don't already exist (migration may be re-run after partial application)
-SET @resolution_id_fk_exists := (
-  SELECT COUNT(*)
-  FROM information_schema.KEY_COLUMN_USAGE
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'bingo_cells'
-    AND COLUMN_NAME = 'resolution_id'
-    AND REFERENCED_TABLE_NAME = 'resolutions'
+CALL Create_Column(
+  'bingo_cells',
+  'resolution_id',
+  'VARCHAR(36)',
+  1,
+  NULL,
+  'resolutions',
+  'id'
 );
-
-SET @resolution_id_fk_stmt := IF(
-  @resolution_id_fk_exists = 0,
-  'ALTER TABLE bingo_cells ADD CONSTRAINT fk_bingo_cells_resolution_id FOREIGN KEY (resolution_id) REFERENCES resolutions(id) ON DELETE SET NULL',
-  'SELECT 1'
+CALL Create_Column(
+  'bingo_cells',
+  'team_provided_resolution_id',
+  'VARCHAR(36)',
+  1,
+  NULL,
+  'team_provided_resolutions',
+  'id'
 );
-PREPARE stmt FROM @resolution_id_fk_stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
--- Check whether team_provided_resolutions table exists
-SET @has_tpr_table := (
-  SELECT COUNT(*)
-  FROM information_schema.TABLES
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'team_provided_resolutions'
-);
-
--- Check whether team_provided_resolutions table has id column
-SET @has_tpr_id := (
-  SELECT COUNT(*)
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'team_provided_resolutions'
-    AND COLUMN_NAME = 'id'
-);
-
-SET @team_provided_resolution_id_fk_exists := (
-  SELECT COUNT(*)
-  FROM information_schema.TABLE_CONSTRAINTS
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'bingo_cells'
-    AND CONSTRAINT_TYPE = 'FOREIGN KEY'
-    AND CONSTRAINT_NAME = 'fk_bingo_cells_team_provided_resolution_id'
-);
-
-SET @team_provided_resolution_id_fk_stmt := IF(
-  @has_tpr_table = 1
-  AND @has_tpr_id = 1
-  AND @has_bingo_cells_team_provided_resolution_id = 1
-  AND @team_provided_resolution_id_fk_exists = 0,
-  'ALTER TABLE bingo_cells ADD CONSTRAINT fk_bingo_cells_team_provided_resolution_id FOREIGN KEY (team_provided_resolution_id) REFERENCES team_provided_resolutions(id) ON DELETE SET NULL',
-  'SELECT 1'
-);
-PREPARE stmt FROM @team_provided_resolution_id_fk_stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
 
 -- 2. Join resolution_text to resolutions table to get corresponding ids (only if resolution_text still exists)
 SET @has_resolution_text := (
@@ -119,11 +49,4 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- 4. Drop resolution_text column
-SET @drop_resolution_text_stmt := IF(
-  @has_resolution_text > 0,
-  'ALTER TABLE bingo_cells DROP COLUMN resolution_text',
-  'SELECT 1'
-);
-PREPARE stmt FROM @drop_resolution_text_stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+CALL Drop_Column('bingo_cells','resolution_text');
