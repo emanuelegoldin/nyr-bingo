@@ -4,13 +4,12 @@ on:
   push:
     paths:
       - 'nextjs/**'
-    paths-ignore:
-      - 'nextjs/**/*.example'
-      - 'nextjs/**/*.md'
-      - 'nextjs/.dockerignore'
-      - 'nextjs/.gitignore'
-      - 'nextjs/.modified'
-      - 'nextjs/specs/**'
+      - '!nextjs/**/*.example'
+      - '!nextjs/**/*.md'
+      - '!nextjs/.dockerignore'
+      - '!nextjs/.gitignore'
+      - '!nextjs/.modified'
+      - '!nextjs/specs/**'
   workflow_dispatch:
 
 jobs:
