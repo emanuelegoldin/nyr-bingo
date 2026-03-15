@@ -56,7 +56,7 @@ jobs:
             ${{ inputs.registry }}/${{ inputs.image_name }}
           tags: |                                           # Use raw tag ("type=raw,value=my-tag" or just "my-tag")
             type=raw,value=${{ inputs.image_version }}
-            ${{ 'latest' if inputs.is_latest }}
+            type=raw,value=latest,enable=${{ inputs.is_latest }}
             type=raw,value=${{ github.sha }}
       - name: Build and push Docker image
         id: push
