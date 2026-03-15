@@ -164,4 +164,20 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Backfill: team source_type cells get resolution_type = 'team'
-UPDATE bingo_cells SET resolution_type = 'team' WHERE source_type = 'team';
+-- Read current enum definition
+SET @resolution_type_column_type := (
+  SELECT COLUMN_TYPE
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'bingo_cells'
+    AND COLUMN_NAME = 'resolution_type'
+);
+SET @can_store_team := IF(@resolution_type_column_type LIKE '%team%', 1, 0);
+SET @update_resolution_type_stmt := IF(
+  @can_store_team = 1,
+  'UPDATE bingo_cells SET resolution_type = ''team'' WHERE source_type = ''team''',
+  'SELECT 1'
+);
+PREPARE stmt FROM @update_resolution_type_stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
