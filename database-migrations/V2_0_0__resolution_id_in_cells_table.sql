@@ -69,22 +69,13 @@ SET @has_tpr_id := (
     AND COLUMN_NAME = 'id'
 );
 
--- -- Check whether team_provided_resolution_id column already exists in bingo_cells
--- SET @has_bc_tpr_col := (
---   SELECT COUNT(*)
---   FROM information_schema.COLUMNS
---   WHERE TABLE_SCHEMA = DATABASE()
---     AND TABLE_NAME = 'bingo_cells'
---     AND COLUMN_NAME = 'team_provided_resolution_id'
--- );
-
 SET @team_provided_resolution_id_fk_exists := (
   SELECT COUNT(*)
   FROM information_schema.TABLE_CONSTRAINTS
   WHERE TABLE_SCHEMA = DATABASE()
     AND TABLE_NAME = 'bingo_cells'
-    AND COLUMN_NAME = 'fk_bingo_cells_team_provided_resolution_id'
     AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+    AND CONSTRAINT_NAME = 'fk_bingo_cells_team_provided_resolution_id'
 );
 
 SET @team_provided_resolution_id_fk_stmt := IF(
