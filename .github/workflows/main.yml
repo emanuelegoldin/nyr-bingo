@@ -29,20 +29,15 @@ env:
 
 jobs:
   build-and-push-nextjs-app:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: ./.github/workflows/docker-build-and-push.yml
-        env:
-          REGISTRY: ${{ env.REGISTRY }}
-          IMAGE_NAMESPACE: ${{ env.IMAGE_NAMESPACE }}
-        with:
-          dockerfile: nextjs/docker/Dockerfile.nextjs
-          context: nextjs/
-          username: ${{ github.actor }}
-          image_name: nextjs-app
-          image_version: 0.0.1
-        secrets:
-          token: ${{ secrets.GITHUB_TOKEN }}
+    uses: ./.github/workflows/docker-build-and-push.yml
+    with:
+      dockerfile: nextjs/docker/Dockerfile.nextjs
+      context: nextjs/
+      username: ${{ github.actor }}
+      image_name: nextjs-app
+      image_version: 0.0.1
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
 
   # build:
   #   runs-on: ubuntu-latest

@@ -21,11 +21,11 @@ on:
         description: 'Version tag for the Docker image'
         required: true
         type: string
-      # registry:
-      #   description: 'Docker registry to push the image to'
-      #   required: false
-      #   type: string
-      #   default: 'ghcr.io'
+      registry:
+        description: 'Docker registry to push the image to'
+        required: false
+        type: string
+        default: 'ghcr.io'
     secrets:
       token:
         description: 'GitHub token for authentication'
@@ -40,7 +40,7 @@ jobs:
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ inputs.registry }}
           username: ${{ inputs.username }}
           password: ${{ secrets.token }}
       - name: Extract metadata (tags, labels) for Docker
@@ -48,7 +48,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ inputs.image_name }}
+            ${{ inputs.registry }}/${{ inputs.image_name }}
           tags: |                                           # Use raw tag ("type=raw,value=my-tag" or just "my-tag")
             type=raw,value=${{ inputs.image_version }}
       - name: Build and push Docker image
