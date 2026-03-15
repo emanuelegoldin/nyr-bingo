@@ -100,17 +100,22 @@ proc_body: BEGIN
     DECLARE v_referenced_table_exists INT DEFAULT 0;
     DECLARE v_referenced_column_exists INT DEFAULT 0;
     DECLARE v_fk_exists INT DEFAULT 0;
+    DECLARE v_is_referenced_table_null INT DEFAULT 0;
+    DECLARE v_is_referenced_column_null INT DEFAULT 0;
+
+    SET v_is_referenced_table_null = IF(p_referencedTable IS NULL OR TRIM(p_referencedTable) = '', 1, 0);
+    SET v_is_referenced_column_null = IF(p_referencedColumn IS NULL OR TRIM(p_referencedColumn) = '', 1, 0);
     
     -- If referencedTable is provided and referencedColumn is not, show meaningful error message and exit procedure
-    IF p_referencedTable IS NOT NULL AND TRIM(p_referencedTable) != '' AND (p_referencedColumn IS NULL OR TRIM(p_referencedColumn) = '') THEN
+    IF v_is_referenced_table_null = 0 AND v_is_referenced_column_null = 1 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Referenced column must be provided if referenced table is specified';
     END IF;
     -- If referencedColumn is provided and referencedTable is not, show meaningful error message and exit procedure
-    IF p_referencedColumn IS NOT NULL AND TRIM(p_referencedColumn) != '' AND (p_referencedTable IS NULL OR TRIM(p_referencedTable) = '') THEN
+    IF v_is_referenced_column_null = 1 AND v_is_referenced_table_null = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Referenced table must be provided if referenced column is specified';
     END IF;
 
-    -- If referenceColumn in referencedTable does not exist, skip execution (likely dropped in a later migration); show warning message
+    -- If referenceColumn in referencedTable does not exist, skip whole execution (likely dropped in a later migration); show warning message
     SET @referenced_column_exists = (
         SELECT 1
         FROM INFORMATION_SCHEMA.COLUMNS
@@ -118,7 +123,7 @@ proc_body: BEGIN
         AND TABLE_NAME = p_referencedTable
         AND COLUMN_NAME = p_referencedColumn
     );
-    IF @referenced_column_exists IS NULL THEN
+    IF v_is_referenced_column_null = 0 AND v_is_referenced_table_null = 0 AND @referenced_column_exists IS NULL THEN
         SET v_messageText = CONCAT('Warning: Referenced column ', p_referencedColumn, ' does not exist in table ', p_referencedTable, '; skipping foreign key constraint creation');
         SIGNAL SQLSTATE '01000' SET MESSAGE_TEXT = v_messageText;
         LEAVE proc_body;
@@ -146,15 +151,7 @@ proc_body: BEGIN
         DEALLOCATE PREPARE stmt;
         
         -- If a referenced table is specified, add a foreign key constraint
-        IF p_referencedTable IS NOT NULL AND LOWER(TRIM(p_referencedTable)) != 'null' AND TRIM(p_referencedTable) != '' THEN
-            -- Check if referenced table and column exist
-            SET @referenced_table_exists = (
-                SELECT 1
-                FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = DATABASE()
-                AND TABLE_NAME = p_referencedTable
-                AND COLUMN_NAME = p_referencedColumn
-            );
+        IF v_is_referenced_table_null = 0 THEN
             -- Check if foreign key constraint already exists
             SET @fk_exists = (
                 SELECT 1
