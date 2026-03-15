@@ -26,6 +26,11 @@ on:
         required: false
         type: string
         default: 'ghcr.io'
+      is_latest:
+        description: 'Whether to tag the image as latest'
+        required: false
+        type: boolean
+        default: true
     secrets:
       token:
         description: 'GitHub token for authentication'
@@ -51,6 +56,8 @@ jobs:
             ${{ inputs.registry }}/${{ inputs.image_name }}
           tags: |                                           # Use raw tag ("type=raw,value=my-tag" or just "my-tag")
             type=raw,value=${{ inputs.image_version }}
+            ${{ 'latest' if inputs.is_latest }}
+            type=raw,value=${{ github.sha }}
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@v6
