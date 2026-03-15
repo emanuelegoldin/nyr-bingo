@@ -87,15 +87,43 @@ CREATE PROCEDURE Create_Column(
     IN p_columnType VARCHAR(255),
     IN p_isNullable INT,
     IN p_defaultValue VARCHAR(255),
-    IN p_referencedTable VARCHAR(255)
+    IN p_referencedTable VARCHAR(255),
+    IN p_referencedColumn VARCHAR(255)
 )
 MODIFIES SQL DATA
 NOT DETERMINISTIC
 COMMENT 'Add a column to a table with optional default value and foreign key constraint'
-BEGIN
+proc_body: BEGIN
     DECLARE v_sqlStatement LONGTEXT;
     DECLARE v_columnExists INT DEFAULT 0;
+    DECLARE v_messageText VARCHAR(512);
+    DECLARE v_referenced_table_exists INT DEFAULT 0;
+    DECLARE v_referenced_column_exists INT DEFAULT 0;
+    DECLARE v_fk_exists INT DEFAULT 0;
     
+    -- If referencedTable is provided and referencedColumn is not, show meaningful error message and exit procedure
+    IF p_referencedTable IS NOT NULL AND TRIM(p_referencedTable) != '' AND (p_referencedColumn IS NULL OR TRIM(p_referencedColumn) = '') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Referenced column must be provided if referenced table is specified';
+    END IF;
+    -- If referencedColumn is provided and referencedTable is not, show meaningful error message and exit procedure
+    IF p_referencedColumn IS NOT NULL AND TRIM(p_referencedColumn) != '' AND (p_referencedTable IS NULL OR TRIM(p_referencedTable) = '') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Referenced table must be provided if referenced column is specified';
+    END IF;
+
+    -- If referenceColumn in referencedTable does not exist, skip execution (likely dropped in a later migration); show warning message
+    SET @referenced_column_exists = (
+        SELECT 1
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = p_referencedTable
+        AND COLUMN_NAME = p_referencedColumn
+    );
+    IF @referenced_column_exists IS NULL THEN
+        SET v_messageText = CONCAT('Warning: Referenced column ', p_referencedColumn, ' does not exist in table ', p_referencedTable, '; skipping foreign key constraint creation');
+        SIGNAL SQLSTATE '01000' SET MESSAGE_TEXT = v_messageText;
+        LEAVE proc_body;
+    END IF;
+
     -- Check if column already exists
     SELECT COUNT(*) INTO v_columnExists
     FROM INFORMATION_SCHEMA.COLUMNS
@@ -119,8 +147,29 @@ BEGIN
         
         -- If a referenced table is specified, add a foreign key constraint
         IF p_referencedTable IS NOT NULL AND LOWER(TRIM(p_referencedTable)) != 'null' AND TRIM(p_referencedTable) != '' THEN
-            SET v_sqlStatement = CONCAT(
-                'ALTER TABLE `', TRIM(p_tableName), '` ADD CONSTRAINT `fk_', TRIM(p_tableName), '_', TRIM(p_columnName), '` FOREIGN KEY (`', TRIM(p_columnName), '`) REFERENCES `', TRIM(p_referencedTable), '`(`', TRIM(p_referencedTable), 'ID`) ON DELETE CASCADE'
+            -- Check if referenced table and column exist
+            SET @referenced_table_exists = (
+                SELECT 1
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = p_referencedTable
+                AND COLUMN_NAME = p_referencedColumn
+            );
+            -- Check if foreign key constraint already exists
+            SET @fk_exists = (
+                SELECT 1
+                FROM information_schema.TABLE_CONSTRAINTS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = p_tableName
+                  AND CONSTRAINT_NAME = CONCAT('fk_', TRIM(p_tableName), '_', TRIM(p_columnName))
+                  AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+            );
+            SET v_sqlStatement = IF(
+                @fk_exists IS NULL,
+                 CONCAT(
+                    'ALTER TABLE `', TRIM(p_tableName), '` ADD CONSTRAINT `fk_', TRIM(p_tableName), '_', TRIM(p_columnName), '` FOREIGN KEY (`', TRIM(p_columnName), '`) REFERENCES `', TRIM(p_referencedTable), '`(`', TRIM(p_referencedColumn), '`) ON DELETE CASCADE'
+                ),
+                'SELECT 1'
             );
             SET @sql = v_sqlStatement;
             PREPARE stmt FROM @sql;
