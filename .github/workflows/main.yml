@@ -26,6 +26,29 @@ env:
   WS_CONTEXT: ws-server/
 
 jobs:
+  compute-release-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semantic.outputs.new_release_version }}
+      published: ${{ steps.semantic.outputs.new_release_published }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # semantic-release needs full history and tags
+                                  # As explained in tthe action README (github.com/actions/checkout)
+                                  # by default, the action fetches only the latest commit.
+                                  # By setting fetch-depth: 0, we ensure that the entire history is available.
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
   build-and-push-nextjs-app:
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
@@ -33,9 +56,11 @@ jobs:
       context: nextjs/
       username: ${{ github.actor }}
       image_name: nextjs-app
-      image_version: &version 0.0.1
+      image_version: &version |
+        0.0.1
+        ${{ needs.compute-release-version.outputs.version }}
       registry: &registry ghcr.io/${{ github.repository_owner }}
-    secrets:
+    secrets: &secrets
       token: ${{ secrets.GITHUB_TOKEN }}
   build-and-push-mariadb:
     uses: ./.github/workflows/docker-build-and-push.yml
@@ -46,8 +71,37 @@ jobs:
       image_name: mariadb
       image_version: *version
       registry: *registry
-    secrets:
-      token: ${{ secrets.GITHUB_TOKEN }}
+    secrets: *secrets
+  build-and-push-nginx:
+    uses: ./.github/workflows/docker-build-and-push.yml
+    with:
+      dockerfile: nextjs/docker/Dockerfile.nginx
+      context: nextjs/
+      username: ${{ github.actor }}
+      image_name: nginx
+      image_version: *version
+      registry: *registry
+    secrets: *secrets
+  build-and-push-flyway:
+    uses: ./.github/workflows/docker-build-and-push.yml
+    with:
+      dockerfile: nextjs/docker/Dockerfile.flyway
+      context: nextjs/
+      username: ${{ github.actor }}
+      image_name: flyway
+      image_version: *version
+      registry: *registry
+    secrets: *secrets
+  build-and-push-ws-server:
+    uses: ./.github/workflows/docker-build-and-push.yml
+    with:
+      dockerfile: ws-server/Dockerfile
+      context: ws-server/
+      username: ${{ github.actor }}
+      image_name: ws-server
+      image_version: *version
+      registry: *registry
+    secrets: *secrets
 
   # build:
   #   runs-on: ubuntu-latest
