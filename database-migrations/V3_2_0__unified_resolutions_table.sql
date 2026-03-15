@@ -43,27 +43,13 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Add resolution metadata columns
-CALL Create_Column(
-  'resolutions',
-  'resolution_type',
-  "ENUM('base', 'compound', 'iterative')",
-  0,
-  'base',
-  NULL
-);
-CALL Create_Column(
-  'resolutions',
-  'scope',
-  "ENUM('personal', 'team', 'member_provided')",
-  0,
-  'personal',
-  NULL
-);
-CALL Create_Column('resolutions', 'team_id', 'VARCHAR(36)', 1, NULL, NULL);
-CALL Create_Column('resolutions', 'to_user_id', 'VARCHAR(36)', 1, NULL, NULL);
-CALL Create_Column('resolutions', 'subtasks', 'JSON', 1, NULL, NULL);
-CALL Create_Column('resolutions', 'number_of_repetition', 'INT', 1, NULL, NULL);
-CALL Create_Column('resolutions', 'completed_times', 'INT', 0, '0', NULL);
+CALL Create_Column('resolutions', 'resolution_type', "ENUM('base', 'compound', 'iterative')", 0, 'base', NULL, NULL);
+CALL Create_Column('resolutions', 'scope', "ENUM('personal', 'team', 'member_provided')", 0, 'personal', NULL, NULL);
+CALL Create_Column('resolutions', 'team_id', 'VARCHAR(36)', 1, NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'to_user_id', 'VARCHAR(36)', 1, NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'subtasks', 'JSON', 1, NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'number_of_repetition', 'INT', 1, NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'completed_times', 'INT', 0, '0', NULL, NULL);
 
 -- Foreign keys for scope-specific columns
 -- TODO: adapt syntax to use Create_Column with referencedTable
@@ -188,9 +174,21 @@ DEALLOCATE PREPARE stmt;
 
 -- 6a. Point member-provided cells to the (now-migrated) resolution_id.
 --     The team_provided_resolution_id values match the IDs copied into resolutions.
-UPDATE bingo_cells
-SET resolution_id = team_provided_resolution_id
-WHERE team_provided_resolution_id IS NOT NULL;
+SET @has_tpr_id_column := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'bingo_cells'
+    AND COLUMN_NAME = 'team_provided_resolution_id'
+);
+SET @update_member_provided_cells := IF(
+  @has_tpr_id_column > 0,
+  "UPDATE bingo_cells SET resolution_id = team_provided_resolution_id WHERE team_provided_resolution_id IS NOT NULL",
+  "SELECT 1"
+);
+PREPARE stmt FROM @update_member_provided_cells;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 6b. Point team-goal cells (source_type='team') to their new resolution entry.
 UPDATE bingo_cells bc
