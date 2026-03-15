@@ -174,3 +174,130 @@ BEGIN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 END$$
+
+-- Move_Column_Without_Constraints procedure
+--    p_fromTableName: Name of the source table; SHALL already exist
+--    p_toTableName: Name of the destination table; SHALL already exist
+--    p_fromColumnName: Name of the column to move; SHALL already exist in the source table
+--    p_toColumnName: Name of the column in the destination table; if it does not exist, it will be created with the same type and nullability as the source column; if it already exists, it must be of a compatible type or the procedure will exit with an error
+-- This procedure is idempotent and can be safely re-run without affecting existing columns.
+DELIMITER $$
+DROP PROCEDURE IF EXISTS Move_Column_Without_Constraints$$
+CREATE PROCEDURE Move_Column_Without_Constraints(
+    IN p_fromTableName VARCHAR(255),
+    IN p_toTableName VARCHAR(255),
+    IN p_fromColumnName VARCHAR(255),
+    IN p_toColumnName VARCHAR(255)
+)
+MODIFIES SQL DATA
+NOT DETERMINISTIC
+COMMENT 'Move a column from one table to another'
+BEGIN
+    DECLARE v_columnExists INT DEFAULT 0;
+    DECLARE v_destColumnExists INT DEFAULT 0;
+    DECLARE v_fromColumnType VARCHAR(255);
+    DECLARE v_toColumnType VARCHAR(255);
+    DECLARE v_messageText VARCHAR(512);
+
+    -- If fromTable is empty, exit procedure; show meaningful error message
+    IF p_fromTableName IS NULL OR TRIM(p_fromTableName) = '' THEN
+        SET v_messageText = 'Source table name cannot be null or empty';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_messageText;
+    END IF;
+
+    -- If toTable is empty, exit procedure; show meaningful error message
+    IF p_toTableName IS NULL OR TRIM(p_toTableName) = '' THEN
+        SET v_messageText = 'Destination table name cannot be null or empty';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_messageText;
+    END IF;
+    
+    -- Check if source column exists
+    SELECT COUNT(*) INTO v_columnExists
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = p_fromTableName
+    AND COLUMN_NAME = p_fromColumnName;
+
+    -- If source column does not exist, exit procedure; show meaningful error message
+    IF v_columnExists = 0 THEN
+        SET v_messageText = CONCAT('Source column ', p_fromColumnName, ' does not exist in table ', p_fromTableName);
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_messageText;
+    END IF;
+
+    -- IF source column exists, THEN check whether it has any FK constraints; if so, exit procedure and show meaningful error message (this procedure is only meant for moving columns without constraints)
+    IF v_columnExists = 1 THEN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.KEY_COLUMN_USAGE
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = p_fromTableName
+              AND COLUMN_NAME = p_fromColumnName
+              AND REFERENCED_TABLE_NAME IS NOT NULL
+        ) THEN
+            SET v_messageText = CONCAT('Source column ', p_fromColumnName, ' in table ', p_fromTableName, ' has foreign key constraints; cannot move using this procedure');
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_messageText;
+        END IF;
+    END IF;
+
+    -- Check if destination table exists, if not, exit procedure; show meaningful error message
+    SELECT COUNT(*) INTO v_destColumnExists
+    FROM INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = p_toTableName;
+    IF v_destColumnExists = 0 THEN
+        SET v_messageText = CONCAT('Destination table ', p_toTableName, ' does not exist');
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_messageText;
+    END IF;
+
+    -- Check if destination column already exists
+    SELECT COUNT(*) INTO v_destColumnExists
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = p_toTableName
+    AND COLUMN_NAME = p_toColumnName;
+
+    -- IF destination column already exists, THEN check if from column type is compatible with to column type
+    IF v_destColumnExists = 1 THEN
+        SELECT COLUMN_TYPE INTO v_fromColumnType
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = p_fromTableName
+        AND COLUMN_NAME = p_fromColumnName;
+
+        SELECT COLUMN_TYPE INTO v_toColumnType
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = p_toTableName
+        AND COLUMN_NAME = p_toColumnName;
+
+        IF v_fromColumnType != v_toColumnType THEN
+            SET v_messageText = CONCAT('Destination column ', p_toColumnName, ' already exists in table ', p_toTableName, ' with incompatible type ', v_toColumnType);
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_messageText;
+        END IF;
+    END IF;
+
+    -- Add column to destination table if it does not exist
+    IF v_destColumnExists = 0 THEN
+        CALL Create_Column(
+            p_toTableName,
+            p_toColumnName,
+            (SELECT COLUMN_TYPE 
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = p_fromTableName AND COLUMN_NAME = p_fromColumnName),
+            (SELECT IF(IS_NULLABLE = 'YES', 1, 0) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = p_fromTableName AND COLUMN_NAME = p_fromColumnName),
+            (SELECT COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = p_fromTableName AND COLUMN_NAME = p_fromColumnName),
+            NULL
+        );
+    END IF;
+
+    -- Copy data from source column to destination column
+    SET @sql = CONCAT(
+        'UPDATE `', TRIM(p_toTableName), '` dest JOIN `', TRIM(p_fromTableName), '` src ON dest.`', TRIM(p_toColumnName), '` = src.`', TRIM(p_fromColumnName), '` SET dest.`', TRIM(p_toColumnName), '` = src.`', TRIM(p_fromColumnName), '`'
+    );
+    PREPARE stmt FROM @sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    -- Drop source column
+    CALL Drop_Column(p_fromTableName, p_fromColumnName);
+END$$
