@@ -3,7 +3,7 @@ name: WebSocket Server Build
 on:
   push:
     paths:
-      - '.github/workflows/nextjs-app-build.yml'
+      - '.github/workflows/websocket-server-build.yml'
       - '.github/workflows/node-build-reusable-workflow.yml'
       - 'ws-server/**'
       - '!ws-server/**/*.example'
