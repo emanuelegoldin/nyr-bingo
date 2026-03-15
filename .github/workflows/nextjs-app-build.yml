@@ -19,5 +19,5 @@ jobs:
     uses: ./.github/workflows/node-build-reusable-workflow.yml
     with:
       node-version: 'lts'
-      pnpm-version: 10
+      pnpm-version: '10'
       working-directory: 'nextjs'
