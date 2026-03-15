@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [ main, sql-scripts ]
+    branches: [ main ]
     paths-ignore:
       - 'docs/**'
       - 'nextjs/specs/**'
