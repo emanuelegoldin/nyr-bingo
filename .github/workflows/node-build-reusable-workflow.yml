@@ -1,17 +1,21 @@
+name: Reusable Node Build Workflow
 on:
-  workfow_call:
+  workflow_call:
     inputs:
       node-version:
         description: 'Node.js version to use (e.g., "16", "18", "20", "lts")'
         required: true
+        type: string        # Required for "workflow_call" event
         default: 'lts'
       pnpm-version:
         description: 'pnpm version to use (e.g., "8", "9", "latest")'
         required: true
+        type: string
         default: '10'
       working-directory:
         description: 'Working directory for the build (e.g., "nextjs", "ws-server")'
         required: true
+        type: string
         default: '.'
 jobs:
   build:
@@ -23,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4                # Required to cache dependencies (
+        uses: pnpm/action-setup@v4                # Required to cache dependencies
         with:
           version: ${{ inputs.pnpm-version }}
       - name: Use Node.js
