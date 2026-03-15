@@ -3,6 +3,8 @@ name: WebSocket Server Build
 on:
   push:
     paths:
+      - '.github/workflows/nextjs-app-build.yml'
+      - '.github/workflows/node-build-reusable-workflow.yml'
       - 'ws-server/**'
       - '!ws-server/**/*.example'
       - '!ws-server/**/*.md'
@@ -17,6 +19,6 @@ jobs:
       contents: read            # Suggested by actions/setup-node@v6
     uses: ./.github/workflows/node-build-reusable-workflow.yml
     with:
-      node-version: 'lts'
+      node-version: 'lts/*'
       pnpm-version: '10'
       working-directory: 'ws-server'
