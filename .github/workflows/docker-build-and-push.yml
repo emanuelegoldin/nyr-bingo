@@ -2,11 +2,11 @@ on:
   workflow_call:
     inputs:
       dockerfile:
-        described: 'Path to the Dockerfile to build'
+        description: 'Path to the Dockerfile to build'
         required: true
         type: string
       context:
-        described: 'Build context for the Docker build'
+        description: 'Build context for the Docker build'
         required: true
         type: string
       username:
