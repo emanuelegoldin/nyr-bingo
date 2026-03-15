@@ -1,0 +1,28 @@
+name: WebSocket Server Build
+
+on:
+  push:
+    paths:
+      - 'ws-server/**'
+    paths-ignore:
+      - 'ws-server/**/*.example'
+      - 'ws-server/**/*.md'
+      - 'ws-server/.dockerignore'
+      - 'ws-server/.gitignore'
+      - 'ws-server/.modified'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: lts
+  PNPM_VERSION: 10
+  WORKING_DIRECTORY: ws-server
+
+jobs:
+  build:
+    permissions:
+      contents: read            # Suggested by actions/setup-node@v6
+    uses: ./.github/workflows/node-build-reusable-workflow.yml
+    with:
+      node-version: ${{ env.NODE_VERSION }}
+      pnpm-version: ${{ env.PNPM_VERSION }}
+      working-directory: ${{ env.WORKING_DIRECTORY }}

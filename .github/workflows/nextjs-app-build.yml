@@ -1,0 +1,29 @@
+name: Next.js App Build
+
+on:
+  push:
+    paths:
+      - 'nextjs/**'
+    paths-ignore:
+      - 'nextjs/**/*.example'
+      - 'nextjs/**/*.md'
+      - 'nextjs/.dockerignore'
+      - 'nextjs/.gitignore'
+      - 'nextjs/.modified'
+      - 'nextjs/specs/**'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: lts
+  PNPM_VERSION: 10
+  WORKING_DIRECTORY: nextjs
+
+jobs:
+  build:
+    permissions:
+      contents: read            # Suggested by actions/setup-node@v6
+    uses: ./.github/workflows/node-build-reusable-workflow.yml
+    with:
+      node-version: ${{ env.NODE_VERSION }}
+      pnpm-version: ${{ env.PNPM_VERSION }}
+      working-directory: ${{ env.WORKING_DIRECTORY }}
