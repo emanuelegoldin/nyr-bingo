@@ -88,7 +88,8 @@ CREATE PROCEDURE Create_Column(
     IN p_isNullable INT,
     IN p_defaultValue VARCHAR(255),
     IN p_referencedTable VARCHAR(255),
-    IN p_referencedColumn VARCHAR(255)
+    IN p_referencedColumn VARCHAR(255),
+    IN p_onDeleteAction VARCHAR(255)
 )
 MODIFIES SQL DATA
 NOT DETERMINISTIC
@@ -111,7 +112,7 @@ proc_body: BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Referenced column must be provided if referenced table is specified';
     END IF;
     -- If referencedColumn is provided and referencedTable is not, show meaningful error message and exit procedure
-    IF v_is_referenced_column_null = 1 AND v_is_referenced_table_null = 0 THEN
+    IF v_is_referenced_table_null = 1 AND v_is_referenced_column_null = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Referenced table must be provided if referenced column is specified';
     END IF;
 
@@ -164,7 +165,13 @@ proc_body: BEGIN
             SET v_sqlStatement = IF(
                 @fk_exists IS NULL,
                  CONCAT(
-                    'ALTER TABLE `', TRIM(p_tableName), '` ADD CONSTRAINT `fk_', TRIM(p_tableName), '_', TRIM(p_columnName), '` FOREIGN KEY (`', TRIM(p_columnName), '`) REFERENCES `', TRIM(p_referencedTable), '`(`', TRIM(p_referencedColumn), '`) ON DELETE CASCADE'
+                    'ALTER TABLE `',
+                    TRIM(p_tableName),
+                    '` ADD CONSTRAINT `fk_', TRIM(p_tableName), '_', TRIM(p_columnName),
+                    '` FOREIGN KEY (`', TRIM(p_columnName), '`) REFERENCES `',
+                    TRIM(p_referencedTable),
+                    '`(`', TRIM(p_referencedColumn), '`)',
+                    'ON DELETE ', IF(p_onDeleteAction IS NOT NULL AND TRIM(p_onDeleteAction) != '', p_onDeleteAction, 'NO ACTION')
                 ),
                 'SELECT 1'
             );
@@ -332,7 +339,17 @@ BEGIN
             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = p_fromTableName AND COLUMN_NAME = p_fromColumnName),
             (SELECT IF(IS_NULLABLE = 'YES', 1, 0) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = p_fromTableName AND COLUMN_NAME = p_fromColumnName),
             (SELECT COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = p_fromTableName AND COLUMN_NAME = p_fromColumnName),
-            NULL
+            NULL,
+            NULL,
+            -- Get onDeleteAction for any existing FK constraint on the source column, if it exists; otherwise default to NULL
+            (SELECT rc.DELETE_RULE
+            FROM information_schema.KEY_COLUMN_USAGE kcu
+            JOIN information_schema.REFERENTIAL_CONSTRAINTS rc ON kcu.CONSTRAINT_NAME = rc.CONSTRAINT_NAME AND kcu.TABLE_SCHEMA = rc.CONSTRAINT_SCHEMA
+            WHERE kcu.TABLE_SCHEMA = DATABASE()
+              AND kcu.TABLE_NAME = p_fromTableName
+              AND kcu.COLUMN_NAME = p_fromColumnName
+              AND kcu.REFERENCED_TABLE_NAME IS NOT NULL
+            LIMIT 1)
         );
     END IF;
 
@@ -347,3 +364,4 @@ BEGIN
     -- Drop source column
     CALL Drop_Column(p_fromTableName, p_fromColumnName);
 END$$
+DELIMITER ;

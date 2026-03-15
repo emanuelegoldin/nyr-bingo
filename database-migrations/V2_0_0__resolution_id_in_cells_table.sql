@@ -8,7 +8,8 @@ CALL Create_Column(
   1,
   NULL,
   'resolutions',
-  'id'
+  'id',
+  'SET NULL'
 );
 CALL Create_Column(
   'bingo_cells',
@@ -17,7 +18,8 @@ CALL Create_Column(
   1,
   NULL,
   'team_provided_resolutions',
-  'id'
+  'id',
+  'SET NULL'
 );
 
 -- 2. Join resolution_text to resolutions table to get corresponding ids (only if resolution_text still exists)

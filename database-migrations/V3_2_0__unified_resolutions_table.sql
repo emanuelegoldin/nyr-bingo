@@ -43,13 +43,13 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Add resolution metadata columns
-CALL Create_Column('resolutions', 'resolution_type', "ENUM('base', 'compound', 'iterative')", 0, 'base', NULL, NULL);
-CALL Create_Column('resolutions', 'scope', "ENUM('personal', 'team', 'member_provided')", 0, 'personal', NULL, NULL);
-CALL Create_Column('resolutions', 'team_id', 'VARCHAR(36)', 1, NULL, NULL, NULL);
-CALL Create_Column('resolutions', 'to_user_id', 'VARCHAR(36)', 1, NULL, NULL, NULL);
-CALL Create_Column('resolutions', 'subtasks', 'JSON', 1, NULL, NULL, NULL);
-CALL Create_Column('resolutions', 'number_of_repetition', 'INT', 1, NULL, NULL, NULL);
-CALL Create_Column('resolutions', 'completed_times', 'INT', 0, '0', NULL, NULL);
+CALL Create_Column('resolutions', 'resolution_type', "ENUM('base', 'compound', 'iterative')", 0, 'base', NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'scope', "ENUM('personal', 'team', 'member_provided')", 0, 'personal', NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'team_id', 'VARCHAR(36)', 1, NULL, NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'to_user_id', 'VARCHAR(36)', 1, NULL, NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'subtasks', 'JSON', 1, NULL, NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'number_of_repetition', 'INT', 1, NULL, NULL, NULL, NULL);
+CALL Create_Column('resolutions', 'completed_times', 'INT', 0, '0', NULL, NULL, NULL);
 
 -- Foreign keys for scope-specific columns
 -- TODO: adapt syntax to use Create_Column with referencedTable
