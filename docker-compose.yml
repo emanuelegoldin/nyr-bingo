@@ -12,7 +12,7 @@ services:
     ports:
       - "3306:3306"
     env_file:
-      - nextjs/.env
+      - .env
     environment:
       MARIADB_DATABASE: resolution_bingo
       MARIADB_USER: ${DB_USER}
@@ -32,7 +32,7 @@ services:
     image: nyr-bingo-flyway:local
     container_name: nyr-bingo-db-migrator
     env_file:
-      - nextjs/.env
+      - .env
     command: >
       -url=jdbc:mariadb://mariadb:3306/resolution_bingo
       -user=${DB_USER}
@@ -51,7 +51,7 @@ services:
     volumes:
       - ./nextjs/uploads:/app/uploads
     env_file:
-      - nextjs/.env
+      - .env
     environment:
       DB_HOST: mariadb
       DB_PORT: 3306                   # Do not override DB_PORT if custom port is used - read from .env file
