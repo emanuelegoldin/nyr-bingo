@@ -12,6 +12,7 @@ on:
       - '**/.gitignore'
       - '**/.modified'
       - '.devcontainer/**'
+  workflow_dispatch:
       
 permissions:
   contents: write
@@ -22,67 +23,81 @@ env:
   IMAGE_NAMESPACE: ${{ github.repository_owner }}
   MARIADB_DOCKERFILE: nextjs/docker/Dockerfile.mariadb
   NGINX_DOCKERFILE: nextjs/docker/Dockerfile.nginx
-  NEXTJS_DOCKERFILE: nextjs/docker/Dockerfile.nextjs
   FLYWAY_DOCKERFILE: nextjs/docker/Dockerfile.flyway
-  NEXTJS_APP_CONTEXT: nextjs/
   WS_DOCKERFILE: ws-server/Dockerfile
   WS_CONTEXT: ws-server/
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  build-and-push-nextjs-app:
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0          # semantic-release needs full history and tags
-                                  # As explained in tthe action README (github.com/actions/checkout)
-                                  # by default, the action fetches only the latest commit.
-                                  # By setting fetch-depth: 0, we ensure that the entire history is available.
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Semantic Release
-        id: semantic
-        uses: cycjimmy/semantic-release-action@v4
+      - uses: ./.github/workflows/docker-build-and-push.yml
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/login-action@v3
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAMESPACE: ${{ env.IMAGE_NAMESPACE }}
         with:
-          registry: ${{ env.REGISTRY }}
+          dockerfile: nextjs/docker/Dockerfile.nextjs
+          context: nextjs/
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          image_name: nextjs-app
+          image_version: 0.0.1
+        secrets:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Next.js App Build and Push
-        env:
-          VERSION: ${{ steps.semantic.outputs.new_release_version }}
-          NEW_RELEASE: ${{ steps.semantic.outputs.new_release_published }}
-        run: |
-          build_and_push() {
-            local name="$1"
-            local dockerfile="$2"
-            local context="$3"
+  # build:
+  #   runs-on: ubuntu-latest
 
-            local tags="-t $REGISTRY/$IMAGE_NAMESPACE/$name:latest"
-            tags="$tags -t $REGISTRY/$IMAGE_NAMESPACE/$name:${{ github.sha }}"
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0          # semantic-release needs full history and tags
+  #                                 # As explained in tthe action README (github.com/actions/checkout)
+  #                                 # by default, the action fetches only the latest commit.
+  #                                 # By setting fetch-depth: 0, we ensure that the entire history is available.
 
-            if [ "$NEW_RELEASE" = "true" ]; then
-              tags="$tags -t $REGISTRY/$IMAGE_NAMESPACE/$name:$VERSION"
-              echo "📦 Releasing $name version $VERSION"
-            fi
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
 
-            echo "🔨 Building $name..."
-            docker build $tags -f "$dockerfile" "$context"
+  #     - name: Semantic Release
+  #       id: semantic
+  #       uses: cycjimmy/semantic-release-action@v4
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            echo "🚀 Pushing $name..."
-            docker push --all-tags "$REGISTRY/$IMAGE_NAMESPACE/$name"
-          }
+  #     - uses: docker/login-action@v3
+  #       with:
+  #         registry: ${{ env.REGISTRY }}
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
 
-          build_and_push "mariadb"    "$MARIADB_DOCKERFILE"  "$NEXTJS_APP_CONTEXT"
-          build_and_push "nginx"      "$NGINX_DOCKERFILE"    "$NEXTJS_APP_CONTEXT"
-          build_and_push "nextjs-app" "$NEXTJS_DOCKERFILE"   "$NEXTJS_APP_CONTEXT"
-          build_and_push "flyway"     "$FLYWAY_DOCKERFILE"   "$NEXTJS_APP_CONTEXT"
-          build_and_push "ws-server"  "$WS_DOCKERFILE"       "$WS_CONTEXT"
+  #     - name: Next.js App Build and Push
+  #       env:
+  #         VERSION: ${{ steps.semantic.outputs.new_release_version }}
+  #         NEW_RELEASE: ${{ steps.semantic.outputs.new_release_published }}
+  #       run: |
+  #         build_and_push() {
+  #           local name="$1"
+  #           local dockerfile="$2"
+  #           local context="$3"
+
+  #           local tags="-t $REGISTRY/$IMAGE_NAMESPACE/$name:latest"
+  #           tags="$tags -t $REGISTRY/$IMAGE_NAMESPACE/$name:${{ github.sha }}"
+
+  #           if [ "$NEW_RELEASE" = "true" ]; then
+  #             tags="$tags -t $REGISTRY/$IMAGE_NAMESPACE/$name:$VERSION"
+  #             echo "📦 Releasing $name version $VERSION"
+  #           fi
+
+  #           echo "🔨 Building $name..."
+  #           docker build $tags -f "$dockerfile" "$context"
+
+  #           echo "🚀 Pushing $name..."
+  #           docker push --all-tags "$REGISTRY/$IMAGE_NAMESPACE/$name"
+  #         }
+
+  #         build_and_push "mariadb"    "$MARIADB_DOCKERFILE"  "$NEXTJS_APP_CONTEXT"
+  #         build_and_push "nginx"      "$NGINX_DOCKERFILE"    "$NEXTJS_APP_CONTEXT"
+  #         build_and_push "nextjs-app" "$NEXTJS_DOCKERFILE"   "$NEXTJS_APP_CONTEXT"
+  #         build_and_push "flyway"     "$FLYWAY_DOCKERFILE"   "$NEXTJS_APP_CONTEXT"
+  #         build_and_push "ws-server"  "$WS_DOCKERFILE"       "$WS_CONTEXT"
