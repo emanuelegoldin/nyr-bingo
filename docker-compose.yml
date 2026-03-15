@@ -27,14 +27,14 @@ services:
       retries: 20
   flyway:
     build:
-      context: ./nextjs/
+      context: ./database-migrations
       dockerfile: docker/Dockerfile.flyway
     image: nyr-bingo-flyway:local
     container_name: nyr-bingo-db-migrator
     env_file:
       - .env
     command: >
-      -url=jdbc:mariadb://mariadb:3306/resolution_bingo
+      -url=jdbc:mariadb://mariadb:3306/${DB_NAME}
       -user=${DB_USER}
       -password=${DB_PASSWORD}
       -baselineOnMigrate=true

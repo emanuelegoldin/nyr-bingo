@@ -1,3 +1,0 @@
-FROM flyway/flyway:11.20.1
-
-COPY ./database/migrations ./sql
