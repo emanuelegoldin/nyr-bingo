@@ -30,11 +30,14 @@ jobs:
         uses: pnpm/action-setup@v4                # Required to cache dependencies
         with:
           version: ${{ inputs.pnpm-version }}
+      - name: Output Filesystem
+        run: ls -l -a
       - name: Use Node.js
         uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
           cache: 'pnpm'
+          cache-dependency-path: ${{ inputs.working-directory }}
       - name: Install dependencies
         run: pnpm install
       - name: Build
