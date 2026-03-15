@@ -1,6 +1,6 @@
 FROM mariadb:11
 
-COPY database/mariadb-init/ /docker-entrypoint-initdb.d/
+COPY mariadb-init/ /docker-entrypoint-initdb.d/
 
 # Set MariaDB port - https://mariadb.com/docs/server/server-management/install-and-upgrade-mariadb/configuring-mariadb/configuring-mariadb-with-option-files
 # Use on env variable in sed - https://stackoverflow.com/questions/584894/environment-variable-substitution-in-sed#:~:text=You%20may%20need%20double%20quotes

@@ -2,7 +2,7 @@ name: nyr-bingo-docker-compose
 services:
   mariadb:
     build:
-      context: ./nextjs/
+      context: ./database
       dockerfile: docker/Dockerfile.mariadb
 # Uncomment the following lines to set a custom port via build argument
       # args:
@@ -14,7 +14,7 @@ services:
     env_file:
       - .env
     environment:
-      MARIADB_DATABASE: resolution_bingo
+      MARIADB_DATABASE: ${DB_NAME}
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASSWORD}
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -58,7 +58,7 @@ services:
       APP_BASE_URL: http://localhost  # nginx listens on localhost:80
     restart: always
     healthcheck:
-      # node:lts-slim doesn't include curl; use Node's built-in fetch.
+      # node:lts-slim doesn't include curl --> use Node's built-in fetch.
       test:
         [
           "CMD",
