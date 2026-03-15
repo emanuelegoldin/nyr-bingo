@@ -19,8 +19,6 @@ permissions:
   packages: write
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAMESPACE: ${{ github.repository_owner }}
   MARIADB_DOCKERFILE: nextjs/docker/Dockerfile.mariadb
   NGINX_DOCKERFILE: nextjs/docker/Dockerfile.nginx
   FLYWAY_DOCKERFILE: nextjs/docker/Dockerfile.flyway
@@ -36,6 +34,7 @@ jobs:
       username: ${{ github.actor }}
       image_name: nextjs-app
       image_version: 0.0.1
+      registry: ghcr.io/${{ github.repository_owner }}
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
 
