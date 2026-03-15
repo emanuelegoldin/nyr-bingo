@@ -13,24 +13,16 @@
 -- Migration is idempotent and safe to re-run.
 
 -- 1. Drop the existing virtual column
-SET @has_is_empty := (
-  SELECT COUNT(*)
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'bingo_cells'
-    AND COLUMN_NAME = 'is_empty'
-);
-
-SET @drop_stmt := IF(
-  @has_is_empty > 0,
-  'ALTER TABLE bingo_cells DROP COLUMN is_empty',
-  'SELECT 1'
-);
-PREPARE stmt FROM @drop_stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+CALL Drop_Column('bingo_cells','is_empty');
 
 -- 2. Re-add is_empty with the corrected expression
-ALTER TABLE bingo_cells
-  ADD COLUMN is_empty TINYINT(1)
-  AS (resolution_id IS NULL AND team_provided_resolution_id IS NULL AND source_type = 'empty') VIRTUAL;
+SET @resolution_id_exists = (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'bingo_cells' AND column_name = 'resolution_id');
+SET @team_provided_resolution_id_exists = (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'bingo_cells' AND column_name = 'team_provided_resolution_id');
+SET @source_type_exists = (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'bingo_cells' AND column_name = 'source_type');
+
+SET @add_is_empty_sql = IF(@resolution_id_exists > 0 AND @team_provided_resolution_id_exists > 0 AND @source_type_exists > 0,
+    'ALTER TABLE bingo_cells ADD COLUMN is_empty BOOLEAN AS (resolution_id IS NULL AND team_provided_resolution_id IS NULL AND source_type = ''empty'') VIRTUAL;',
+    'ALTER TABLE bingo_cells ADD COLUMN is_empty BOOLEAN AS (1) VIRTUAL;'); -- Placeholder definition, missing required columns
+PREPARE stmt FROM @add_is_empty_sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
