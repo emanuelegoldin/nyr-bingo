@@ -33,8 +33,19 @@ jobs:
       context: nextjs/
       username: ${{ github.actor }}
       image_name: nextjs-app
-      image_version: 0.0.1
-      registry: ghcr.io/${{ github.repository_owner }}
+      image_version: &version 0.0.1
+      registry: &registry ghcr.io/${{ github.repository_owner }}
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+  build-and-push-mariadb:
+    uses: ./.github/workflows/docker-build-and-push.yml
+    with:
+      dockerfile: nextjs/docker/Dockerfile.mariadb
+      context: nextjs/
+      username: ${{ github.actor }}
+      image_name: mariadb
+      image_version: *version
+      registry: *registry
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
 
