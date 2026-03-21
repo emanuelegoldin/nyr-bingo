@@ -1,0 +1,88 @@
+#!/bin/bash
+# From (https://git-scm.com/book/en/v2/Customizing-Git-An-Example-Git-Enforced-Policy#:~:text=will%20be%20sandboxed.-,Client%2DSide%20Hooks,-The%20downside%20to)
+## This commit-msg hook enforces a commit message format of:
+##   #<issue number> <space or '-'> <brief description>
+## For example:
+##   #1234 - Fix the login bug        ✓
+##   #5678 Update the README file     ✓
+##
+##   Fix the login bug                ✗ Missing issue number and hashtag
+##   1234 Fix the login bug           ✗ Missing hashtag
+##   #1234Fix the login bug           ✗ Missing space or hyphen after issue number
+COMMIT_MESSAGE_REGEX='^#([0-9]+)[[:blank:]-](.*)$'
+ISSUE_NUMBER_REGEX='.*#([0-9]+).*'
+# From https://stackoverflow.com/questions/1417957/show-just-the-current-branch-in-git/1418022#1418022
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+RED='\033[0;31m'                      # Error
+GREEN='\033[0;32m'                    # Success
+NC='\033[0m'                          # No Color
+
+function has_branch_issue_number() {
+  if [[ "$1" =~ $ISSUE_NUMBER_REGEX ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function extract_issue_number_from_current_branch() {
+  if [[ $CURRENT_BRANCH =~ $ISSUE_NUMBER_REGEX ]]; then
+    ISSUE_NUMBER=${BASH_REMATCH[1]}
+    echo "$ISSUE_NUMBER"
+  else
+    echo ""
+  fi
+}
+
+function validate_commit_message() {
+  local MSG=$1
+  if [[ $MSG =~ $COMMIT_MESSAGE_REGEX ]]; then
+    ISSUE_NUMBER=${BASH_REMATCH[1]}     # BASH_REMATCH stores matched substrings after using the =~ operator
+    DESCRIPTION=${BASH_REMATCH[2]}
+    echo -e "${GREEN}[POLICY]: Commit message is valid${NC}\n\tIssue Number: $ISSUE_NUMBER\n\tDescription: $DESCRIPTION"
+    return 0
+  else
+    return 1
+  fi
+}
+
+function is_provided_issue_number_equal_to_branch_issue_number() {
+  local PROVIDED_ISSUE_NUMBER=$1
+  local BRANCH_ISSUE_NUMBER=$(extract_issue_number_from_current_branch)
+  if [[ "$PROVIDED_ISSUE_NUMBER" == "$BRANCH_ISSUE_NUMBER" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# The first argument this hook receives is the message file
+MSG_FILE=$1
+MSG=$(cat $MSG_FILE)
+echo "Validating commit message: '$MSG'"
+if validate_commit_message "$MSG"; then
+  if has_branch_issue_number "$CURRENT_BRANCH"; then
+    if is_provided_issue_number_equal_to_branch_issue_number "$ISSUE_NUMBER"; then
+      echo -e "${GREEN}[POLICY]: Provided issue number in commit message matches the issue number in the current branch name.${NC}"
+      exit 0
+    else
+      echo -e "${RED}[POLICY]: Provided issue number in commit message does NOT match the issue number in the current branch name.${NC}\n\tProvided issue number: $ISSUE_NUMBER\n\tBranch issue number: $(extract_issue_number_from_current_branch)"
+      exit 1
+    fi
+  fi
+else
+  echo "Commit message does not conform to policy. Attempting to extract issue number from current branch and prepend it to the commit message..."
+  # Try to extract issue number from current branch; if found, prepend it to the commit message and check again
+  ISSUE_NUMBER_FROM_BRANCH=$(extract_issue_number_from_current_branch)
+  if [[ -n "$ISSUE_NUMBER_FROM_BRANCH" ]]; then
+    echo "Current branch contains issue number: #$ISSUE_NUMBER_FROM_BRANCH. Prepending it to the commit message and re-validating..."
+    MSG="#$ISSUE_NUMBER_FROM_BRANCH - $MSG"
+    if validate_commit_message "$MSG"; then
+      # Update the commit message file with the modified message
+      echo "$MSG" > $MSG_FILE
+      exit 0
+    fi
+  fi
+  echo -e "${RED}[POLICY]: Commit message must start with an hashtag (#) followed by an issue number and then a description.${NC}\n\tProvided message: '$MSG'\n\tExample: '#1234 - Fix the login bug'"
+  exit 1
+fi
