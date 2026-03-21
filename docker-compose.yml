@@ -88,7 +88,7 @@ services:
       - "8888:8888"
   nginx:
     build:
-      context: ./nextjs/
+      context: ./nginx/
       dockerfile: docker/Dockerfile.nginx
     image: nyr-bingo-nginx:local
     container_name: nyr-bingo-nginx

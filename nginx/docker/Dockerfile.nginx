@@ -3,7 +3,7 @@ FROM nginx:1.29.4
 # Remove default config
 RUN  rm /etc/nginx/conf.d/default.conf
 RUN mkdir -p /data/nginx/cache
-COPY ./nyr-bingo.conf ./etc/nginx/conf.d/default.conf
+COPY ./nyr-bingo_nginx.conf ./etc/nginx/conf.d/default.conf
 EXPOSE 80
 # Validate config at container start (runtime), then start nginx.
 CMD ["/bin/sh", "-c", "nginx -t && exec nginx -g 'daemon off;'" ]
