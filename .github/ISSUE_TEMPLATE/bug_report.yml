@@ -59,7 +59,6 @@ body:
     attributes:
       label: Upload screenshots (optional)
       description: If applicable, add screenshots to help explain your problem.
-      multiple: true
   - type: markdown
     attributes:
       value: |
@@ -68,6 +67,7 @@ body:
     attributes:
       label: Device Kind
       description: Please select the kind of device you were using when you experienced the bug.
+      multiple: true
       options:
         - label: Laptop
           value: laptop
@@ -77,13 +77,6 @@ body:
           value: tablet
         - label: Other
           value: other
-    validations:
-      required: true
-  - type: input
-    attributes:
-      label: Device OS
-      description: Please specify the operating system of your device (e.g., iOS, Android, Windows, macOS).
-      placeholder: e.g., iOS
     validations:
       required: true
   - type: dropdown
