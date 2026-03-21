@@ -1,0 +1,62 @@
+---
+name: Feature request
+description: Suggest an idea for this project
+title: "[FEATURE]: "
+labels: ["enhancement"]
+assignees:
+  - emanuelegoldin
+body:
+  - type: markdown
+    text: |
+      ## Feature Description
+  - type: textarea
+    attributes:
+      label: Describe the feature
+      description: Please provide a clear and concise description of the feature you are requesting.
+      placeholder: Ex. I would like to have a dark mode for the application.
+    validations:
+      required: true
+  - type: markdown
+    text: |
+      ## Is your feature request related to a problem? Please describe.
+  - type: textarea
+    attributes:
+      label: Problem Description
+      description: A clear and concise description of what the problem is.
+      placeholder: Ex. I'm always frustrated when [...]
+    validations:
+      required: false
+  - type: markdown
+    text: |
+      ## Proposed Solution
+  - type: textarea
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you **want** to happen.
+      placeholder: Ex. I would like to have a dark mode option in the settings.
+    validations:
+      required: true
+  - type: markdown
+    text: |
+      ## Considered Alternatives
+  - type: textarea
+    attributes:
+      label: Describe any alternative solutions or features you've considered
+      placeholder: Ex. I have considered using a browser extension for dark mode, but it doesn't work well with our application.
+    validations:
+      required: false
+  - type: markdown
+    text: |
+      ## Additional Context
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the feature request here.
+      placeholder: Ex. I have attached a mockup of how the dark mode could look like.
+    validations:
+      required: false
+  - type: upload
+    attributes:
+      label: Upload screenshots (optional)
+      description: If applicable, add screenshots to help explain your feature request.
+      multiple: true

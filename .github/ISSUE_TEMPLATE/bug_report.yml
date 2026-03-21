@@ -1,0 +1,119 @@
+name: Bug report
+description: Create a report to help us improve
+title: '[Bug]: '
+labels: ["bug"]
+assignees:
+  - emanuelegoldin
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Description
+    id: bug-description
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description:  Please provide a clear and concise description of the bug.
+      placeholder: XYZ is not working when I do ABC
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Steps to Reproduce
+  - type: textarea
+    attributes:
+      label: Steps to reproduce the behavior
+      description: Please provide a clear and concise list of steps to reproduce the bug.
+      placeholder: 1. Go to '...'\n2. Click on '....'\n3. Scroll down to '....'\n4. See error
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Expected Behavior
+  - type: textarea
+    attributes:
+      label: Describe the expected behavior
+      description: Please provide a clear and concise description of what you expected to happen.
+      placeholder: I expected XYZ to happen when I do ABC
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Actual Behavior
+  - type: textarea
+    attributes:
+      label: Describe the actual behavior
+      description: Please provide a clear and concise description of what actually happened.
+      placeholder: Instead, XYZ happened when I did ABC
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Screenshots
+  - type: upload
+    attributes:
+      label: Upload screenshots (optional)
+      description: If applicable, add screenshots to help explain your problem.
+      multiple: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Device Information
+  - type: dropdown
+    attributes:
+      label: Device Kind
+      description: Please select the kind of device you were using when you experienced the bug.
+      options:
+        - label: Laptop
+          value: laptop
+        - label: Smartphone
+          value: smartphone
+        - label: Tablet
+          value: tablet
+        - label: Other
+          value: other
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Device OS
+      description: Please specify the operating system of your device (e.g., iOS, Android, Windows, macOS).
+      placeholder: e.g., iOS
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Browser
+      description: Please select the browser you were using when you experienced the bug.
+      options:
+        - label: Chrome
+          value: chrome
+        - label: Safari
+          value: safari
+        - label: Firefox
+          value: firefox
+        - label: Edge
+          value: edge
+        - label: Other
+          value: other
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Application Version
+      description: Please select the version of the application you were using when you experienced the bug.
+      options:
+        - label: 1.0.0
+          value: 1.0.0
+        - label: 1.0.1
+          value: 1.0.1
+  - type: textarea
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
+      placeholder: e.g., I noticed this bug started happening after I updated to version 1.2.3
