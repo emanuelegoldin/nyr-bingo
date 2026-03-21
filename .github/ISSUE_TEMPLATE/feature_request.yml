@@ -1,4 +1,3 @@
----
 name: Feature request
 description: Suggest an idea for this project
 title: "[FEATURE]: "
@@ -7,8 +6,9 @@ assignees:
   - emanuelegoldin
 body:
   - type: markdown
-    text: |
-      ## Feature Description
+    attributes:
+      value: |
+        ## Feature Description
   - type: textarea
     attributes:
       label: Describe the feature
@@ -17,8 +17,9 @@ body:
     validations:
       required: true
   - type: markdown
-    text: |
-      ## Is your feature request related to a problem? Please describe.
+    attributes:
+      value: |
+        ## Is your feature request related to a problem? Please describe.
   - type: textarea
     attributes:
       label: Problem Description
@@ -37,17 +38,20 @@ body:
     validations:
       required: true
   - type: markdown
-    text: |
-      ## Considered Alternatives
+    attributes:
+      value: |
+        ## Considered Alternatives
   - type: textarea
     attributes:
-      label: Describe any alternative solutions or features you've considered
+      label: Alternative Solution
+      description: Describe any alternative solutions or features you have considered
       placeholder: Ex. I have considered using a browser extension for dark mode, but it doesn't work well with our application.
     validations:
       required: false
   - type: markdown
-    text: |
-      ## Additional Context
+    attributes:
+      value: |
+        ## Additional Context
   - type: textarea
     attributes:
       label: Additional context
@@ -59,4 +63,3 @@ body:
     attributes:
       label: Upload screenshots (optional)
       description: If applicable, add screenshots to help explain your feature request.
-      multiple: true
