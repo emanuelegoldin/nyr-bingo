@@ -28,7 +28,13 @@ Each commit message shall follow the following pattern:
 
 For instance: `#1234 Implemented XYZ` is a valid commit message related to issue 1234.
 
-In the `githooks/` folder scripts can be found to perform checks on the commit messages on the client and server side.
+The script `githooks/commit-msg` verify the content of the commit message. Feel free to activate it to help with consistent commit messages:
+
+```bash
+cp ./githooks/commit-msg .git/hooks
+# Any hook in the .git/hooks/ folder shall be executable for git to invoke it
+chmod u+x .git/hooks/commit-msg
+```
 
 ## Pull Requests
 
@@ -44,8 +50,3 @@ The pull request shall squash commits for better readability. Moreover, the titl
 - \[NO-RELEASE\]
 
 Based on the tag used (except \[NO-RELEASE\]), new images will be pushed to the registry with the updated version.
-
-## Guidelines
-
-- Code Style
-- Formatting
