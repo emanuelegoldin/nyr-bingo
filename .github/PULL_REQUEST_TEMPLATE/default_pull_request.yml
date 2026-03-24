@@ -1,0 +1,30 @@
+name: Pull Into Main
+description: Create a pull request to merge your changes into the main branch
+title: '[MAJOR] || [MINOR] || [PATCH] || [NO-RELEASE]: Keep only the relevant tag in the title'
+assignees:
+  - emanuelegoldin
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Description of Changes
+    id: description-of-changes
+  - type: textarea
+    attributes:
+      label: Describe the changes you made
+      description: Please provide a clear and concise description of the changes you made in this pull request.
+      placeholder: I added a new feature that allows users to do XYZ
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Related Issues
+  - type: textarea
+    attributes:
+      label: List related issues (optional)
+      description: Please provide a list of related issues that this pull request addresses, if any.
+      placeholder: Closes #123, Closes #456
+    validations:
+      required: false
