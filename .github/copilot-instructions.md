@@ -17,7 +17,8 @@ This project is a web application that allows users to create and manage resolut
   - `uploads/`: Contains user-uploaded files, such as profile pictures and resolution images. Usually not relevant for development when prompted.
   - `specs/`: Contains Markdown files with specifications for the project, such as API specifications and user stories.
   - `AGENTS.md`: Contains specifications for the agents that will be used in the project, such as their roles and responsibilities.
-  - `nyr-bingo.conf`: Contains the Nginx configuration for the project, which is used to serve the frontend and backend applications.
+- `nginx/`: Contains the Nginx configuration for the project.
+  - `nyr-bingo_nginx.conf`: Contains the Nginx configuration, which is used to serve the frontend and backend applications.
 - `ws-server/`: Websocket server for real-time behavior in the application.
   - `server.ts`: Contains the source code for the websocket server.
   - `messages/`: Contains the message definitions for the websocket communication.
