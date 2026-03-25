@@ -15,7 +15,7 @@ import {
   getProofById,
 } from '@/lib/db';
 import type { ReviewDecision } from '@/lib/db/types';
-import { convertToWebP, tryConvertToWebP } from '@/lib/image-processing';
+import { convertToWebP, tryConvertToWebP } from '@/lib/uploads-processing';
 
 const MAX_PROOF_FILE_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = new Set<string>([
@@ -132,15 +132,14 @@ export async function POST(
           );
         }
 
-        const { buffer: convertedBuffer, ext: convertedExt, type: convertedType } = await tryConvertToWebP(file, ext);
+        const { buffer: convertedBuffer, ext: convertedExt, type: convertedType, cadKey } = await tryConvertToWebP(file);
             
 
         const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'proofs');
         await mkdir(uploadDir, { recursive: true });
 
-        const filename = `${randomUUID()}.${convertedExt}`;
-        await writeFile(path.join(uploadDir, filename), convertedBuffer);
-        fileUrl = `/uploads/proofs/${filename}`;
+        await writeFile(path.join(uploadDir, cadKey), convertedBuffer);
+        fileUrl = `/uploads/proofs/${cadKey}`;
       } else {
         const formFileUrl = form.get('fileUrl');
         fileUrl = typeof formFileUrl === 'string' ? formFileUrl : undefined;

@@ -1,4 +1,6 @@
 import sharp from 'sharp';
+import { createHash } from 'crypto';
+import { extname } from 'path';
 
 /**
  * Converts an image buffer to WEBP format.
@@ -30,20 +32,26 @@ export async function convertToWebP(
  * If it fails to convert, it will return the original file buffer as a fallback.
  * If the image already is a WEBP, it will return the original buffer without conversion.
  * @param file The File object to convert
- * @returns A promise resolving to the converted or original buffer along with its extension and MIME type
+ * @returns 
  */
-export async function tryConvertToWebP(file: File, ext: string): Promise<{ buffer: Uint8Array<ArrayBufferLike>, ext: string, type: string }> {
+export async function tryConvertToWebP(file: File): Promise<{ buffer: Uint8Array<ArrayBufferLike>, ext: string, type: string, cadKey: string }> {
     // If webp already or not an image, return original buffer
     if (file.type === 'image/webp' || !file.type.startsWith('image/')) {
       const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
-      return { buffer: originalBytes, ext: ext, type: file.type };
+      return { buffer: originalBytes, ext: extname(file.name), type: file.type, cadKey: contentAddressedKey(originalBytes, file.name) };
     }
     try {
         const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
         const webpBuffer = await convertToWebP(originalBytes, 80);
-        return { buffer: webpBuffer, ext: 'webp', type: 'image/webp' };
+        return { buffer: webpBuffer, ext: 'webp', type: 'image/webp', cadKey: contentAddressedKey(originalBytes, file.name) };
     } catch (error) {
         const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
-        return { buffer: originalBytes, ext: ext, type: file.type };
+        return { buffer: originalBytes, ext: extname(file.name), type: file.type, cadKey: contentAddressedKey(originalBytes, file.name) };
     }
+}
+
+function contentAddressedKey(buffer: Uint8Array<ArrayBufferLike>, originalFilename: string): string {
+  const hash = createHash("sha256").update(buffer).digest("hex").slice(0, 32);
+  const ext = extname(originalFilename);
+  return `${hash}${ext}`;
 }

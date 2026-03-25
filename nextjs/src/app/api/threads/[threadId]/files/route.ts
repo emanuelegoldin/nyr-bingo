@@ -9,7 +9,7 @@ import { uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { convertToWebP, tryConvertToWebP } from '@/lib/image-processing';
+import { convertToWebP, tryConvertToWebP } from '@/lib/uploads-processing';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = new Set<string>([
@@ -115,15 +115,13 @@ export async function POST(
     }
 
     // Save file to disk
-    const { buffer: convertedBuffer, ext: convertedExt, type: convertedType } = await tryConvertToWebP(file, ext);
+    const { buffer: convertedBuffer, ext: convertedExt, type: convertedType , cadKey } = await tryConvertToWebP(file);
     const uploadDir = path.join(process.cwd(), 'uploads', 'review-files');
     await mkdir(uploadDir, { recursive: true });
 
-    const filename = `${randomUUID()}.${convertedExt}`;
-    const filePath = path.join(uploadDir, filename);
+    const filePath = path.join(uploadDir, cadKey);
     await writeFile(filePath, convertedBuffer);
-
-    const fileUrl = `/review-files/${filename}`;
+    const fileUrl = `/review-files/${cadKey}`;
 
     // Save to database
     const result = await uploadFile(
