@@ -115,7 +115,7 @@ export async function POST(
     }
 
     // Save file to disk
-    const { buffer: convertedBuffer, ext: convertedExt, type: convertedType , cadKey } = await tryConvertToWebP(file);
+    const { buffer: convertedBuffer, type: convertedType , cadKey } = await tryConvertToWebP(file);
     const uploadDir = path.join(process.cwd(), 'uploads', 'review-files');
     await mkdir(uploadDir, { recursive: true });
 

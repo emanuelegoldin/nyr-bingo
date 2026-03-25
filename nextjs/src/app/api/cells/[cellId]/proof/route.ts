@@ -132,7 +132,7 @@ export async function POST(
           );
         }
 
-        const { buffer: convertedBuffer, ext: convertedExt, type: convertedType, cadKey } = await tryConvertToWebP(file);
+        const { buffer: convertedBuffer, type: convertedType, cadKey } = await tryConvertToWebP(file);
             
 
         const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'proofs');

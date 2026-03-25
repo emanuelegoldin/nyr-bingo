@@ -34,24 +34,23 @@ export async function convertToWebP(
  * @param file The File object to convert
  * @returns 
  */
-export async function tryConvertToWebP(file: File): Promise<{ buffer: Uint8Array<ArrayBufferLike>, ext: string, type: string, cadKey: string }> {
+export async function tryConvertToWebP(file: File): Promise<{ buffer: Uint8Array<ArrayBufferLike>, type: string, cadKey: string }> {
     // If webp already or not an image, return original buffer
     if (file.type === 'image/webp' || !file.type.startsWith('image/')) {
       const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
-      return { buffer: originalBytes, ext: extname(file.name), type: file.type, cadKey: contentAddressedKey(originalBytes, file.name) };
+      return { buffer: originalBytes, type: file.type, cadKey: contentAddressedKey(originalBytes, extname(file.name)) };
     }
     try {
         const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
         const webpBuffer = await convertToWebP(originalBytes, 80);
-        return { buffer: webpBuffer, ext: 'webp', type: 'image/webp', cadKey: contentAddressedKey(originalBytes, file.name) };
+        return { buffer: webpBuffer, type: 'image/webp', cadKey: contentAddressedKey(originalBytes, '.webp') };
     } catch (error) {
         const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
-        return { buffer: originalBytes, ext: extname(file.name), type: file.type, cadKey: contentAddressedKey(originalBytes, file.name) };
+        return { buffer: originalBytes, type: file.type, cadKey: contentAddressedKey(originalBytes, extname(file.name)) };
     }
 }
 
-function contentAddressedKey(buffer: Uint8Array<ArrayBufferLike>, originalFilename: string): string {
+function contentAddressedKey(buffer: Uint8Array<ArrayBufferLike>, ext: string): string {
   const hash = createHash("sha256").update(buffer).digest("hex").slice(0, 32);
-  const ext = extname(originalFilename);
   return `${hash}${ext}`;
 }
