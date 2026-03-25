@@ -9,6 +9,7 @@ import { uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { convertToWebP, tryConvertToWebP } from '@/lib/image-processing';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = new Set<string>([
@@ -114,13 +115,13 @@ export async function POST(
     }
 
     // Save file to disk
-    const bytes = Buffer.from(await file.arrayBuffer());
+    const { buffer: convertedBuffer, ext: convertedExt, type: convertedType } = await tryConvertToWebP(file, ext);
     const uploadDir = path.join(process.cwd(), 'uploads', 'review-files');
     await mkdir(uploadDir, { recursive: true });
 
-    const filename = `${randomUUID()}.${ext}`;
+    const filename = `${randomUUID()}.${convertedExt}`;
     const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, bytes);
+    await writeFile(filePath, convertedBuffer);
 
     const fileUrl = `/review-files/${filename}`;
 
@@ -129,9 +130,9 @@ export async function POST(
       threadId,
       currentUser.id,
       fileUrl,
-      file.size,
+      convertedBuffer.byteLength,
       file.name,
-      file.type
+      convertedType
     );
     
     if (!result.success) {
