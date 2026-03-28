@@ -4,10 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { uploadFile } from '@/lib/db';
+import { uploadFile, User } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 import { randomUUID } from 'node:crypto';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -55,63 +55,38 @@ function getSafeExtension(file: File): string | null {
  * POST /api/threads/[threadId]/files - Upload a proof file to a thread
  * Only the completing user can upload files
  */
-export async function POST(
+export const POST = withAuth(async (
   request: NextRequest,
-  { params }: { params: Promise<{ threadId: string }> }
-) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+  { params, currentUser }: { params: Promise<{ threadId: string }>; currentUser: User }
+) => {
+  const { threadId } = await params;
+  const contentType = request.headers.get('content-type') || '';
 
-    const { threadId } = await params;
-    const contentType = request.headers.get('content-type') || '';
+  if (!contentType.includes('multipart/form-data')) {
+    return errorResponse('Content-Type must be multipart/form-data', 400);
+  }
 
-    if (!contentType.includes('multipart/form-data')) {
-      return NextResponse.json(
-        { error: 'Content-Type must be multipart/form-data' },
-        { status: 400 }
-      );
-    }
+  const form = await request.formData();
+  const file = form.get('file');
 
-    const form = await request.formData();
-    const file = form.get('file');
+  if (!(file instanceof File)) {
+    return errorResponse('File is required', 400);
+  }
 
-    if (!(file instanceof File)) {
-      return NextResponse.json(
-        { error: 'File is required' },
-        { status: 400 }
-      );
-    }
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return errorResponse('File size exceeds 5MB limit', 400);
+  }
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: 'File size exceeds 5MB limit' },
-        { status: 400 }
-      );
-    }
+  // Validate file type
+  if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
+    return errorResponse('Unsupported file type', 400);
+  }
 
-    // Validate file type
-    if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
-      return NextResponse.json(
-        { error: 'Unsupported file type' },
-        { status: 400 }
-      );
-    }
-
-    const ext = getSafeExtension(file);
-    if (!ext) {
-      return NextResponse.json(
-        { error: 'Unsupported file type' },
-        { status: 400 }
-      );
-    }
+  const ext = getSafeExtension(file);
+  if (!ext) {
+    return errorResponse('Unsupported file type', 400);
+  }
 
     // Save file to disk
     const bytes = Buffer.from(await file.arrayBuffer());
@@ -135,18 +110,8 @@ export async function POST(
     );
     
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
+      return errorResponse(result.error, 400);
     }
     
     return NextResponse.json({ file: result.file }, { status: 201 });
-  } catch (error) {
-    console.error('Upload file error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
-  }
-}
+  });

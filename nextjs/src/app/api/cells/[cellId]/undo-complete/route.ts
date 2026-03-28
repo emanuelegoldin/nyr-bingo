@@ -4,44 +4,21 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { undoCompletion } from '@/lib/db';
+import { undoCompletion, User } from '@/lib/db';
+import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
  * POST /api/cells/[cellId]/undo-complete - Undo mistaken completion
  * Reverts cell to pending state and closes any open review thread
  */
-export async function POST(
+export const POST = withAuth(async (
   _request: NextRequest,
-  { params }: { params: Promise<{ cellId: string }> }
-) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const { cellId } = await params;
-
-    const result = await undoCompletion(cellId, currentUser.id);
-    
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
-    }
-    
-    return NextResponse.json({ cell: result.cell });
-  } catch (error) {
-    console.error('Undo complete error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
+  { params, currentUser }: AuthContext<{ cellId: string }>
+) => {
+  const { cellId } = await params;
+  const result = await undoCompletion(cellId, currentUser.id);
+  if (!result.success) {
+    return errorResponse(result.error, 400);
   }
-}
+  return NextResponse.json({ cell: result.cell });
+});

@@ -4,158 +4,90 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser, isUserVerified } from '@/lib/auth';
-import { 
-  createTeam, 
-  getTeamsForUser, 
+import { isUserVerified } from '@/lib/auth';
+import {
+  createTeam,
+  getTeamsForUser,
   getTeamWithMembers,
   setTeamResolution,
   isTeamLeader,
 } from '@/lib/db';
+import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
  * GET /api/teams - Get all teams for current user
  */
-export async function GET() {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
+  const teams = await getTeamsForUser(currentUser.id);
 
-    const teams = await getTeamsForUser(currentUser.id);
-    
-    // Get full team data with members for each team
-    const teamsWithMembers = await Promise.all(
-      teams.map(team => getTeamWithMembers(team.id))
-    );
-    
-    return NextResponse.json({ 
-      teams: teamsWithMembers.filter(t => t !== null) 
-    });
-  } catch (error) {
-    console.error('Get teams error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
-  }
-}
+  // Get full team data with members for each team
+  const teamsWithMembers = await Promise.all(
+    teams.map(team => getTeamWithMembers(team.id))
+  );
+
+  return NextResponse.json({
+    teams: teamsWithMembers.filter(t => t !== null)
+  });
+});
 
 /**
  * POST /api/teams - Create a new team
  * Spec: 04-bingo-teams.md - A user can create a team and becomes team leader
  * Requires email verification
  */
-export async function POST(request: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user has verified their email
-    // Unverified users can only write resolutions and update their profiles
-    if (!isUserVerified(currentUser)) {
-      return NextResponse.json(
-        { error: 'Email verification required. Please verify your email before creating a team.' },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
-    const { name } = body;
-
-    if (!name || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Team name is required' },
-        { status: 400 }
-      );
-    }
-
-    const team = await createTeam(name.trim(), currentUser.id);
-    const teamWithMembers = await getTeamWithMembers(team.id);
-    
-    return NextResponse.json({ team: teamWithMembers }, { status: 201 });
-  } catch (error) {
-    console.error('Create team error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
+export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
+  // Check if user has verified their email
+  // Unverified users can only write resolutions and update their profiles
+  if (!isUserVerified(currentUser)) {
+    return errorResponse('Email verification required. Please verify your email before creating a team.', 403);
   }
-}
+
+  const body = await request.json();
+  const { name } = body;
+
+  if (!name || name.trim().length === 0) {
+    return errorResponse('Team name is required', 400);
+  }
+
+  const team = await createTeam(name.trim(), currentUser.id);
+  const teamWithMembers = await getTeamWithMembers(team.id);
+
+  return NextResponse.json({ team: teamWithMembers }, { status: 201 });
+});
 
 /**
  * PUT /api/teams - Update team (set resolution, etc.)
  * Spec: 04-bingo-teams.md - Team leader can set team resolution
  */
-export async function PUT(request: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
+  const body = await request.json();
+  const { teamId, teamResolutionText } = body;
 
-    const body = await request.json();
-    const { teamId, teamResolutionText } = body;
-
-    if (!teamId) {
-      return NextResponse.json(
-        { error: 'Team ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user is team leader
-    // Spec: 04-bingo-teams.md - Only team leader can set team resolution
-    const isLeader = await isTeamLeader(teamId, currentUser.id);
-    if (!isLeader) {
-      return NextResponse.json(
-        { error: 'Only the team leader can update team settings' },
-        { status: 403 }
-      );
-    }
-
-    if (teamResolutionText !== undefined) {
-      if (!teamResolutionText || teamResolutionText.trim().length === 0) {
-        return NextResponse.json(
-          { error: 'Team resolution text is required' },
-          { status: 400 }
-        );
-      }
-
-      const team = await setTeamResolution(teamId, currentUser.id, teamResolutionText);
-      
-      if (!team) {
-        return NextResponse.json(
-          { error: 'Failed to update team resolution' },
-          { status: 500 }
-        );
-      }
-
-      const teamWithMembers = await getTeamWithMembers(teamId);
-      return NextResponse.json({ team: teamWithMembers });
-    }
-
-    return NextResponse.json({ error: 'No update parameters provided' }, { status: 400 });
-  } catch (error) {
-    console.error('Update team error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
+  if (!teamId) {
+    return errorResponse('Team ID is required', 400);
   }
-}
+
+  // Check if user is team leader
+  // Spec: 04-bingo-teams.md - Only team leader can set team resolution
+  const isLeader = await isTeamLeader(teamId, currentUser.id);
+  if (!isLeader) {
+    return errorResponse('Only the team leader can update team settings', 403);
+  }
+
+  if (teamResolutionText !== undefined) {
+    if (!teamResolutionText || teamResolutionText.trim().length === 0) {
+      return errorResponse('Team resolution text is required', 400);
+    }
+
+    const team = await setTeamResolution(teamId, currentUser.id, teamResolutionText);
+
+    if (!team) {
+      return errorResponse('Failed to update team resolution', 500);
+    }
+
+    const teamWithMembers = await getTeamWithMembers(teamId);
+    return NextResponse.json({ team: teamWithMembers });
+  }
+
+  return errorResponse('No update parameters provided', 400);
+});

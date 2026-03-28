@@ -10,6 +10,7 @@ import {
   createSession 
 } from '@/lib/db';
 import { cookies } from 'next/headers';
+import { errorResponse } from '@/app/api/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,10 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
+      return errorResponse('Email and password are required', 400);
     }
 
     // Find user by email
@@ -29,19 +27,13 @@ export async function POST(request: NextRequest) {
 
     // Spec: 01-authentication.md - Login with invalid credentials → reject
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
+      return errorResponse('Invalid email or password', 401);
     }
 
     // Verify password
     const isValidPassword = await verifyPassword(password, user.passwordHash);
     if (!isValidPassword) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
+      return errorResponse('Invalid email or password', 401);
     }
 
     // Note: We allow login for unverified users but they should complete verification
@@ -72,9 +64,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred during login' },
-      { status: 500 }
-    );
+    return errorResponse('An error occurred during login', 500);
   }
 }

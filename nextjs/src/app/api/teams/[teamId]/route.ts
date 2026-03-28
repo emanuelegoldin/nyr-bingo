@@ -4,55 +4,32 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { getTeamWithMembers, isTeamMember, deleteTeam, getTeamById } from '@/lib/db';
+import { getTeamWithMembers, isTeamMember, deleteTeam, getTeamById, User } from '@/lib/db';
+import { errorResponse, withAuth, AuthContext } from '../../utils';
 
 /**
  * GET /api/teams/[teamId] - Get a specific team's details
  */
-export async function GET(
+export const GET = withAuth(async (
   _request: NextRequest,
-  { params }: { params: Promise<{ teamId: string }> }
-) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+  { params, currentUser }: AuthContext<{ teamId: string }>
+) => {
+  const { teamId } = await params;
 
-    const { teamId } = await params;
-
-    // Check if user is a member of the team
-    const isMember = await isTeamMember(teamId, currentUser.id);
-    if (!isMember) {
-      return NextResponse.json(
-        { error: 'You are not a member of this team' },
-        { status: 403 }
-      );
-    }
-
-    const team = await getTeamWithMembers(teamId);
-    
-    if (!team) {
-      return NextResponse.json(
-        { error: 'Team not found' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json({ team });
-  } catch (error) {
-    console.error('Get team error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
+  // Check if user is a member of the team
+  const isMember = await isTeamMember(teamId, currentUser.id);
+  if (!isMember) {
+    return errorResponse('You are not a member of this team', 403);
   }
-}
+
+  const team = await getTeamWithMembers(teamId);
+
+  if (!team) {
+    return errorResponse('Team not found', 404);
+  }
+
+  return NextResponse.json({ team });
+});
 
 /**
  * DELETE /api/teams/[teamId] - Delete a team (leader only)
@@ -61,49 +38,32 @@ export async function GET(
  * Deletes the team and all associated data (memberships, invitations, 
  * resolutions, bingo cards) via CASCADE constraints.
  */
-export async function DELETE(
+export const DELETE = withAuth(async (
   _request: NextRequest,
-  { params }: { params: Promise<{ teamId: string }> }
-) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+  { params, currentUser }: AuthContext<{ teamId: string }>
+) => {
+  const { teamId } = await params;
 
-    const { teamId } = await params;
-
-    // Check if team exists
-    const team = await getTeamById(teamId);
-    if (!team) {
-      return NextResponse.json(
-        { error: 'Team not found' },
-        { status: 404 }
-      );
-    }
-
-    // Attempt to delete (will check authorization internally)
-    const deleted = await deleteTeam(teamId, currentUser.id);
-    
-    if (!deleted) {
-      return NextResponse.json(
-        { error: 'Only the team leader can delete the team' },
-        { status: 403 }
-      );
-    }
-    
-    return NextResponse.json({ 
-      message: 'Team deleted successfully' 
-    });
-  } catch (error) {
-    console.error('Delete team error:', error);
+  // Check if team exists
+  const team = await getTeamById(teamId);
+  if (!team) {
     return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
+      { error: 'Team not found' },
+      { status: 404 }
     );
   }
-}
+
+  // Attempt to delete (will check authorization internally)
+  const deleted = await deleteTeam(teamId, currentUser.id);
+
+  if (!deleted) {
+    return NextResponse.json(
+      { error: 'Only the team leader can delete the team' },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json({
+    message: 'Team deleted successfully'
+  });
+});
