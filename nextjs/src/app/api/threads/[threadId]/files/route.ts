@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { uploadFile } from '@/lib/db';
+import { deleteThreadFile, uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -143,6 +143,53 @@ export async function POST(
     return NextResponse.json({ file: result.file }, { status: 201 });
   } catch (error) {
     console.error('Upload file error:', error);
+    return NextResponse.json(
+      { error: 'An error occurred' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/threads/[threadId]/files - Delete a previously uploaded proof file
+ * Only the completing user can delete files from an open thread
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ threadId: string }> }
+) {
+  try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const { threadId } = await params;
+    const body = await request.json().catch(() => null);
+    const fileId = body?.fileId;
+
+    if (!fileId || typeof fileId !== 'string') {
+      return NextResponse.json(
+        { error: 'File ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const result = await deleteThreadFile(threadId, currentUser.id, fileId);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: result.error === 'File not found' ? 404 : 400 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete file error:', error);
     return NextResponse.json(
       { error: 'An error occurred' },
       { status: 500 }
