@@ -28,7 +28,7 @@ import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
  * With ?id=...: returns a single compound resolution by ID (any authenticated user).
  */
 export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
   if (id) {
@@ -147,7 +147,6 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthCo
  * DELETE /api/resolutions/compound?id=... - Delete a compound resolution
  */
 export const DELETE = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) {

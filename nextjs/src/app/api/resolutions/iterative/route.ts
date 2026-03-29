@@ -27,7 +27,7 @@ import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
  * With ?id=...: returns a single iterative resolution by ID (any authenticated user).
  */
 export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
   if (id) {
@@ -50,7 +50,7 @@ export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthCo
  * Body: { title: string, numberOfRepetition: number, description?: string }
  */
 export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const body = await request.json();
+  const body = await request.json();
   const { title, numberOfRepetition, description } = body;
 
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
@@ -76,7 +76,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
  * Body: { id: string, title?: string, description?: string, numberOfRepetition?: number }
  */
 export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const body = await request.json();
+  const body = await request.json();
   const { id, title, description, numberOfRepetition } = body;
 
   if (!id) {
@@ -129,7 +129,7 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthCo
  * DELETE /api/resolutions/iterative?id=... - Delete an iterative resolution
  */
 export const DELETE = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) {
     return errorResponse('Resolution ID is required', 400);
