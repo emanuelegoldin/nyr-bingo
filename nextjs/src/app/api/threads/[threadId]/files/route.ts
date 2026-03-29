@@ -5,10 +5,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { uploadFile } from '@/lib/db';
+import { deleteThreadFile, uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { convertToWebP, tryConvertToWebP } from '@/lib/uploads-processing';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = new Set<string>([
@@ -114,24 +115,22 @@ export async function POST(
     }
 
     // Save file to disk
-    const bytes = Buffer.from(await file.arrayBuffer());
+    const { buffer: convertedBuffer, type: convertedType , cadKey } = await tryConvertToWebP(file);
     const uploadDir = path.join(process.cwd(), 'uploads', 'review-files');
     await mkdir(uploadDir, { recursive: true });
 
-    const filename = `${randomUUID()}.${ext}`;
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, bytes);
-
-    const fileUrl = `/review-files/${filename}`;
+    const filePath = path.join(uploadDir, cadKey);
+    await writeFile(filePath, convertedBuffer);
+    const fileUrl = `/review-files/${cadKey}`;
 
     // Save to database
     const result = await uploadFile(
       threadId,
       currentUser.id,
       fileUrl,
-      file.size,
+      convertedBuffer.byteLength,
       file.name,
-      file.type
+      convertedType
     );
     
     if (!result.success) {
@@ -144,6 +143,53 @@ export async function POST(
     return NextResponse.json({ file: result.file }, { status: 201 });
   } catch (error) {
     console.error('Upload file error:', error);
+    return NextResponse.json(
+      { error: 'An error occurred' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/threads/[threadId]/files - Delete a previously uploaded proof file
+ * Only the completing user can delete files from an open thread
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ threadId: string }> }
+) {
+  try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const { threadId } = await params;
+    const body = await request.json().catch(() => null);
+    const fileId = body?.fileId;
+
+    if (!fileId || typeof fileId !== 'string') {
+      return NextResponse.json(
+        { error: 'File ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const result = await deleteThreadFile(threadId, currentUser.id, fileId);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: result.error === 'File not found' ? 404 : 400 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete file error:', error);
     return NextResponse.json(
       { error: 'An error occurred' },
       { status: 500 }
