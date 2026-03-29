@@ -5,11 +5,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  createSystemResolutionHistoryEntry,
   createResolution,
   getResolutionsByUser,
   getResolutionById,
   updateResolution,
-  deleteResolution
+  deleteResolution,
 } from '@/lib/db';
 import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 
@@ -17,8 +18,8 @@ import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
  * GET /api/resolutions - Get all resolutions for current user
  * Spec: 03-personal-resolutions.md - User can list and view their own resolutions
  */
-export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const resolutions = await getResolutionsByUser(currentUser.id);
+export const GET = withAuth(async (_request: NextRequest, { currentUser }: AuthContextNoParams) => {
+  const resolutions = await getResolutionsByUser(currentUser.id);
   return NextResponse.json({ resolutions });
 });
 
@@ -27,7 +28,7 @@ export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthCo
  * Spec: 03-personal-resolutions.md - User can add a resolution (text)
  */
 export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const body = await request.json();
+  const body = await request.json();
   const { text, title } = body;
 
   // Spec: 03-personal-resolutions.md - Resolution text must be non-empty
@@ -37,6 +38,18 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
 
   const resolution = await createResolution(currentUser.id, text, title);
 
+  try {
+    await createSystemResolutionHistoryEntry(
+      resolution.id,
+      currentUser.id,
+      'resolution.created',
+      'Created base resolution',
+      { type: 'base' },
+    );
+  } catch {
+    // Preserve core create behavior even if history logging fails.
+  }
+
   return NextResponse.json({ resolution }, { status: 201 });
 });
 
@@ -45,7 +58,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
  * Spec: 03-personal-resolutions.md - User can edit an existing resolution's text
  */
 export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const body = await request.json();
+  const body = await request.json();
   const { id, text, title } = body;
 
   if (!id) {
@@ -74,6 +87,18 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthCo
     return errorResponse('Resolution not found', 404);
   }
 
+  try {
+    await createSystemResolutionHistoryEntry(
+      resolution.id,
+      currentUser.id,
+      'resolution.updated',
+      'Updated base resolution',
+      { type: 'base' },
+    );
+  } catch {
+    // Preserve core update behavior even if history logging fails.
+  }
+
   return NextResponse.json({ resolution });
 });
 
@@ -82,7 +107,7 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthCo
  * Spec: 03-personal-resolutions.md - User can delete a resolution
  */
 export const DELETE = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
   if (!id) {

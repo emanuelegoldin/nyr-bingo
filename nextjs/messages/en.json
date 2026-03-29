@@ -12,6 +12,21 @@
     "ResolutionsPage":{
         "title": "Your Personal Resolutions",
         "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
-        "headerTitle": "Resolutions"
+        "headerTitle": "Resolutions",
+        "viewHistoryAriaLabel": "View resolution history"
+    },
+    "ResolutionHistoryDialog": {
+        "title": "Resolution History",
+        "description": "Timeline for \"{title}\".",
+        "addNoteTitle": "Add progress note",
+        "addNotePlaceholder": "Write what you did, learned, or completed...",
+        "addNoteButton": "Add note",
+        "loading": "Loading history...",
+        "empty": "No history yet.",
+        "close": "Close",
+        "noteLabel": "Note",
+        "progressLabel": "Progress",
+        "loadError": "Failed to load resolution history",
+        "addError": "Failed to add history entry"
     }
 }
