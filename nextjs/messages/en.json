@@ -1,0 +1,32 @@
+{
+    "LoginPage": {
+        "title": "Welcome Back!",
+        "description": "Enter your email and password to sign in to your account.",
+        "registerLink": "Don't have an account? Register here."
+    },
+    "RegisterPage": {
+        "title": "Create an Account",
+        "description": "Enter your details below to create your account and join the fun.",
+        "loginLink": "Already have an account? Sign In"
+    },
+    "ResolutionsPage":{
+        "title": "Your Personal Resolutions",
+        "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
+        "headerTitle": "Resolutions",
+        "viewHistoryAriaLabel": "View resolution history"
+    },
+    "ResolutionHistoryDialog": {
+        "title": "Resolution History",
+        "description": "Timeline for \"{title}\".",
+        "addNoteTitle": "Add progress note",
+        "addNotePlaceholder": "Write what you did, learned, or completed...",
+        "addNoteButton": "Add note",
+        "loading": "Loading history...",
+        "empty": "No history yet.",
+        "close": "Close",
+        "noteLabel": "Note",
+        "progressLabel": "Progress",
+        "loadError": "Failed to load resolution history",
+        "addError": "Failed to add history entry"
+    }
+}

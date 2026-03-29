@@ -4,53 +4,29 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { addMessage } from '@/lib/db';
+import { addMessage, User } from '@/lib/db';
+import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
  * POST /api/threads/[threadId]/messages - Post a message to a thread
  * All team members can post messages
  */
-export async function POST(
+export const POST = withAuth(async (
   request: NextRequest,
-  { params }: { params: Promise<{ threadId: string }> }
-) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+  { params, currentUser }: AuthContext<{ threadId: string }>
+) => {
+  const { threadId } = await params;
+  const body = await request.json();
+  const { content } = body;
 
-    const { threadId } = await params;
-    const body = await request.json();
-    const { content } = body;
-
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Message content is required' },
-        { status: 400 }
-      );
-    }
-
-    const result = await addMessage(threadId, currentUser.id, content);
-    
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
-    }
-    
-    return NextResponse.json({ message: result.message }, { status: 201 });
-  } catch (error) {
-    console.error('Add message error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
+  if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    return errorResponse('Message content is required', 400);
   }
-}
+
+  const result = await addMessage(threadId, currentUser.id, content);
+  if (!result.success) {
+    return errorResponse(result.error, 400);
+  }
+
+  return NextResponse.json({ message: result.message }, { status: 201 });
+});

@@ -15,11 +15,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { getConnection, query, isTeamLeader, isTeamMember } from '@/lib/db';
+import {
+  createSystemResolutionHistoryEntry,
+  getConnection,
+  isTeamLeader,
+  isTeamMember,
+  query,
+} from '@/lib/db';
 import { getResolutionById } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '@/lib/shared/types';
+import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
  * Validate common fields
@@ -63,140 +69,130 @@ function validateIterative(body: Record<string, unknown>): string | null {
  * POST /api/resolutions/save
  * Atomically creates/updates a resolution, supporting type changes.
  */
-export async function POST(request: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
+export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
     const body = await request.json();
-    const {
-      id,
-      previousType,
-      type,
-      title,
-      text,
-      subtasks,
-      numberOfRepetition,
-      scope: rawScope,
-      teamId,
-      toUserId,
-    } = body as {
-      id?: string;
-      previousType?: string;
-      type: string;
-      title: string;
-      text?: string;
-      subtasks?: Subtask[];
-      numberOfRepetition?: number;
-      scope?: string;
-      teamId?: string;
-      toUserId?: string;
-    };
+  const {
+    id,
+    previousType,
+    type,
+    title,
+    text,
+    subtasks,
+    numberOfRepetition,
+    scope: rawScope,
+    teamId,
+    toUserId,
+  } = body as {
+    id?: string;
+    previousType?: string;
+    type: string;
+    title: string;
+    text?: string;
+    subtasks?: Subtask[];
+    numberOfRepetition?: number;
+    scope?: string;
+    teamId?: string;
+    toUserId?: string;
+  };
 
-    const scope = rawScope || 'personal';
-    if (!['personal', 'team', 'member_provided'].includes(scope)) {
-      return NextResponse.json({ error: 'Invalid scope' }, { status: 400 });
-    }
-
-    if (!type || !['base', 'compound', 'iterative'].includes(type)) {
-      return NextResponse.json({ error: 'Invalid resolution type' }, { status: 400 });
-    }
-
-    // Common validation
-    const commonErr = validateCommon(body);
-    if (commonErr) return NextResponse.json({ error: commonErr }, { status: 400 });
-
-    // Type-specific validation
-    if (type === 'compound') {
-      const err = validateCompound(body);
-      if (err) return NextResponse.json({ error: err }, { status: 400 });
-    }
-    if (type === 'iterative') {
-      const err = validateIterative(body);
-      if (err) return NextResponse.json({ error: err }, { status: 400 });
-    }
-
-    const trimmedTitle = title.trim().slice(0, 255);
-    const trimmedText = text?.trim() || '';
-
-    // ── Scope authorization ────────────────────────────────────
-    if (scope === 'team') {
-      if (!teamId) {
-        return NextResponse.json({ error: 'Team ID is required for team scope' }, { status: 400 });
-      }
-      const leader = await isTeamLeader(teamId, currentUser.id);
-      if (!leader) {
-        return NextResponse.json({ error: 'Only the team leader can set the team goal' }, { status: 403 });
-      }
-    }
-
-    if (scope === 'member_provided') {
-      if (!teamId || !toUserId) {
-        return NextResponse.json({ error: 'Team ID and target user ID are required' }, { status: 400 });
-      }
-      if (toUserId === currentUser.id) {
-        return NextResponse.json({ error: 'You cannot create a resolution for yourself' }, { status: 400 });
-      }
-      const member = await isTeamMember(teamId, currentUser.id);
-      if (!member) {
-        return NextResponse.json({ error: 'You must be a team member' }, { status: 403 });
-      }
-      const targetMember = await isTeamMember(teamId, toUserId);
-      if (!targetMember) {
-        return NextResponse.json({ error: 'Target user is not a team member' }, { status: 400 });
-      }
-    }
-
-    // ── CREATE (no id) ─────────────────────────────────────────
-    if (!id) {
-      // For team scope, if a goal already exists, update it instead
-      if (scope === 'team') {
-        const [existingGoal] = await query<Array<Record<string, unknown>>>(
-          `SELECT id FROM resolutions WHERE team_id = ? AND scope = 'team' LIMIT 1`,
-          [teamId]
-        );
-        if (existingGoal) {
-          return handleSameTypeUpdate(
-            existingGoal.id as string, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition
-          );
-        }
-      }
-      // For member_provided scope, if a resolution from→to already exists, update it
-      if (scope === 'member_provided') {
-        const [existingMp] = await query<Array<Record<string, unknown>>>(
-          `SELECT id FROM resolutions WHERE team_id = ? AND owner_user_id = ? AND to_user_id = ? AND scope = 'member_provided' LIMIT 1`,
-          [teamId, currentUser.id, toUserId]
-        );
-        if (existingMp) {
-          return handleSameTypeUpdate(
-            existingMp.id as string, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition
-          );
-        }
-      }
-      return handleCreate(currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition, scope, teamId, toUserId);
-    }
-
-    // ── UPDATE (with id) ───────────────────────────────────────
-    const effectivePrevType = previousType || type;
-
-    // Verify ownership of existing resolution
-    const ownerErr = await verifyOwnership(id, effectivePrevType, currentUser.id);
-    if (ownerErr) return ownerErr;
-
-    // Same type → simple update
-    if (effectivePrevType === type) {
-      return handleSameTypeUpdate(id, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition);
-    }
-
-    // Type changed → atomic delete-from-old + insert-into-new
-    return handleTypeChange(id, currentUser.id, effectivePrevType, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition, scope, teamId, toUserId);
-  } catch (error) {
-    console.error('Resolution save error:', error);
-    return NextResponse.json({ error: 'An error occurred' }, { status: 500 });
+  const scope = rawScope || 'personal';
+  if (!['personal', 'team', 'member_provided'].includes(scope)) {
+    return errorResponse('Invalid scope', 400);
   }
-}
+
+  if (!type || !['base', 'compound', 'iterative'].includes(type)) {
+    return errorResponse('Invalid resolution type', 400);
+  }
+
+  // Common validation
+  const commonErr = validateCommon(body);
+  if (commonErr) return errorResponse(commonErr, 400);
+
+  // Type-specific validation
+  if (type === 'compound') {
+    const err = validateCompound(body);
+    if (err) return errorResponse(err, 400);
+  }
+  if (type === 'iterative') {
+    const err = validateIterative(body);
+    if (err) return errorResponse(err, 400);
+  }
+
+  const trimmedTitle = title.trim().slice(0, 255);
+  const trimmedText = text?.trim() || '';
+
+  // ── Scope authorization ────────────────────────────────────
+  if (scope === 'team') {
+    if (!teamId) {
+      return errorResponse('Team ID is required for team scope', 400);
+    }
+    const leader = await isTeamLeader(teamId, currentUser.id);
+    if (!leader) {
+      return errorResponse('Only the team leader can set the team goal', 403);
+    }
+  }
+
+  if (scope === 'member_provided') {
+    if (!teamId || !toUserId) {
+      return errorResponse('Team ID and target user ID are required', 400);
+    }
+    if (toUserId === currentUser.id) {
+      return errorResponse('You cannot create a resolution for yourself', 400);
+    }
+    const member = await isTeamMember(teamId, currentUser.id);
+    if (!member) {
+      return errorResponse('You must be a team member', 403);
+    }
+    const targetMember = await isTeamMember(teamId, toUserId);
+    if (!targetMember) {
+      return errorResponse('Target user is not a team member', 400);
+    }
+  }
+
+  // ── CREATE (no id) ─────────────────────────────────────────
+  if (!id) {
+    // For team scope, if a goal already exists, update it instead
+    if (scope === 'team') {
+      const [existingGoal] = await query<Array<Record<string, unknown>>>(
+        `SELECT id FROM resolutions WHERE team_id = ? AND scope = 'team' LIMIT 1`,
+        [teamId]
+      );
+      if (existingGoal) {
+        return handleSameTypeUpdate(
+          existingGoal.id as string, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition
+        );
+      }
+    }
+    // For member_provided scope, if a resolution from→to already exists, update it
+    if (scope === 'member_provided') {
+      const [existingMp] = await query<Array<Record<string, unknown>>>(
+        `SELECT id FROM resolutions WHERE team_id = ? AND owner_user_id = ? AND to_user_id = ? AND scope = 'member_provided' LIMIT 1`,
+        [teamId, currentUser.id, toUserId]
+      );
+      if (existingMp) {
+        return handleSameTypeUpdate(
+          existingMp.id as string, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition
+        );
+      }
+    }
+    return handleCreate(currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition, scope, teamId, toUserId);
+  }
+
+  // ── UPDATE (with id) ───────────────────────────────────────
+  const effectivePrevType = previousType || type;
+
+  // Verify ownership of existing resolution
+  const ownerErr = await verifyOwnership(id, effectivePrevType, currentUser.id);
+  if (ownerErr) return ownerErr;
+
+  // Same type → simple update
+  if (effectivePrevType === type) {
+    return handleSameTypeUpdate(id, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition);
+  }
+
+  // Type changed → atomic delete-from-old + insert-into-new
+  return handleTypeChange(id, currentUser.id, effectivePrevType, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition, scope, teamId, toUserId);
+});
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
 
@@ -204,10 +200,10 @@ async function verifyOwnership(id: string, type: string, userId: string): Promis
   const existing = await getResolutionById(id);
 
   if (!existing) {
-    return NextResponse.json({ error: 'Resolution not found' }, { status: 404 });
+    return errorResponse('Resolution not found', 404);
   }
   if (existing.ownerUserId !== userId) {
-    return NextResponse.json({ error: 'You can only modify your own resolutions' }, { status: 403 });
+    return errorResponse('You can only modify your own resolutions', 403);
   }
   return null;
 }
@@ -254,6 +250,20 @@ async function handleCreate(
   const rows = await query<Array<Record<string, unknown>>>(
     `SELECT * FROM resolutions WHERE id = ?`, [id]
   );
+
+  await logResolutionHistoryEventSafe(
+    id,
+    userId,
+    'resolution.created',
+    `Created ${type} resolution`,
+    {
+      type,
+      scope,
+      teamId: teamId || null,
+      toUserId: toUserId || null,
+    },
+  );
+
   return NextResponse.json({ resolution: toUnifiedResponse(rows[0], type) }, { status: 201 });
 }
 
@@ -295,6 +305,18 @@ async function handleSameTypeUpdate(
   const rows = await query<Array<Record<string, unknown>>>(
     `SELECT * FROM resolutions WHERE id = ?`, [id]
   );
+
+  await logResolutionHistoryEventSafe(
+    id,
+    userId,
+    'resolution.updated',
+    `Updated ${type} resolution`,
+    {
+      type,
+      title,
+    },
+  );
+
   return NextResponse.json({ resolution: toUnifiedResponse(rows[0], type) });
 }
 
@@ -369,7 +391,39 @@ async function handleTypeChange(
     return NextResponse.json({ error: 'Failed to save resolution' }, { status: 500 });
   }
 
+  await logResolutionHistoryEventSafe(
+    id,
+    userId,
+    'resolution.type_changed',
+    `Changed resolution type from ${oldType} to ${newType}`,
+    {
+      oldType,
+      newType,
+      title,
+    },
+  );
+
   return NextResponse.json({ resolution: toUnifiedResponse(rows[0], newType) });
+}
+
+async function logResolutionHistoryEventSafe(
+  resolutionId: string,
+  actorUserId: string,
+  eventKey: string,
+  content: string,
+  metadata?: Record<string, unknown>,
+) {
+  try {
+    await createSystemResolutionHistoryEntry(
+      resolutionId,
+      actorUserId,
+      eventKey,
+      content,
+      metadata,
+    );
+  } catch {
+    // Preserve core save behavior even if history logging fails.
+  }
 }
 
 /**

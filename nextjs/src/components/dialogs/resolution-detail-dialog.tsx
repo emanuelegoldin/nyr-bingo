@@ -22,7 +22,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
 import { DialogFooter } from "../ui/dialog";
-import { Check, Minus, Plus, Loader2, Undo2, Eye, MessageSquare, Hourglass, ThumbsUp, X } from "lucide-react";
+import { Check, Minus, Plus, Loader2, Undo2, Eye, MessageSquare, Hourglass, ThumbsUp, X, History } from "lucide-react";
 import { CellState, ResolutionType, ProofStatus } from "@/lib/shared/types";
 import type { Subtask } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
@@ -86,6 +86,8 @@ interface ResolutionDetailDialogProps {
   onRequestProof?: () => void;
   /** Called when someone wants to view the review thread */
   onViewThread?: () => void;
+  /** Called when someone wants to view resolution history */
+  onViewHistory?: () => void;
 }
 
 /**
@@ -128,6 +130,7 @@ export const ResolutionDetailDialog = ({
   onUndo,
   onRequestProof,
   onViewThread,
+  onViewHistory,
 }: ResolutionDetailDialogProps) => {
   const isAutomatic = data.type === ResolutionType.COMPOUND || data.type === ResolutionType.ITERATIVE;
 
@@ -192,6 +195,12 @@ export const ResolutionDetailDialog = ({
 
         {/* Action buttons */}
         <DialogFooter className="gap-2 sm:gap-0">
+          {onViewHistory && (
+            <Button variant="outline" onClick={() => { setIsOpen(false); onViewHistory(); }}>
+              <History className="h-4 w-4 mr-2" /> History
+            </Button>
+          )}
+
           {/* Owner + pending + non-automatic → Mark Complete */}
           {isOwner && cell.state === CellState.PENDING && !isAutomatic && onComplete && (
             <Button onClick={() => { setIsOpen(false); onComplete(); }}>

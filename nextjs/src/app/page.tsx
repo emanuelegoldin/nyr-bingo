@@ -64,15 +64,6 @@ export default function Home() {
                 <p className="max-w-[700px] text-foreground/80 md:text-xl">
                   Resolution Bingo transforms your personal goals into a fun, competitive, and collaborative team experience.
                 </p>
-                {/* TODO: Implement functionality or remove buttons
-                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" asChild>
-                    <Link href="/register">Create Your Team</Link>
-                  </Button>
-                   <Button size="lg" variant="secondary" asChild>
-                    <Link href="/login">Join a Game</Link>
-                  </Button>
-                </div> */}
               </div>
                {heroImage && (
                 <div className="hidden md:flex justify-center">

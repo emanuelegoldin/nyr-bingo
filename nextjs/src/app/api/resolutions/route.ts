@@ -4,206 +4,132 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { 
-  createResolution, 
-  getResolutionsByUser, 
+import {
+  createSystemResolutionHistoryEntry,
+  createResolution,
+  getResolutionsByUser,
   getResolutionById,
-  updateResolution, 
-  deleteResolution 
+  updateResolution,
+  deleteResolution,
 } from '@/lib/db';
+import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
  * GET /api/resolutions - Get all resolutions for current user
  * Spec: 03-personal-resolutions.md - User can list and view their own resolutions
  */
-export async function GET() {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const resolutions = await getResolutionsByUser(currentUser.id);
-    
-    return NextResponse.json({ resolutions });
-  } catch (error) {
-    console.error('Get resolutions error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
-  }
-}
+export const GET = withAuth(async (_request: NextRequest, { currentUser }: AuthContextNoParams) => {
+  const resolutions = await getResolutionsByUser(currentUser.id);
+  return NextResponse.json({ resolutions });
+});
 
 /**
  * POST /api/resolutions - Create a new resolution
  * Spec: 03-personal-resolutions.md - User can add a resolution (text)
  */
-export async function POST(request: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
+  const body = await request.json();
+  const { text, title } = body;
 
-    const body = await request.json();
-    const { text, title } = body;
-
-    // Spec: 03-personal-resolutions.md - Resolution text must be non-empty
-    if (!text || text.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Resolution text is required' },
-        { status: 400 }
-      );
-    }
-
-    const resolution = await createResolution(currentUser.id, text, title);
-    
-    return NextResponse.json({ resolution }, { status: 201 });
-  } catch (error) {
-    console.error('Create resolution error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
+  // Spec: 03-personal-resolutions.md - Resolution text must be non-empty
+  if (!text || text.trim().length === 0) {
+    return errorResponse('Resolution text is required', 400);
   }
-}
+
+  const resolution = await createResolution(currentUser.id, text, title);
+
+  try {
+    await createSystemResolutionHistoryEntry(
+      resolution.id,
+      currentUser.id,
+      'resolution.created',
+      'Created base resolution',
+      { type: 'base' },
+    );
+  } catch {
+    // Preserve core create behavior even if history logging fails.
+  }
+
+  return NextResponse.json({ resolution }, { status: 201 });
+});
 
 /**
  * PUT /api/resolutions - Update a resolution
  * Spec: 03-personal-resolutions.md - User can edit an existing resolution's text
  */
-export async function PUT(request: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
+  const body = await request.json();
+  const { id, text, title } = body;
 
-    const body = await request.json();
-    const { id, text, title } = body;
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Resolution ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Spec: 03-personal-resolutions.md - Resolution text must be non-empty
-    if (!text || text.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Resolution text is required' },
-        { status: 400 }
-      );
-    }
-
-    // Check ownership before update
-    const existing = await getResolutionById(id);
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'Resolution not found' },
-        { status: 404 }
-      );
-    }
-
-    // Spec: 03-personal-resolutions.md - User cannot modify someone else's resolutions
-    if (existing.ownerUserId !== currentUser.id) {
-      return NextResponse.json(
-        { error: 'You can only modify your own resolutions' },
-        { status: 403 }
-      );
-    }
-
-    const resolution = await updateResolution(id, currentUser.id, text, title);
-    
-    if (!resolution) {
-      return NextResponse.json(
-        { error: 'Resolution not found' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json({ resolution });
-  } catch (error) {
-    console.error('Update resolution error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
+  if (!id) {
+    return errorResponse('Resolution ID is required', 400);
   }
-}
+
+  // Spec: 03-personal-resolutions.md - Resolution text must be non-empty
+  if (!text || text.trim().length === 0) {
+    return errorResponse('Resolution text is required', 400);
+  }
+
+  // Check ownership before update
+  const existing = await getResolutionById(id);
+  if (!existing) {
+    return errorResponse('Resolution not found', 404);
+  }
+
+  // Spec: 03-personal-resolutions.md - User cannot modify someone else's resolutions
+  if (existing.ownerUserId !== currentUser.id) {
+    return errorResponse('You can only modify your own resolutions', 403);
+  }
+
+  const resolution = await updateResolution(id, currentUser.id, text, title);
+
+  if (!resolution) {
+    return errorResponse('Resolution not found', 404);
+  }
+
+  try {
+    await createSystemResolutionHistoryEntry(
+      resolution.id,
+      currentUser.id,
+      'resolution.updated',
+      'Updated base resolution',
+      { type: 'base' },
+    );
+  } catch {
+    // Preserve core update behavior even if history logging fails.
+  }
+
+  return NextResponse.json({ resolution });
+});
 
 /**
  * DELETE /api/resolutions - Delete a resolution
  * Spec: 03-personal-resolutions.md - User can delete a resolution
  */
-export async function DELETE(request: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+export const DELETE = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
 
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Resolution ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Check ownership before delete
-    const existing = await getResolutionById(id);
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'Resolution not found' },
-        { status: 404 }
-      );
-    }
-
-    // Spec: 03-personal-resolutions.md - User cannot modify someone else's resolutions
-    if (existing.ownerUserId !== currentUser.id) {
-      return NextResponse.json(
-        { error: 'You can only delete your own resolutions' },
-        { status: 403 }
-      );
-    }
-
-    const deleted = await deleteResolution(id, currentUser.id);
-    
-    if (!deleted) {
-      return NextResponse.json(
-        { error: 'Failed to delete resolution' },
-        { status: 500 }
-      );
-    }
-    
-    return NextResponse.json({ message: 'Resolution deleted successfully' });
-  } catch (error) {
-    console.error('Delete resolution error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred' },
-      { status: 500 }
-    );
+  if (!id) {
+    return errorResponse('Resolution ID is required', 400);
   }
-}
+
+  // Check ownership before delete
+  const existing = await getResolutionById(id);
+  if (!existing) {
+    return errorResponse('Resolution not found', 404);
+  }
+
+  // Spec: 03-personal-resolutions.md - User cannot modify someone else's resolutions
+  if (existing.ownerUserId !== currentUser.id) {
+    return errorResponse('You can only delete your own resolutions', 403);
+  }
+
+  const deleted = await deleteResolution(id, currentUser.id);
+
+  if (!deleted) {
+    return errorResponse('Failed to delete resolution', 500);
+  }
+
+  return NextResponse.json({ message: 'Resolution deleted successfully' });
+});

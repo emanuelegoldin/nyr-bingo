@@ -59,6 +59,11 @@ function is_provided_issue_number_equal_to_branch_issue_number() {
 # The first argument this hook receives is the message file
 MSG_FILE=$1
 MSG=$(cat $MSG_FILE)
+# If the current branch is "dev" or "release-candidate", we skip the commit message validation
+if [[ "$CURRENT_BRANCH" == "dev" || "$CURRENT_BRANCH" == "release-candidate" ]]; then
+  echo -e "${GREEN}[POLICY]: Skipping commit message validation for branch '$CURRENT_BRANCH'.${NC}"
+  exit 0
+fi
 echo "Validating commit message: '$MSG'"
 if validate_commit_message "$MSG"; then
   if has_branch_issue_number "$CURRENT_BRANCH"; then

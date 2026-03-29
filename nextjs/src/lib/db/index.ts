@@ -15,6 +15,7 @@ export { schema } from './schema';
 // Repositories
 export * from './user-repository';
 export * from './resolution-repository';
+export * from './resolution-history-repository';
 export * from './compound-resolution-repository';
 export * from './iterative-resolution-repository';
 export * from './team-repository';
