@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Leaderboard Tab — Team Detail Page
  * Spec Reference: 12-team-tabs.md
@@ -15,17 +13,14 @@
  * - The "First Bingo" column is blank until the user scores one.
  */
 
-import { useState, useEffect, useCallback } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useToast } from "@/hooks/use-toast";
 
 // ── Types ─────────────────────────────────────────────────────────
 
 /** Matches the shape returned by GET /api/teams/[teamId]/leaderboard */
-interface LeaderboardEntry {
+export interface LeaderboardEntry {
   userId: string;
   username: string;
   displayName: string | null;
@@ -34,7 +29,7 @@ interface LeaderboardEntry {
 }
 
 interface LeaderboardTabProps {
-  teamId: string;
+  initialEntries: LeaderboardEntry[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -67,48 +62,8 @@ function formatDate(iso: string): string {
 
 // ── Component ─────────────────────────────────────────────────────
 
-export function LeaderboardTab({ teamId }: LeaderboardTabProps) {
-  const { toast } = useToast();
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadLeaderboard = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/teams/${teamId}/leaderboard`);
-      const data = await response.json();
-      if (response.ok) {
-        setEntries(data.leaderboard ?? []);
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to load leaderboard",
-          variant: "destructive",
-        });
-      }
-    } catch {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [teamId, toast]);
-
-  useEffect(() => {
-    loadLeaderboard();
-  }, [loadLeaderboard]);
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="py-8 flex justify-center">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </CardContent>
-      </Card>
-    );
-  }
+export function LeaderboardTab({ initialEntries }: LeaderboardTabProps) {
+  const entries = initialEntries;
 
   return (
     <Card>

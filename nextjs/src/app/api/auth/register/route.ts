@@ -10,6 +10,7 @@ import {
   createVerificationToken 
 } from '@/lib/db';
 import { sendVerificationEmail, isEmailConfigured } from '@/lib/email';
+import { errorResponse } from '@/app/api/utils';
 
 // Password policy: minimum 8 characters
 // Spec: 01-authentication.md - password meets minimum security policy
@@ -22,27 +23,18 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!username || !email || !password) {
-      return NextResponse.json(
-        { error: 'Username, email, and password are required' },
-        { status: 400 }
-      );
+      return errorResponse('Username, email, and password are required', 400);
     }
 
     // Validate password length
     if (password.length < MIN_PASSWORD_LENGTH) {
-      return NextResponse.json(
-        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
-        { status: 400 }
-      );
+      return errorResponse(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`, 400);
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Please enter a valid email address' },
-        { status: 400 }
-      );
+      return errorResponse('Please enter a valid email address', 400);
     }
 
     // Check if username/email already exists
@@ -50,17 +42,11 @@ export async function POST(request: NextRequest) {
     const { usernameExists, emailExists } = await checkUserExists(username, email);
 
     if (usernameExists) {
-      return NextResponse.json(
-        { error: 'Username already exists' },
-        { status: 409 }
-      );
+      return errorResponse('Username already exists', 409);
     }
 
     if (emailExists) {
-      return NextResponse.json(
-        { error: 'Email already exists' },
-        { status: 409 }
-      );
+      return errorResponse('Email already exists', 409);
     }
 
     // Create user
@@ -103,9 +89,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred during registration' },
-      { status: 500 }
-    );
+    return errorResponse('An error occurred during registration', 500);
   }
 }

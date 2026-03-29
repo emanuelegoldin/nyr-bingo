@@ -1,104 +1,35 @@
-"use client";
-
 /**
  * Public Profile Page
  * Spec Reference: 02-user-profile-and-privacy.md
  *
- * Displays a user's public profile (username, display name if public, bio if public).
- * If the viewer is the profile owner, redirects to the editable profile page.
+ * Server-first implementation:
+ * - Auth, ownership checks, redirects, and profile loading run on the server
+ * - A tiny client shell is used for client-only app-header context updates
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense } from "react";
+import { notFound, redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
-import type { PublicUserProfile } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
+import { getPublicUserProfile, type PublicUserProfile } from "@/lib/db";
+import PublicProfilePageShell from "@/components/profile/public-profile-page-shell";
 
-interface ProfileResponse {
-  profile: PublicUserProfile;
-  isOwner: boolean;
-  /** Only present when isOwner is true */
-  user?: {
-    id: string;
-    username: string;
-    email: string;
-    emailVerified: boolean;
-  };
+interface PublicProfilePageProps {
+  params: Promise<{ userId: string }>;
 }
 
-export default function PublicProfilePage({
-  params,
-}: {
-  params: Promise<{ userId: string }>;
-}) {
-  useSetAppHeaderTitle("Profile");
+function PublicProfileLoadingFallback() {
+  return (
+    <div className="flex justify-center py-16">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
+}
 
-  const router = useRouter();
-  const { toast } = useToast();
-  const [userId, setUserId] = useState<string>("");
-  const [profile, setProfile] = useState<PublicUserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    params.then((p) => setUserId(p.userId));
-  }, [params]);
-
-  const loadProfile = useCallback(async () => {
-    if (!userId) return;
-    try {
-      const response = await fetch(`/api/profile?userId=${userId}`);
-      const data: ProfileResponse = await response.json();
-
-      if (data.isOwner) {
-        // Redirect owners to the editable profile page
-        router.replace("/profile");
-        return;
-      }
-
-      if (response.ok && data.profile) {
-        setProfile(data.profile);
-      } else {
-        toast({
-          title: "Error",
-          description: "User not found",
-          variant: "destructive",
-        });
-      }
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId, router, toast]);
-
-  useEffect(() => {
-    if (userId) loadProfile();
-  }, [userId, loadProfile]);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="text-center py-16">
-        <h1 className="text-2xl font-bold">User not found</h1>
-      </div>
-    );
-  }
-
+function PublicProfileCard({ profile }: { profile: PublicUserProfile }) {
   return (
     <div className="max-w-xl mx-auto">
       <Card>
@@ -106,7 +37,6 @@ export default function PublicProfilePage({
           <CardTitle className="font-headline">Profile</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Avatar & username */}
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
               <AvatarFallback className="text-2xl">
@@ -123,7 +53,6 @@ export default function PublicProfilePage({
             </div>
           </div>
 
-          {/* Bio (only shown if the user made it public) */}
           {profile.bio && (
             <>
               <Separator />
@@ -138,5 +67,40 @@ export default function PublicProfilePage({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+async function PublicProfileContent({ userId }: { userId: string }) {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  // Owner redirect belongs on the server so we avoid client flashes.
+  if (currentUser.id === userId) {
+    redirect("/profile");
+  }
+
+  // We can call DB methods directly in a Server Component, no useEffect/fetch needed.
+  const profile = await getPublicUserProfile(userId);
+  if (!profile) {
+    notFound();
+  }
+
+  return <PublicProfileCard profile={profile} />;
+}
+
+export default async function PublicProfilePage({ params }: PublicProfilePageProps) {
+  const { userId } = await params;
+
+  return (
+    // Client shell updates app header title via context, while server children stay server-rendered.
+    <PublicProfilePageShell>
+      {/* Suspense lets this async server section stream with a loading fallback. */}
+      <Suspense fallback={<PublicProfileLoadingFallback />}>
+        <PublicProfileContent userId={userId} />
+      </Suspense>
+    </PublicProfilePageShell>
   );
 }

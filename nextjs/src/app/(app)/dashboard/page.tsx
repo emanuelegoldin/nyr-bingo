@@ -1,260 +1,189 @@
-"use client";
-
 /**
  * Dashboard Page
  * Spec Reference: 00-system-overview.md - Primary Flows
+ *
+ * Server-first implementation:
+ * - Authentication and initial team/card reads are done on the server
+ * - Each started-team card streams independently via Suspense
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { BingoCard } from "@/components/bingo-card";
-import { TeamWsProvider } from "@/components/team-ws-provider";
-import { TeamMembersProvider, TeamMembersMap } from "@/components/team-members-context";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, Users, Plus } from "lucide-react";
-import Link from "next/link";
-import { useToast } from "@/hooks/use-toast";
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
-import { CellSourceType, CellState, ProofStatus, ResolutionType } from '@/lib/shared/types';
+import { Suspense } from 'react';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { Loader2, Plus, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DashboardPageShell from '@/components/dashboard/dashboard-page-shell';
+import DashboardTeamCardClient from '@/components/dashboard/dashboard-team-card-client';
+import { getCurrentUser } from '@/lib/auth';
+import {
+  getBingoCard,
+  getTeamWithMembers,
+  getTeamsForUser,
+  type TeamWithMembers,
+} from '@/lib/db';
 
-interface BingoCell {
-  id: string;
-  cardId: string;
-  position: number;
-  resolutionId: string | null;
-  resolutionType: ResolutionType;
-  resolutionText: string;
-  resolutionTitle: string;
-  isJoker: boolean;
-  isEmpty: boolean;
-  sourceType: CellSourceType;
-  sourceUserId: string | null;
-  state: CellState;
-  reviewThreadId?: string | null;
-  proof: {
-    id: string;
-    status: ProofStatus;
-  } | null;
+function DashboardCardLoadingFallback({ teamName }: { teamName: string }) {
+  return (
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle className="font-headline text-2xl">
+          Your Bingo Card for "{teamName}"
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Loading card...</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
-interface BingoCardData {
-  id: string;
-  teamId: string;
-  userId: string;
-  gridSize: number;
-  cells: BingoCell[];
+function DashboardCardError({ teamName }: { teamName: string }) {
+  return (
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle className="font-headline text-2xl">
+          Your Bingo Card for "{teamName}"
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-destructive">
+          Failed to load this card. Other cards are still available.
+        </p>
+      </CardContent>
+    </Card>
+  );
 }
 
-interface TeamMember {
-  membership: {
-    id: string;
-    teamId: string;
-    userId: string;
-    role: 'leader' | 'member';
-  };
-  user: {
-    id: string;
-    userId: string;
-    username: string;
-    displayName: string | null;
-  };
+function DashboardCardMissing({ teamName }: { teamName: string }) {
+  return (
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle className="font-headline text-2xl">
+          Your Bingo Card for "{teamName}"
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">
+          No card available yet for your user in this started team.
+        </p>
+      </CardContent>
+    </Card>
+  );
 }
 
-interface Team {
-  id: string;
-  name: string;
-  status: 'forming' | 'started';
-  members: TeamMember[];
-}
-
-export default function DashboardPage() {
-  useSetAppHeaderTitle("Dashboard");
-
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
-  const [activeCards, setActiveCards] = useState<{ team: Team; card: BingoCardData }[]>([]);
-
-  const loadDashboard = useCallback(async () => {
-    try {
-      // Get current user
-      const profileRes = await fetch('/api/profile');
-      const profileData = await profileRes.json();
-      
-      if (!profileRes.ok) {
-        setIsLoading(false);
-        return;
-      }
-      
-      setCurrentUserId(profileData.user?.id || '');
-
-      // Get teams
-      const teamsRes = await fetch('/api/teams');
-      const teamsData = await teamsRes.json();
-      
-      if (teamsRes.ok) {
-        const userTeams = teamsData.teams || [];
-        setTeams(userTeams);
-
-        // Get cards for started teams
-        const cardsPromises = userTeams
-          .filter((t: Team) => t.status === 'started')
-          .map(async (team: Team) => {
-            const cardsRes = await fetch(`/api/teams/${team.id}/cards?userId=${profileData.user.id}`);
-            const cardsData = await cardsRes.json();
-            if (cardsRes.ok && cardsData.card) {
-              return { team, card: cardsData.card };
-            }
-            return null;
-          });
-
-        const cards = await Promise.all(cardsPromises);
-        setActiveCards(cards.filter((c): c is { team: Team; card: BingoCardData } => c !== null));
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+async function DashboardTeamCardStream({
+  team,
+  currentUserId,
+}: {
+  team: TeamWithMembers;
+  currentUserId: string;
+}) {
+  try {
+    // Each team card loads independently so one slow query does not block others.
+    const card = await getBingoCard(team.id, currentUserId);
+    if (!card) {
+      return <DashboardCardMissing teamName={team.name} />;
     }
-  }, [toast]);
 
-  const reloadCardForTeam = useCallback(
-    async (teamId: string) => {
-      const cardsRes = await fetch(`/api/teams/${teamId}/cards?userId=${currentUserId}`);
-      const cardsData = await cardsRes.json();
-      if (cardsRes.ok && cardsData.card) {
-        setActiveCards((prev) =>
-          prev.map((item) =>
-            item.team.id === teamId ? { ...item, card: cardsData.card } : item
-          )
-        );
-      }
-    },
-    [currentUserId]
+    return (
+      <DashboardTeamCardClient
+        team={team}
+        currentUserId={currentUserId}
+        initialCard={card}
+      />
+    );
+  } catch {
+    // Isolated error handling keeps the rest of the dashboard usable.
+    return <DashboardCardError teamName={team.name} />;
+  }
+}
+
+async function getTeamsWithMembersForUser(userId: string): Promise<TeamWithMembers[]> {
+  const teams = await getTeamsForUser(userId);
+  const settledTeams = await Promise.allSettled(
+    teams.map((team) => getTeamWithMembers(team.id))
   );
 
-  useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
+  return settledTeams
+    .filter(
+      (result): result is PromiseFulfilledResult<TeamWithMembers | null> =>
+        result.status === 'fulfilled'
+    )
+    .map((result) => result.value)
+    .filter((team): team is TeamWithMembers => team !== null);
+}
 
-  // TODO: consider moving the cell update logic at Card or Cell level
-  const handleCellUpdate = async (teamId: string, cellId: string, newState: 'pending' | 'completed') => {
-    try {
-      const response =
-        newState === 'pending'
-          ? await fetch(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
-          : await fetch(`/api/cells/${cellId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ state: newState }),
-            });
+export default async function DashboardPage() {
+  const currentUser = await getCurrentUser();
 
-      if (response.ok) {
-        await reloadCardForTeam(teamId);
-      } else {
-        const data = await response.json();
-        toast({
-          title: "Error",
-          description: data.error || "Failed to update cell",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+  if (!currentUser) {
+    redirect('/login');
   }
+
+  const teams = await getTeamsWithMembersForUser(currentUser.id);
+  const startedTeams = teams.filter((team) => team.status === 'started');
 
   if (teams.length === 0) {
     return (
-      <div className="container mx-auto">
-        <Card className="w-full max-w-2xl mx-auto">
-          <CardContent className="py-16 text-center">
-            <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-2xl font-bold font-headline mb-2">Welcome to Resolution Bingo!</h2>
-            <p className="text-muted-foreground mb-6">
-              Join or create a team to start playing.
-            </p>
-            <Button asChild>
-              <Link href="/teams">
-                <Plus className="mr-2 h-4 w-4" /> Get Started
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardPageShell>
+        <div className="container mx-auto">
+          <Card className="w-full max-w-2xl mx-auto">
+            <CardContent className="py-16 text-center">
+              <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-2xl font-bold font-headline mb-2">Welcome to Resolution Bingo!</h2>
+              <p className="text-muted-foreground mb-6">
+                Join or create a team to start playing.
+              </p>
+              <Button asChild>
+                <Link href="/teams">
+                  <Plus className="mr-2 h-4 w-4" /> Get Started
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardPageShell>
     );
   }
 
-  if (activeCards.length === 0) {
+  if (startedTeams.length === 0) {
     return (
-      <div className="container mx-auto">
-        <Card className="w-full max-w-2xl mx-auto">
-          <CardContent className="py-16 text-center">
-            <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-2xl font-bold font-headline mb-2">No Active Games</h2>
-            <p className="text-muted-foreground mb-6">
-              You're part of {teams.length} team{teams.length > 1 ? 's' : ''}, but no games have started yet.
-            </p>
-            <Button asChild>
-              <Link href="/teams">View Your Teams</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardPageShell>
+        <div className="container mx-auto">
+          <Card className="w-full max-w-2xl mx-auto">
+            <CardContent className="py-16 text-center">
+              <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-2xl font-bold font-headline mb-2">No Active Games</h2>
+              <p className="text-muted-foreground mb-6">
+                You're part of {teams.length} team{teams.length > 1 ? 's' : ''}, but no games have started yet.
+              </p>
+              <Button asChild>
+                <Link href="/teams">View Your Teams</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardPageShell>
     );
   }
 
   return (
-    <div className="container mx-auto space-y-8">
-      {activeCards.map(({ team, card }) => {
-        const membersMap: TeamMembersMap = {};
-        for (const m of team.members) {
-          membersMap[m.user.userId] = m.user.displayName || m.user.username;
-        }
-        return (
-        <TeamWsProvider key={team.id} teamId={team.id} onRefresh={() => reloadCardForTeam(team.id)}>
-        <TeamMembersProvider members={membersMap}>
-        <Card className="w-full max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="font-headline text-2xl">
-              Your Bingo Card for "{team.name}"
-            </CardTitle>
-            <CardDescription>
-              Complete your resolutions to get a BINGO! Click on a cell to mark it as completed.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BingoCard 
-              cells={card.cells} 
-              isOwner={true}
-              teamId={team.id}
-              currentUserId={currentUserId}
-              onCellUpdate={(cellId, newState) => handleCellUpdate(team.id, cellId, newState)}
-              onRefresh={() => reloadCardForTeam(team.id)}
-            />
-          </CardContent>
-        </Card>
-        </TeamMembersProvider>
-        </TeamWsProvider>
-        );
-      })}
-    </div>
+    <DashboardPageShell>
+      <div className="container mx-auto space-y-8">
+        {startedTeams.map((team) => (
+          <Suspense
+            key={team.id}
+            fallback={<DashboardCardLoadingFallback teamName={team.name} />}
+          >
+            <DashboardTeamCardStream team={team} currentUserId={currentUser.id} />
+          </Suspense>
+        ))}
+      </div>
+    </DashboardPageShell>
   );
 }
+

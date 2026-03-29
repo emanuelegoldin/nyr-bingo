@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Members Tab — Team Detail Page
  * Spec Reference: 12-team-tabs.md
