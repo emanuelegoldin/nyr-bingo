@@ -11,7 +11,7 @@ import {
   getIterativeResolutionById,
   incrementIterativeResolution,
   autoTransitionCellState,
-  User,
+  createSystemResolutionHistoryEntry,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
@@ -35,6 +35,21 @@ export const PATCH = withAuth(
     const resolution = await incrementIterativeResolution(id, currentUser.id);
     if (!resolution) {
       return errorResponse('Failed to increment', 500);
+    }
+
+    try {
+      await createSystemResolutionHistoryEntry(
+        id,
+        currentUser.id,
+        'resolution.iterative_incremented',
+        `Progress updated: ${resolution.completedTimes} / ${resolution.numberOfRepetition ?? 0}`,
+        {
+          completedTimes: resolution.completedTimes,
+          numberOfRepetition: resolution.numberOfRepetition,
+        },
+      );
+    } catch {
+      // Preserve core increment behavior even if history logging fails.
     }
 
     // Auto-transition bingo cells: threshold met → completed

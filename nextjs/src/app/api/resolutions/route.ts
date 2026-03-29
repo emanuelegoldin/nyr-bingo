@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  createSystemResolutionHistoryEntry,
   createResolution,
   getResolutionsByUser,
   getResolutionById,
@@ -36,6 +37,18 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   }
 
   const resolution = await createResolution(currentUser.id, text, title);
+
+  try {
+    await createSystemResolutionHistoryEntry(
+      resolution.id,
+      currentUser.id,
+      'resolution.created',
+      'Created base resolution',
+      { type: 'base' },
+    );
+  } catch {
+    // Preserve core create behavior even if history logging fails.
+  }
 
   return NextResponse.json({ resolution }, { status: 201 });
 });
@@ -72,6 +85,18 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthCo
 
   if (!resolution) {
     return errorResponse('Resolution not found', 404);
+  }
+
+  try {
+    await createSystemResolutionHistoryEntry(
+      resolution.id,
+      currentUser.id,
+      'resolution.updated',
+      'Updated base resolution',
+      { type: 'base' },
+    );
+  } catch {
+    // Preserve core update behavior even if history logging fails.
   }
 
   return NextResponse.json({ resolution });

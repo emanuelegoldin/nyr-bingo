@@ -15,7 +15,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getConnection, query, isTeamLeader, isTeamMember, User } from '@/lib/db';
+import {
+  createSystemResolutionHistoryEntry,
+  getConnection,
+  isTeamLeader,
+  isTeamMember,
+  query,
+} from '@/lib/db';
 import { getResolutionById } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '@/lib/shared/types';
@@ -244,6 +250,20 @@ async function handleCreate(
   const rows = await query<Array<Record<string, unknown>>>(
     `SELECT * FROM resolutions WHERE id = ?`, [id]
   );
+
+  await logResolutionHistoryEventSafe(
+    id,
+    userId,
+    'resolution.created',
+    `Created ${type} resolution`,
+    {
+      type,
+      scope,
+      teamId: teamId || null,
+      toUserId: toUserId || null,
+    },
+  );
+
   return NextResponse.json({ resolution: toUnifiedResponse(rows[0], type) }, { status: 201 });
 }
 
@@ -285,6 +305,18 @@ async function handleSameTypeUpdate(
   const rows = await query<Array<Record<string, unknown>>>(
     `SELECT * FROM resolutions WHERE id = ?`, [id]
   );
+
+  await logResolutionHistoryEventSafe(
+    id,
+    userId,
+    'resolution.updated',
+    `Updated ${type} resolution`,
+    {
+      type,
+      title,
+    },
+  );
+
   return NextResponse.json({ resolution: toUnifiedResponse(rows[0], type) });
 }
 
@@ -359,7 +391,39 @@ async function handleTypeChange(
     return NextResponse.json({ error: 'Failed to save resolution' }, { status: 500 });
   }
 
+  await logResolutionHistoryEventSafe(
+    id,
+    userId,
+    'resolution.type_changed',
+    `Changed resolution type from ${oldType} to ${newType}`,
+    {
+      oldType,
+      newType,
+      title,
+    },
+  );
+
   return NextResponse.json({ resolution: toUnifiedResponse(rows[0], newType) });
+}
+
+async function logResolutionHistoryEventSafe(
+  resolutionId: string,
+  actorUserId: string,
+  eventKey: string,
+  content: string,
+  metadata?: Record<string, unknown>,
+) {
+  try {
+    await createSystemResolutionHistoryEntry(
+      resolutionId,
+      actorUserId,
+      eventKey,
+      content,
+      metadata,
+    );
+  } catch {
+    // Preserve core save behavior even if history logging fails.
+  }
 }
 
 /**
