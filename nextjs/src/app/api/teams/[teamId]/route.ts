@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getTeamWithMembers, isTeamMember, deleteTeam, getTeamById, User } from '@/lib/db';
-import { errorResponse, withAuth, AuthContext } from '../../utils';
+import { getTeamWithMembers, isTeamMember, deleteTeam, getTeamById } from '@/lib/db';
+import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
  * GET /api/teams/[teamId] - Get a specific team's details

@@ -2,7 +2,7 @@
  * Cell Edit API
  * Spec Reference: 09-bingo-card-editing.md
  */
-import { updateCellContent, User } from "@/lib/db";
+import { updateCellContent } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { ResolutionType } from "@/lib/shared/types";
 import { errorResponse, withAuth, AuthContext } from "@/app/api/utils";
@@ -38,7 +38,7 @@ export const PUT = withAuth(async (
   if (sourceType === 'member_provided' && !resolutionId) {
     return errorResponse('resolutionId is required for member_provided cells', 400);
   }
-  const result = await updateCellContent(cellId, currentUser.id, { // If we are her, authentication was successful, so currentUser is guaranteed to be non-null
+  const result = await updateCellContent(cellId, currentUser.id, {
     resolutionId,
     resolutionType,
     sourceType,

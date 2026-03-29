@@ -1,11 +1,11 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { findUserById, User } from '@/lib/db';
-import { errorResponse, withAuth, AuthContext } from '../../utils';
+import { findUserById } from '@/lib/db';
+import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 export const GET = withAuth(async (
-  request: NextRequest,
-  { params, currentUser }: { params: Promise<{ id: string }>; currentUser: User }
+  _request: NextRequest,
+  { params }: AuthContext<{ id: string }>
 ) => {
   const { id } = await params;
   if (!id) return errorResponse('Missing id', 400);
