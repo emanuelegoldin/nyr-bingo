@@ -10,7 +10,7 @@ const DEFAULT_ERROR_MESSAGE: string = 'An error occurred';
  * Unified context type for authenticated API route handlers with dynamic parameters
  * @example { params, currentUser }: AuthContext<{ teamId: string }>
  */
-export type AuthContext<ParamShape = {}> = {
+export type AuthContext<ParamShape extends Record<string, unknown> = Record<string, never>> = {
   params: Promise<ParamShape>;
   currentUser: User;
 };
@@ -23,18 +23,26 @@ export type AuthContextNoParams = {
   currentUser: User;
 };
 
+type RouteContext<ParamShape extends Record<string, unknown>> = {
+  params?: ParamShape | Promise<ParamShape>;
+};
+
 /**
- * Wrapper for API route handlers to authenticate the user and catch errors and return a consistent error response
- * The authenticated user is passed to the handler via the params object (e.g., params.currentUser)
- * @param handler The API route handler function to wrap (e.g., POST, GET, etc.) with signature (request:NextRequest, params?: any) => Promise<NextResponse>
+ * Wrapper for API route handlers to authenticate the user and return a consistent error response.
+ * The authenticated user is available as context.currentUser.
+ * For dynamic routes, context.params is always provided as Promise<...>.
+ * @param handler The API route handler function to wrap (e.g., POST, GET, etc.) with signature
+ * (request: NextRequest, context: AuthContext<...>) => Promise<NextResponse>
  * @returns A new API route handler function that includes authentication and error handling
  * Usage:
  * export const POST = withAuth(async (request: NextRequest, { currentUser }) => {
  *   // Your API logic here, with access to currentUser
  * });
  */
-export function withAuth(handler: (request: NextRequest, params?: any) => Promise<NextResponse>) {
-  return async (request: NextRequest, context?: any) => {
+export function withAuth<ParamShape extends Record<string, unknown> = Record<string, never>>(
+  handler: (request: NextRequest, context: AuthContext<ParamShape>) => Promise<NextResponse>
+) {
+  return async (request: NextRequest, context?: RouteContext<ParamShape>): Promise<NextResponse> => {
     try {
         const currentUser = await getCurrentUser();
         
@@ -44,12 +52,11 @@ export function withAuth(handler: (request: NextRequest, params?: any) => Promis
             { status: 401 }
           );
         }
-        const handlerParams = {
-          ...(context ?? {}),
+        const handlerContext: AuthContext<ParamShape> = {
           currentUser,
-          params: Promise.resolve(context?.params ?? {}),
+          params: Promise.resolve((context?.params ?? {}) as ParamShape),
         };
-        return await handler(request, handlerParams);
+        return await handler(request, handlerContext);
     } catch (error) {
         console.error('API route error:', error);
         return NextResponse.json(
