@@ -46,7 +46,10 @@ export const PUT = withAuth(async (
   const result = await updateCellState(cellId, currentUser.id, state as CellState);
 
   if (!result.success) {
-    return errorResponse('Failed to update cell state', 400);
+    const message = typeof result.error === 'string' && result.error.trim().length > 0
+      ? result.error
+      : 'Failed to update cell state';
+    return errorResponse(message, 400);
   }
 
   return NextResponse.json({ cell: result.cell });
