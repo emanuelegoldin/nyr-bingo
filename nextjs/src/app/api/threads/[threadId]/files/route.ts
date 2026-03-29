@@ -4,11 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFile, User } from '@/lib/db';
+import { deleteThreadFile, uploadFile, User } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
-import { randomUUID } from 'node:crypto';
+import { tryConvertToWebP } from '@/lib/uploads-processing';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = new Set<string>([
@@ -88,30 +88,52 @@ export const POST = withAuth(async (
     return errorResponse('Unsupported file type', 400);
   }
 
-    // Save file to disk
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const uploadDir = path.join(process.cwd(), 'uploads', 'review-files');
-    await mkdir(uploadDir, { recursive: true });
+  // Save file to disk
+  const { buffer: convertedBuffer, type: convertedType, cadKey } = await tryConvertToWebP(file);
+  const uploadDir = path.join(process.cwd(), 'uploads', 'review-files');
+  await mkdir(uploadDir, { recursive: true });
 
-    const filename = `${randomUUID()}.${ext}`;
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, bytes);
+  const filePath = path.join(uploadDir, cadKey);
+  await writeFile(filePath, convertedBuffer);
+  const fileUrl = `/review-files/${cadKey}`;
 
-    const fileUrl = `/review-files/${filename}`;
+  // Save to database
+  const result = await uploadFile(
+    threadId,
+    currentUser.id,
+    fileUrl,
+    convertedBuffer.byteLength,
+    file.name,
+    convertedType
+  );
 
-    // Save to database
-    const result = await uploadFile(
-      threadId,
-      currentUser.id,
-      fileUrl,
-      file.size,
-      file.name,
-      file.type
-    );
-    
-    if (!result.success) {
-      return errorResponse(result.error, 400);
-    }
-    
-    return NextResponse.json({ file: result.file }, { status: 201 });
-  });
+  if (!result.success) {
+    return errorResponse(result.error, 400);
+  }
+
+  return NextResponse.json({ file: result.file }, { status: 201 });
+});
+
+/**
+ * DELETE /api/threads/[threadId]/files - Delete a previously uploaded proof file
+ * Only the completing user can delete files from an open thread
+ */
+export const DELETE = withAuth(async (
+  request: NextRequest,
+  { params, currentUser }: AuthContext<{ threadId: string }>
+) => {
+  const { threadId } = await params;
+  const body = await request.json().catch(() => null);
+  const fileId = body?.fileId;
+
+  if (!fileId || typeof fileId !== 'string') {
+    return errorResponse('File ID is required', 400);
+  }
+
+  const result = await deleteThreadFile(threadId, currentUser.id, fileId);
+  if (!result.success) {
+    return errorResponse(result.error, result.error === 'File not found' ? 404 : 400);
+  }
+
+  return NextResponse.json({ success: true });
+});
