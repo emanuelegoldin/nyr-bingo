@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { deleteSession } from '@/lib/db';
 import { cookies } from 'next/headers';
+import { errorResponse } from '@/app/api/utils';
 
 export async function POST() {
   try {
@@ -25,9 +26,6 @@ export async function POST() {
     });
   } catch (error) {
     console.error('Logout error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred during logout' },
-      { status: 500 }
-    );
+    return errorResponse('An error occurred during logout', 500);
   }
 }

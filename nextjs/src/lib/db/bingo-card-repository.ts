@@ -10,6 +10,7 @@ import {
   BingoCellWithProof,
   BingoCardWithCells,
   CellProof,
+  Resolution,
 } from './types';
 import { randomUUID } from 'crypto';
 import { getTeamById, getTeamMembers, isTeamMember } from './team-repository';
@@ -166,8 +167,7 @@ export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCa
         connection,
         teamId,
         member.userId,
-        teamGoalResolution.id,
-        teamGoalResolution.description || teamGoalResolution.title
+        teamGoalResolution
       );
       cards.push(card);
     }
@@ -190,8 +190,7 @@ async function generateCardForUser(
   connection: Awaited<ReturnType<typeof getConnection>>,
   teamId: string,
   userId: string,
-  teamGoalResolutionId: string,
-  teamResolutionText: string
+  teamGoalResolution: Resolution
 ): Promise<BingoCard> {
   const gridSize = 5;
   const totalCells = gridSize * gridSize;
@@ -217,7 +216,7 @@ async function generateCardForUser(
   }[] = [];
 
   const usedTexts = new Set<string>();
-  usedTexts.add(teamResolutionText.toLowerCase());
+  usedTexts.add(teamGoalResolution.description?.toLowerCase() || teamGoalResolution.title.toLowerCase());
 
   // Add member-provided resolutions (highest priority)
   // Spec: 05-bingo-card-generation.md - Step 3
@@ -238,7 +237,7 @@ async function generateCardForUser(
   // Add team resolution as a completable cell (second priority)
   if (cellData.length < totalCells - 1) {
     cellData.push({
-      resolutionId: teamGoalResolutionId,
+      resolutionId: teamGoalResolution.id,
       sourceType: CellSourceType.TEAM,
       sourceUserId: null,
       resolutionType: teamGoalResolution?.resolutionType ?? ResolutionType.BASE,
@@ -394,8 +393,7 @@ export async function ensureBingoCardForUser(
     await connection.beginTransaction();
     const card = await generateCardForUser(
       connection, teamId, userId,
-      teamGoalResolution.id,
-      teamGoalResolution.description || teamGoalResolution.title
+      teamGoalResolution
     );
     await connection.commit();
     return { created: true, card };
