@@ -13,28 +13,30 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          MAJOR=0; MINOR=0; MICRO=0
+          MAJOR=0; MINOR=0; PATCH=0; NO_RELEASE=0
 
           [[ "$PR_TITLE" == *"[MAJOR]"* ]] && MAJOR=1
           [[ "$PR_TITLE" == *"[MINOR]"* ]] && MINOR=1
-          [[ "$PR_TITLE" == *"[MICRO]"* ]] && MICRO=1
+          [[ "$PR_TITLE" == *"[PATCH]"* ]] && PATCH=1
+          [[ "$PR_TITLE" == *"[NO-RELEASE]"* ]] && NO_RELEASE=1
 
-          COUNT=$((MAJOR + MINOR + MICRO))
+          COUNT=$((MAJOR + MINOR + PATCH + NO_RELEASE))
 
           if [ "$COUNT" -eq 0 ]; then
-            echo "::error::PR title must contain exactly one of [MAJOR], [MINOR], or [MICRO]."
+            echo "::error::PR title must contain exactly one of [MAJOR], [MINOR], [PATCH], or [NO-RELEASE]."
             echo ""
             echo "  Current title: \"$PR_TITLE\""
             echo ""
             echo "  Examples:"
-            echo "    Add team voting feature [MINOR]"
-            echo "    Fix login redirect [MICRO]"
             echo "    Rewrite bingo engine [MAJOR]"
+            echo "    Add team voting feature [MINOR]"
+            echo "    Fix login redirect [PATCH]"
+            echo "    Update documentation [NO-RELEASE]"
             exit 1
           fi
 
           if [ "$COUNT" -gt 1 ]; then
-            echo "::error::PR title contains multiple version keywords. Use exactly one of [MAJOR], [MINOR], or [MICRO]."
+            echo "::error::PR title contains multiple version keywords. Use exactly one of [MAJOR], [MINOR], [PATCH], or [NO-RELEASE]."
             echo ""
             echo "  Current title: \"$PR_TITLE\""
             exit 1
@@ -42,4 +44,4 @@ jobs:
 
           echo "PR title contains a valid version keyword."
           echo "   Title: \"$PR_TITLE\""
-          echo "   Release type: $([ $MAJOR -eq 1 ] && echo "MAJOR" || ([ $MINOR -eq 1 ] && echo "MINOR" || echo "MICRO"))"
+          echo "   Release type: $([ $MAJOR -eq 1 ] && echo "MAJOR" || ([ $MINOR -eq 1 ] && echo "MINOR" || ([ $PATCH -eq 1 ] && echo "PATCH" || echo "NO-RELEASE")))"

@@ -1,0 +1,69 @@
+on:
+  workflow_call:
+    inputs:
+      dockerfile:
+        description: 'Path to the Dockerfile to build'
+        required: true
+        type: string
+      context:
+        description: 'Build context for the Docker build'
+        required: true
+        type: string
+      username:
+        description: 'Username for Docker registry authentication'
+        required: true
+        type: string
+      image_name:
+        description: 'Name of the Docker image to build and push'
+        required: true
+        type: string
+      image_version:
+        description: 'Version tag for the Docker image'
+        required: true
+        type: string
+      registry:
+        description: 'Docker registry to push the image to'
+        required: false
+        type: string
+        default: 'ghcr.io'
+      is_latest:
+        description: 'Whether to tag the image as latest'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      token:
+        description: 'GitHub token for authentication'
+        required: true
+
+jobs:
+  docker-build-and-push:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.username }}
+          password: ${{ secrets.token }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ inputs.registry }}/${{ inputs.image_name }}
+          tags: |                                           # Use raw tag ("type=raw,value=my-tag" or just "my-tag")
+            type=raw,value=${{ inputs.image_version }}
+            type=raw,value=latest,enable=${{ inputs.is_latest }}
+            type=raw,value=${{ github.sha }}
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

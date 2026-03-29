@@ -1,9 +1,21 @@
-node_modules/
+#########
+# Files #
+#########
+*.md
 .env*
 .gitignore
-.next
 .github
 .devcontainer
-.idx
-*.md
+.modified
+
+###########
+# Folders #
+###########
+.idx/
+.next/
+.pnpm-store/
 docker/
+node_modules/
+playwright-report/
+specs/
+test-results/

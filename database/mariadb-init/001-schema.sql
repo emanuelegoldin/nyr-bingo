@@ -60,7 +60,6 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS resolutions (
   id VARCHAR(36) PRIMARY KEY,
   owner_user_id VARCHAR(36) NOT NULL,
-  title VARCHAR(255) NOT NULL,
   text VARCHAR(1000) NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -115,7 +114,6 @@ CREATE TABLE IF NOT EXISTS team_provided_resolutions (
   team_id VARCHAR(36) NOT NULL,
   from_user_id VARCHAR(36) NOT NULL,
   to_user_id VARCHAR(36) NOT NULL,
-  title VARCHAR(255) NOT NULL,
   text VARCHAR(1000) NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -146,10 +144,9 @@ CREATE TABLE IF NOT EXISTS bingo_cells (
   id VARCHAR(36) PRIMARY KEY,
   card_id VARCHAR(36) NOT NULL,
   position INT NOT NULL,
-  resolution_id VARCHAR(36) NULL,
-  team_provided_resolution_id VARCHAR(36) NULL,
-  resolution_type ENUM('base', 'team', 'compound', 'iterative') NOT NULL DEFAULT 'base',
-  is_empty TINYINT(1) AS (resolution_id IS NULL AND team_provided_resolution_id IS NULL AND source_type = 'empty') VIRTUAL,
+  resolution_text VARCHAR(1000) NOT NULL,
+  is_joker BOOLEAN DEFAULT FALSE,
+  is_empty BOOLEAN DEFAULT FALSE,
   source_type ENUM('team', 'member_provided', 'personal', 'empty') NOT NULL,
   source_user_id VARCHAR(36) NULL,
   state ENUM('pending', 'completed', 'pending_review', 'accomplished') DEFAULT 'pending',
@@ -157,38 +154,8 @@ CREATE TABLE IF NOT EXISTS bingo_cells (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY unique_cell (card_id, position),
   FOREIGN KEY (card_id) REFERENCES bingo_cards(id) ON DELETE CASCADE,
-  FOREIGN KEY (team_provided_resolution_id) REFERENCES team_provided_resolutions(id) ON DELETE SET NULL,
   FOREIGN KEY (source_user_id) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_card (card_id)
-);
-
--- Compound resolutions (subtask checklist)
--- Spec: 03-personal-resolutions.md - Typed resolutions
-CREATE TABLE IF NOT EXISTS compound_resolutions (
-  id VARCHAR(36) PRIMARY KEY,
-  owner_user_id VARCHAR(36) NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  description TEXT NULL,
-  subtasks JSON NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_owner (owner_user_id)
-);
-
--- Iterative resolutions (counter-based)
--- Spec: 03-personal-resolutions.md - Typed resolutions
-CREATE TABLE IF NOT EXISTS iterative_resolutions (
-  id VARCHAR(36) PRIMARY KEY,
-  owner_user_id VARCHAR(36) NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  description TEXT NULL,
-  number_of_repetition INT NOT NULL,
-  completed_times INT NOT NULL DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_owner (owner_user_id)
 );
 
 -- Proofs
@@ -287,18 +254,4 @@ CREATE TABLE IF NOT EXISTS review_votes (
   FOREIGN KEY (thread_id) REFERENCES review_threads(id) ON DELETE CASCADE,
   FOREIGN KEY (voter_user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_thread (thread_id)
-);
-
--- Team leaderboard
--- Spec: 12-team-tabs.md - Persisted leaderboard data
-CREATE TABLE IF NOT EXISTS team_leaderboard (
-  user_id VARCHAR(36) NOT NULL,
-  team_id VARCHAR(36) NOT NULL,
-  first_bingo_at DATETIME NULL,
-  completed_tasks INT NOT NULL DEFAULT 0,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_user_team (user_id, team_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
-  INDEX idx_team (team_id)
 );

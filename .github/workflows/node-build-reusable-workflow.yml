@@ -1,0 +1,41 @@
+name: Reusable Node Build Workflow
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Node.js version to use (e.g., "24", "lts/*")'
+        required: true
+        type: string        # Required for "workflow_call" event
+        default: 'lts/*'
+      pnpm-version:
+        description: 'pnpm version to use (e.g., "8", "9", "latest")'
+        required: true
+        type: string
+        default: '10'
+      working-directory:
+        description: 'Working directory for the build'
+        required: true
+        type: string
+        default: '.'
+jobs:
+  node-pnpm-build:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4                                # Required to cache dependencies
+        with:
+          version: ${{ inputs.pnpm-version }}
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'pnpm'
+          cache-dependency-path: ${{ inputs.working-directory }}  # Required if lock file is not int he root of the repository (https://github.com/actions/setup-node#:~:text=cache%2Ddependency%2Dpath%3A%20subdir/package%2Dlock.json)
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build
+        run: pnpm build
