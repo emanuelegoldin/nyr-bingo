@@ -1,0 +1,27 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://app.nyr-bingo.de/labels.schema.json",
+    "title": "Labels",
+    "description": "Schema for defining labels in different languages",
+    "type": "object",
+    "properties": {
+        "labels": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "labelId": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "type": "string"
+                    }
+                },
+                "required": ["labelId", "content"]
+            },
+            "description": "List of label identifiers and their corresponding text in the specified language"
+        }
+    },
+    "required": ["labels"],
+    "additionalProperties": false
+}

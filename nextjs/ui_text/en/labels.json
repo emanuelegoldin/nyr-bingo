@@ -1,0 +1,16 @@
+{
+ "labels": [
+   {"labelId": "submitButton", "content": "Submit"},
+   {"labelId": "loginButton", "content": "Login"},
+   {"labelId": "getStartedButton", "content": "Get Started"},
+   {"labelId": "signInButton", "content": "Sign in"},
+   {"labelId": "noAccountLink", "content": "Don't have an account? Sign up" },
+   {"labelId": "profileTitle",  "content": "Profile"},
+   {"labelId": "resolutionsTitle",  "content": "Resolutions"},
+   {"labelId": "dashboardTitle",  "content": "Dashboard"},
+   {"labelId": "resolutionLabelPersonal",  "content": "Personal"},
+   {"labelId": "resolutionLabelTeam",  "content": "Team"},
+   {"labelId": "markCompleteButton",  "content": "Mark as Complete"},
+   {"labelId": "viewThreadButton",  "content": "View Thread"}
+ ]
+}
