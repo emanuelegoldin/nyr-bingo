@@ -14,6 +14,31 @@ import {
 } from '@/lib/db';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
+function parsePaginationParam(
+  rawValue: string | null,
+  field: 'limit' | 'offset',
+): number | null {
+  if (rawValue == null) {
+    return field === 'limit' ? 50 : 0;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  if (field === 'limit') {
+    if (parsed < 1) return null;
+    return parsed;
+  }
+
+  if (parsed < 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
 /**
  * GET /api/resolutions/[id]/history
  */
@@ -31,10 +56,15 @@ export const GET = withAuth(async (
     return errorResponse('You are not allowed to view this resolution history', 403);
   }
 
-  const limitParam = request.nextUrl.searchParams.get('limit');
-  const offsetParam = request.nextUrl.searchParams.get('offset');
-  const limit = limitParam ? Number.parseInt(limitParam, 10) : 50;
-  const offset = offsetParam ? Number.parseInt(offsetParam, 10) : 0;
+  const limit = parsePaginationParam(request.nextUrl.searchParams.get('limit'), 'limit');
+  if (limit == null) {
+    return errorResponse('limit must be an integer greater than 0', 400);
+  }
+
+  const offset = parsePaginationParam(request.nextUrl.searchParams.get('offset'), 'offset');
+  if (offset == null) {
+    return errorResponse('offset must be an integer greater than or equal to 0', 400);
+  }
 
   const entries = await getResolutionHistoryEntries(id, limit, offset);
 

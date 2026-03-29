@@ -56,6 +56,13 @@ function rowToResolutionHistoryEntry(row: ResolutionHistoryEntryRow): Resolution
   };
 }
 
+function toSafeInteger(value: number, fallback: number): number {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.trunc(value);
+}
+
 async function canViewPersonalResolutionViaTeamCards(
   resolutionId: string,
   requestingUserId: string,
@@ -121,8 +128,8 @@ export async function getResolutionHistoryEntries(
   limit: number = 50,
   offset: number = 0,
 ): Promise<ResolutionHistoryEntry[]> {
-  const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
-  const safeOffset = Math.max(0, Math.floor(offset));
+  const safeLimit = Math.max(1, Math.min(100, toSafeInteger(limit, 50)));
+  const safeOffset = Math.max(0, toSafeInteger(offset, 0));
 
   const rows = await query<ResolutionHistoryEntryRow[]>(
     `SELECT
