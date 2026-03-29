@@ -140,8 +140,6 @@ export const ResolutionHistoryDialog = ({
     }
   }, [canSubmit, draft, loadHistory, resolutionId, sendWsMessage, toast]);
 
-  const orderedEntries = useMemo(() => entries, [entries]);
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -178,13 +176,13 @@ export const ResolutionHistoryDialog = ({
           <div className="space-y-2">
             {loading ? (
               <p className="text-sm text-muted-foreground py-4 text-center">{t("loading")}</p>
-            ) : orderedEntries.length === 0 ? (
+            ) : entries.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
                 {t("empty")}
               </p>
             ) : (
               <ul className="space-y-2 max-h-[45vh] overflow-y-auto">
-                {orderedEntries.map((entry) => (
+                {entries.map((entry) => (
                   <li key={entry.id} className="border rounded-md p-3 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
