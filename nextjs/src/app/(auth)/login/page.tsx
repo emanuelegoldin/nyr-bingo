@@ -1,15 +1,18 @@
 import { UserAuthForm } from '@/components/user-auth-form';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function LoginPage() {
+  const t = useTranslations('LoginPage');
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight font-headline">
-          Welcome Back!
+          {t('title')}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Enter your email and password to sign in to your account.
+          {t('description')}
         </p>
       </div>
       <UserAuthForm variant="login" />
@@ -18,7 +21,7 @@ export default function LoginPage() {
           href="/register"
           className="hover:text-primary underline underline-offset-4"
         >
-          Don&apos;t have an account? Sign Up
+          {t('registerLink')}
         </Link>
       </p>
     </div>

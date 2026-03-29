@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AppLogo } from '@/components/icons';
 import { Loader2, Users, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { AuthContext } from '@/app/api/utils';
 
 /**
  * Join Team Page
  * Spec Reference: 04-bingo-teams.md - Invitations / Joining
  */
-export default function JoinTeamPage({ params }: { params: Promise<{ inviteCode: string }> }) {
+export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: string }>) {
   const router = useRouter();
   const [inviteCode, setInviteCode] = useState<string>('');
   const [status, setStatus] = useState<'loading' | 'joining' | 'success' | 'error'>('loading');

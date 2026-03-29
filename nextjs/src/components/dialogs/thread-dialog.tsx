@@ -287,6 +287,93 @@ export const CellThreadDialog = ({
     }
   };
 
+  const handleDeleteFileFromThread = async (fileId: string) => {
+    const threadId = cell.reviewThreadId || thread?.id;
+    if (!threadId) return;
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/threads/${threadId}/files`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({
+          title: 'Error',
+          description: data?.error || 'Failed to delete file',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (thread) {
+        setThread({
+          ...thread,
+          files: (thread.files || []).filter((f) => f.id !== fileId),
+        });
+      }
+
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const wsMessage: ThreadRefreshMessage = {
+          type: 'thread-refresh',
+          body: { threadId },
+        };
+        ws.send(JSON.stringify(wsMessage));
+      }
+
+      onRefresh?.();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseThread = async () => {
+    const threadId = cell.reviewThreadId || thread?.id;
+    if (!threadId) return;
+    if (isSubmitting) return;
+    // TODO: Use modal for confirmation.
+    const confirmed = window.confirm(
+      'Close this thread and revert the resolution to pending? This will delete all thread files and messages.'
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/threads/${threadId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({
+          title: 'Error',
+          description: data?.error || 'Failed to close thread',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const wsMessage: ThreadRefreshMessage = {
+          type: 'thread-refresh',
+          body: { threadId },
+        };
+        ws.send(JSON.stringify(wsMessage));
+      }
+
+      onRefresh?.();
+      setIsOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <CellDialog
       isOpen={isOpen}
@@ -304,6 +391,16 @@ export const CellThreadDialog = ({
                 <p className="text-sm font-medium">Status</p>
                 <Badge variant="outline">{thread.status}</Badge>
               </div>
+              {isOwner && thread.status === 'open' && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleCloseThread}
+                  disabled={isSubmitting}
+                >
+                  Close Thread
+                </Button>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -311,15 +408,28 @@ export const CellThreadDialog = ({
               {thread.files?.length ? (
                 <div className="space-y-1">
                   {thread.files.map((f: ReviewFile) => (
-                    <a
-                      key={f.id}
-                      href={f.filePath}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block text-sm underline"
-                    >
-                      {f.fileName}
-                    </a>
+                    <div key={f.id} className="flex items-center justify-between gap-2">
+                      <a
+                        href={f.filePath}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block text-sm underline truncate"
+                      >
+                        {f.fileName}
+                      </a>
+                      {isOwner && thread.status === 'open' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            void handleDeleteFileFromThread(f.id);
+                          }}
+                          disabled={isSubmitting}
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </div>
                   ))}
                 </div>
               ) : (

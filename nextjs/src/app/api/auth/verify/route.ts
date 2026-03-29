@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyEmailToken } from '@/lib/db';
+import { errorResponse } from '@/app/api/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,10 +13,7 @@ export async function POST(request: NextRequest) {
     const { token } = body;
 
     if (!token) {
-      return NextResponse.json(
-        { error: 'Verification token is required' },
-        { status: 400 }
-      );
+      return errorResponse('Verification token is required', 400);
     }
 
     // Verify the token
@@ -24,10 +22,7 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       // Spec: 01-authentication.md - Expired/invalid verification token → show failure
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
+      return errorResponse(result.error, 400);
     }
 
     return NextResponse.json({
@@ -35,9 +30,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Verification error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred during verification' },
-      { status: 500 }
-    );
+    return errorResponse('An error occurred during verification', 500);
   }
 }

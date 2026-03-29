@@ -16,14 +16,19 @@
 	"runArgs": [
 		"--add-host=host.docker.internal:host-gateway"
 	],
-	"postCreateCommand": "set -euo pipefail; if command -v docker >/dev/null 2>&1; then echo 'docker: OK'; fi; if docker compose version >/dev/null 2>&1; then echo 'docker compose: OK'; fi; if ! command -v docker-compose >/dev/null 2>&1; then sudo tee /usr/local/bin/docker-compose >/dev/null <<'EOF'\n#!/usr/bin/env sh\nexec docker compose \"$@\"\nEOF\n; sudo chmod +x /usr/local/bin/docker-compose; fi"
+	"postCreateCommand": "set -euo pipefail; if command -v docker >/dev/null 2>&1; then echo 'docker: OK'; fi; if docker compose version >/dev/null 2>&1; then echo 'docker compose: OK'; fi; if ! command -v docker-compose >/dev/null 2>&1; then sudo tee /usr/local/bin/docker-compose >/dev/null <<'EOF'\n#!/usr/bin/env sh\nexec docker compose \"$@\"\nEOF\n; sudo chmod +x /usr/local/bin/docker-compose; fi",
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
 	// Configure tool-specific properties.
-	// "customizations": {},
-
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-playwright.playwright"
+			]
+		}
+	}
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
 }
