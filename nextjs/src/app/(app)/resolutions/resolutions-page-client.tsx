@@ -27,6 +27,7 @@ import {
   type ResolutionFormData,
 } from "@/components/dialogs/resolution-create-edit-dialog";
 import type { Subtask } from "@/lib/shared/types";
+import { useTranslations } from "next-intl";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
@@ -67,6 +68,7 @@ interface ResolutionsManagerProps {
 
 function ResolutionsManager({ initialResolutions }: ResolutionsManagerProps) {
   const { toast } = useToast();
+  const t = useTranslations("ResolutionsPage");
   const [resolutions, setResolutions] = useState<UnifiedResolution[]>(initialResolutions);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -165,9 +167,9 @@ function ResolutionsManager({ initialResolutions }: ResolutionsManagerProps) {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div className="space-y-1.5">
-            <CardTitle className="font-headline">My Personal Resolutions</CardTitle>
+            <CardTitle className="font-headline">{t("title")}</CardTitle>
             <CardDescription>
-              Manage your personal resolutions. These can be used to fill your bingo cards.
+              {t("description")}
             </CardDescription>
           </div>
           <Button size="icon" onClick={handleCreate} aria-label="Add resolution">
@@ -266,7 +268,8 @@ interface ResolutionsPageClientProps {
 export default function ResolutionsPageClient({
   initialResolutions,
 }: ResolutionsPageClientProps) {
-  useSetAppHeaderTitle("Resolutions");
+  const t = useTranslations("ResolutionsPage");
+  useSetAppHeaderTitle(t("headerTitle"));
 
   return (
     <div className="space-y-6">
