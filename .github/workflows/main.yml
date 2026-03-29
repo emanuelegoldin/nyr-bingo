@@ -94,7 +94,7 @@ jobs:
       registry: *registry
     secrets: *secrets
   e2e-tests:
-    needs: build
+    needs: build-and-push-nextjs-app
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
