@@ -10,7 +10,7 @@ import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 /**
  * GET /api/threads/[threadId] - Get thread details with messages, files, and votes
  */
-export const GET = withAuth(async (request: NextRequest, { params, currentUser }: { params: Promise<{ threadId: string }>; currentUser: User }) => {
+export const GET = withAuth(async (request: NextRequest, { params, currentUser }: AuthContext<{ threadId: string }>) => {
   const { threadId } = await params;
   const result = await getThreadById(threadId, currentUser.id);
   if (!result.success) {

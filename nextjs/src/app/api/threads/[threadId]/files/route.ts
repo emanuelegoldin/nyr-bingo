@@ -57,7 +57,7 @@ function getSafeExtension(file: File): string | null {
  */
 export const POST = withAuth(async (
   request: NextRequest,
-  { params, currentUser }: { params: Promise<{ threadId: string }>; currentUser: User }
+  { params, currentUser }: AuthContext<{ threadId: string }>
 ) => {
   const { threadId } = await params;
   const contentType = request.headers.get('content-type') || '';

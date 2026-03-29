@@ -8,13 +8,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { isTeamMember, getTeamLeaderboard, User } from "@/lib/db";
-import { withAuth } from "@/app/api/utils";
+import { AuthContext, withAuth } from "@/app/api/utils";
 
 // ── Route handler ─────────────────────────────────────────────────
 
 export const GET = withAuth(async (
   _request: NextRequest,
-  { params, currentUser }: { params: Promise<{ teamId: string }>; currentUser: User }
+  { params, currentUser }: AuthContext<{ teamId: string }>
 ) => {
   const { teamId } = await params;
 

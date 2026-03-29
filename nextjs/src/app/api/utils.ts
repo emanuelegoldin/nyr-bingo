@@ -47,7 +47,7 @@ export function withAuth(handler: (request: NextRequest, params?: any) => Promis
         const handlerParams = {
           ...(context ?? {}),
           currentUser,
-          params: context?.params ?? Promise.resolve({}),
+          params: Promise.resolve(context?.params ?? {}),
         };
         return await handler(request, handlerParams);
     } catch (error) {

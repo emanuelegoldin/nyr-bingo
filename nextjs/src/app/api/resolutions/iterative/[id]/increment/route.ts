@@ -14,14 +14,14 @@ import {
   User,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
-import { errorResponse, withAuth } from '@/app/api/utils';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
  * PATCH /api/resolutions/iterative/[id]/increment
  * Increments the completed_times counter by 1.
  */
 export const PATCH = withAuth(
-  async (_request: NextRequest, { params, currentUser }: { params: Promise<{ id: string }>; currentUser: User }) => {
+  async (_request: NextRequest, { params, currentUser }: AuthContext<{ id: string }>) => {
     const { id } = await params;
 
     const existing = await getIterativeResolutionById(id);
