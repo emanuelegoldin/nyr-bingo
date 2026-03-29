@@ -62,7 +62,7 @@ jobs:
     needs: compute-release-version
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
-      dockerfile: nextjs/docker/Dockerfile.nginx
+      dockerfile: nginx/docker/Dockerfile.nginx
       context: nginx/
       username: ${{ github.actor }}
       image_name: nginx
