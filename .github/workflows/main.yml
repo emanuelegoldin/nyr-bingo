@@ -63,7 +63,7 @@ jobs:
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
       dockerfile: nextjs/docker/Dockerfile.nginx
-      context: nextjs/
+      context: nginx/
       username: ${{ github.actor }}
       image_name: nginx
       image_version: *version
