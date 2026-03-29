@@ -11,6 +11,7 @@ import {
   type ResolutionDetailData,
   type CellContext,
 } from "../dialogs/resolution-detail-dialog";
+import { ResolutionHistoryDialog } from "../dialogs/resolution-history-dialog";
 import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
@@ -40,7 +41,7 @@ export const ResolutionCell = ({
     onRefresh
 }: ResolutionCellProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState<'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | null>(null);
+    const [modalMode, setModalMode] = useState<'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | 'history' | null>(null);
     const [detailData, setDetailData] = useState<ResolutionDetailData | null>(null);
     const usernames = useTeamMembers();
 
@@ -142,6 +143,12 @@ export const ResolutionCell = ({
     /** Anyone wants to view the review thread. */
     const handleViewThreadFromDetail = () => {
         setModalMode('thread');
+        setIsModalOpen(true);
+    };
+
+    /** Open resolution history timeline dialog. */
+    const handleViewHistoryFromDetail = () => {
+        setModalMode('history');
         setIsModalOpen(true);
     };
 
@@ -289,6 +296,15 @@ export const ResolutionCell = ({
                     onUndo={handleUndoFromDetail}
                     onRequestProof={handleRequestProofFromDetail}
                     onViewThread={handleViewThreadFromDetail}
+                    onViewHistory={handleViewHistoryFromDetail}
+                />
+            }
+            {modalMode === "history" && detailData &&
+                <ResolutionHistoryDialog
+                    resolutionId={detailData.id}
+                    resolutionTitle={detailData.title}
+                    isOpen={isModalOpen}
+                    setIsOpen={setIsModalOpen}
                 />
             }
         </>
