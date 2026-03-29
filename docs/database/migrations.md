@@ -123,3 +123,29 @@ compound, iterative) for all scopes (personal, team goal, member-provided).
   `unique_member_provided` constraint only enforces uniqueness for
   member-provided resolutions where `team_id`, `owner_user_id`, and
   `to_user_id` are all non-NULL.
+
+## 3.3.0 - Resolution History Entries
+
+Adds a dedicated timeline table for resolution history and progress updates.
+
+### Schema changes
+
+- New table `resolution_history_entries` with immutable entries keyed by
+  `resolution_id`.
+- Entry model supports both manual notes and automatic system events:
+  - `entry_type ENUM('manual_note', 'system_event')`
+  - `event_key` (nullable)
+  - `content` (required text)
+  - `metadata_json` (nullable JSON payload)
+- Foreign keys:
+  - `resolution_id -> resolutions.id` (`ON DELETE CASCADE`)
+  - `author_user_id -> users.id` (`ON DELETE CASCADE`)
+- Added indexes for timeline and author queries:
+  - `(resolution_id, created_at)`
+  - `(author_user_id, created_at)`
+
+### Design notes
+
+- History is stored once per resolution (not per cell), so all surfaces read
+  from the same source of truth.
+- Entries are append-only and intended for auditability/progress sharing.
