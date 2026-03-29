@@ -6,7 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { toggleCompoundSubtask, getCompoundResolutionById, autoTransitionCellState, User } from '@/lib/db';
+import {
+  toggleCompoundSubtask,
+  getCompoundResolutionById,
+  autoTransitionCellState,
+  createSystemResolutionHistoryEntry,
+} from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
@@ -39,6 +44,31 @@ export const PATCH = withAuth(async (
   const resolution = await toggleCompoundSubtask(id, currentUser.id, subtaskIndex);
   if (!resolution) {
     return errorResponse('Failed to toggle subtask', 500);
+  }
+
+  const previousSubtask = existing.subtasks?.[subtaskIndex];
+  const updatedSubtask = resolution.subtasks?.[subtaskIndex];
+  if (updatedSubtask) {
+    try {
+      await createSystemResolutionHistoryEntry(
+        id,
+        currentUser.id,
+        'resolution.compound_subtask_toggled',
+        updatedSubtask.completed
+          ? `Completed subtask: ${updatedSubtask.title}`
+          : `Marked subtask as incomplete: ${updatedSubtask.title}`,
+        {
+          subtaskIndex,
+          title: updatedSubtask.title,
+          previousCompleted: previousSubtask?.completed ?? null,
+          currentCompleted: updatedSubtask.completed,
+          completedSubtasks: resolution.subtasks?.filter((s) => s.completed).length ?? 0,
+          totalSubtasks: resolution.subtasks?.length ?? 0,
+        },
+      );
+    } catch {
+      // Preserve core toggle behavior even if history logging fails.
+    }
   }
 
   // Auto-transition bingo cells: all subtasks done → completed, otherwise → pending

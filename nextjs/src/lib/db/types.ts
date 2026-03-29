@@ -85,6 +85,26 @@ export interface Resolution {
   updatedAt: Date;
 }
 
+export type ResolutionHistoryEntryType = 'manual_note' | 'system_event';
+
+export interface ResolutionHistoryEntry {
+  id: string;
+  resolutionId: string;
+  authorUserId: string;
+  authorUsername: string;
+  entryType: ResolutionHistoryEntryType;
+  eventKey: string | null;
+  content: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: Date;
+}
+
+export interface ResolutionHistoryAccess {
+  resolution: Resolution | null;
+  canView: boolean;
+  canWrite: boolean;
+}
+
 // Team entity
 // Spec: 04-bingo-teams.md
 export interface Team {

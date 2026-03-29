@@ -19,13 +19,14 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSetAppHeaderTitle } from "@/components/app-header-title";
 import {
   ResolutionCreateEditDialog,
   type ResolutionFormData,
 } from "@/components/dialogs/resolution-create-edit-dialog";
+import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
 import type { Subtask } from "@/lib/shared/types";
 import { useTranslations } from "next-intl";
 
@@ -75,6 +76,8 @@ function ResolutionsManager({ initialResolutions }: ResolutionsManagerProps) {
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingResolution, setEditingResolution] = useState<ResolutionFormData | undefined>(undefined);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyResolution, setHistoryResolution] = useState<{ id: string; title: string } | null>(null);
 
   /** Fetch all resolution types from the unified endpoint. */
   const loadResolutions = useCallback(async () => {
@@ -110,6 +113,11 @@ function ResolutionsManager({ initialResolutions }: ResolutionsManagerProps) {
       numberOfRepetition: res.numberOfRepetition,
     });
     setDialogOpen(true);
+  };
+
+  const handleViewHistory = (res: UnifiedResolution) => {
+    setHistoryResolution({ id: res.id, title: res.title });
+    setHistoryOpen(true);
   };
 
   /**
@@ -218,6 +226,16 @@ function ResolutionsManager({ initialResolutions }: ResolutionsManagerProps) {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => handleViewHistory(res)}
+                    disabled={deletingId === res.id}
+                    aria-label={t("viewHistoryAriaLabel")}
+                  >
+                    <History className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() => handleEdit(res)}
                     disabled={deletingId === res.id}
                     aria-label="Edit resolution"
@@ -257,6 +275,15 @@ function ResolutionsManager({ initialResolutions }: ResolutionsManagerProps) {
         setIsOpen={setDialogOpen}
         onSaved={handleSaved}
       />
+
+      {historyResolution && (
+        <ResolutionHistoryDialog
+          resolutionId={historyResolution.id}
+          resolutionTitle={historyResolution.title}
+          isOpen={historyOpen}
+          setIsOpen={setHistoryOpen}
+        />
+      )}
     </>
   );
 }

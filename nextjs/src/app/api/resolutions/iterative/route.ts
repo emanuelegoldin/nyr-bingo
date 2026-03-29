@@ -10,13 +10,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  createSystemResolutionHistoryEntry,
   createIterativeResolution,
   getIterativeResolutionsByUser,
-  getIterativeResolutionById,
+  getResolutionHistoryAccess,
   updateIterativeResolution,
+  getIterativeResolutionById,
   deleteIterativeResolution,
-  User,
 } from '@/lib/db';
+import { ResolutionType } from '@/lib/shared/types';
 import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
 
 /**
@@ -29,11 +31,14 @@ export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthCo
   const id = searchParams.get('id');
 
   if (id) {
-    const resolution = await getIterativeResolutionById(id);
-    if (!resolution) {
+    const access = await getResolutionHistoryAccess(id, currentUser.id);
+    if (!access.resolution || access.resolution.resolutionType !== ResolutionType.ITERATIVE) {
       return errorResponse('Resolution not found', 404);
     }
-    return NextResponse.json({ resolution });
+    if (!access.canView) {
+      return errorResponse('You are not allowed to view this resolution', 403);
+    }
+    return NextResponse.json({ resolution: access.resolution });
   }
 
   const resolutions = await getIterativeResolutionsByUser(currentUser.id);
@@ -44,7 +49,7 @@ export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthCo
  * POST /api/resolutions/iterative - Create a new iterative resolution
  * Body: { title: string, numberOfRepetition: number, description?: string }
  */
-export const POST = withAuth(async (request: NextRequest, { currentUser }: { currentUser: User }) => {
+export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
     const body = await request.json();
   const { title, numberOfRepetition, description } = body;
 
@@ -70,7 +75,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: { cur
  * PUT /api/resolutions/iterative - Update an iterative resolution
  * Body: { id: string, title?: string, description?: string, numberOfRepetition?: number }
  */
-export const PUT = withAuth(async (request: NextRequest, { currentUser }: { currentUser: User }) => {
+export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
     const body = await request.json();
   const { id, title, description, numberOfRepetition } = body;
 
@@ -101,13 +106,29 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: { curr
     return errorResponse('Resolution not found', 404);
   }
 
+  try {
+    await createSystemResolutionHistoryEntry(
+      id,
+      currentUser.id,
+      'resolution.iterative_updated',
+      'Updated iterative resolution details',
+      {
+        titleUpdated: title !== undefined,
+        descriptionUpdated: description !== undefined,
+        repetitionUpdated: numberOfRepetition !== undefined,
+      },
+    );
+  } catch {
+    // Preserve core update behavior even if history logging fails.
+  }
+
   return NextResponse.json({ resolution });
 });
 
 /**
  * DELETE /api/resolutions/iterative?id=... - Delete an iterative resolution
  */
-export const DELETE = withAuth(async (request: NextRequest, { currentUser }: { currentUser: User }) => {
+export const DELETE = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
     const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) {

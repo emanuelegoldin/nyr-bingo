@@ -11,12 +11,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   createCompoundResolution,
+  createSystemResolutionHistoryEntry,
   getCompoundResolutionsByUser,
   getCompoundResolutionById,
+  getResolutionHistoryAccess,
   updateCompoundResolution,
   deleteCompoundResolution,
-  User,
 } from '@/lib/db';
+import { ResolutionType } from '@/lib/shared/types';
 import type { Subtask } from '@/lib/shared/types';
 import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
 
@@ -30,11 +32,14 @@ export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthCo
   const id = searchParams.get('id');
 
   if (id) {
-    const resolution = await getCompoundResolutionById(id);
-    if (!resolution) {
+    const access = await getResolutionHistoryAccess(id, currentUser.id);
+    if (!access.resolution || access.resolution.resolutionType !== ResolutionType.COMPOUND) {
       return errorResponse('Resolution not found', 404);
     }
-    return NextResponse.json({ resolution });
+    if (!access.canView) {
+      return errorResponse('You are not allowed to view this resolution', 403);
+    }
+    return NextResponse.json({ resolution: access.resolution });
   }
 
   const resolutions = await getCompoundResolutionsByUser(currentUser.id);
@@ -45,7 +50,7 @@ export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthCo
  * POST /api/resolutions/compound - Create a new compound resolution
  * Body: { title: string, subtasks: Subtask[], description?: string }
  */
-export const POST = withAuth(async (request: NextRequest, { currentUser }: { currentUser: User }) => {
+export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
   const body = await request.json();
   const { title, subtasks, description } = body;
 
@@ -84,7 +89,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: { cur
  * PUT /api/resolutions/compound - Update a compound resolution
  * Body: { id: string, title?: string, description?: string, subtasks?: Subtask[] }
  */
-export const PUT = withAuth(async (request: NextRequest, { currentUser }: { currentUser: User }) => {
+export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
   const body = await request.json();
   const { id, title, description, subtasks } = body;
 
@@ -119,13 +124,29 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: { curr
     return errorResponse('Resolution not found', 404);
   }
 
+  try {
+    await createSystemResolutionHistoryEntry(
+      id,
+      currentUser.id,
+      'resolution.compound_updated',
+      'Updated compound resolution details',
+      {
+        titleUpdated: title !== undefined,
+        descriptionUpdated: description !== undefined,
+        subtasksUpdated: subtasks !== undefined,
+      },
+    );
+  } catch {
+    // Preserve core update behavior even if history logging fails.
+  }
+
   return NextResponse.json({ resolution });
 });
 
 /**
  * DELETE /api/resolutions/compound?id=... - Delete a compound resolution
  */
-export const DELETE = withAuth(async (request: NextRequest, { currentUser }: { currentUser: User }) => {
+export const DELETE = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
