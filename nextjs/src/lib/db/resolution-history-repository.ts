@@ -14,7 +14,7 @@ import type {
 } from './types';
 import { getResolutionById } from './resolution-repository';
 import { isTeamMember } from './team-repository';
-import { ResolutionScope } from '../shared/types';
+import { ResolutionScope, ResolutionType } from '../shared/types';
 import { v4 as uuidv4 } from 'uuid';
 import type { RowDataPacket } from 'mysql2/promise';
 
@@ -113,7 +113,14 @@ export async function getResolutionHistoryAccess(
     };
   }
 
-  const canWrite = resolution.ownerUserId === requestingUserId;
+  if(resolution.scope === ResolutionScope.TEAM){
+    // TODO: we need a way to tell from which card the resolution is coming from in order to verify if the user is the 
+    // owner of the card. If they are, then they can edit the resolution history.
+  }
+
+  const canWrite = 
+    resolution.scope === ResolutionScope.PERSONAL && resolution.ownerUserId === requestingUserId || // Owner of the resolution
+    resolution.scope === ResolutionScope.MEMBER_PROVIDED && resolution.toUserId === requestingUserId;  // Target user of a member-provided resolution
   const canView = await computeReadAccess(resolution, requestingUserId);
 
   return {
