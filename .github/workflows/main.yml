@@ -62,8 +62,8 @@ jobs:
     needs: compute-release-version
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
-      dockerfile: nextjs/docker/Dockerfile.nginx
-      context: nextjs/
+      dockerfile: nginx/docker/Dockerfile.nginx
+      context: nginx/
       username: ${{ github.actor }}
       image_name: nginx
       image_version: *version
@@ -94,14 +94,14 @@ jobs:
       registry: *registry
     secrets: *secrets
   e2e-tests:
-    needs: build
+    needs: build-and-push-nextjs-app
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - uses: actions/setup-node@v4
         with:
