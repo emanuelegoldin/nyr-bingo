@@ -260,7 +260,12 @@ export async function updateCompoundResolution(
   updates: { title?: string; description?: string | null; subtasks?: Subtask[] }
 ): Promise<Resolution | null> {
   const existing = await getCompoundResolutionById(id);
-  if (!existing || existing.ownerUserId !== ownerUserId) return null;
+  if (!existing ||
+    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId) ||   // Personal resolutions can only be modified by the owner
+    (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient  
+  ) {
+    return null;
+  }
 
   const sets: string[] = [];
   const params: unknown[] = [];
@@ -296,7 +301,12 @@ export async function toggleCompoundSubtask(
   subtaskIndex: number
 ): Promise<Resolution | null> {
   const existing = await getCompoundResolutionById(id);
-  if (!existing || existing.ownerUserId !== ownerUserId || !existing.subtasks) return null;
+  if (!existing ||
+    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId)   // Personal resolutions can only be modified by the owner
+    || (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient
+    || !existing.subtasks) {
+    return null;
+  }
 
   if (subtaskIndex < 0 || subtaskIndex >= existing.subtasks.length) return null;
 
@@ -371,7 +381,12 @@ export async function updateIterativeResolution(
   updates: { title?: string; description?: string | null; numberOfRepetition?: number }
 ): Promise<Resolution | null> {
   const existing = await getIterativeResolutionById(id);
-  if (!existing || existing.ownerUserId !== ownerUserId) return null;
+  if (!existing ||
+    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId) ||   // Personal resolutions can only be modified by the owner
+    (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient  
+  ) {
+    return null;
+  }
 
   const sets: string[] = [];
   const params: unknown[] = [];
@@ -406,8 +421,13 @@ export async function incrementIterativeResolution(
   ownerUserId: string
 ): Promise<Resolution | null> {
   const existing = await getIterativeResolutionById(id);
-  if (!existing || existing.ownerUserId !== ownerUserId) return null;
-
+  if (!existing ||
+    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId) ||   // Personal resolutions can only be modified by the owner
+    (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient  
+  ) {
+    return null;
+  }
+  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
     `UPDATE resolutions SET completed_times = completed_times + 1 WHERE id = ? AND owner_user_id = ?`,
     [id, ownerUserId]
@@ -423,7 +443,12 @@ export async function decrementIterativeResolution(
   ownerUserId: string
 ): Promise<Resolution | null> {
   const existing = await getIterativeResolutionById(id);
-  if (!existing || existing.ownerUserId !== ownerUserId) return null;
+  if (!existing ||
+    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId) ||   // Personal resolutions can only be modified by the owner
+    (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient  
+  ) {
+    return null;
+  }
   if (existing.completedTimes <= 0) return existing;
 
   await query(
