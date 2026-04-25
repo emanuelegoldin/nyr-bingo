@@ -10,7 +10,7 @@
 ##   1234 Fix the login bug           ✗ Missing hashtag
 ##   #1234Fix the login bug           ✗ Missing space or hyphen after issue number
 COMMIT_MESSAGE_REGEX='^#([0-9]+)[[:blank:]-](.*)$'
-ISSUE_NUMBER_REGEX='.*#([0-9]+).*'
+ISSUE_NUMBER_REGEX='.*\/([0-9]+)\/.*'
 # From https://stackoverflow.com/questions/1417957/show-just-the-current-branch-in-git/1418022#1418022
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 RED='\033[0;31m'                      # Error
@@ -59,8 +59,8 @@ function is_provided_issue_number_equal_to_branch_issue_number() {
 # The first argument this hook receives is the message file
 MSG_FILE=$1
 MSG=$(cat $MSG_FILE)
-# If the current branch is "dev" or "release-candidate", we skip the commit message validation
-if [[ "$CURRENT_BRANCH" == "dev" || "$CURRENT_BRANCH" == "release-candidate" ]]; then
+# If the current branch is "dev", "release-candidate", or "doc", we skip the commit message validation
+if [[ "$CURRENT_BRANCH" == "dev" || "$CURRENT_BRANCH" == "release-candidate" || "$CURRENT_BRANCH" == "doc" ]]; then
   echo -e "${GREEN}[POLICY]: Skipping commit message validation for branch '$CURRENT_BRANCH'.${NC}"
   exit 0
 fi
