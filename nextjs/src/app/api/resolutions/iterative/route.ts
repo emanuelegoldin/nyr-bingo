@@ -87,7 +87,10 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthCo
   if (!existing) {
     return errorResponse('Resolution not found', 404);
   }
-  if (existing.ownerUserId !== currentUser.id) {
+  if (
+    (existing.scope === 'personal' && existing.ownerUserId !== currentUser.id) ||   // Personal resolutions can only be modified by the owner
+    (existing.scope === 'member_provided' && existing.toUserId !== currentUser.id)  // Member-provided resolutions can only be modified by the recipient  
+  ) {
     return errorResponse('You can only modify your own resolutions', 403);
   }
 
