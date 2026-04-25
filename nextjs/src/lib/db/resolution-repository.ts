@@ -231,7 +231,7 @@ export async function createCompoundResolution(
      (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, subtasks)
      VALUES (?, ?, ?, ?, 'compound', ?, ?, ?, ?)`,
     [id, ownerUserId, title.trim().slice(0, 255), description?.trim() || null,
-     scope, teamId || null, toUserId || null, JSON.stringify(normalized)]
+      scope, teamId || null, toUserId || null, JSON.stringify(normalized)]
   );
   return (await getResolutionById(id))!;
 }
@@ -285,8 +285,9 @@ export async function updateCompoundResolution(
   if (sets.length === 0) return existing;
 
   params.push(id, ownerUserId);
+  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
-    `UPDATE resolutions SET ${sets.join(', ')} WHERE id = ? AND owner_user_id = ?`,
+    `UPDATE resolutions SET ${sets.join(', ')} WHERE id = ? AND ${user_id_to_compare} = ?`,
     params
   );
   return getResolutionById(id);
@@ -312,9 +313,9 @@ export async function toggleCompoundSubtask(
 
   const updated = [...existing.subtasks];
   updated[subtaskIndex] = { ...updated[subtaskIndex], completed: !updated[subtaskIndex].completed };
-
+  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
-    `UPDATE resolutions SET subtasks = ? WHERE id = ? AND owner_user_id = ?`,
+    `UPDATE resolutions SET subtasks = ? WHERE id = ? AND ${user_id_to_compare} = ?`,
     [JSON.stringify(updated), id, ownerUserId]
   );
   return getResolutionById(id);
@@ -352,7 +353,7 @@ export async function createIterativeResolution(
      (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, number_of_repetition, completed_times)
      VALUES (?, ?, ?, ?, 'iterative', ?, ?, ?, ?, 0)`,
     [id, ownerUserId, title.trim().slice(0, 255), description?.trim() || null,
-     scope, teamId || null, toUserId || null, numberOfRepetition]
+      scope, teamId || null, toUserId || null, numberOfRepetition]
   );
   return (await getResolutionById(id))!;
 }
@@ -406,8 +407,9 @@ export async function updateIterativeResolution(
   if (sets.length === 0) return existing;
 
   params.push(id, ownerUserId);
+  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
-    `UPDATE resolutions SET ${sets.join(', ')} WHERE id = ? AND owner_user_id = ?`,
+    `UPDATE resolutions SET ${sets.join(', ')} WHERE id = ? AND ${user_id_to_compare} = ?`,
     params
   );
   return getResolutionById(id);
@@ -429,7 +431,7 @@ export async function incrementIterativeResolution(
   }
   const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
-    `UPDATE resolutions SET completed_times = completed_times + 1 WHERE id = ? AND owner_user_id = ?`,
+    `UPDATE resolutions SET completed_times = completed_times + 1 WHERE id = ? AND ${user_id_to_compare} = ?`,
     [id, ownerUserId]
   );
   return getResolutionById(id);
@@ -450,9 +452,9 @@ export async function decrementIterativeResolution(
     return null;
   }
   if (existing.completedTimes <= 0) return existing;
-
+  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
-    `UPDATE resolutions SET completed_times = completed_times - 1 WHERE id = ? AND owner_user_id = ?`,
+    `UPDATE resolutions SET completed_times = completed_times - 1 WHERE id = ? AND ${user_id_to_compare} = ?`,
     [id, ownerUserId]
   );
   return getResolutionById(id);
@@ -537,9 +539,9 @@ export async function setTeamGoalResolution(
      (id, owner_user_id, title, description, resolution_type, scope, team_id, subtasks, number_of_repetition)
      VALUES (?, ?, ?, ?, ?, 'team', ?, ?, ?)`,
     [id, ownerUserId, trimmedTitle, trimmedDesc, resolutionType, teamId,
-     resolutionType === ResolutionType.COMPOUND && subtasks
-       ? JSON.stringify(normalizeSubtasks(subtasks)) : null,
-     resolutionType === ResolutionType.ITERATIVE ? numberOfRepetition ?? null : null]
+      resolutionType === ResolutionType.COMPOUND && subtasks
+        ? JSON.stringify(normalizeSubtasks(subtasks)) : null,
+      resolutionType === ResolutionType.ITERATIVE ? numberOfRepetition ?? null : null]
   );
   return (await getResolutionById(id))!;
 }
@@ -609,10 +611,10 @@ export async function createOrUpdateMemberProvidedResolution(
       team_id, to_user_id, subtasks, number_of_repetition)
      VALUES (?, ?, ?, ?, ?, 'member_provided', ?, ?, ?, ?)`,
     [id, fromUserId, trimmedTitle, trimmedDesc, resolutionType,
-     teamId, toUserId,
-     resolutionType === ResolutionType.COMPOUND && subtasks
-       ? JSON.stringify(normalizeSubtasks(subtasks)) : null,
-     resolutionType === ResolutionType.ITERATIVE ? numberOfRepetition ?? null : null]
+      teamId, toUserId,
+      resolutionType === ResolutionType.COMPOUND && subtasks
+        ? JSON.stringify(normalizeSubtasks(subtasks)) : null,
+      resolutionType === ResolutionType.ITERATIVE ? numberOfRepetition ?? null : null]
   );
   return getResolutionById(id);
 }
