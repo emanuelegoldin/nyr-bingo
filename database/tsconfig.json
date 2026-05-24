@@ -1,0 +1,10 @@
+{
+   "compilerOptions": {
+       "types" : [
+            "node",
+            "jest"
+        ]
+   },
+   "include": ["jest.db.config.ts", "tests/**/*.test.ts", "tests/jest.setup.ts", "scripts/run-db-tests.ts"],
+   "exclude": ["node_modules"]
+}

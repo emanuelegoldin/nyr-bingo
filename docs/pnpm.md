@@ -16,3 +16,18 @@ Solution: set the store-dir to point to `nextjs/.pnpm-store`
 # From nextjs/
 pnpm config set store-dir ".pnpm-store"
 ```
+
+> Using a .npmrc file allows to define the location of the pnpm store directory thriugh the "store-dir" variable
+
+## Initialize Folder
+
+```sh
+pnpm -C <folder> init   # Creates package.json for context <folder>
+```
+
+We can then add dependencies:
+
+```sh
+pnpm -C <folder> add mysql2
+pnpm -C database add -D jest ts-jest @types/jest tsx typescript # Add dev dependency
+```
