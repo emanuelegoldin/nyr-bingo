@@ -42,6 +42,26 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+  db-tests:
+    image: node:lts-slim
+    container_name: nyr-bingo-db-tests
+    profiles:
+      - test
+    working_dir: /workspace/database
+    volumes:
+      - ./:/workspace
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_ROOT_PASSWORD}
+    command: >
+      sh -c "corepack enable pnpm && pnpm -C /workspace/database install && pnpm -C /workspace/database test"
+    depends_on:
+      mariadb:
+        condition: service_healthy
   nextjs-app:
     build:
       context: ./nextjs/
