@@ -9,9 +9,6 @@ export { getPool, query, getConnection, closePool } from './connection';
 // Types
 export * from './types';
 
-// Schema
-export { schema } from './schema';
-
 // Repositories
 export * from './user-repository';
 export * from './resolution-repository';

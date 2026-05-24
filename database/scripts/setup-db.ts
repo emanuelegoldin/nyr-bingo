@@ -5,18 +5,20 @@
  * Usage: npx tsx scripts/setup-db.ts
  * 
  * Make sure to set up your .env.local file with database credentials first.
+ * 
+ * OLD USAGE (deprecated): it was used to initialize the database in the nextjs app, but now the nextjs app directly uses the same schema from this script, so it should be run manually if needed to set up a local database for development or testing.
  */
 
 import mysql from 'mysql2/promise';
-import { schema } from '../src/lib/db/schema';
-import * as dotenv from 'dotenv';
+import { schema } from './schema';
+// import * as dotenv from 'dotenv';
 
-// Load environment variables
-dotenv.config({ path: '.env.local' });
-dotenv.config({ path: '.env' });
+// // Load environment variables
+// dotenv.config({ path: '.env.local' });
+// dotenv.config({ path: '.env' });
 
 async function setupDatabase() {
-  const dbName = process.env.DB_NAME || 'resolution_bingo';
+  const dbName = process.env.DB_NAME || 'resolution_bingo_test';
   
   // First connect without database to create it
   const connection = await mysql.createConnection({
