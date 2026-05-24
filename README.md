@@ -19,6 +19,8 @@ To launch the application:
 
 ## Start the Application
 
+Configure the environmental variables in the .env file (copy `.env.example` and rename it) and the docker-compose file, if needed.
+
 From the root folder of the project:
 
 ```sh
