@@ -10,13 +10,11 @@
  *   3. Leaderboard — ranked table of first-bingo times
  */
 
-import { useState, useCallback } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useSetAppHeaderTitle } from "@/components/app-header-title";
+import {
+  ResolutionCreateEditDialog,
+  type ResolutionFormData,
+} from "@/components/dialogs/resolution-create-edit-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,20 +27,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Send, Settings, Swords, Copy, UserPlus, Loader2, Check, Trash2, Pencil, Plus } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
-import {
-  ResolutionCreateEditDialog,
-  type ResolutionFormData,
-} from "@/components/dialogs/resolution-create-edit-dialog";
+import { Check, Copy, Crown, Loader2, Pencil, Plus, Send, Settings, Swords, Trash2, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useState } from 'react';
 
 import { CardsTab } from "./cards-tab";
-import { MembersTab } from "./members-tab";
 import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
-import type { Team, BingoCardData, TeamProvidedResolution } from "./types";
+import { MembersTab } from "./members-tab";
+import type { BingoCardData, Team, TeamProvidedResolution } from "./types";
 
 interface TeamDetailPageClientProps {
   teamId: string;

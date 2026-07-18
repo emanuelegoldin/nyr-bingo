@@ -6,12 +6,12 @@
  * of every type (base, compound, iterative) lives in the `resolutions` table.
  */
 
+import type { RowDataPacket } from 'mysql2/promise';
+import { v4 as uuidv4 } from 'uuid';
+import type { Subtask } from '../shared/types';
+import { ResolutionScope, ResolutionType } from '../shared/types';
 import { query } from './connection';
 import type { Resolution } from './types';
-import { ResolutionType, ResolutionScope } from '../shared/types';
-import type { Subtask } from '../shared/types';
-import { v4 as uuidv4 } from 'uuid';
-import type { RowDataPacket } from 'mysql2/promise';
 
 // ── Row type from database (snake_case) ──────────────────────────
 

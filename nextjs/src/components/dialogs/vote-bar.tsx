@@ -1,11 +1,11 @@
 "use client";
 
+import { useToast } from "@/hooks/use-toast";
 import { ReviewVote } from "@/lib/db/types";
 import { VoteType } from "@/lib/shared/types";
-import { Button } from "../ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { useCallback, useState } from "react";
+import { Button } from "../ui/button";
 
 /**
  * VoteBar — extracted voting UI for review threads.

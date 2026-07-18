@@ -4,9 +4,9 @@
  * Spec Reference: 01-authentication.md - Access Control
  */
 
-import { cookies } from 'next/headers';
 import { findSessionByToken, findUserById } from '@/lib/db';
 import type { User } from '@/lib/db/types';
+import { cookies } from 'next/headers';
 
 /**
  * Get the current authenticated user from the session

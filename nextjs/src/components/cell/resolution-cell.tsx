@@ -1,23 +1,23 @@
 import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Check, Hourglass, ThumbsUp, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { MarkCellCompleteDialog } from "../dialogs/complete-dialog";
 import { EditCellDialog } from "../dialogs/edit-cell";
 import { RequestProofDialog } from "../dialogs/request-proof";
-import { CellThreadDialog } from "../dialogs/thread-dialog";
 import {
-  ResolutionDetailDialog,
-  type ResolutionDetailData,
-  type CellContext,
+    ResolutionDetailDialog,
+    type CellContext,
+    type ResolutionDetailData,
 } from "../dialogs/resolution-detail-dialog";
 import { ResolutionHistoryDialog } from "../dialogs/resolution-history-dialog";
+import { CellThreadDialog } from "../dialogs/thread-dialog";
 import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
-import { BingoCell } from "./types";
 import { EmptyCell } from "./empty";
-import Link from "next/link";
+import { BingoCell } from "./types";
 
 interface ResolutionCellProps {
     cell: BingoCell,

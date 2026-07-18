@@ -8,9 +8,7 @@
  * - Client component only handles interactive mutations and local UI state
  */
 
-import { Suspense } from 'react';
-import { notFound, redirect } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import type { ResolutionFormData } from '@/components/dialogs/resolution-create-edit-dialog';
 import { getCurrentUser } from '@/lib/auth';
 import {
   getTeamBingoCards,
@@ -23,7 +21,9 @@ import {
   type Resolution,
   type TeamWithMembers,
 } from '@/lib/db';
-import type { ResolutionFormData } from '@/components/dialogs/resolution-create-edit-dialog';
+import { Loader2 } from 'lucide-react';
+import { notFound, redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import TeamDetailPageClient from './team-detail-page-client';
 import type { BingoCardData, Team, TeamProvidedResolution } from './types';
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from 'react';
 import { BingoCard } from '@/components/bingo-card';
-import { TeamMembersProvider, TeamMembersMap } from '@/components/team-members-context';
+import { TeamMembersMap, TeamMembersProvider } from '@/components/team-members-context';
 import { TeamWsProvider } from '@/components/team-ws-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import type { BingoCardWithCells, TeamWithMembers } from '@/lib/db/types';
+import { useCallback, useMemo, useState } from 'react';
 
 interface DashboardTeamCardClientProps {
   team: TeamWithMembers;

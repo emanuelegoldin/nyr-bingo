@@ -3,8 +3,8 @@
  * Spec Reference: 04-bingo-teams.md, 06-bingo-gameplay.md
  */
 
-import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import type { Subtask } from "@/lib/shared/types";
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 
 /** Team member shape as returned by the team detail API. */
 export interface TeamMember {

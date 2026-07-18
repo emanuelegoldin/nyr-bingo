@@ -4,8 +4,8 @@
  * Spec Reference: 01-authentication.md - Email Verification
  */
 
-import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import nodemailer from 'nodemailer';
 
 // Default SMTP provider for this application
 const DEFAULT_SMTP_HOST = 'smtp.soho.com';

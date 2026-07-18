@@ -16,14 +16,14 @@
  * team-level WebSocket.
  */
 
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
-import { Button } from "./ui/button";
-import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { hasBingo } from "@/lib/shared/bingo-utils";
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { JokerCell } from "./cell/joker";
 import { ResolutionCell } from "./cell/resolution-cell";
 import { Confetti } from "./confetti";
 import { useTeamWs } from "./team-ws-provider";
+import { Button } from "./ui/button";
 
 // ── Context for child components to broadcast card-refresh ────────
 

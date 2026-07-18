@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import { Input } from "../ui/input";
-import { CellDialog } from "./cell-dialog"
-import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "../ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CellState, ProofStatus, CellSourceType, ResolutionType } from "@/lib/shared/types";
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "../ui/badge";
+import { Input } from "../ui/input";
+import { CellDialog } from "./cell-dialog";
 
 interface BingoCell {
       id: string;

@@ -5,18 +5,18 @@
  * and centralizes visibility/write authorization checks.
  */
 
+import type { RowDataPacket } from 'mysql2/promise';
+import { v4 as uuidv4 } from 'uuid';
+import { ResolutionScope } from '../shared/types';
 import { query } from './connection';
+import { getResolutionById } from './resolution-repository';
+import { isTeamMember } from './team-repository';
 import type {
   Resolution,
   ResolutionHistoryAccess,
   ResolutionHistoryEntry,
   ResolutionHistoryEntryType,
 } from './types';
-import { getResolutionById } from './resolution-repository';
-import { isTeamMember } from './team-repository';
-import { ResolutionScope, ResolutionType } from '../shared/types';
-import { v4 as uuidv4 } from 'uuid';
-import type { RowDataPacket } from 'mysql2/promise';
 
 interface ResolutionHistoryEntryRow extends RowDataPacket {
   id: string;

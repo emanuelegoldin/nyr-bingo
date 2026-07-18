@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, History } from "lucide-react";
+import type { WsIncomingMessage } from "@/components/team-ws-provider";
+import { useTeamWs } from "@/components/team-ws-provider";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,13 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useTeamWs } from "@/components/team-ws-provider";
-import type { WsIncomingMessage } from "@/components/team-ws-provider";
+import { History, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useState } from "react";
 
 interface HistoryEntry {
   id: string;

@@ -7,14 +7,10 @@
  * - Each started-team card streams independently via Suspense
  */
 
-import { Suspense } from 'react';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { Loader2, Plus, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardPageShell from '@/components/dashboard/dashboard-page-shell';
 import DashboardTeamCardClient from '@/components/dashboard/dashboard-team-card-client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getCurrentUser } from '@/lib/auth';
 import {
   getBingoCard,
@@ -22,6 +18,10 @@ import {
   getTeamsForUser,
   type TeamWithMembers,
 } from '@/lib/db';
+import { Loader2, Plus, Users } from 'lucide-react';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 function DashboardCardLoadingFallback({ teamName }: { teamName: string }) {
   return (

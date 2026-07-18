@@ -1,13 +1,13 @@
 "use client";
 
+import { useToast } from "@/hooks/use-toast";
 import { ReviewFile, ReviewMessageAndAuthor, ReviewThreadWithDetails } from "@/lib/db/types";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import { CellDialog } from "./cell-dialog"
+import { CellDialog } from "./cell-dialog";
 import { VoteBar } from "./vote-bar";
-import { useEffect, useRef, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 
 function getWsUrl(): string | null {
   if (typeof window !== 'undefined') {

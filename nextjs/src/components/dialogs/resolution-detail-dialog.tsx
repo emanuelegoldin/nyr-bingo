@@ -16,18 +16,18 @@
 
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { CellDialog } from "./cell-dialog";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { Progress } from "../ui/progress";
-import { DialogFooter } from "../ui/dialog";
-import { Check, Minus, Plus, Loader2, Undo2, Eye, MessageSquare, Hourglass, ThumbsUp, X, History } from "lucide-react";
-import { CellState, ResolutionType, ProofStatus } from "@/lib/shared/types";
 import type { Subtask } from "@/lib/shared/types";
+import { CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
-import { useTeamWs } from "../team-ws-provider";
+import { Check, Eye, History, Hourglass, Loader2, MessageSquare, Minus, Plus, ThumbsUp, Undo2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import type { WsIncomingMessage } from "../team-ws-provider";
+import { useTeamWs } from "../team-ws-provider";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { DialogFooter } from "../ui/dialog";
+import { Progress } from "../ui/progress";
+import { CellDialog } from "./cell-dialog";
 
 /* ─── Data types ─────────────────────────────────────────────────── */
 

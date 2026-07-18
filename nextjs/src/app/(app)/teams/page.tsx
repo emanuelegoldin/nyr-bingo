@@ -5,17 +5,17 @@
  * Spec Reference: 04-bingo-teams.md
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useSetAppHeaderTitle } from "@/components/app-header-title";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Users, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
+import { Loader2, Plus, Users } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from 'react';
 
 interface TeamMember {
   membership: {

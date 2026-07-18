@@ -8,7 +8,13 @@
  * Creation and editing are handled via the ResolutionCreateEditDialog.
  */
 
-import { useState, useCallback } from "react";
+import { useSetAppHeaderTitle } from "@/components/app-header-title";
+import {
+  ResolutionCreateEditDialog,
+  type ResolutionFormData,
+} from "@/components/dialogs/resolution-create-edit-dialog";
+import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,17 +24,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Pencil, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
-import {
-  ResolutionCreateEditDialog,
-  type ResolutionFormData,
-} from "@/components/dialogs/resolution-create-edit-dialog";
-import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
 import type { Subtask } from "@/lib/shared/types";
+import { History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useCallback, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 

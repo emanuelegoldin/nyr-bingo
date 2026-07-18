@@ -3,25 +3,25 @@
  * Spec Reference: 04-bingo-teams.md
  */
 
-import { query, getConnection } from './connection';
-import type {
-  Team,
-  TeamMembership,
-  TeamInvitation,
-  TeamWithMembers,
-  TeamMemberWithProfile,
-} from './types';
+import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { getPublicUserProfile } from './user-repository';
+import { InvitationStatus, ResolutionType, TeamRole, TeamStatus } from '../shared/types';
+import { getConnection, query } from './connection';
 import {
-  getTeamGoalResolution,
-  setTeamGoalResolution,
+  createOrUpdateMemberProvidedResolution,
   getMemberProvidedResolutionsByUser,
   getMemberProvidedResolutionsForUser,
-  createOrUpdateMemberProvidedResolution,
+  getTeamGoalResolution,
+  setTeamGoalResolution,
 } from './resolution-repository';
-import type { RowDataPacket } from 'mysql2/promise';
-import { TeamStatus, TeamRole, InvitationStatus, ResolutionType } from '../shared/types';
+import type {
+  Team,
+  TeamInvitation,
+  TeamMembership,
+  TeamMemberWithProfile,
+  TeamWithMembers,
+} from './types';
+import { getPublicUserProfile } from './user-repository';
 
 // Row types from database (snake_case)
 interface TeamRow extends RowDataPacket {

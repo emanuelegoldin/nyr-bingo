@@ -5,11 +5,6 @@
  */
 
 export {
-  createIterativeResolution,
-  getIterativeResolutionsByUser,
-  getIterativeResolutionById,
-  updateIterativeResolution,
-  incrementIterativeResolution,
-  decrementIterativeResolution,
-  deleteIterativeResolution,
+  createIterativeResolution, decrementIterativeResolution,
+  deleteIterativeResolution, getIterativeResolutionById, getIterativeResolutionsByUser, incrementIterativeResolution, updateIterativeResolution
 } from './resolution-repository';

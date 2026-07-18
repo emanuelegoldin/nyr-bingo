@@ -5,7 +5,8 @@
  * Spec Reference: 02-user-profile-and-privacy.md
  */
 
-import { useState } from 'react';
+import { useSetAppHeaderTitle } from "@/components/app-header-title";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,11 +15,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
 import type { UserProfile } from '@/lib/db/types';
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface UserViewModel {
   id: string;

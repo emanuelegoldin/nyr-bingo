@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Button } from "../ui/button"
-import { DialogFooter } from "../ui/dialog"
-import { CellDialog } from "./cell-dialog"
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { Button } from "../ui/button";
+import { DialogFooter } from "../ui/dialog";
+import { CellDialog } from "./cell-dialog";
 
 interface RequestProofDialogProps {
     cell: {

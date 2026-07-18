@@ -9,16 +9,16 @@
  * are view-only.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { BingoCard } from "@/components/bingo-card";
 import { TeamMembersProvider } from "@/components/team-members-context";
 import { TeamWsProvider } from "@/components/team-ws-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import type { Team, BingoCardData } from "./types";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { BingoCardData, Team } from "./types";
 
 interface CardsTabProps {
   teamId: string;

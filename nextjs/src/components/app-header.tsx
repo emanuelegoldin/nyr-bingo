@@ -1,9 +1,8 @@
 "use client";
 
+import { useAppHeaderTitle } from "@/components/app-header-title";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { UserAvatarButton } from "./user-avatar-button";
-import React from "react";
-import { useAppHeaderTitle } from "@/components/app-header-title";
 
 export function AppHeader() {
 

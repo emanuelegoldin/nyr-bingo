@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from 'react';
 import { useSetAppHeaderTitle } from '@/components/app-header-title';
+import type { ReactNode } from 'react';
 
 interface DashboardPageShellProps {
   children: ReactNode;

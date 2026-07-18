@@ -3,21 +3,21 @@
  * Spec Reference: Resolution Review & Proof Workflow Implementation
  */
 
-import { query, getConnection } from './connection';
-import type {
-  ReviewThread,
-  ReviewMessageAndAuthor,
-  ReviewFile,
-  ReviewVote,
-  ReviewThreadWithDetails,
-} from './types';
 import { randomUUID } from 'crypto';
-import { isTeamMember } from './team-repository';
-import { refreshLeaderboardEntry } from './leaderboard-repository';
+import { PoolConnection } from 'mysql2/promise';
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
-import { PoolConnection } from 'mysql2/promise';
 import { ThreadStatus, VoteType } from '../shared/types';
+import { getConnection, query } from './connection';
+import { refreshLeaderboardEntry } from './leaderboard-repository';
+import { isTeamMember } from './team-repository';
+import type {
+  ReviewFile,
+  ReviewMessageAndAuthor,
+  ReviewThread,
+  ReviewThreadWithDetails,
+  ReviewVote,
+} from './types';
 
 // Row types from database
 interface ThreadRow {
