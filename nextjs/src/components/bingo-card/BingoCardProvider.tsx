@@ -3,6 +3,7 @@
 import { BingoCardWithCells } from "@/lib/db/types";
 import { Card, CardHeader } from "@ui/card";
 import { createContext, useMemo, useState } from "react";
+import { useTeamWs } from "../team-ws-provider";
 import { BingoCardContent } from "./BingoCardContent";
 import { BingoCardEditButton } from "./dashboard-page/BingoCardEditButton";
 import { ProfileInfo } from "./team-page/ProfileInfo";
@@ -15,8 +16,9 @@ type BaseBingoCardProviderProps = {
     currentUserId: string,
     triggerRefresh?: () => boolean,
     cardFetchInput?: string | URL | Request
-    headerSlot?: React.ReactNode;
-    children?: React.ReactNode;
+    headerSlot?: React.ReactNode
+    children?: React.ReactNode
+    broadcastRefresh?: () => void
 };
 
 type BingoCardContextType = {
@@ -37,7 +39,7 @@ export const BingoCardContext = createContext<BingoCardContextType>({
     },
     isEditMode: false,
     actions: {
-        setEditMode: () => { }
+        setEditMode: () => { },
     }
 });
 
@@ -50,7 +52,8 @@ function BingoCard(
         currentUserId,
         triggerRefresh,
         cardFetchInput,
-        headerSlot
+        headerSlot,
+        broadcastRefresh
     }: BaseBingoCardProviderProps
 ) {
     // BAD! Overwriting the state with setState causes too many re-renders
@@ -110,6 +113,7 @@ function BingoCard(
                         currentUserId={currentUserId}
                         triggerRefresh={triggerRefresh}
                         fetchInput={cardFetchInput}
+                        broadcastRefresh={broadcastRefresh}
                     />
                 </BingoCard.Frame>
             </BingoCardContext>
@@ -156,6 +160,8 @@ BingoCard.ProfileInfo = ProfileInfo;
 BingoCard.Content = BingoCardContent;  // Reuse the BingoCardContent component defined in card.tsx
 
 export function TeamBingoCardProvider(props: Omit<BaseBingoCardProviderProps, 'headerSlot'>) {
+    const { broadcastCardRefresh } = useTeamWs();
+
     const headerSlot = (
         <>
             <ProfileInfo isCurrentUser={props.isOwner} />
@@ -166,6 +172,7 @@ export function TeamBingoCardProvider(props: Omit<BaseBingoCardProviderProps, 'h
         <BingoCard
             {...props}
             headerSlot={headerSlot}
+            broadcastRefresh={broadcastCardRefresh}
         />
     );
 }

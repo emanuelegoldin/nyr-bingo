@@ -71,7 +71,6 @@ export function CardsTab({
   }
 
   return (
-    // <TeamWsProvider teamId={team.id} onRefresh={loadCards}>
     <TeamWsProvider teamId={team.id}>
       <TeamMembersProvider members={membersMap}>
         <div className="space-y-8">

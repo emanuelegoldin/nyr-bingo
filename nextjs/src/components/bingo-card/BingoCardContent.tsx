@@ -1,31 +1,10 @@
 import { BingoCardWithCells } from "@/lib/db/types";
-import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { JokerCell } from "../cell/joker";
 import { ResolutionCell } from "../cell/resolution-cell";
 import { BingoCardContext } from "./BingoCardProvider";
-
-export interface BingoCell {
-  id: string;
-  cardId: string;
-  position: number;
-  resolutionId: string | null;
-  resolutionType: ResolutionType;
-  resolutionText: string;
-  resolutionTitle: string;
-  isJoker: boolean;
-  isEmpty: boolean;
-  sourceType: CellSourceType;
-  sourceUserId: string | null;
-  state: CellState;
-  reviewThreadId?: string | null;
-  proof: {
-    id: string;
-    status: ProofStatus;
-  } | null;
-}
 
 export function BingoCardContent(
   {
@@ -35,7 +14,8 @@ export function BingoCardContent(
     teamId,
     currentUserId,
     triggerRefresh,
-    fetchInput
+    fetchInput,
+    broadcastRefresh
   }
     :
     {
@@ -45,7 +25,8 @@ export function BingoCardContent(
       teamId: string,
       currentUserId: string,
       triggerRefresh?: () => boolean,
-      fetchInput?: string | URL | Request
+      fetchInput?: string | URL | Request,
+      broadcastRefresh?: () => void         // Pass through useContext for Team page to broadcast changes with websocket
     }
 ) {
   // Hooks
@@ -81,7 +62,10 @@ export function BingoCardContent(
         variant: 'destructive',
       });
     }
-  }, [currentUserId, teamId, toast]);
+    if (broadcastRefresh) {
+      broadcastRefresh();
+    }
+  }, [currentUserId, teamId, toast, fetchUrl, broadcastRefresh]);
 
   const handleCellUpdate = useCallback(
     async (cellId: string, newState: 'pending' | 'completed') => {
@@ -113,8 +97,11 @@ export function BingoCardContent(
           variant: 'destructive',
         });
       }
+      if (broadcastRefresh) {
+        broadcastRefresh();
+      }
     },
-    [reloadCard, toast]
+    [reloadCard, toast, broadcastRefresh]
   );
 
   // Effects
