@@ -1,10 +1,12 @@
+import { AppLogo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CheckCircle2, Goal, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { AppLogo } from '@/components/icons';
+
+const version = process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0.0';
 
 const features = [
   {
@@ -45,7 +47,7 @@ export default function Home() {
       </header>
       <main className="flex-1">
         <section className="relative w-full pt-12 md:pt-24 lg:pt-32">
-           {heroImage && (
+          {heroImage && (
             <Image
               src={heroImage.imageUrl}
               alt={heroImage.description}
@@ -65,7 +67,7 @@ export default function Home() {
                   Resolution Bingo transforms your personal goals into a fun, competitive, and collaborative team experience.
                 </p>
               </div>
-               {heroImage && (
+              {heroImage && (
                 <div className="hidden md:flex justify-center">
                   <Image
                     src={heroImage.imageUrl}
@@ -109,7 +111,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-foreground/60">&copy; 2026 Resolution Bingo.</p>
+        <p className="text-xs text-foreground/60">&copy; 2026 Resolution Bingo. Version {version}</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           {/* TODO: Add links when pages are available
            <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
