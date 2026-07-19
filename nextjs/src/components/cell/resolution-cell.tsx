@@ -1,3 +1,4 @@
+import { BingoCellWithProof } from "@/lib/db/types";
 import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Check, Hourglass, ThumbsUp, X } from "lucide-react";
@@ -17,11 +18,10 @@ import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
 import { EmptyCell } from "./empty";
-import { BingoCell } from "./types";
 
 interface ResolutionCellProps {
-    cell: BingoCell,
-    existingCells: BingoCell[],
+    cell: BingoCellWithProof,
+    existingCells: BingoCellWithProof[],
     editMode: boolean,
     teamId: string,
     isOwner: boolean,
@@ -178,10 +178,7 @@ export const ResolutionCell = ({
     const displayTitle = cell.resolutionTitle || cell.resolutionText;
     // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell is selectable (including empty)
     const canEditContent = Boolean(editMode && isOwner && cell.sourceType !== CellSourceType.TEAM);
-    // Compound/iterative types disable manual complete — state is automatic
-    const isAutomatic = cell.resolutionType === ResolutionType.COMPOUND || cell.resolutionType === ResolutionType.ITERATIVE;
     const canInteract =
-        cell.state !== CellState.ACCOMPLISHED &&    // Accomplished cells have no interactions
         (
             canEditContent ||
             (!editMode && !cell.isEmpty)  // Any non-empty cell can be clicked to open detail view
@@ -198,11 +195,11 @@ export const ResolutionCell = ({
     return (
         <>
             {cell.isEmpty ?
-                <EmptyCell 
+                <EmptyCell
                     editMode={editMode}
-                    isOwner={isOwner} 
-                    onClick={handleClick}/>
-            :
+                    isOwner={isOwner}
+                    onClick={handleClick} />
+                :
                 <Cell
                     cellClassName={cn(
                         "relative flex flex-col items-center justify-center aspect-square p-2 rounded-lg border shadow-sm text-center transition-all duration-300",
@@ -221,15 +218,15 @@ export const ResolutionCell = ({
                     <Badge variant="outline" className="absolute bottom-1 right-1 text-xs hidden sm:inline-flex">
                         {cell.sourceType === CellSourceType.TEAM && "Team Goal"}
                         {cell.sourceType === CellSourceType.MEMBER_PROVIDED && (
-                          cell.sourceUserId ? (
-                            <Link
-                              href={`/profile/${cell.sourceUserId}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="hover:underline"
-                            >
-                              {usernames[cell.sourceUserId] ?? "Team member"}
-                            </Link>
-                          ) : "Team member"
+                            cell.sourceUserId ? (
+                                <Link
+                                    href={`/profile/${cell.sourceUserId}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="hover:underline"
+                                >
+                                    {usernames[cell.sourceUserId] ?? "Team member"}
+                                </Link>
+                            ) : "Team member"
                         )}
                         {cell.sourceType === CellSourceType.PERSONAL && "Personal"}
                     </Badge>
@@ -285,11 +282,11 @@ export const ResolutionCell = ({
                     setIsOpen={setIsModalOpen}
                     isOwner={isOwner}
                     sourceLabel={
-                      cell.sourceType === CellSourceType.TEAM
-                        ? "Team Goal"
-                        : cell.sourceType === CellSourceType.MEMBER_PROVIDED
-                          ? (cell.sourceUserId ? (usernames[cell.sourceUserId] ?? "Team member") : "Team member")
-                          : "Personal"
+                        cell.sourceType === CellSourceType.TEAM
+                            ? "Team Goal"
+                            : cell.sourceType === CellSourceType.MEMBER_PROVIDED
+                                ? (cell.sourceUserId ? (usernames[cell.sourceUserId] ?? "Team member") : "Team member")
+                                : "Personal"
                     }
                     onRefresh={onRefresh}
                     onComplete={handleCompleteFromDetail}
