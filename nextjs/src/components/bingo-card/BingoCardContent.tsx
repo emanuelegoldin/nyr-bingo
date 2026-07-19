@@ -5,6 +5,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { JokerCell } from "../cell/joker";
 import { ResolutionCell } from "../cell/resolution-cell";
 import { BingoCardContext } from "./BingoCardProvider";
+import { ConfettiLayer } from "./ConfettiLayer";
 
 export function BingoCardContent(
   {
@@ -115,6 +116,7 @@ export function BingoCardContent(
 
   return (
     <CardContent>
+      <ConfettiLayer cells={card.cells} />
       <div className="grid grid-cols-5 grid-rows-5 gap-2 md:gap-4">
         {card.cells.map((cell) => (
           cell.isJoker ?
