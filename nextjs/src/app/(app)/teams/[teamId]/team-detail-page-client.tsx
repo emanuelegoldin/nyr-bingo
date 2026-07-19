@@ -38,15 +38,16 @@ import { Check, Copy, Crown, Loader2, Pencil, Plus, Send, Settings, Swords, Tras
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from 'react';
 
+import { BingoCardWithCells } from "@/lib/db/types";
 import { CardsTab } from "./cards-tab";
 import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
 import { MembersTab } from "./members-tab";
-import type { BingoCardData, Team, TeamProvidedResolution } from "./types";
+import type { Team, TeamProvidedResolution } from "./types";
 
 interface TeamDetailPageClientProps {
   teamId: string;
   initialTeam: Team;
-  initialCards: BingoCardData[];
+  initialCards: BingoCardWithCells[];
   initialCurrentUserId: string;
   initialTeamGoal: ResolutionFormData | null;
   initialExistingResolutions: TeamProvidedResolution[];
@@ -74,17 +75,17 @@ export default function TeamDetailPageClient({
   // Delete team dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Team goal resolution
   const [teamGoal, setTeamGoal] = useState<ResolutionFormData | null>(initialTeamGoal);
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
-  
+
   // Invite dialog
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [isCreatingInvite, setIsCreatingInvite] = useState(false);
   const [copied, setCopied] = useState(false);
-  
+
   // Member resolutions dialog
   const [memberResolutionsOpen, setMemberResolutionsOpen] = useState(false);
   const [existingResolutions, setExistingResolutions] = useState<TeamProvidedResolution[]>(
@@ -101,10 +102,10 @@ export default function TeamDetailPageClient({
       // Get team details
       const response = await fetch(`/api/teams/${teamId}`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setTeam(data.team);
-        
+
         // Get team goal resolution
         const goalRes = await fetch(`/api/teams/${teamId}/goal`);
         const goalData = await goalRes.json();
@@ -120,7 +121,7 @@ export default function TeamDetailPageClient({
         } else {
           setTeamGoal(null);
         }
-        
+
         // Get existing member-provided resolutions
         const resRes = await fetch(`/api/teams/${teamId}/resolutions`);
         const resData = await resRes.json();
@@ -304,11 +305,10 @@ export default function TeamDetailPageClient({
               Team Leader: {leader?.user.displayName || leader?.user.username || 'Unknown'}
             </CardDescription>
             <div className="mt-2">
-              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                team.status === 'started' 
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-              }`}>
+              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${team.status === 'started'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                }`}>
                 {team.status === 'started' ? 'Game Started' : 'Forming Team'}
               </span>
             </div>
@@ -339,7 +339,7 @@ export default function TeamDetailPageClient({
                         <div className="space-y-2">
                           <Label>Invite Link</Label>
                           <div className="flex gap-2">
-                            <Input 
+                            <Input
                               value={`${typeof window !== 'undefined' ? window.location.origin : ''}/join/${inviteCode}`}
                               readOnly
                             />
@@ -404,7 +404,7 @@ export default function TeamDetailPageClient({
             )}
 
             <Button variant="outline" onClick={() => { setMemberResolutionsOpen(true); loadTeam(); }}>
-              <Send className="h-4 w-4 mr-2"/> Propose Resolutions
+              <Send className="h-4 w-4 mr-2" /> Propose Resolutions
             </Button>
           </div>
         </CardHeader>

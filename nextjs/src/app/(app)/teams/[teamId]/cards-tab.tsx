@@ -15,15 +15,14 @@ import { TeamWsProvider } from "@/components/team-ws-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { BingoCardWithCells } from "@/lib/db/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { BingoCardData, Team } from "./types";
+import type { Team } from "./types";
 
 interface CardsTabProps {
   teamId: string;
   team: Team;
-  initialCards: BingoCardData[];
+  initialCards: BingoCardWithCells[];
   currentUserId: string;
 }
 
@@ -34,7 +33,7 @@ export function CardsTab({
   currentUserId,
 }: CardsTabProps) {
   const { toast } = useToast();
-  const [cards, setCards] = useState<BingoCardData[]>(initialCards);
+  const [cards, setCards] = useState<BingoCardWithCells[]>(initialCards);
 
   const loadCards = useCallback(async () => {
     try {

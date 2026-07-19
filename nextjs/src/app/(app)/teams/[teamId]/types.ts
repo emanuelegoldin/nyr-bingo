@@ -4,7 +4,7 @@
  */
 
 import type { Subtask } from "@/lib/shared/types";
-import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
+import { ResolutionType } from "@/lib/shared/types";
 
 /** Team member shape as returned by the team detail API. */
 export interface TeamMember {
@@ -33,36 +33,6 @@ export interface Team {
   teamResolutionText: string | null;
   status: "forming" | "started";
   members: TeamMember[];
-}
-
-/** Bingo cell shape as returned by the cards API. */
-export interface BingoCellData {
-  id: string;
-  cardId: string;
-  position: number;
-  resolutionId: string | null;
-  resolutionType: ResolutionType;
-  resolutionText: string;
-  resolutionTitle: string;
-  isJoker: boolean;
-  isEmpty: boolean;
-  sourceType: CellSourceType;
-  sourceUserId: string | null;
-  state: CellState;
-  reviewThreadId?: string | null;
-  proof: {
-    id: string;
-    status: ProofStatus;
-  } | null;
-}
-
-/** Bingo card shape as returned by the cards API. */
-export interface BingoCardData {
-  id: string;
-  teamId: string;
-  userId: string;
-  gridSize: number;
-  cells: BingoCellData[];
 }
 
 /** Team-provided resolution shape (from unified Resolution entity). */
