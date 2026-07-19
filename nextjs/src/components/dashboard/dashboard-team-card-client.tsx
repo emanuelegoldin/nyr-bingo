@@ -1,12 +1,11 @@
 "use client";
 
-import { BingoCard } from '@/components/bingo-card';
+import { DashboardBingoCardProvider } from '@/components/bingo-card/BingoCardProvider';
 import { TeamMembersMap, TeamMembersProvider } from '@/components/team-members-context';
 import { TeamWsProvider } from '@/components/team-ws-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import type { BingoCardWithCells, TeamWithMembers } from '@/lib/db/types';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface DashboardTeamCardClientProps {
   team: TeamWithMembers;
@@ -19,7 +18,6 @@ export default function DashboardTeamCardClient({
   currentUserId,
   initialCard,
 }: DashboardTeamCardClientProps) {
-  const { toast } = useToast();
   const [card, setCard] = useState<BingoCardWithCells>(initialCard);
 
   const membersMap = useMemo<TeamMembersMap>(() => {
@@ -30,66 +28,8 @@ export default function DashboardTeamCardClient({
     return map;
   }, [team.members]);
 
-  const reloadCard = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/teams/${team.id}/cards?userId=${currentUserId}`);
-      const data = await response.json();
-
-      if (!response.ok || !data.card) {
-        toast({
-          title: 'Error',
-          description: data.error || `Failed to refresh card for ${team.name}`,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      setCard(data.card);
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to refresh card',
-        variant: 'destructive',
-      });
-    }
-  }, [currentUserId, team.id, team.name, toast]);
-
-  const handleCellUpdate = useCallback(
-    async (cellId: string, newState: 'pending' | 'completed') => {
-      try {
-        const response =
-          newState === 'pending'
-            ? await fetch(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
-            : await fetch(`/api/cells/${cellId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ state: newState }),
-              });
-
-        if (response.ok) {
-          await reloadCard();
-          return;
-        }
-
-        const data = await response.json();
-        toast({
-          title: 'Error',
-          description: data.error || 'Failed to update cell',
-          variant: 'destructive',
-        });
-      } catch {
-        toast({
-          title: 'Error',
-          description: 'An error occurred',
-          variant: 'destructive',
-        });
-      }
-    },
-    [reloadCard, toast]
-  );
-
   return (
-    <TeamWsProvider teamId={team.id} onRefresh={reloadCard}>
+    <TeamWsProvider teamId={team.id}>
       <TeamMembersProvider members={membersMap}>
         <Card className="w-full max-w-4xl mx-auto">
           <CardHeader>
@@ -101,13 +41,13 @@ export default function DashboardTeamCardClient({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <BingoCard
-              cells={card.cells}
+            <DashboardBingoCardProvider
+              user={{ id: currentUserId, username: membersMap[currentUserId] || 'Unknown User' }}
+              initialCard={card}
               isOwner={true}
               teamId={team.id}
               currentUserId={currentUserId}
-              onCellUpdate={handleCellUpdate}
-              onRefresh={reloadCard}
+              cardFetchInput={`/api/teams/${team.id}/cards?userId=${currentUserId}`}
             />
           </CardContent>
         </Card>
