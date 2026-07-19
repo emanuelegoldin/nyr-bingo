@@ -1,5 +1,11 @@
 "use client";
 
+// OBSOLETE: we moved to the implementation in BingoCardProvider.tsx
+// TODO: Things to move from here to BingoCardProvider.tsx:
+// - Confetti overlay
+// - win condition
+// - useTeamWS
+
 /**
  * Bingo Card Component
  * Spec Reference: 05-bingo-card-generation.md, 06-bingo-gameplay.md, 11-real-time-card-updates.md
@@ -35,7 +41,7 @@ import { Button } from "./ui/button";
 export const CardWsContext = createContext<{
   broadcastCardRefresh: () => void;
 }>({
-  broadcastCardRefresh: () => {},
+  broadcastCardRefresh: () => { },
 });
 
 /** Convenience hook for child components. */
@@ -174,9 +180,9 @@ export function BingoCard({ cells, isOwner = false, teamId, currentUserId, onCel
         <div className="grid grid-cols-5 grid-rows-5 gap-2 md:gap-4">
           {sortedCells.map((cell) => (
             cell.isJoker ?
-            <JokerCell key={cell.id} />
-            :
-            <ResolutionCell
+              <JokerCell key={cell.id} />
+              :
+              <ResolutionCell
                 key={cell.id}
                 cell={cell}
                 isOwner={isOwner}
@@ -185,7 +191,7 @@ export function BingoCard({ cells, isOwner = false, teamId, currentUserId, onCel
                 currentUserId={currentUserId ? currentUserId : ""}
                 existingCells={sortedCells}
                 onUpdate={onCellUpdate ? wrappedOnCellUpdate : undefined}
-                onRefresh={wrappedOnRefresh}/>
+                onRefresh={wrappedOnRefresh} />
           ))}
         </div>
       </div>
