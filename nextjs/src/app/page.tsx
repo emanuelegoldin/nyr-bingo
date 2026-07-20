@@ -3,45 +3,48 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CheckCircle2, Goal, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 
 const version = process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0.0';
 
-const features = [
-  {
-    icon: <Goal className="h-8 w-8 text-primary" />,
-    title: 'Create & Share Resolutions',
-    description: 'Easily add your personal goals and share them with your team.',
-  },
-  {
-    icon: <Users className="h-8 w-8 text-primary" />,
-    title: 'Form Bingo Teams',
-    description: 'Invite friends to a team and compete in a friendly bingo game.',
-  },
-  {
-    icon: <CheckCircle2 className="h-8 w-8 text-primary" />,
-    title: 'Track Your Progress',
-    description: 'Mark resolutions as complete and see everyone\'s progress in real-time.',
-  },
-];
-
 export default function Home() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-1');
+  const appTranslations = useTranslations('App');
+  const homeTranslations = useTranslations('Home');
+
+  const features = [
+    {
+      icon: <Goal className="h-8 w-8 text-primary" />,
+      title: homeTranslations('featureResolutionTitle'),
+      description: homeTranslations('featureResolutionDescription'),
+    },
+    {
+      icon: <Users className="h-8 w-8 text-primary" />,
+      title: homeTranslations('featureTeamTitle'),
+      description: homeTranslations('featureTeamDescription'),
+    },
+    {
+      icon: <CheckCircle2 className="h-8 w-8 text-primary" />,
+      title: homeTranslations('featureProgressTitle'),
+      description: homeTranslations('featureProgressDescription'),
+    },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm bg-card">
         <Link href="/" className="flex items-center justify-center gap-2">
           <AppLogo />
-          <span className="font-semibold font-headline">Resolution Bingo</span>
+          <span className="font-semibold font-headline">{appTranslations('name')}</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Button variant="ghost" asChild>
-            <Link href="/login">Login</Link>
+            <Link href="/login">{homeTranslations('loginLink')}</Link>
           </Button>
           <Button asChild>
-            <Link href="/register">Get Started</Link>
+            <Link href="/register">{homeTranslations('registerLink')}</Link>
           </Button>
         </nav>
       </header>
@@ -61,10 +64,10 @@ export default function Home() {
             <div className="grid max-w-[1300px] mx-auto gap-4 px-4 sm:px-6 md:px-10 md:grid-cols-2 md:gap-16">
               <div className="flex flex-col justify-center space-y-4">
                 <h1 className="lg:leading-tighter text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl xl:text-[3.4rem] 2xl:text-[3.75rem] font-headline">
-                  Turn Your New Year's Goals into a Game
+                  {homeTranslations('title')}
                 </h1>
                 <p className="max-w-[700px] text-foreground/80 md:text-xl">
-                  Resolution Bingo transforms your personal goals into a fun, competitive, and collaborative team experience.
+                  {homeTranslations('subtitle')}
                 </p>
               </div>
               {heroImage && (
@@ -87,10 +90,10 @@ export default function Home() {
           <div className="container space-y-12 px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">Key Features</div>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">How It Works</h2>
+                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">{homeTranslations('featureTitle')}</div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">{homeTranslations('featureSubTitle')}</h2>
                 <p className="max-w-[900px] text-foreground/80 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Everything you need to stay motivated and achieve your goals together.
+                  {homeTranslations('featureDescription')}
                 </p>
               </div>
             </div>
