@@ -1,0 +1,50 @@
+{
+    "App": {
+        "name": "Resolution Bingo"
+    },
+    "LoginPage": {
+        "title": "Bentornato!",
+        "description": "Inserisci email e password per accedere al tuo account.",
+        "registerLink": "Non hai un account? Registrati qui!"
+    },
+    "Home": {
+        "featureTitle": "Cosa offriamo",
+        "featureSubTitle": "Come funziona",
+        "featureDescription": "Tutto ciò che serve per restare motivati e raggiungere i propri obiettivi insieme",
+        "featureResolutionTitle": "Crea e condividi i tuoi obiettivi",
+        "featureResolutionDescription": "Crea i tuoi obiettivi personali e codnivili con il tuo team.",
+        "featureTeamTitle": "Crea il tuo team",
+        "featureTeamDescription": "Invita i tuoi amici a competere nel più glorioso dei giochi: il bingo dei buoni proposti!",
+        "featureProgressTitle": "Tieni traccia dei tuoi progressi",
+        "featureProgressDescription": "Segna i tuoi obiettivi come completati e visualizza i progressi di tutti in tempo reale.",
+        "loginLink": "Login",
+        "registerLink": "Inizia",
+        "title": "Trasforma i tuoi boni propositi per l'anno nuovo in un gioco",
+        "subtitle": "Resolution Bingo rende i tuoi obiettivi personali un'esperienza di squadra divertente, competitiva e collaborativa."
+    },
+    "RegisterPage": {
+        "title": "Crea un Account",
+        "description": "Inserisci i tuoi dati per creare il tuo account e unirti al divertimento.",
+        "loginLink": "Hai già un account? Accedi"
+    },
+    "ResolutionsPage": {
+        "title": "I tuoi Obiettivi",
+        "description": "Gestisci i tuoi obiettivi personali. Questi possono essere utilizzati per riempire le tue carte del bingo.",
+        "headerTitle": "Obiettivi",
+        "viewHistoryAriaLabel": "Visualizza la cronologia degli obiettivi"
+    },
+    "ResolutionHistoryDialog": {
+        "title": "Cronologia degli Obiettivi",
+        "description": "Cronologia per \"{title}\".",
+        "addNoteTitle": "Commenta il tuo progresso",
+        "addNotePlaceholder": "Scrivi cosa hai fatto, imparato o completato...",
+        "addNoteButton": "Aggiungi nota",
+        "loading": "Caricamento della cronologia...",
+        "empty": "Nessuna cronologia",
+        "close": "Chiudi",
+        "noteLabel": "Nota",
+        "progressLabel": "Progresso",
+        "loadError": "Ops! Impossibile caricare la cronologia degli obiettivi",
+        "addError": "Ops! Impossibile aggiungere la nuova nota alla cronologia"
+    }
+}

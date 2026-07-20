@@ -1,0 +1,50 @@
+{
+    "App": {
+        "name": "Resolution Bingo"
+    },
+    "LoginPage": {
+        "title": "Schön, dass du wieder da bist!",
+        "description": "E-Mail und Passwort eingeben, um sich in Ihrem Konto anzumelden.",
+        "registerLink": "Hast du noch kein Konto? Hier registrieren!"
+    },
+    "Home": {
+        "featureTitle": "Key Features",
+        "featureSubTitle": "So funktioniert es",
+        "featureDescription": "Alles, was Sie brauchen, um motiviert zu bleiben und Ihre Ziele gemeinsam zu erreichen.",
+        "featureResolutionTitle": "Erstellen & Teilen von Auflösungen",
+        "featureResolutionDescription": "Fügen Sie einfach Ihre persönlichen Ziele hinzu und teilen Sie sie mit Ihrem Team.",
+        "featureTeamTitle": "Bingo-Teams bilden",
+        "featureTeamDescription": "Freunde zu einem Team einladen und in einem freundlichen Bingo-Spiel gegeneinander antreten.",
+        "featureProgressTitle": "Ihren Fortschritt verfolgen",
+        "featureProgressDescription": "Markieren Sie Auflösungen als abgeschlossen und sehen Sie den Fortschritt aller in Echtzeit.",
+        "loginLink": "Login",
+        "registerLink": "Loslegen",
+        "title": "Turn Your New Year's Goals into a Game",
+        "subtitle": "Resolution Bingo transforms your personal goals into a fun, competitive, and collaborative team experience."
+    },
+    "RegisterPage": {
+        "title": "Create an Account",
+        "description": "Enter your details below to create your account and join the fun.",
+        "loginLink": "Already have an account? Sign In"
+    },
+    "ResolutionsPage": {
+        "title": "Your Personal Resolutions",
+        "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
+        "headerTitle": "Resolutions",
+        "viewHistoryAriaLabel": "View resolution history"
+    },
+    "ResolutionHistoryDialog": {
+        "title": "Resolution History",
+        "description": "Timeline for \"{title}\".",
+        "addNoteTitle": "Add progress note",
+        "addNotePlaceholder": "Write what you did, learned, or completed...",
+        "addNoteButton": "Add note",
+        "loading": "Loading history...",
+        "empty": "No history yet.",
+        "close": "Close",
+        "noteLabel": "Note",
+        "progressLabel": "Progress",
+        "loadError": "Failed to load resolution history",
+        "addError": "Failed to add history entry"
+    }
+}
