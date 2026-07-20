@@ -19,15 +19,18 @@ import {
   type TeamWithMembers,
 } from '@/lib/db';
 import { Link, Loader2, Plus, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 function DashboardCardLoadingFallback({ teamName }: { teamName: string }) {
+  const t = useTranslations('Dashboard');
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">
-          Your Bingo Card for "{teamName}"
+          {t('cardTitle', { teamName })}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -41,11 +44,13 @@ function DashboardCardLoadingFallback({ teamName }: { teamName: string }) {
 }
 
 function DashboardCardError({ teamName }: { teamName: string }) {
+  const t = useTranslations('Dashboard');
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">
-          Your Bingo Card for "{teamName}"
+          {t('cardTitle', { teamName })}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -58,16 +63,18 @@ function DashboardCardError({ teamName }: { teamName: string }) {
 }
 
 function DashboardCardMissing({ teamName }: { teamName: string }) {
+  const t = useTranslations('Dashboard');
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">
-          Your Bingo Card for "{teamName}"
+          {t('cardTitle', { teamName })}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">
-          No card available yet for your user in this started team.
+          {t('cardContentNoneAvailable')}
         </p>
       </CardContent>
     </Card>
@@ -117,14 +124,16 @@ async function getTeamsWithMembersForUser(userId: string): Promise<TeamWithMembe
 }
 
 function DashboardNoTeam() {
+  const t = useTranslations('Dashboard');
+
   return (
     <div className="container mx-auto">
       <Card className="w-full max-w-2xl mx-auto">
         <CardContent className="py-16 text-center">
           <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold font-headline mb-2">Welcome to Resolution Bingo!</h2>
+          <h2 className="text-2xl font-bold font-headline mb-2">{t('headerContent')}</h2>
           <p className="text-muted-foreground mb-6">
-            Join or create a team to start playing.
+            {t('headerDescriptionNoTeam')}
           </p>
           <Button asChild>
             <Link href="/teams">
@@ -138,14 +147,16 @@ function DashboardNoTeam() {
 }
 
 function DashboardNoStartedGames() {
+  const t = useTranslations('Dashboard');
+
   return (
     <div className="container mx-auto">
       <Card className="w-full max-w-2xl mx-auto">
         <CardContent className="py-16 text-center">
           <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold font-headline mb-2">Welcome to Resolution Bingo!</h2>
+          <h2 className="text-2xl font-bold font-headline mb-2">{t('headerContent')}</h2>
           <p className="text-muted-foreground mb-6">
-            Join or create a team to start playing.
+            {t('headerDescriptionNoTeam')}
           </p>
           <Button asChild>
             <Link href="/teams">
