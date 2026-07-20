@@ -18,8 +18,7 @@ import {
   getTeamsForUser,
   type TeamWithMembers,
 } from '@/lib/db';
-import { Loader2, Plus, Users } from 'lucide-react';
-import Link from 'next/link';
+import { Link, Loader2, Plus, Users } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -117,6 +116,72 @@ async function getTeamsWithMembersForUser(userId: string): Promise<TeamWithMembe
     .filter((team): team is TeamWithMembers => team !== null);
 }
 
+function DashboardNoTeam() {
+  return (
+    <div className="container mx-auto">
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="py-16 text-center">
+          <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <h2 className="text-2xl font-bold font-headline mb-2">Welcome to Resolution Bingo!</h2>
+          <p className="text-muted-foreground mb-6">
+            Join or create a team to start playing.
+          </p>
+          <Button asChild>
+            <Link href="/teams">
+              <Plus className="mr-2 h-4 w-4" /> Get Started
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function DashboardNoStartedGames() {
+  return (
+    <div className="container mx-auto">
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="py-16 text-center">
+          <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <h2 className="text-2xl font-bold font-headline mb-2">Welcome to Resolution Bingo!</h2>
+          <p className="text-muted-foreground mb-6">
+            Join or create a team to start playing.
+          </p>
+          <Button asChild>
+            <Link href="/teams">
+              <Plus className="mr-2 h-4 w-4" /> Get Started
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+DashboardPage.Content = ({ teams, currentUserId }: { teams: TeamWithMembers[]; currentUserId: string }) => {
+  if (teams.length === 0) {
+    return <DashboardNoTeam />;
+  }
+
+  const startedTeams = teams.filter((team) => team.status === 'started');
+  if (startedTeams.length === 0) {
+    return <DashboardNoStartedGames />;
+  }
+
+  return (
+    <div className="container mx-auto space-y-8">
+      {startedTeams.map((team) => (
+        <Suspense
+          key={team.id}
+          fallback={<DashboardCardLoadingFallback teamName={team.name} />}
+        >
+          <DashboardTeamCardStream team={team} currentUserId={currentUserId} />
+        </Suspense>
+      ))}
+    </div>
+  )
+}
+
 export default async function DashboardPage() {
   const currentUser = await getCurrentUser();
 
@@ -125,64 +190,10 @@ export default async function DashboardPage() {
   }
 
   const teams = await getTeamsWithMembersForUser(currentUser.id);
-  const startedTeams = teams.filter((team) => team.status === 'started');
-
-  if (teams.length === 0) {
-    return (
-      <DashboardPageShell>
-        <div className="container mx-auto">
-          <Card className="w-full max-w-2xl mx-auto">
-            <CardContent className="py-16 text-center">
-              <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-2xl font-bold font-headline mb-2">Welcome to Resolution Bingo!</h2>
-              <p className="text-muted-foreground mb-6">
-                Join or create a team to start playing.
-              </p>
-              <Button asChild>
-                <Link href="/teams">
-                  <Plus className="mr-2 h-4 w-4" /> Get Started
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </DashboardPageShell>
-    );
-  }
-
-  if (startedTeams.length === 0) {
-    return (
-      <DashboardPageShell>
-        <div className="container mx-auto">
-          <Card className="w-full max-w-2xl mx-auto">
-            <CardContent className="py-16 text-center">
-              <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-2xl font-bold font-headline mb-2">No Active Games</h2>
-              <p className="text-muted-foreground mb-6">
-                You're part of {teams.length} team{teams.length > 1 ? 's' : ''}, but no games have started yet.
-              </p>
-              <Button asChild>
-                <Link href="/teams">View Your Teams</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </DashboardPageShell>
-    );
-  }
 
   return (
     <DashboardPageShell>
-      <div className="container mx-auto space-y-8">
-        {startedTeams.map((team) => (
-          <Suspense
-            key={team.id}
-            fallback={<DashboardCardLoadingFallback teamName={team.name} />}
-          >
-            <DashboardTeamCardStream team={team} currentUserId={currentUser.id} />
-          </Suspense>
-        ))}
-      </div>
+      <DashboardPage.Content teams={teams} currentUserId={currentUser.id} />
     </DashboardPageShell>
   );
 }
