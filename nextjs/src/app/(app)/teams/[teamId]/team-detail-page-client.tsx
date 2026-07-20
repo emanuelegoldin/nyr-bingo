@@ -10,7 +10,6 @@
  *   3. Leaderboard — ranked table of first-bingo times
  */
 
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
 import {
   ResolutionCreateEditDialog,
   type ResolutionFormData,
@@ -33,6 +32,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
 import { useToast } from "@/hooks/use-toast";
 import { Check, Copy, Crown, Loader2, Pencil, Plus, Send, Settings, Swords, Trash2, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -63,7 +63,8 @@ export default function TeamDetailPageClient({
   initialExistingResolutions,
   initialLeaderboardEntries,
 }: TeamDetailPageClientProps) {
-  useSetAppHeaderTitle("Team");
+  const { setTitle } = useAppHeaderTitle();
+  setTitle("Team");
 
   const { toast } = useToast();
   const router = useRouter();

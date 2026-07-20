@@ -5,13 +5,13 @@
  * Spec Reference: 04-bingo-teams.md
  */
 
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Users } from "lucide-react";
 import Link from "next/link";
@@ -45,7 +45,8 @@ interface Team {
 }
 
 export default function TeamsPage() {
-  useSetAppHeaderTitle("Teams");
+  const { setTitle } = useAppHeaderTitle();
+  setTitle("Teams");
 
   const { toast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
@@ -58,7 +59,7 @@ export default function TeamsPage() {
     try {
       const response = await fetch('/api/teams');
       const data = await response.json();
-      
+
       if (response.ok) {
         setTeams(data.teams || []);
       }
@@ -79,7 +80,7 @@ export default function TeamsPage() {
 
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) return;
-    
+
     setIsCreating(true);
     try {
       const response = await fetch('/api/teams', {
@@ -167,7 +168,7 @@ export default function TeamsPage() {
           </DialogContent>
         </Dialog>
       </div>
-      
+
       {teams.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map(team => {
@@ -176,18 +177,17 @@ export default function TeamsPage() {
               <Card key={team.id} className="flex flex-col">
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary"/>
+                    <Users className="h-5 w-5 text-primary" />
                     {team.name}
                   </CardTitle>
                   <CardDescription>
                     Led by {leader?.user.displayName || leader?.user.username || 'Unknown'}
                   </CardDescription>
                   <div className="mt-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                      team.status === 'started' 
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                        : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    }`}>
+                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${team.status === 'started'
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      }`}>
                       {team.status === 'started' ? 'Game Started' : 'Forming Team'}
                     </span>
                   </div>

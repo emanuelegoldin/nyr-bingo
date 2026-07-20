@@ -1,6 +1,6 @@
 "use client";
 
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
+import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
 import type { ReactNode } from "react";
 
 interface PublicProfilePageShellProps {
@@ -16,7 +16,8 @@ interface PublicProfilePageShellProps {
 export default function PublicProfilePageShell({
   children,
 }: PublicProfilePageShellProps) {
-  useSetAppHeaderTitle("Profile");
+  const { setTitle } = useAppHeaderTitle();
+  setTitle("Profile");
 
   return <>{children}</>;
 }

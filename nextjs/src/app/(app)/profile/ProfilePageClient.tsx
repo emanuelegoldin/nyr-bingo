@@ -5,7 +5,6 @@
  * Spec Reference: 02-user-profile-and-privacy.md
  */
 
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/db/types';
 import { Loader2 } from 'lucide-react';
@@ -36,7 +36,8 @@ export default function ProfilePageClient({
   initialUser,
   initialProfile,
 }: ProfilePageClientProps) {
-  useSetAppHeaderTitle("Settings");
+  const { setTitle } = useAppHeaderTitle();
+  setTitle("Settings");
 
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);

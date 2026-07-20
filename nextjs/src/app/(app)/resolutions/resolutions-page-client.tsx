@@ -8,7 +8,6 @@
  * Creation and editing are handled via the ResolutionCreateEditDialog.
  */
 
-import { useSetAppHeaderTitle } from "@/components/app-header-title";
 import {
   ResolutionCreateEditDialog,
   type ResolutionFormData,
@@ -24,6 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
 import { useToast } from "@/hooks/use-toast";
 import type { Subtask } from "@/lib/shared/types";
 import { History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
@@ -296,7 +296,8 @@ export default function ResolutionsPageClient({
   initialResolutions,
 }: ResolutionsPageClientProps) {
   const t = useTranslations("ResolutionsPage");
-  useSetAppHeaderTitle(t("headerTitle"));
+  const { setTitle } = useAppHeaderTitle();
+  setTitle(t("headerTitle"));
 
   return (
     <div className="space-y-6">

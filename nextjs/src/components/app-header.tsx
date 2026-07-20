@@ -1,7 +1,7 @@
 "use client";
 
-import { useAppHeaderTitle } from "@/components/app-header-title";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
 import { UserAvatarButton } from "./user-avatar-button";
 
 export function AppHeader() {
