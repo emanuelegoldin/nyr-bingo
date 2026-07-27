@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
+import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/db/types';
 import { Loader2 } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function ProfilePageClient({
   initialUser,
   initialProfile,
 }: ProfilePageClientProps) {
-  const { setTitle } = useAppHeaderTitle();
+  const { setTitle } = useAppContext();
   setTitle("Settings");
 
   const { toast } = useToast();

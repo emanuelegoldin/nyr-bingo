@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
+import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Users } from "lucide-react";
 import Link from "next/link";
@@ -45,7 +45,7 @@ interface Team {
 }
 
 export default function TeamsPage() {
-  const { setTitle } = useAppHeaderTitle();
+  const { setTitle } = useAppContext();
   setTitle("Teams");
 
   const { toast } = useToast();

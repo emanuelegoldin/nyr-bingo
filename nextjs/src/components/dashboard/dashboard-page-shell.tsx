@@ -1,6 +1,6 @@
 "use client";
 
-import { useAppHeaderTitle } from '@/hooks/AppHeaderTitle';
+import { useAppContext } from '@/hooks/AppContext';
 import type { ReactNode } from 'react';
 
 interface DashboardPageShellProps {
@@ -14,7 +14,7 @@ interface DashboardPageShellProps {
  * so hydration stays minimal.
  */
 export default function DashboardPageShell({ children }: DashboardPageShellProps) {
-  const { setTitle } = useAppHeaderTitle();
+  const { setTitle } = useAppContext();
   setTitle('Dashboard');
 
   return <>{children}</>;

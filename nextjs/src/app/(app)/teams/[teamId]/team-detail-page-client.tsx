@@ -32,7 +32,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAppHeaderTitle } from "@/hooks/AppHeaderTitle";
+import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { Check, Copy, Crown, Loader2, Pencil, Plus, Send, Settings, Swords, Trash2, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -63,7 +63,7 @@ export default function TeamDetailPageClient({
   initialExistingResolutions,
   initialLeaderboardEntries,
 }: TeamDetailPageClientProps) {
-  const { setTitle } = useAppHeaderTitle();
+  const { setTitle } = useAppContext();
   setTitle("Team");
 
   const { toast } = useToast();

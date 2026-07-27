@@ -2,6 +2,14 @@
     "App": {
         "name": "Resolution Bingo"
     },
+    "Dashboard": {
+        "title": "Dashboard",
+        "cardTitle": "Your Bingo Card for \"{teamName}\"",
+        "headerContent": "Welcome to Resolution Bingo!",
+        "headerDescriptionNoTeam": "Join or create a team to start playing.",
+        "createTeambutton": "Get Started",
+        "cardContentNoneAvailable": "No card available yet for your user in this started team."
+    },
     "LoginPage": {
         "title": "Schön, dass du wieder da bist!",
         "description": "E-Mail und Passwort eingeben, um sich in Ihrem Konto anzumelden.",
