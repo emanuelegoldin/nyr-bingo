@@ -46,6 +46,7 @@ export default async function Home() {
             <Link href="/register">{t.Home.registerLink}</Link>
           </Button>
         </nav>
+        <LanguageSelectorDropdown />
       </header>
       <main className="flex-1">
         <section className="relative w-full pt-12 md:pt-24 lg:pt-32">

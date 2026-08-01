@@ -53,3 +53,8 @@ export function useAppContext() {
   }
   return context;
 }
+
+// Make it optional since the language selector in the home page is outside of the AppContextProvider. TODO: refactor the home page to be inside the AppContextProvider.
+export function useOptionalAppContext() {
+  return useContext(AppContext);
+}
