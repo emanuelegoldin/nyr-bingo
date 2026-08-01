@@ -1,7 +1,8 @@
 import { AppLogo } from '@/components/icons';
+import { LanguageSelectorDropdown } from '@/components/LanguageSelectorDropdown';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getDictionary } from '@/i18n/request';
+import { getDictionary, getLocaleFromRequest } from '@/i18n/request';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CheckCircle2, Goal, Users } from 'lucide-react';
 import Image from 'next/image';
@@ -10,8 +11,10 @@ import Link from 'next/link';
 const version = process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0.0';
 
 export default async function Home() {
-  const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-1');
+  const locale = await getLocaleFromRequest();
   const t = await getDictionary();
+  const heroImageId = locale === 'it' ? 'hero-1-it' : 'hero-1';
+  const heroImage = PlaceHolderImages.find((img) => img.id === heroImageId);
 
   const features = [
     {
