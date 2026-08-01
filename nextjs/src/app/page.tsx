@@ -41,6 +41,9 @@ export default async function Home() {
           <AppLogo />
           <span className="font-semibold font-headline">{t.App.name}</span>
         </Link>
+        <div className="ml-4">
+          <LanguageSelectorDropdown />
+        </div>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Button variant="ghost" asChild>
             <Link href="/login">{t.Home.loginLink}</Link>
@@ -49,7 +52,6 @@ export default async function Home() {
             <Link href="/register">{t.Home.registerLink}</Link>
           </Button>
         </nav>
-        <LanguageSelectorDropdown />
       </header>
       <main className="flex-1">
         <section className="relative w-full pt-12 md:pt-24 lg:pt-32">
