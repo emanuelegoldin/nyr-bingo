@@ -4,7 +4,7 @@
     },
     "Dashboard": {
         "title": "Dashboard",
-        "cardTitle": "La tua carta del Bingo per \"{teamName}\"",
+        "cardTitle": "La tua carta del Bingo per {teamName}",
         "headerContent": "Benvenuto!",
         "headerDescriptionNoTeam": "Crea o unisciti a un team per iniziare a giocare.",
         "createTeambutton": "Inizia",

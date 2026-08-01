@@ -54,5 +54,20 @@
         "progressLabel": "Progress",
         "loadError": "Failed to load resolution history",
         "addError": "Failed to add history entry"
+    },
+    "TeamPage": {
+        "title": "Your Team",
+        "MemberTab": {
+            "title": "Team Members",
+            "leaderLabel": "Leader"
+        }
+    },
+    "ToastMessages": {
+        "inviteCode": {
+            "success": {
+                "title": "Success!",
+                "description": "Invite link created"
+            }
+        }
     }
 }

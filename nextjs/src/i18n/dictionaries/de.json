@@ -4,11 +4,11 @@
     },
     "Dashboard": {
         "title": "Dashboard",
-        "cardTitle": "Your Bingo Card for \"{teamName}\"",
-        "headerContent": "Welcome to Resolution Bingo!",
-        "headerDescriptionNoTeam": "Join or create a team to start playing.",
-        "createTeambutton": "Get Started",
-        "cardContentNoneAvailable": "No card available yet for your user in this started team."
+        "cardTitle": "Deine Bingo-Karte für {teamName}",
+        "headerContent": "Willkommen bei Resolution Bingo!",
+        "headerDescriptionNoTeam": "Treten Sie einem Team bei oder erstellen Sie eines, um zu spielen.",
+        "createTeambutton": "Loslegen",
+        "cardContentNoneAvailable": "Keine Karte verfügbar für Ihren Benutzer in diesem gestarteten Team."
     },
     "LoginPage": {
         "title": "Schön, dass du wieder da bist!",
@@ -31,25 +31,25 @@
         "subtitle": "Resolution Bingo transforms your personal goals into a fun, competitive, and collaborative team experience."
     },
     "RegisterPage": {
-        "title": "Create an Account",
-        "description": "Enter your details below to create your account and join the fun.",
-        "loginLink": "Already have an account? Sign In"
+        "title": "Ein Konto erstellen",
+        "description": "Geben Sie Ihre Daten unten ein, um Ihr Konto zu erstellen und dem Spaß beizutreten.",
+        "loginLink": "Haben Sie bereits ein Konto? Melden Sie sich an"
     },
     "ResolutionsPage": {
-        "title": "Your Personal Resolutions",
-        "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
-        "headerTitle": "Resolutions",
-        "viewHistoryAriaLabel": "View resolution history"
+        "title": "Ihre persönlichen Auflösungen",
+        "description": "Verwalten Sie Ihre persönlichen Auflösungen. Diese können verwendet werden, um Ihre Bingo-Karten zu füllen.",
+        "headerTitle": "Auflösungen",
+        "viewHistoryAriaLabel": "Auflösungshistorie anzeigen"
     },
     "ResolutionHistoryDialog": {
-        "title": "Resolution History",
-        "description": "Timeline for \"{title}\".",
-        "addNoteTitle": "Add progress note",
-        "addNotePlaceholder": "Write what you did, learned, or completed...",
-        "addNoteButton": "Add note",
-        "loading": "Loading history...",
+        "title": "Auflösungshistorie",
+        "description": "Chronik für \"{title}\".",
+        "addNoteTitle": "Fortschrittsnotiz hinzufügen",
+        "addNotePlaceholder": "Schreiben Sie, was Sie getan, gelernt oder abgeschlossen haben...",
+        "addNoteButton": "Notiz hinzufügen",
+        "loading": "Chronik wird geladen...",
         "empty": "No history yet.",
-        "close": "Close",
+        "close": "Schließen",
         "noteLabel": "Note",
         "progressLabel": "Progress",
         "loadError": "Failed to load resolution history",
