@@ -1,13 +1,12 @@
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAppContext } from "@/hooks/AppContext";
 import { UserAvatarButton } from "./user-avatar-button";
-import React from "react";
-import { useAppHeaderTitle } from "@/components/app-header-title";
 
 export function AppHeader() {
 
-  const { title: headerTitle } = useAppHeaderTitle();
+  const { title: headerTitle } = useAppContext();
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">

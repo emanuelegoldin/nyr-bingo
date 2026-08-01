@@ -8,9 +8,7 @@
  * - Client component only handles interactive mutations and local UI state
  */
 
-import { Suspense } from 'react';
-import { notFound, redirect } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import type { ResolutionFormData } from '@/components/dialogs/resolution-create-edit-dialog';
 import { getCurrentUser } from '@/lib/auth';
 import {
   getTeamBingoCards,
@@ -23,9 +21,11 @@ import {
   type Resolution,
   type TeamWithMembers,
 } from '@/lib/db';
-import type { ResolutionFormData } from '@/components/dialogs/resolution-create-edit-dialog';
+import { Loader2 } from 'lucide-react';
+import { notFound, redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import TeamDetailPageClient from './team-detail-page-client';
-import type { BingoCardData, Team, TeamProvidedResolution } from './types';
+import type { Team, TeamProvidedResolution } from './types';
 
 interface LeaderboardEntry {
   userId: string;
@@ -76,36 +76,6 @@ function mapTeam(team: TeamWithMembers): Team {
       },
     })),
   };
-}
-
-function mapCards(cards: BingoCardWithCells[]): BingoCardData[] {
-  return cards.map((card) => ({
-    id: card.id,
-    teamId: card.teamId,
-    userId: card.userId,
-    gridSize: card.gridSize,
-    cells: card.cells.map((cell) => ({
-      id: cell.id,
-      cardId: cell.cardId,
-      position: cell.position,
-      resolutionId: cell.resolutionId,
-      resolutionType: cell.resolutionType,
-      resolutionText: cell.resolutionText,
-      resolutionTitle: cell.resolutionTitle,
-      isJoker: cell.isJoker,
-      isEmpty: cell.isEmpty,
-      sourceType: cell.sourceType,
-      sourceUserId: cell.sourceUserId,
-      state: cell.state,
-      reviewThreadId: cell.reviewThreadId ?? null,
-      proof: cell.proof
-        ? {
-            id: cell.proof.id,
-            status: cell.proof.status,
-          }
-        : null,
-    })),
-  }));
 }
 
 function mapTeamProvidedResolutions(resolutions: Resolution[]): TeamProvidedResolution[] {
@@ -166,7 +136,7 @@ async function TeamDetailContent({ teamId }: { teamId: string }) {
     getTeamLeaderboard(teamId),
   ]);
 
-  const initialCards = cardsResult.status === 'fulfilled' ? mapCards(cardsResult.value) : [];
+  const initialCards = cardsResult.status === 'fulfilled' ? cardsResult.value : [];
   const initialTeamGoal = goalResult.status === 'fulfilled' ? mapGoalToFormData(goalResult.value) : null;
   const initialExistingResolutions = resolutionsResult.status === 'fulfilled'
     ? mapTeamProvidedResolutions(resolutionsResult.value)

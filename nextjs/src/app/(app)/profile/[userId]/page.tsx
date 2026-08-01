@@ -7,15 +7,15 @@
  * - A tiny client shell is used for client-only app-header context updates
  */
 
-import { Suspense } from "react";
-import { notFound, redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PublicProfilePageShell from "@/components/profile/public-profile-page-shell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { getPublicUserProfile, type PublicUserProfile } from "@/lib/db";
-import PublicProfilePageShell from "@/components/profile/public-profile-page-shell";
+import { Loader2 } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 
 interface PublicProfilePageProps {
   params: Promise<{ userId: string }>;

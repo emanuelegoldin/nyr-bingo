@@ -3,10 +3,10 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { TeamStatus, TeamRole, InvitationStatus, CellSourceType, CellState, ProofStatus, ReviewDecision, DuplicateReportStatus, ThreadStatus, VoteType, ResolutionType, ResolutionScope, Subtask } from "../shared/types";
+import { CellSourceType, CellState, DuplicateReportStatus, InvitationStatus, ProofStatus, ResolutionScope, ResolutionType, ReviewDecision, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
 
 // Re-export shared enums/types so consumers can import from db/types
-export { TeamStatus, TeamRole, InvitationStatus, CellSourceType, CellState, ProofStatus, ReviewDecision, DuplicateReportStatus, ThreadStatus, VoteType, ResolutionType, ResolutionScope };
+export { CellSourceType, CellState, DuplicateReportStatus, InvitationStatus, ProofStatus, ResolutionScope, ResolutionType, ReviewDecision, TeamRole, TeamStatus, ThreadStatus, VoteType };
 export type { Subtask };
 
 // User entity

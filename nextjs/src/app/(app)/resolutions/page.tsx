@@ -7,12 +7,12 @@
  * - The client component only handles interactive mutations/dialog state
  */
 
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { getResolutionsByUser, type Resolution } from "@/lib/db";
 import type { Subtask } from "@/lib/shared/types";
+import { Loader2 } from "lucide-react";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import ResolutionsPageClient from "./resolutions-page-client";
 
 type ResolutionTypeValue = "base" | "compound" | "iterative";

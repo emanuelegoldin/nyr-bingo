@@ -1,0 +1,74 @@
+{
+    "App": {
+        "name": "Resolution Bingo"
+    },
+    "Dashboard": {
+        "title": "Dashboard",
+        "cardTitle": "Your Bingo Card for {teamName}",
+        "headerContent": "Welcome to Resolution Bingo!",
+        "headerDescription": "Complete your resolutions to get a BINGO! Click on a cell to mark it as completed.",
+        "headerDescriptionNoTeam": "Join or create a team to start playing.",
+        "createTeambutton": "Get Started",
+        "cardContentNoneAvailable": "No card available yet for your user in this started team."
+    },
+    "LoginPage": {
+        "title": "Welcome Back!",
+        "description": "Enter your email and password to sign in to your account.",
+        "registerLink": "Don't have an account? Register here."
+    },
+    "Home": {
+        "featureTitle": "Key Features",
+        "featureSubTitle": "How it works",
+        "featureDescription": "Everything you need to stay motivated and achieve your goals together.",
+        "featureResolutionTitle": "Create & Share Resolutions",
+        "featureResolutionDescription": "Easily add your personal goals and share them with your team.",
+        "featureTeamTitle": "Form Bingo Teams",
+        "featureTeamDescription": "Invite friends to a team and compete in a friendly bingo game.",
+        "featureProgressTitle": "Track Your Progress",
+        "featureProgressDescription": "Mark resolutions as complete and see everyone's progress in real-time.",
+        "loginLink": "Login",
+        "registerLink": "Get Started",
+        "title": "Turn Your New Year's Goals into a Game",
+        "subtitle": "Resolution Bingo transforms your personal goals into a fun, competitive, and collaborative team experience."
+    },
+    "RegisterPage": {
+        "title": "Create an Account",
+        "description": "Enter your details below to create your account and join the fun.",
+        "loginLink": "Already have an account? Sign In"
+    },
+    "ResolutionsPage": {
+        "title": "Your Personal Resolutions",
+        "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
+        "headerTitle": "Resolutions",
+        "viewHistoryAriaLabel": "View resolution history"
+    },
+    "ResolutionHistoryDialog": {
+        "title": "Resolution History",
+        "description": "Timeline for \"{title}\".",
+        "addNoteTitle": "Add progress note",
+        "addNotePlaceholder": "Write what you did, learned, or completed...",
+        "addNoteButton": "Add note",
+        "loading": "Loading history...",
+        "empty": "No history yet.",
+        "close": "Close",
+        "noteLabel": "Note",
+        "progressLabel": "Progress",
+        "loadError": "Failed to load resolution history",
+        "addError": "Failed to add history entry"
+    },
+    "TeamPage": {
+        "title": "Your Team",
+        "MemberTab": {
+            "title": "Team Members",
+            "leaderLabel": "Leader"
+        }
+    },
+    "ToastMessages": {
+        "inviteCode": {
+            "success": {
+                "title": "Success!",
+                "description": "Invite link created"
+            }
+        }
+    }
+}

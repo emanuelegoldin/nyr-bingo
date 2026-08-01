@@ -13,18 +13,20 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useToast } from "@/hooks/use-toast";
+import type { Subtask } from "@/lib/shared/types";
+import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "../ui/dialog";
-import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
 import {
   Select,
   SelectContent,
@@ -32,9 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { Plus, Trash2, Pencil, Check, X, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import type { Subtask } from "@/lib/shared/types";
+import { Textarea } from "../ui/textarea";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 

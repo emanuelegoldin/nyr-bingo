@@ -3,11 +3,11 @@
  * Spec Reference: 07-proof-and-approval.md
  */
 
-import { query, getConnection } from './connection';
-import type { CellProof, ProofReview } from './types';
 import { v4 as uuidv4 } from 'uuid';
-import { isTeamMember } from './team-repository';
 import { ProofStatus, ReviewDecision } from '../shared/types';
+import { getConnection, query } from './connection';
+import { isTeamMember } from './team-repository';
+import type { CellProof, ProofReview } from './types';
 
 // Row types from database
 interface ProofRow {

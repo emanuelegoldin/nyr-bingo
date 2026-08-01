@@ -5,10 +5,5 @@
  */
 
 export {
-  createCompoundResolution,
-  getCompoundResolutionsByUser,
-  getCompoundResolutionById,
-  updateCompoundResolution,
-  toggleCompoundSubtask,
-  deleteCompoundResolution,
+  createCompoundResolution, deleteCompoundResolution, getCompoundResolutionById, getCompoundResolutionsByUser, toggleCompoundSubtask, updateCompoundResolution
 } from './resolution-repository';

@@ -1,20 +1,22 @@
-import type { Metadata } from 'next';
-import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import {NextIntlClientProvider} from 'next-intl';
+import { getLocaleFromRequest } from '@/i18n/request';
+import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Resolution Bingo Team',
   description: 'Gamify your New Year\'s resolutions with friends.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocaleFromRequest();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

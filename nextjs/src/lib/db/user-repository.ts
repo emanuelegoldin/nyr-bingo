@@ -3,11 +3,11 @@
  * Spec Reference: 01-authentication.md, 02-user-profile-and-privacy.md
  */
 
-import { query, getConnection } from './connection';
-import type { User, UserProfile, PublicUserProfile, EmailVerificationToken, Session } from './types';
-import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import type { RowDataPacket } from 'mysql2/promise';
+import { v4 as uuidv4 } from 'uuid';
+import { getConnection, query } from './connection';
+import type { EmailVerificationToken, PublicUserProfile, Session, User, UserProfile } from './types';
 
 // Row type from database (snake_case)
 interface UserRow extends RowDataPacket {

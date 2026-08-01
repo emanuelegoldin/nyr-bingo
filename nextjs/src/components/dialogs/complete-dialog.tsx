@@ -1,7 +1,7 @@
 import { ThumbsUp } from "lucide-react";
-import { DialogFooter } from "../ui/dialog";
-import { Button } from "../ui/button";
 import { useState } from "react";
+import { Button } from "../ui/button";
+import { DialogFooter } from "../ui/dialog";
 import { CellDialog } from "./cell-dialog";
 
 interface MarkCellCompleteDialogProps {

@@ -3,9 +3,9 @@
  * Spec Reference: 02-user-profile-and-privacy.md
  */
 
-import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { getUserProfile } from '@/lib/db';
+import { redirect } from 'next/navigation';
 import ProfilePageClient from './ProfilePageClient';
 
 export default async function ProfilePage() {

@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, History } from "lucide-react";
+import type { WsIncomingMessage } from "@/components/team-ws-provider";
+import { useTeamWs } from "@/components/team-ws-provider";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,13 +12,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { useTeamWs } from "@/components/team-ws-provider";
-import type { WsIncomingMessage } from "@/components/team-ws-provider";
-import { useTranslations } from "next-intl";
+import { getDictionaryForLocale } from "@/i18n/dictionary";
+import { History, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 interface HistoryEntry {
   id: string;
@@ -42,7 +43,8 @@ export const ResolutionHistoryDialog = ({
   isOpen,
   setIsOpen,
 }: ResolutionHistoryDialogProps) => {
-  const t = useTranslations("ResolutionHistoryDialog");
+  const { language } = useAppContext();
+  const t = getDictionaryForLocale(language).ResolutionHistoryDialog;
   const { toast } = useToast();
   const { sendWsMessage, addMessageListener } = useTeamWs();
 
@@ -63,7 +65,7 @@ export const ResolutionHistoryDialog = ({
       if (!res.ok) {
         toast({
           title: "Error",
-          description: data?.error || t("loadError"),
+          description: data?.error || t.loadError,
           variant: "destructive",
         });
         return;
@@ -73,7 +75,7 @@ export const ResolutionHistoryDialog = ({
     } catch {
       toast({
         title: "Error",
-        description: t("loadError"),
+        description: t.loadError,
         variant: "destructive",
       });
     } finally {
@@ -117,7 +119,7 @@ export const ResolutionHistoryDialog = ({
       if (!res.ok) {
         toast({
           title: "Error",
-          description: data?.error || t("addError"),
+          description: data?.error || t.addError,
           variant: "destructive",
         });
         return;
@@ -132,7 +134,7 @@ export const ResolutionHistoryDialog = ({
     } catch {
       toast({
         title: "Error",
-        description: t("addError"),
+        description: t.addError,
         variant: "destructive",
       });
     } finally {
@@ -146,19 +148,19 @@ export const ResolutionHistoryDialog = ({
         <DialogHeader>
           <DialogTitle className="font-headline flex items-center gap-2">
             <History className="h-4 w-4" />
-            {t("title")}
+            {t.title}
           </DialogTitle>
           <DialogDescription>
-            {t("description", { title: resolutionTitle })}
+            {t.description.replace("{title}", resolutionTitle)}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           {canWrite && (
             <div className="space-y-2 border rounded-md p-3 bg-secondary/20">
-              <p className="text-sm font-medium">{t("addNoteTitle")}</p>
+              <p className="text-sm font-medium">{t.addNoteTitle}</p>
               <Textarea
-                placeholder={t("addNotePlaceholder")}
+                placeholder={t.addNotePlaceholder}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 rows={3}
@@ -167,7 +169,7 @@ export const ResolutionHistoryDialog = ({
               <div className="flex justify-end">
                 <Button onClick={handleAddEntry} disabled={!canSubmit}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  {t("addNoteButton")}
+                  {t.addNoteButton}
                 </Button>
               </div>
             </div>
@@ -175,10 +177,10 @@ export const ResolutionHistoryDialog = ({
 
           <div className="space-y-2">
             {loading ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">{t("loading")}</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">{t.loading}</p>
             ) : entries.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                {t("empty")}
+                {t.empty}
               </p>
             ) : (
               <ul className="space-y-2 max-h-[45vh] overflow-y-auto">
@@ -187,7 +189,7 @@ export const ResolutionHistoryDialog = ({
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <Badge variant={entry.entryType === "manual_note" ? "secondary" : "outline"}>
-                          {entry.entryType === "manual_note" ? t("noteLabel") : t("progressLabel")}
+                          {entry.entryType === "manual_note" ? t.noteLabel : t.progressLabel}
                         </Badge>
                         <span className="text-xs text-muted-foreground truncate">
                           {entry.authorUsername}
@@ -207,7 +209,7 @@ export const ResolutionHistoryDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
-            {t("close")}
+            {t.close}
           </Button>
         </DialogFooter>
       </DialogContent>

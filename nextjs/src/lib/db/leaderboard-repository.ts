@@ -10,9 +10,9 @@
  * undoCompletion, vote resolution) and bulk-initialized when a game starts.
  */
 
+import { CellState } from '../shared/types';
 import { query } from './connection';
 import type { TeamLeaderboardEntry } from './types';
-import { CellState } from '../shared/types';
 
 // ── Row types ────────────────────────────────────────────────────
 

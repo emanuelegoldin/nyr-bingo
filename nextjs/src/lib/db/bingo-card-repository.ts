@@ -3,20 +3,20 @@
  * Spec Reference: 05-bingo-card-generation.md, 06-bingo-gameplay.md
  */
 
-import { query, getConnection } from './connection';
+import { randomUUID } from 'crypto';
+import { CellSourceType, CellState, ProofStatus, ResolutionType } from '../shared/types';
+import { getConnection, query } from './connection';
+import { refreshLeaderboardEntry } from './leaderboard-repository';
+import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution } from './resolution-repository';
+import { getTeamById, getTeamMembers, isTeamMember } from './team-repository';
 import {
   BingoCard,
+  BingoCardWithCells,
   BingoCell,
   BingoCellWithProof,
-  BingoCardWithCells,
   CellProof,
   Resolution,
 } from './types';
-import { randomUUID } from 'crypto';
-import { getTeamById, getTeamMembers, isTeamMember } from './team-repository';
-import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution } from './resolution-repository';
-import { CellSourceType, CellState, ProofStatus, ResolutionType } from '../shared/types';
-import { refreshLeaderboardEntry } from './leaderboard-repository';
 
 // Row types from database
 interface CardRow {
