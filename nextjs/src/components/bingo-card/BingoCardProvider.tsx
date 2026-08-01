@@ -1,7 +1,7 @@
 "use client"; // required for useState, useEffect, etc.
 
 import { BingoCardWithCells } from "@/lib/db/types";
-import { Card, CardHeader } from "@ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@ui/card";
 import { createContext, useMemo, useState } from "react";
 import { useTeamWs } from "../team-ws-provider";
 import { BingoCardContent } from "./BingoCardContent";
@@ -177,10 +177,35 @@ export function TeamBingoCardProvider(props: Omit<BaseBingoCardProviderProps, 'h
     );
 }
 
-export function DashboardBingoCardProvider(props: Omit<BaseBingoCardProviderProps, 'headerSlot'>) {
+// Helper type for passing translation strings to avoid issues with importing server functions into client components
+type DashboardBingoCardProviderProps = Omit<BaseBingoCardProviderProps, "headerSlot"> & {
+    dashboardText: {
+        cardTitle: string;
+        headerDescription: string;
+    };
+};
+
+export async function DashboardBingoCardProvider({
+    dashboardText,
+    ...props
+}: DashboardBingoCardProviderProps) {
+    const { broadcastCardRefresh, teamName } = useTeamWs();
     const headerSlot = (
         <>
-            <BingoCardEditButton />
+            <div className="flex w-full items-start justify-between gap-4">
+                <div className="min-w-0">
+                    <CardTitle className="font-headline text-2xl">
+                        {dashboardText.cardTitle.replace('{teamName}', teamName)}
+                    </CardTitle>
+                    <CardDescription>
+                        {dashboardText.headerDescription}
+                    </CardDescription>
+                </div>
+
+                <div className="shrink-0">
+                    <BingoCardEditButton />
+                </div>
+            </div>
         </>
     );
 
@@ -188,6 +213,7 @@ export function DashboardBingoCardProvider(props: Omit<BaseBingoCardProviderProp
         <BingoCard
             {...props}
             headerSlot={headerSlot}
+            broadcastRefresh={broadcastCardRefresh}
         />
     );
 }

@@ -23,6 +23,7 @@ import { Link, Loader2, Plus, Users } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+// TODO: we could create the loading fallback through composition with a dummy empty cell
 async function DashboardCardLoadingFallback({ teamName }: { teamName: string }) {
   const t = (await getDictionary()).Dashboard;
 
@@ -88,6 +89,7 @@ async function DashboardTeamCardStream({
   team: TeamWithMembers;
   currentUserId: string;
 }) {
+  const t = (await getDictionary()).Dashboard;  // Get dictionary here (ServerComponent) and pass strings to CLientComponents
   try {
     // Each team card loads independently so one slow query does not block others.
     const card = await getBingoCard(team.id, currentUserId);
@@ -100,6 +102,11 @@ async function DashboardTeamCardStream({
         team={team}
         currentUserId={currentUserId}
         initialCard={card}
+        // Pass translation strings to avoid issues with importing server funcitons into clients components!
+        dashboardText={{
+          cardTitle: t.cardTitle,
+          headerDescription: t.headerDescription,
+        }}
       />
     );
   } catch {

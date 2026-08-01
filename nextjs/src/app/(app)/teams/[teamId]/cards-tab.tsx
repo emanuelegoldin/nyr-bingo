@@ -71,7 +71,7 @@ export function CardsTab({
   }
 
   return (
-    <TeamWsProvider teamId={team.id}>
+    <TeamWsProvider teamId={team.id} teamName={team.name}>
       <TeamMembersProvider members={membersMap}>
         <div className="space-y-8">
           <h2 className="text-2xl font-bold font-headline">Bingo Cards</h2>

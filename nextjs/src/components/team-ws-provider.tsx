@@ -60,12 +60,15 @@ interface TeamWsContextValue {
    * Returns an unsubscribe function.
    */
   addMessageListener: (handler: WsMessageHandler) => () => void;
+  /** The team name (used by card components) */
+  teamName: string;
 }
 
 const TeamWsContext = createContext<TeamWsContextValue>({
-  broadcastCardRefresh: () => {},
-  sendWsMessage: () => {},
-  addMessageListener: () => () => {},
+  broadcastCardRefresh: () => { },
+  sendWsMessage: () => { },
+  addMessageListener: () => () => { },
+  teamName: ""
 });
 
 /** Hook for child components to interact with the team WebSocket. */
@@ -78,12 +81,14 @@ export function useTeamWs(): TeamWsContextValue {
 interface TeamWsProviderProps {
   /** The team whose card-room we join. */
   teamId: string;
+  /** The team name (used by card components) */
+  teamName: string;
   /** Called when the server pushes a refresh event (another client changed something). */
   onRefresh?: () => void;
   children: React.ReactNode;
 }
 
-export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderProps) {
+export function TeamWsProvider({ teamId, teamName, onRefresh, children }: TeamWsProviderProps) {
   const wsRef = useRef<WebSocket | null>(null);
   /** Messages queued while the socket is still CONNECTING. */
   const pendingMessagesRef = useRef<object[]>([]);
@@ -188,7 +193,7 @@ export function TeamWsProvider({ teamId, onRefresh, children }: TeamWsProviderPr
   }, []);
 
   return (
-    <TeamWsContext.Provider value={{ broadcastCardRefresh, sendWsMessage, addMessageListener }}>
+    <TeamWsContext.Provider value={{ broadcastCardRefresh, sendWsMessage, addMessageListener, teamName }}>
       {children}
     </TeamWsContext.Provider>
   );
