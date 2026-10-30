@@ -28,7 +28,7 @@ const dbConfig = {
 // Create connection pool for efficient database access
 let pool: mysql.Pool | null = null;
 
-export function getPool(): mysql.Pool {
+function getPool(): mysql.Pool {
   if (!pool) {
     pool = mysql.createPool(dbConfig);
   }
@@ -43,11 +43,4 @@ export async function query<T>(sql: string, params?: unknown[]): Promise<T> {
 
 export async function getConnection(): Promise<mysql.PoolConnection> {
   return getPool().getConnection();
-}
-
-export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
 }

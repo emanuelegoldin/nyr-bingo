@@ -193,18 +193,6 @@ export interface ProofReview {
   createdAt: Date;
 }
 
-// Duplicate report
-// Spec: 05-bingo-card-generation.md
-export interface DuplicateReport {
-  id: string;
-  cellId: string;
-  reporterUserId: string;
-  replacementText: string | null;
-  status: DuplicateReportStatus;
-  createdAt: Date;
-  resolvedAt: Date | null;
-}
-
 // Extended types for API responses
 
 export interface TeamWithMembers extends Team {

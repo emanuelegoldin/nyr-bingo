@@ -406,26 +406,6 @@ export async function ensureBingoCardForUser(
 }
 
 /**
- * Get bingo card by ID
- */
-export async function getBingoCardById(cardId: string): Promise<BingoCardWithCells | null> {
-  const cardRows = await query<CardRow[]>(
-    `SELECT * FROM bingo_cards WHERE id = ?`,
-    [cardId]
-  );
-
-  if (cardRows.length === 0) return null;
-
-  const card = rowToCard(cardRows[0]);
-  const cells = await getCellsWithProofs(card.id);
-
-  return {
-    ...card,
-    cells,
-  };
-}
-
-/**
  * Get cells with proofs for a card
  */
 async function getCellsWithProofs(cardId: string): Promise<BingoCellWithProof[]> {

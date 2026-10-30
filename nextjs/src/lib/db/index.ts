@@ -4,7 +4,7 @@
  */
 
 // Connection
-export { closePool, getConnection, getPool, query } from './connection';
+export { getConnection, query } from './connection';
 
 // Types
 export * from './types';

@@ -147,23 +147,3 @@ The Resolution Bingo Team
     };
   }
 }
-
-/**
- * Verify transporter configuration (for testing purposes)
- * This can be called during application startup to ensure email is configured correctly
- */
-export async function verifyEmailConnection(): Promise<boolean> {
-  if (!isEmailConfigured()) {
-    return false;
-  }
-
-  try {
-    const transporter = getTransporter();
-    await transporter.verify();
-    console.log('[Email Service] SMTP connection verified successfully');
-    return true;
-  } catch (error) {
-    console.error('[Email Service] SMTP connection verification failed:', error);
-    return false;
-  }
-}

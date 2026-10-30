@@ -613,18 +613,6 @@ export async function closeThread(
   return { success: true };
 }
 
-/**
- * Get open thread for a cell
- */
-export async function getOpenThreadForCell(cellId: string): Promise<ReviewThread | null> {
-  const rows = await query<ThreadRow[]>(
-    `SELECT * FROM review_threads WHERE cell_id = ? AND status = 'open'`,
-    [cellId]
-  );
-
-  return rows.length > 0 ? rowToThread(rows[0]) : null;
-}
-
 async function cleanUpThreadMessages(threadId: string, connection: PoolConnection): Promise<void> {
   await connection.execute(
     `DELETE FROM review_messages WHERE thread_id = ?`,

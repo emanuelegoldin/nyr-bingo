@@ -107,7 +107,7 @@ function getSaltRounds(): number {
 
 const SALT_ROUNDS = getSaltRounds();
 
-export async function hashPassword(password: string): Promise<string> {
+async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
@@ -155,18 +155,6 @@ export async function findUserByEmail(email: string): Promise<User | null> {
   const rows = await query<UserRow[]>(
     `SELECT * FROM users WHERE email = ?`,
     [email]
-  );
-  return rows.length > 0 ? rowToUser(rows[0]) : null;
-}
-
-/**
- * Find user by username
- * Spec: 01-authentication.md - Registration (uniqueness check)
- */
-export async function findUserByUsername(username: string): Promise<User | null> {
-  const rows = await query<UserRow[]>(
-    `SELECT * FROM users WHERE username = ?`,
-    [username]
   );
   return rows.length > 0 ? rowToUser(rows[0]) : null;
 }
@@ -412,15 +400,4 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
     bio: row.bio_public ? row.bio : null,
     avatarUrl: row.avatar_public ? row.avatar_url : null,
   };
-}
-
-/**
- * Update user password
- */
-export async function updateUserPassword(userId: string, newPassword: string): Promise<void> {
-  const passwordHash = await hashPassword(newPassword);
-  await query(
-    `UPDATE users SET password_hash = ? WHERE id = ?`,
-    [passwordHash, userId]
-  );
 }

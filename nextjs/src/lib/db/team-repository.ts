@@ -499,17 +499,6 @@ export async function startBingoGame(
 }
 
 /**
- * Get team invitation by code
- */
-export async function getInvitationByCode(inviteCode: string): Promise<TeamInvitation | null> {
-  const rows = await query<InvitationRow[]>(
-    `SELECT * FROM team_invitations WHERE invite_code = ?`,
-    [inviteCode]
-  );
-  return rows.length > 0 ? rowToInvitation(rows[0]) : null;
-}
-
-/**
  * Delete a team
  * Spec: 04-bingo-teams.md - Only team leader can manage the team
  * 

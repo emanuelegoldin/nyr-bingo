@@ -35,38 +35,9 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 /**
- * Require authentication - throws if not authenticated
- */
-export async function requireAuth(): Promise<User> {
-  const user = await getCurrentUser();
-  if (!user) {
-    throw new Error('Authentication required');
-  }
-  return user;
-}
-
-/**
  * Check if user is verified
  * Returns true if user has verified their email
  */
 export function isUserVerified(user: User): boolean {
   return user.emailVerifiedAt !== null;
-}
-
-/**
- * Require verified email - returns user if verified, null if not
- * Use this to enforce email verification for certain operations
- * Spec: Email verification required for creating/joining teams and starting games
- */
-export async function requireVerifiedEmail(): Promise<User | null> {
-  const user = await getCurrentUser();
-  if (!user) {
-    return null;
-  }
-  
-  if (!isUserVerified(user)) {
-    return null;
-  }
-  
-  return user;
 }

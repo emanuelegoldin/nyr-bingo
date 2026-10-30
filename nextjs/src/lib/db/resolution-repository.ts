@@ -111,7 +111,7 @@ export async function getResolutionsByUser(userId: string): Promise<Resolution[]
 /**
  * Get personal resolutions filtered by type.
  */
-export async function getResolutionsByUserAndType(
+async function getResolutionsByUserAndType(
   userId: string,
   resolutionType: ResolutionType
 ): Promise<Resolution[]> {
@@ -622,7 +622,7 @@ export async function createOrUpdateMemberProvidedResolution(
 /**
  * Get a specific member-provided resolution.
  */
-export async function getMemberProvidedResolution(
+async function getMemberProvidedResolution(
   teamId: string,
   fromUserId: string,
   toUserId: string

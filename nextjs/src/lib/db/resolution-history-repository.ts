@@ -169,7 +169,7 @@ interface CreateResolutionHistoryEntryInput {
   metadata?: Record<string, unknown> | null;
 }
 
-export async function createResolutionHistoryEntry(
+async function createResolutionHistoryEntry(
   input: CreateResolutionHistoryEntryInput,
 ): Promise<ResolutionHistoryEntry> {
   const trimmedContent = input.content.trim();
