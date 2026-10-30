@@ -11,8 +11,6 @@ export * from './types';
 
 // Repositories
 export * from './bingo-card-repository';
-export * from './compound-resolution-repository';
-export * from './iterative-resolution-repository';
 export * from './leaderboard-repository';
 export * from './proof-repository';
 export * from './resolution-history-repository';
