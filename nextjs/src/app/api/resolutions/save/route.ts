@@ -18,11 +18,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   createSystemResolutionHistoryEntry,
   getConnection,
+  getResolutionById,
   isTeamLeader,
   isTeamMember,
   query,
 } from '@/lib/db';
-import { getResolutionById } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '@/lib/shared/types';
 import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
@@ -182,7 +182,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   const effectivePrevType = previousType || type;
 
   // Verify ownership of existing resolution
-  const ownerErr = await verifyOwnership(id, effectivePrevType, currentUser.id);
+  const ownerErr = await verifyOwnership(id, currentUser.id);
   if (ownerErr) return ownerErr;
 
   // Same type → simple update
@@ -191,12 +191,12 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   }
 
   // Type changed → atomic delete-from-old + insert-into-new
-  return handleTypeChange(id, currentUser.id, effectivePrevType, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition, scope, teamId, toUserId);
+  return handleTypeChange(id, currentUser.id, effectivePrevType, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition);
 });
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
 
-async function verifyOwnership(id: string, type: string, userId: string): Promise<NextResponse | null> {
+async function verifyOwnership(id: string, userId: string): Promise<NextResponse | null> {
   const existing = await getResolutionById(id);
 
   if (!existing) {
@@ -333,9 +333,6 @@ async function handleTypeChange(
   text: string,
   subtasks?: Subtask[],
   numberOfRepetition?: number,
-  _scope?: string,
-  _teamId?: string,
-  _toUserId?: string,
 ) {
   const conn = await getConnection();
   const description = newType === 'base' ? (text || title) : (text || null);
@@ -388,7 +385,7 @@ async function handleTypeChange(
   );
 
   if (rows.length === 0) {
-    return NextResponse.json({ error: 'Failed to save resolution' }, { status: 500 });
+    return errorResponse('Failed to save resolution', 500);
   }
 
   await logResolutionHistoryEventSafe(

@@ -12,7 +12,6 @@
 
 import { CellState } from '../shared/types';
 import { query } from './connection';
-import type { TeamLeaderboardEntry } from './types';
 
 // ── Row types ────────────────────────────────────────────────────
 
@@ -27,18 +26,6 @@ interface LeaderboardRow {
 interface LeaderboardRowWithUser extends LeaderboardRow {
   username: string;
   display_name: string | null;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────
-
-function rowToEntry(row: LeaderboardRow): TeamLeaderboardEntry {
-  return {
-    userId: row.user_id,
-    teamId: row.team_id,
-    firstBingoAt: row.first_bingo_at,
-    completedTasks: row.completed_tasks,
-    updatedAt: row.updated_at,
-  };
 }
 
 // ── Bingo detection (server-side, from raw DB rows) ─────────────
