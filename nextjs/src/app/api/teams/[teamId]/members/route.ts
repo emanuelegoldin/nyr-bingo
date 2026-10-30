@@ -1,5 +1,5 @@
 import { AuthContext, errorResponse, withAuth } from "@/app/api/utils";
-import { getTeamWithMembers, isTeamMember, User } from "@/lib/db";
+import { getTeamWithMembers, isTeamMember } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 /**

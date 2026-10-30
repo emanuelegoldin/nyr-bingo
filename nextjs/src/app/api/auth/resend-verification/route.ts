@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createVerificationToken, User } from '@/lib/db';
+import { createVerificationToken } from '@/lib/db';
 import { sendVerificationEmail, isEmailConfigured } from '@/lib/email';
 import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
 

@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server';
 import { getResolutionsByUser } from '@/lib/db';
 import type { Subtask } from '@/lib/shared/types';
-import { errorResponse, withAuth, AuthContextNoParams } from '../../utils';
+import { withAuth, AuthContextNoParams } from '../../utils';
 
 interface UnifiedResolution {
   id: string;

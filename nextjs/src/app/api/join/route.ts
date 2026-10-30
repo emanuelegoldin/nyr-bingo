@@ -4,7 +4,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { isUserVerified } from '@/lib/auth';
-import { joinTeamByInviteCode, getTeamWithMembers, ensureBingoCardForUser, User } from '@/lib/db';
+import { joinTeamByInviteCode, getTeamWithMembers, ensureBingoCardForUser } from '@/lib/db';
 import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
 
 /**

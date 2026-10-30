@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserProfile, updateUserProfile, getPublicUserProfile, User } from '@/lib/db';
+import { getUserProfile, updateUserProfile, getPublicUserProfile } from '@/lib/db';
 import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
 
 /**

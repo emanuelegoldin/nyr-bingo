@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteThreadFile, uploadFile, User } from '@/lib/db';
+import { deleteThreadFile, uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';

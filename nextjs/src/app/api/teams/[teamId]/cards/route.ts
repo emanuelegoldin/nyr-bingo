@@ -8,7 +8,6 @@ import {
   isTeamMember,
   getTeamBingoCards,
   getBingoCard,
-  User,
 } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
