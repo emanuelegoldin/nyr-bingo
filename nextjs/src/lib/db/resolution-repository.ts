@@ -125,56 +125,6 @@ async function getResolutionsByUserAndType(
 }
 
 /**
- * Create a personal base resolution.
- * Spec: 03-personal-resolutions.md – Create
- */
-export async function createResolution(
-  ownerUserId: string,
-  description: string,
-  title?: string
-): Promise<Resolution> {
-  if (!description || description.trim().length === 0) {
-    throw new Error('Resolution description must be non-empty');
-  }
-  const id = uuidv4();
-  const trimmedDesc = description.trim();
-  const resolvedTitle = title ? title.trim().slice(0, 255) : trimmedDesc.slice(0, 255);
-  if (!resolvedTitle) throw new Error('Resolution title must be non-empty');
-
-  await query(
-    `INSERT INTO resolutions (id, owner_user_id, title, description, resolution_type, scope)
-     VALUES (?, ?, ?, ?, 'base', 'personal')`,
-    [id, ownerUserId, resolvedTitle, trimmedDesc]
-  );
-  return (await getResolutionById(id))!;
-}
-
-/**
- * Update a personal base resolution.
- * Spec: 03-personal-resolutions.md – Update
- */
-export async function updateResolution(
-  id: string,
-  ownerUserId: string,
-  description: string,
-  title?: string
-): Promise<Resolution | null> {
-  if (!description || description.trim().length === 0) {
-    throw new Error('Resolution description must be non-empty');
-  }
-  const trimmedDesc = description.trim();
-  const resolvedTitle = title ? title.trim().slice(0, 255) : trimmedDesc.slice(0, 255);
-  if (!resolvedTitle) throw new Error('Resolution title must be non-empty');
-
-  await query(
-    `UPDATE resolutions SET title = ?, description = ? WHERE id = ? AND owner_user_id = ?`,
-    [resolvedTitle, trimmedDesc, id, ownerUserId]
-  );
-  const row = await getResolutionById(id);
-  return row && row.ownerUserId === ownerUserId ? row : null;
-}
-
-/**
  * Get random personal resolutions for bingo card filling.
  * Spec: 05-bingo-card-generation.md – fallback from personal resolutions
  */
@@ -213,30 +163,6 @@ function normalizeSubtasks(subtasks: Subtask[]): Subtask[] {
 }
 
 /**
- * Create a compound resolution.
- */
-export async function createCompoundResolution(
-  ownerUserId: string,
-  title: string,
-  subtasks: Subtask[],
-  description?: string | null,
-  scope: ResolutionScope = ResolutionScope.PERSONAL,
-  teamId?: string | null,
-  toUserId?: string | null
-): Promise<Resolution> {
-  const id = uuidv4();
-  const normalized = normalizeSubtasks(subtasks);
-  await query(
-    `INSERT INTO resolutions
-     (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, subtasks)
-     VALUES (?, ?, ?, ?, 'compound', ?, ?, ?, ?)`,
-    [id, ownerUserId, title.trim().slice(0, 255), description?.trim() || null,
-      scope, teamId || null, toUserId || null, JSON.stringify(normalized)]
-  );
-  return (await getResolutionById(id))!;
-}
-
-/**
  * Get compound resolutions for a user (personal scope).
  */
 export async function getCompoundResolutionsByUser(userId: string): Promise<Resolution[]> {
@@ -249,48 +175,6 @@ export async function getCompoundResolutionsByUser(userId: string): Promise<Reso
 export async function getCompoundResolutionById(id: string): Promise<Resolution | null> {
   const row = await getResolutionById(id);
   return row && row.resolutionType === ResolutionType.COMPOUND ? row : null;
-}
-
-/**
- * Update a compound resolution.
- */
-export async function updateCompoundResolution(
-  id: string,
-  ownerUserId: string,
-  updates: { title?: string; description?: string | null; subtasks?: Subtask[] }
-): Promise<Resolution | null> {
-  const existing = await getCompoundResolutionById(id);
-  if (!existing ||
-    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId) ||   // Personal resolutions can only be modified by the owner
-    (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient  
-  ) {
-    return null;
-  }
-
-  const sets: string[] = [];
-  const params: unknown[] = [];
-
-  if (updates.title !== undefined) {
-    sets.push('title = ?');
-    params.push(updates.title.trim().slice(0, 255));
-  }
-  if (updates.description !== undefined) {
-    sets.push('description = ?');
-    params.push(updates.description?.trim() || null);
-  }
-  if (updates.subtasks !== undefined) {
-    sets.push('subtasks = ?');
-    params.push(JSON.stringify(normalizeSubtasks(updates.subtasks)));
-  }
-  if (sets.length === 0) return existing;
-
-  params.push(id, ownerUserId);
-  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
-  await query(
-    `UPDATE resolutions SET ${sets.join(', ')} WHERE id = ? AND ${user_id_to_compare} = ?`,
-    params
-  );
-  return getResolutionById(id);
 }
 
 /**
@@ -336,29 +220,6 @@ export async function deleteCompoundResolution(
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Create an iterative resolution.
- */
-export async function createIterativeResolution(
-  ownerUserId: string,
-  title: string,
-  numberOfRepetition: number,
-  description?: string | null,
-  scope: ResolutionScope = ResolutionScope.PERSONAL,
-  teamId?: string | null,
-  toUserId?: string | null
-): Promise<Resolution> {
-  const id = uuidv4();
-  await query(
-    `INSERT INTO resolutions
-     (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, number_of_repetition, completed_times)
-     VALUES (?, ?, ?, ?, 'iterative', ?, ?, ?, ?, 0)`,
-    [id, ownerUserId, title.trim().slice(0, 255), description?.trim() || null,
-      scope, teamId || null, toUserId || null, numberOfRepetition]
-  );
-  return (await getResolutionById(id))!;
-}
-
-/**
  * Get iterative resolutions for a user (personal scope).
  */
 export async function getIterativeResolutionsByUser(userId: string): Promise<Resolution[]> {
@@ -371,48 +232,6 @@ export async function getIterativeResolutionsByUser(userId: string): Promise<Res
 export async function getIterativeResolutionById(id: string): Promise<Resolution | null> {
   const row = await getResolutionById(id);
   return row && row.resolutionType === ResolutionType.ITERATIVE ? row : null;
-}
-
-/**
- * Update an iterative resolution.
- */
-export async function updateIterativeResolution(
-  id: string,
-  ownerUserId: string,
-  updates: { title?: string; description?: string | null; numberOfRepetition?: number }
-): Promise<Resolution | null> {
-  const existing = await getIterativeResolutionById(id);
-  if (!existing ||
-    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId) ||   // Personal resolutions can only be modified by the owner
-    (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient  
-  ) {
-    return null;
-  }
-
-  const sets: string[] = [];
-  const params: unknown[] = [];
-
-  if (updates.title !== undefined) {
-    sets.push('title = ?');
-    params.push(updates.title.trim().slice(0, 255));
-  }
-  if (updates.description !== undefined) {
-    sets.push('description = ?');
-    params.push(updates.description?.trim() || null);
-  }
-  if (updates.numberOfRepetition !== undefined) {
-    sets.push('number_of_repetition = ?');
-    params.push(updates.numberOfRepetition);
-  }
-  if (sets.length === 0) return existing;
-
-  params.push(id, ownerUserId);
-  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
-  await query(
-    `UPDATE resolutions SET ${sets.join(', ')} WHERE id = ? AND ${user_id_to_compare} = ?`,
-    params
-  );
-  return getResolutionById(id);
 }
 
 /**
