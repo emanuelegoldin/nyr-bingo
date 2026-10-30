@@ -5,14 +5,12 @@
 
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { InvitationStatus, ResolutionType, TeamRole, TeamStatus } from '../shared/types';
+import { InvitationStatus, TeamRole, TeamStatus } from '../shared/types';
 import { getConnection, query } from './connection';
 import {
-  createOrUpdateMemberProvidedResolution,
   getMemberProvidedResolutionsByUser,
   getMemberProvidedResolutionsForUser,
   getTeamGoalResolution,
-  setTeamGoalResolution,
 } from './resolution-repository';
 import type {
   Team,
@@ -219,33 +217,6 @@ export async function isTeamLeader(teamId: string, userId: string): Promise<bool
 }
 
 /**
- * Set team resolution (goal)
- * Spec: 04-bingo-teams.md - Team Resolution
- * Creates or updates a resolution entity with scope='team'.
- */
-export async function setTeamResolution(
-  teamId: string,
-  leaderUserId: string,
-  resolutionText: string,
-  resolutionType: ResolutionType = ResolutionType.BASE,
-  subtasks?: import('../shared/types').Subtask[],
-  numberOfRepetition?: number
-): Promise<Team | null> {
-  // Only team leader can set the team resolution
-  const leader = await isTeamLeader(teamId, leaderUserId);
-  if (!leader) {
-    return null;
-  }
-
-  const trimmed = resolutionText.trim();
-  const title = trimmed.slice(0, 255);
-
-  await setTeamGoalResolution(teamId, leaderUserId, title, trimmed, resolutionType, subtasks, numberOfRepetition);
-
-  return getTeamById(teamId);
-}
-
-/**
  * Create team invitation
  * Spec: 04-bingo-teams.md - Invitations / Joining
  */
@@ -350,38 +321,6 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
     [teamId]
   );
   return rows.map(rowToMembership);
-}
-
-/**
- * Create a team-provided resolution (member to member)
- * Spec: 04-bingo-teams.md - Member-Provided Resolutions
- * Delegates to the unified resolution repository.
- */
-export async function createTeamProvidedResolution(
-  teamId: string,
-  fromUserId: string,
-  toUserId: string,
-  text: string,
-  title?: string,
-  resolutionType: ResolutionType = ResolutionType.BASE,
-  subtasks?: import('../shared/types').Subtask[],
-  numberOfRepetition?: number
-): Promise<import('./types').Resolution | null> {
-  // Verify both users are team members
-  const fromIsMember = await isTeamMember(teamId, fromUserId);
-  const toIsMember = await isTeamMember(teamId, toUserId);
-
-  if (!fromIsMember || !toIsMember) {
-    return null;
-  }
-
-  const trimmedText = text.trim();
-  const resolvedTitle = title ? title.trim().slice(0, 255) : trimmedText.slice(0, 255);
-
-  return createOrUpdateMemberProvidedResolution(
-    teamId, fromUserId, toUserId, resolvedTitle, trimmedText,
-    resolutionType, subtasks, numberOfRepetition
-  );
 }
 
 /**
