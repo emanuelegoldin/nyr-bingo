@@ -67,6 +67,9 @@ export enum ResolutionType {
   ITERATIVE = 'iterative',
 }
 
+// String form of ResolutionType, for serialized data passed to the frontend
+export type ResolutionTypeValue = `${ResolutionType}`;
+
 // Resolution scope (ownership context)
 // A resolution can be personal, a team-wide goal, or written by one member for another.
 export enum ResolutionScope {

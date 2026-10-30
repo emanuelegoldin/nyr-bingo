@@ -14,7 +14,7 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
-import type { Subtask } from "@/lib/shared/types";
+import type { ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "../ui/button";
@@ -37,8 +37,6 @@ import {
 import { Textarea } from "../ui/textarea";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
-
-type ResolutionTypeValue = "base" | "compound" | "iterative";
 
 /** Shape of a resolution passed in for editing (matches the unified API response). */
 export interface ResolutionFormData {

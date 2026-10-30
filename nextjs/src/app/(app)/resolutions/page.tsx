@@ -9,26 +9,11 @@
 
 import { getCurrentUser } from "@/lib/auth";
 import { getResolutionsByUser, type Resolution } from "@/lib/db";
-import type { Subtask } from "@/lib/shared/types";
+import type { ResolutionTypeValue } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import ResolutionsPageClient from "./resolutions-page-client";
-
-type ResolutionTypeValue = "base" | "compound" | "iterative";
-
-interface UnifiedResolution {
-  id: string;
-  type: ResolutionTypeValue;
-  ownerUserId: string;
-  title: string;
-  text: string;
-  subtasks?: Subtask[];
-  numberOfRepetition?: number;
-  completedTimes?: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import ResolutionsPageClient, { type UnifiedResolution } from "./resolutions-page-client";
 
 function toIsoDateString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : value;

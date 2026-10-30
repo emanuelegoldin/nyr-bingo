@@ -39,6 +39,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from 'react';
 
 import { BingoCardWithCells } from "@/lib/db/types";
+import type { ResolutionTypeValue } from "@/lib/shared/types";
 import { CardsTab } from "./cards-tab";
 import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
 import { MembersTab } from "./members-tab";
@@ -484,7 +485,6 @@ export default function TeamDetailPageClient({
 
         <TabsContent value="cards" className="mt-6">
           <CardsTab
-            teamId={teamId}
             team={team}
             initialCards={initialCards}
             currentUserId={currentUserId}
@@ -504,8 +504,6 @@ export default function TeamDetailPageClient({
 }
 
 /* ─── Human-readable labels ──────────────────────────────────────── */
-
-type ResolutionTypeValue = "base" | "compound" | "iterative";
 
 const TYPE_LABELS: Record<ResolutionTypeValue, string> = {
   base: "Common",

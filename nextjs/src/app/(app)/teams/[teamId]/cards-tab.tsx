@@ -19,14 +19,12 @@ import { useCallback, useMemo, useState } from "react";
 import type { Team } from "./types";
 
 interface CardsTabProps {
-  teamId: string;
   team: Team;
   initialCards: BingoCardWithCells[];
   currentUserId: string;
 }
 
 export function CardsTab({
-  teamId,
   team,
   initialCards,
   currentUserId,

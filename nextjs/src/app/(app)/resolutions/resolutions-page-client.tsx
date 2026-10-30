@@ -26,15 +26,13 @@ import { Separator } from "@/components/ui/separator";
 import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
-import type { Subtask } from "@/lib/shared/types";
+import type { ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
-type ResolutionTypeValue = "base" | "compound" | "iterative";
-
-interface UnifiedResolution {
+export interface UnifiedResolution {
   id: string;
   type: ResolutionTypeValue;
   ownerUserId: string;

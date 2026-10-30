@@ -56,29 +56,6 @@ function BingoCard(
         broadcastRefresh
     }: BaseBingoCardProviderProps
 ) {
-    // BAD! Overwriting the state with setState causes too many re-renders
-    // if (user) {
-    //     setState({ ...state, user });
-    // }
-    // Use useEffect to update the state when the user prop changes
-    // TODO: User is part of the context (it won't be mutated by bingo card); 
-    //       resolutions can be mutated by user actions ==> part of the state
-    //       update function provided by context to update state from child components
-    //
-    // const [state, setState] = useState(() => ({
-    //     ...BingoCard.initialState,
-    //     user: user ?? BingoCard.initialState.user
-    // }));
-    //
-    // useEffect(() => {
-    //     if (user) {
-    //         setState((current) => ({
-    //         ...current,
-    //         user,
-    //         }));
-    //     }
-    //     }, [user]);
-    const [state, setState] = useState(BingoCard.initialState);
     const [editMode, setEditMode] = useState(false);
 
     // Memoize the actions object to prevent creating new context value on every render
@@ -96,8 +73,6 @@ function BingoCard(
 
     return (
         <BingoCard.Provider>
-            {/* This creates new object for the context value on every render! {**{here the new obj}**} */}
-            {/* <BingoCardContext value={{ user: user, actions: { update: setState } }}> */}
             <BingoCardContext value={contextValue}>
                 <BingoCard.Frame>
                     <BingoCard.Header>
@@ -119,10 +94,6 @@ function BingoCard(
             </BingoCardContext>
         </BingoCard.Provider>
     )
-}
-
-BingoCard.initialState = {
-
 }
 
 BingoCard.Provider = function ({ children }: { children: React.ReactNode }) {

@@ -24,16 +24,9 @@ import {
 import { Loader2 } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import type { LeaderboardEntry } from './leaderboard-tab';
 import TeamDetailPageClient from './team-detail-page-client';
 import type { Team, TeamProvidedResolution } from './types';
-
-interface LeaderboardEntry {
-  userId: string;
-  username: string;
-  displayName: string | null;
-  firstBingoAt: string | null;
-  completedTasks: number;
-}
 
 interface TeamDetailPageProps {
   params: Promise<{ teamId: string }>;
