@@ -2,10 +2,8 @@ packages:
   - .
 
 ignoredBuiltDependencies:
-  - '@firebase/util'
   - sharp
   - unrs-resolver
 
 onlyBuiltDependencies:
   - esbuild
-  - protobufjs
