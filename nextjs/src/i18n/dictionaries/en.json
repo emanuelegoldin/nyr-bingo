@@ -8,7 +8,6 @@
         "headerContent": "Welcome to Resolution Bingo!",
         "headerDescription": "Complete your resolutions to get a BINGO! Click on a cell to mark it as completed.",
         "headerDescriptionNoTeam": "Join or create a team to start playing.",
-        "createTeambutton": "Get Started",
         "cardContentNoneAvailable": "No card available yet for your user in this started team."
     },
     "LoginPage": {
@@ -55,20 +54,5 @@
         "progressLabel": "Progress",
         "loadError": "Failed to load resolution history",
         "addError": "Failed to add history entry"
-    },
-    "TeamPage": {
-        "title": "Your Team",
-        "MemberTab": {
-            "title": "Team Members",
-            "leaderLabel": "Leader"
-        }
-    },
-    "ToastMessages": {
-        "inviteCode": {
-            "success": {
-                "title": "Success!",
-                "description": "Invite link created"
-            }
-        }
     }
 }
