@@ -3,10 +3,10 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { CellSourceType, CellState, DuplicateReportStatus, InvitationStatus, ProofStatus, ResolutionScope, ResolutionType, ReviewDecision, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
+import { CellSourceType, CellState, InvitationStatus, ProofStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
 
 // Re-export shared enums/types so consumers can import from db/types
-export { CellSourceType, CellState, DuplicateReportStatus, InvitationStatus, ProofStatus, ResolutionScope, ResolutionType, ReviewDecision, TeamRole, TeamStatus, ThreadStatus, VoteType };
+export { CellSourceType, CellState, InvitationStatus, ProofStatus, ResolutionScope, ResolutionType, TeamRole, TeamStatus, ThreadStatus, VoteType };
 export type { Subtask };
 
 // User entity
@@ -180,17 +180,6 @@ export interface CellProof {
   status: ProofStatus;
   createdAt: Date;
   updatedAt: Date;
-}
-
-// Proof review
-// Spec: 07-proof-and-approval.md
-export interface ProofReview {
-  id: string;
-  proofId: string;
-  reviewerUserId: string;
-  decision: ReviewDecision;
-  comment: string | null;
-  createdAt: Date;
 }
 
 // Extended types for API responses

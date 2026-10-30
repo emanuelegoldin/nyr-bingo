@@ -12,7 +12,6 @@ export * from './types';
 // Repositories
 export * from './bingo-card-repository';
 export * from './leaderboard-repository';
-export * from './proof-repository';
 export * from './resolution-history-repository';
 export * from './resolution-repository';
 export * from './review-thread-repository';

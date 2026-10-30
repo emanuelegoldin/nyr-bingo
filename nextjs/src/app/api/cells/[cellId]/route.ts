@@ -3,24 +3,9 @@
  * Spec Reference: 06-bingo-gameplay.md - Card State
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { updateCellState, getCellById, User } from '@/lib/db';
+import { updateCellState } from '@/lib/db';
 import type { CellState } from '@/lib/db/types';
 import { errorResponse, withAuth, AuthContext } from '../../utils';
-
-/**
- * GET /api/cells/[cellId] - Get cell details
- */
-export const GET = withAuth(async (
-  _request: NextRequest,
-  { params, currentUser }: AuthContext<{ cellId: string }>
-) => {
-  const { cellId } = await params;
-  const cell = await getCellById(cellId);
-  if (!cell) {
-    return errorResponse('Cell not found', 404);
-  }
-  return NextResponse.json({ cell });
-});
 
 /**
  * PUT /api/cells/[cellId] - Update cell state

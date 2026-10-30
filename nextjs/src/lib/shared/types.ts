@@ -47,20 +47,6 @@ export enum ProofStatus {
   DECLINED = 'declined'
 }
 
-// Proof review decision
-// Spec: 07-proof-and-approval.md
-export enum ReviewDecision {
-  APPROVED = 'approved',
-  DECLINED = 'declined'
-}
-
-// Duplicate report status
-// Spec: 05-bingo-card-generation.md
-export enum DuplicateReportStatus {
-  PENDING = 'pending',
-  RESOLVED = 'resolved'
-}
-
 // Review thread types
 // Spec: Resolution Review & Proof Workflow
 export enum ThreadStatus {
