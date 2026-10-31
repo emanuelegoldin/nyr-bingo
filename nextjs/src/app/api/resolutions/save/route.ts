@@ -16,15 +16,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  changeResolutionType,
+  createResolution,
+  getMemberProvidedResolutionsByUser,
   getResolutionById,
+  getTeamGoalResolution,
   isTeamLeader,
   isTeamMember,
   logResolutionHistoryEventSafe,
-  query,
-  withTransaction,
+  updateResolutionContent,
 } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
-import type { Subtask } from '@/lib/shared/types';
+import type { Resolution, ResolutionContent } from '@/lib/db';
+import type { ResolutionScope, ResolutionType, Subtask } from '@/lib/shared/types';
 import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
@@ -118,8 +121,13 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     if (err) return errorResponse(err, 400);
   }
 
-  const trimmedTitle = title.trim().slice(0, 255);
-  const trimmedText = text?.trim() || '';
+  const content: ResolutionContent = {
+    type: type as ResolutionType,
+    title: title.trim().slice(0, 255),
+    text: text?.trim() || '',
+    subtasks,
+    numberOfRepetition,
+  };
 
   // ── Scope authorization ────────────────────────────────────
   if (scope === 'team') {
@@ -153,29 +161,20 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   if (!id) {
     // For team scope, if a goal already exists, update it instead
     if (scope === 'team') {
-      const [existingGoal] = await query<Array<Record<string, unknown>>>(
-        `SELECT id FROM resolutions WHERE team_id = ? AND scope = 'team' LIMIT 1`,
-        [teamId]
-      );
+      const existingGoal = await getTeamGoalResolution(teamId!);
       if (existingGoal) {
-        return handleSameTypeUpdate(
-          existingGoal.id as string, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition
-        );
+        return handleSameTypeUpdate(existingGoal.id, currentUser.id, content);
       }
     }
     // For member_provided scope, if a resolution from→to already exists, update it
     if (scope === 'member_provided') {
-      const [existingMp] = await query<Array<Record<string, unknown>>>(
-        `SELECT id FROM resolutions WHERE team_id = ? AND owner_user_id = ? AND to_user_id = ? AND scope = 'member_provided' LIMIT 1`,
-        [teamId, currentUser.id, toUserId]
-      );
+      const provided = await getMemberProvidedResolutionsByUser(teamId!, currentUser.id);
+      const existingMp = provided.find((resolution) => resolution.toUserId === toUserId);
       if (existingMp) {
-        return handleSameTypeUpdate(
-          existingMp.id as string, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition
-        );
+        return handleSameTypeUpdate(existingMp.id, currentUser.id, content);
       }
     }
-    return handleCreate(currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition, scope, teamId, toUserId);
+    return handleCreate(currentUser.id, content, scope as ResolutionScope, teamId, toUserId);
   }
 
   // ── UPDATE (with id) ───────────────────────────────────────
@@ -187,11 +186,11 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
 
   // Same type → simple update
   if (effectivePrevType === type) {
-    return handleSameTypeUpdate(id, currentUser.id, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition);
+    return handleSameTypeUpdate(id, currentUser.id, content);
   }
 
-  // Type changed → atomic delete-from-old + insert-into-new
-  return handleTypeChange(id, currentUser.id, effectivePrevType, type, trimmedTitle, trimmedText, subtasks, numberOfRepetition);
+  // Type changed → atomic update of the resolution and its cells
+  return handleTypeChange(id, currentUser.id, effectivePrevType, content);
 });
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
@@ -213,168 +212,59 @@ async function verifyOwnership(id: string, userId: string): Promise<NextResponse
  */
 async function handleCreate(
   userId: string,
-  type: string,
-  title: string,
-  text: string,
-  subtasks?: Subtask[],
-  numberOfRepetition?: number,
-  scope: string = 'personal',
+  content: ResolutionContent,
+  scope: ResolutionScope,
   teamId?: string,
   toUserId?: string,
 ) {
-  const id = uuidv4();
-  const description = type === 'base' ? (text || title) : (text || null);
-
-  if (type === 'base') {
-    await query(
-      `INSERT INTO resolutions (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id)
-       VALUES (?, ?, ?, ?, 'base', ?, ?, ?)`,
-      [id, userId, title, description, scope, teamId || null, toUserId || null]
-    );
-  } else if (type === 'compound') {
-    const normalizedSubtasks = normalizeSubtasks(subtasks!);
-    await query(
-      `INSERT INTO resolutions (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, subtasks)
-       VALUES (?, ?, ?, ?, 'compound', ?, ?, ?, ?)`,
-      [id, userId, title, description, scope, teamId || null, toUserId || null, JSON.stringify(normalizedSubtasks)]
-    );
-  } else {
-    // iterative
-    await query(
-      `INSERT INTO resolutions (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, number_of_repetition, completed_times)
-       VALUES (?, ?, ?, ?, 'iterative', ?, ?, ?, ?, 0)`,
-      [id, userId, title, description, scope, teamId || null, toUserId || null, numberOfRepetition!]
-    );
-  }
-
-  const rows = await query<Array<Record<string, unknown>>>(
-    `SELECT * FROM resolutions WHERE id = ?`, [id]
-  );
+  const id = await createResolution(userId, content, { scope, teamId, toUserId });
+  const saved = await getResolutionById(id);
 
   await logResolutionHistoryEventSafe(
     id,
     userId,
     'resolution.created',
-    `Created ${type} resolution`,
+    `Created ${content.type} resolution`,
     {
-      type,
+      type: content.type,
       scope,
       teamId: teamId || null,
       toUserId: toUserId || null,
     },
   );
 
-  return NextResponse.json({ resolution: toUnifiedResponse(rows[0], type) }, { status: 201 });
+  return NextResponse.json({ resolution: toUnifiedResponse(saved!, content.type) }, { status: 201 });
 }
 
 /**
  * Update a resolution without changing type.
  */
-async function handleSameTypeUpdate(
-  id: string,
-  userId: string,
-  type: string,
-  title: string,
-  text: string,
-  subtasks?: Subtask[],
-  numberOfRepetition?: number,
-) {
-  const description = type === 'base' ? (text || title) : (text || null);
-
-  if (type === 'base') {
-    await query(
-      `UPDATE resolutions SET title = ?, description = ? WHERE id = ? AND owner_user_id = ?`,
-      [title, description, id, userId]
-    );
-  } else if (type === 'compound') {
-    const normalizedSubtasks = normalizeSubtasks(subtasks!);
-    await query(
-      `UPDATE resolutions SET title = ?, description = ?, subtasks = ?
-       WHERE id = ? AND owner_user_id = ?`,
-      [title, description, JSON.stringify(normalizedSubtasks), id, userId]
-    );
-  } else {
-    // iterative
-    await query(
-      `UPDATE resolutions SET title = ?, description = ?, number_of_repetition = ?
-       WHERE id = ? AND owner_user_id = ?`,
-      [title, description, numberOfRepetition!, id, userId]
-    );
-  }
-
-  const rows = await query<Array<Record<string, unknown>>>(
-    `SELECT * FROM resolutions WHERE id = ?`, [id]
-  );
+async function handleSameTypeUpdate(id: string, userId: string, content: ResolutionContent) {
+  await updateResolutionContent(id, userId, content);
+  const saved = await getResolutionById(id);
 
   await logResolutionHistoryEventSafe(
     id,
     userId,
     'resolution.updated',
-    `Updated ${type} resolution`,
+    `Updated ${content.type} resolution`,
     {
-      type,
-      title,
+      type: content.type,
+      title: content.title,
     },
   );
 
-  return NextResponse.json({ resolution: toUnifiedResponse(rows[0], type) });
+  return NextResponse.json({ resolution: toUnifiedResponse(saved!, content.type) });
 }
 
 /**
  * Change resolution type: update the single resolutions row and any bingo_cells referencing it.
- * Since all types live in the same table, this is a single UPDATE + cell update.
  */
-async function handleTypeChange(
-  id: string,
-  userId: string,
-  oldType: string,
-  newType: string,
-  title: string,
-  text: string,
-  subtasks?: Subtask[],
-  numberOfRepetition?: number,
-) {
-  const description = newType === 'base' ? (text || title) : (text || null);
+async function handleTypeChange(id: string, userId: string, oldType: string, content: ResolutionContent) {
+  await changeResolutionType(id, userId, content);
+  const saved = await getResolutionById(id);
 
-  await withTransaction(async (conn) => {
-    // Update the resolution row: change type and type-specific fields
-    if (newType === 'base') {
-      await conn.execute(
-        `UPDATE resolutions SET title = ?, description = ?, resolution_type = 'base',
-         subtasks = NULL, number_of_repetition = NULL, completed_times = 0
-         WHERE id = ? AND owner_user_id = ?`,
-        [title, description, id, userId]
-      );
-    } else if (newType === 'compound') {
-      const normalizedSubtasks = normalizeSubtasks(subtasks!);
-      await conn.execute(
-        `UPDATE resolutions SET title = ?, description = ?, resolution_type = 'compound',
-         subtasks = ?, number_of_repetition = NULL, completed_times = 0
-         WHERE id = ? AND owner_user_id = ?`,
-        [title, description, JSON.stringify(normalizedSubtasks), id, userId]
-      );
-    } else {
-      // iterative
-      await conn.execute(
-        `UPDATE resolutions SET title = ?, description = ?, resolution_type = 'iterative',
-         subtasks = NULL, number_of_repetition = ?, completed_times = 0
-         WHERE id = ? AND owner_user_id = ?`,
-        [title, description, numberOfRepetition!, id, userId]
-      );
-    }
-
-    // Update bingo_cells.resolution_type for any cells referencing this resolution
-    await conn.execute(
-      `UPDATE bingo_cells SET resolution_type = ? WHERE resolution_id = ?`,
-      [newType, id]
-    );
-  });
-
-  const rows = await query<Array<Record<string, unknown>>>(
-    `SELECT * FROM resolutions WHERE id = ?`, [id]
-  );
-
-  if (rows.length === 0) {
+  if (!saved) {
     return errorResponse('Failed to save resolution', 500);
   }
 
@@ -382,58 +272,41 @@ async function handleTypeChange(
     id,
     userId,
     'resolution.type_changed',
-    `Changed resolution type from ${oldType} to ${newType}`,
+    `Changed resolution type from ${oldType} to ${content.type}`,
     {
       oldType,
-      newType,
-      title,
+      newType: content.type,
+      title: content.title,
     },
   );
 
-  return NextResponse.json({ resolution: toUnifiedResponse(rows[0], newType) });
+  return NextResponse.json({ resolution: toUnifiedResponse(saved, content.type) });
 }
 
 /**
- * Normalize subtasks: ensure correct shape, trim strings.
- */
-function normalizeSubtasks(subtasks: Subtask[]): Subtask[] {
-  return subtasks.map((st) => ({
-    title: st.title.trim(),
-    description: st.description?.trim() ?? '',
-    completed: st.completed ?? false,
-  }));
-}
-
-/**
- * Convert a raw DB row + type into a unified response object
+ * Convert a resolution + the requested type into a unified response object
  * that the frontend can use regardless of type.
  */
-function toUnifiedResponse(row: Record<string, unknown>, type: string) {
+function toUnifiedResponse(resolution: Resolution, type: ResolutionType) {
   const base = {
-    id: row.id,
+    id: resolution.id,
     type,
-    ownerUserId: row.owner_user_id,
-    title: row.title,
-    text: (row.description as string) ?? '',
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    ownerUserId: resolution.ownerUserId,
+    title: resolution.title,
+    text: resolution.description ?? '',
+    createdAt: resolution.createdAt,
+    updatedAt: resolution.updatedAt,
   };
 
   if (type === 'compound') {
-    let subtasks: Subtask[];
-    try {
-      subtasks = typeof row.subtasks === 'string' ? JSON.parse(row.subtasks as string) : (row.subtasks as Subtask[]);
-    } catch {
-      subtasks = [];
-    }
-    return { ...base, subtasks };
+    return { ...base, subtasks: resolution.subtasks };
   }
 
   if (type === 'iterative') {
     return {
       ...base,
-      numberOfRepetition: row.number_of_repetition,
-      completedTimes: row.completed_times,
+      numberOfRepetition: resolution.numberOfRepetition,
+      completedTimes: resolution.completedTimes,
     };
   }
 

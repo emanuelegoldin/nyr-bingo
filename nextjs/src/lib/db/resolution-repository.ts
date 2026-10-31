@@ -7,9 +7,10 @@
  */
 
 import type { RowDataPacket } from 'mysql2/promise';
+import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '../shared/types';
 import { ResolutionScope, ResolutionType } from '../shared/types';
-import { query } from './connection';
+import { query, withTransaction } from './connection';
 import type { Resolution } from './types';
 
 // ── Row type from database (snake_case) ──────────────────────────
@@ -112,6 +113,134 @@ export function canModifyProgress(resolution: Resolution, userId: string): boole
  */
 function progressOwnerColumn(resolution: Resolution): 'to_user_id' | 'owner_user_id' {
   return resolution.scope === 'member_provided' ? 'to_user_id' : 'owner_user_id';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Saving resolutions
+// ═══════════════════════════════════════════════════════════════════
+
+/** The editable content of a resolution, as submitted by a user. */
+export interface ResolutionContent {
+  type: ResolutionType;
+  title: string;
+  text: string;
+  subtasks?: Subtask[];
+  numberOfRepetition?: number;
+}
+
+/**
+ * Normalize subtasks: ensure correct shape, trim strings.
+ */
+function normalizeSubtasks(subtasks: Subtask[]): Subtask[] {
+  return subtasks.map((st) => ({
+    title: st.title.trim(),
+    description: st.description?.trim() ?? '',
+    completed: st.completed ?? false,
+  }));
+}
+
+/**
+ * Derive the stored column values from submitted content.
+ * Base resolutions fall back to their title as description. Type-specific columns are null for other types.
+ * @param content The validated content
+ * @returns The values for the description, subtasks and number_of_repetition columns
+ */
+function toColumnValues({ type, title, text, subtasks, numberOfRepetition }: ResolutionContent) {
+  return {
+    description: type === ResolutionType.BASE ? (text || title) : (text || null),
+    subtasks: type === ResolutionType.COMPOUND ? JSON.stringify(normalizeSubtasks(subtasks!)) : null,
+    numberOfRepetition: type === ResolutionType.ITERATIVE ? numberOfRepetition! : null,
+  };
+}
+
+/**
+ * Create a resolution.
+ * @param ownerUserId The user creating it
+ * @param content The validated content
+ * @param placement The scope, plus the team and recipient where the scope needs them
+ * @returns The new resolution's id
+ */
+export async function createResolution(
+  ownerUserId: string,
+  content: ResolutionContent,
+  placement: { scope: ResolutionScope; teamId?: string; toUserId?: string }
+): Promise<string> {
+  const id = uuidv4();
+  const { description, subtasks, numberOfRepetition } = toColumnValues(content);
+
+  await query(
+    `INSERT INTO resolutions
+       (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, subtasks, number_of_repetition, completed_times)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+    [
+      id,
+      ownerUserId,
+      content.title,
+      description,
+      content.type,
+      placement.scope,
+      placement.teamId || null,
+      placement.toUserId || null,
+      subtasks,
+      numberOfRepetition,
+    ]
+  );
+
+  return id;
+}
+
+/**
+ * Update a resolution's content without changing its type.
+ * Writes only the columns of content.type, leaving resolution_type and progress untouched.
+ * @param id The resolution to update
+ * @param ownerUserId Its owner; other users' rows are not matched
+ * @param content The validated content
+ */
+export async function updateResolutionContent(
+  id: string,
+  ownerUserId: string,
+  content: ResolutionContent
+): Promise<void> {
+  const { description, subtasks, numberOfRepetition } = toColumnValues(content);
+  const typedColumns: Record<ResolutionType, { assignment: string; values: unknown[] }> = {
+    [ResolutionType.BASE]: { assignment: '', values: [] },
+    [ResolutionType.COMPOUND]: { assignment: ', subtasks = ?', values: [subtasks] },
+    [ResolutionType.ITERATIVE]: { assignment: ', number_of_repetition = ?', values: [numberOfRepetition] },
+  };
+  const { assignment, values } = typedColumns[content.type];
+
+  await query(
+    `UPDATE resolutions SET title = ?, description = ?${assignment} WHERE id = ? AND owner_user_id = ?`,
+    [content.title, description, ...values, id, ownerUserId]
+  );
+}
+
+/**
+ * Change a resolution's type, resetting its progress and retyping the bingo cells that reference it.
+ * @param id The resolution to change
+ * @param ownerUserId Its owner; other users' rows are not matched
+ * @param content The validated content, whose type is the new type
+ */
+export async function changeResolutionType(
+  id: string,
+  ownerUserId: string,
+  content: ResolutionContent
+): Promise<void> {
+  const { description, subtasks, numberOfRepetition } = toColumnValues(content);
+
+  await withTransaction(async (connection) => {
+    await connection.execute(
+      `UPDATE resolutions SET title = ?, description = ?, resolution_type = ?,
+       subtasks = ?, number_of_repetition = ?, completed_times = 0
+       WHERE id = ? AND owner_user_id = ?`,
+      [content.title, description, content.type, subtasks, numberOfRepetition, id, ownerUserId]
+    );
+
+    await connection.execute(
+      `UPDATE bingo_cells SET resolution_type = ? WHERE resolution_id = ?`,
+      [content.type, id]
+    );
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
