@@ -113,7 +113,6 @@ The mutations of `bingo_cells.state` in this table include a `WHERE state ...` g
 |------------------------------|-----------------------------------------------|------------------|
 | Mark completed               | `pending`                                     | `completed`      |
 | `PUT` to `pending`           | `completed`                                   | `pending`        |
-| `PUT` to `accomplished`      | `pending_review`                              | `accomplished`   |
 | Undo completion              | `completed`, `pending_review`, `accomplished` | `pending`        |
 | Request proof                | `completed`                                   | `pending_review` |
 | Automatic completion/revert  | The state read just before                    | `completed` or `pending` |

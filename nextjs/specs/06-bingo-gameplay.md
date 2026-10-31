@@ -161,6 +161,5 @@ These concerns are handled in **07 — Proof and Approval**.
 
 ## Known Gaps
 
-- `PUT /api/cells/[cellId]` lets the card owner set `accomplished` on their own cell in `pending_review`, bypassing the vote and leaving the thread open.
 - `PUT /api/cells/[cellId]` does not check the resolution type, so `compound` and `iterative` cells can be set manually through the API.
 - An `accomplished` cell has no Undo in the UI.

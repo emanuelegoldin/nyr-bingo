@@ -22,13 +22,12 @@ interface OwnedCellRow {
  * races with concurrent proof requests.
  *   pending -> completed (user marks as done)
  *   completed -> pending (user undoes)
- *   pending_review -> accomplished
- * pending_review itself can only be set by requesting proof, never directly.
+ * pending_review and accomplished are never set directly: they come from requesting
+ * proof and from closing the review thread.
  */
-const VALID_FROM_STATES: Record<Exclude<CellState, CellState.PENDING_REVIEW>, CellState[]> = {
+const VALID_FROM_STATES: Record<CellState.PENDING | CellState.COMPLETED, CellState[]> = {
   [CellState.COMPLETED]: [CellState.PENDING],
   [CellState.PENDING]: [CellState.COMPLETED],
-  [CellState.ACCOMPLISHED]: [CellState.PENDING_REVIEW],
 };
 
 /**
@@ -65,7 +64,6 @@ async function loadOwnedCell(
 /**
  * Update cell state
  * Spec: 06-bingo-gameplay.md - Card State
- * Updated: Support new states for proof workflow
  */
 export async function updateCellState(
   cellId: string,
@@ -86,12 +84,12 @@ export async function updateCellState(
   const { cell } = owned;
 
   // Spec: 06-bingo-gameplay.md - "empty" filler cells cannot be marked completed
-  if (cell.is_empty && (newState === 'completed' || newState === 'accomplished')) {
+  if (cell.is_empty && newState === CellState.COMPLETED) {
     return { success: false, error: 'Empty cells cannot be marked as completed' };
   }
 
-  if (newState === CellState.PENDING_REVIEW) {
-    return { success: false, error: 'Cannot directly set pending_review state' };
+  if (newState !== CellState.PENDING && newState !== CellState.COMPLETED) {
+    return { success: false, error: 'Only pending and completed can be set directly' };
   }
 
   const validFromStates = VALID_FROM_STATES[newState];
