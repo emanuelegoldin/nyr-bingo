@@ -86,7 +86,7 @@ export async function deleteThreadFile(
   }
 
   const file = fileRows[0];
-  await deleteStoredThreadFile(file.file_path);
+  await deleteStoredFileUnlessShared(file);
 
   await query(
     `DELETE FROM review_files WHERE id = ? AND thread_id = ?`,
@@ -110,7 +110,7 @@ export async function removeThreadFiles(threadId: string): Promise<boolean> {
 
   for (const file of fileRows) {
     try {
-      await deleteStoredThreadFile(file.file_path);
+      await deleteStoredFileUnlessShared(file);
     } catch {
       return false;
     }
@@ -122,6 +122,22 @@ export async function removeThreadFiles(threadId: string): Promise<boolean> {
   }
 
   return true;
+}
+
+/**
+ * Remove a file from storage unless another row still references it.
+ * Names are content-addressed, so identical uploads share one stored file.
+ * @param file The file row being deleted
+ */
+async function deleteStoredFileUnlessShared(file: ThreadFilePathRow): Promise<void> {
+  const otherReferences = await query<Array<{ id: string }>>(
+    `SELECT id FROM review_files WHERE file_path = ? AND id != ? LIMIT 1`,
+    [file.file_path, file.id]
+  );
+
+  if (otherReferences.length === 0) {
+    await deleteStoredThreadFile(file.file_path);
+  }
 }
 
 // Based on possible alias, retrieve actual path on filesystem

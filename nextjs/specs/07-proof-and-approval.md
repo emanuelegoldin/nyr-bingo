@@ -79,6 +79,7 @@ A cell's `reviewThreadId` is only set while a thread is open. Once a thread clos
 - Accepted types: JPEG, PNG, WebP, GIF, PDF, MP4 and QuickTime.
 - Images other than WebP are converted to WebP when possible; the original is kept if conversion fails.
 - Files are stored under `uploads/review-files/` with a content-addressed name, and served by Nginx at `/review-files/`.
+- Identical uploads share one stored file, which is removed only when no other review file references it.
 
 ---
 
