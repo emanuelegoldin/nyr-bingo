@@ -13,17 +13,3 @@ export interface JoinResolutionRoomMessage extends WSMessage {
     resolutionId: string;
   };
 }
-
-/**
- * Sent by the owner's client after persisting a resolution-level
- * mutation (subtask toggle, iteration increment/decrement).
- *
- * The server broadcasts a `refresh-resolution` event to every
- * *other* socket in the resolution room so viewers can re-fetch.
- */
-export interface ResolutionRefreshMessage extends WSMessage {
-  type: "resolution-refresh";
-  body: {
-    resolutionId: string;
-  };
-}

@@ -88,8 +88,8 @@ not-found page.
   table (see _Database Impact_ below), not computed on the fly. The team page
   loads them on the server when it renders; there is no leaderboard API.
 - **Updates:** The team page re-renders from the server, keeping the selected
-  tab, when it receives `refresh-card` or when the viewer's own card reload
-  broadcasts `card-refresh` (spec 11). This applies on every tab of the page.
+  tab, when it receives `refresh-card` (spec 11). This applies on every tab of
+  the page.
 
 ---
 

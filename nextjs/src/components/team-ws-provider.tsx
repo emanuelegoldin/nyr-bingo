@@ -13,12 +13,9 @@
  *     <BingoCard ... />
  *   </TeamWsProvider>
  *
- * Child components call `broadcastCardRefresh()` (via `useTeamWs()`) after
- * persisting a mutation. The provider sends one `card-refresh` WS message
- * which the server will broadcast to every *other* client in the same room,
- * and dispatches `refresh-card` to its own listeners, since the sender is
- * excluded from that broadcast. Incoming messages are dispatched to the
- * listeners registered with `addMessageListener()`.
+ * The Next.js server signals rooms after each mutation; clients only listen.
+ * Incoming messages are dispatched to the listeners registered with
+ * `addMessageListener()`.
  *
  * Components that need resolution-level real-time updates (e.g.
  * the detail dialog showing compound subtasks or iterative counters)
@@ -35,8 +32,6 @@ export type WsMessageHandler = (msg: WsIncomingMessage) => void;
 // ── Context ───────────────────────────────────────────────────────
 
 interface TeamWsContextValue {
-  /** Send a card-refresh message so other viewers re-fetch. */
-  broadcastCardRefresh: () => void;
   /** Send an arbitrary JSON message over the shared WebSocket. */
   sendWsMessage: (msg: WsOutgoingMessage) => void;
   /**
@@ -49,7 +44,6 @@ interface TeamWsContextValue {
 }
 
 const TeamWsContext = createContext<TeamWsContextValue>({
-  broadcastCardRefresh: () => { },
   sendWsMessage: () => { },
   addMessageListener: () => () => { },
   teamName: ""
@@ -152,13 +146,6 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
     }
   }, []);
 
-  // ── Broadcast helper (stable identity) ────────────────────────
-  const broadcastCardRefresh = useCallback(() => {
-    if (!teamId) return;
-    sendWsMessage({ type: "card-refresh", body: { teamId } });
-    dispatchToListeners({ type: "refresh-card" });
-  }, [teamId, sendWsMessage, dispatchToListeners]);
-
   // ── Listener subscribe/unsubscribe (stable identity) ──────────
   const addMessageListener = useCallback((handler: WsMessageHandler): (() => void) => {
     listenersRef.current.add(handler);
@@ -168,7 +155,7 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
   }, []);
 
   return (
-    <TeamWsContext.Provider value={{ broadcastCardRefresh, sendWsMessage, addMessageListener, teamName }}>
+    <TeamWsContext.Provider value={{ sendWsMessage, addMessageListener, teamName }}>
       {children}
     </TeamWsContext.Provider>
   );

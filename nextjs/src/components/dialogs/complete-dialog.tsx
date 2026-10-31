@@ -24,8 +24,6 @@ export const MarkCellCompleteDialog = ({ cell, onUpdate, open, setIsOpen }: Mark
         setIsSubmitting(true);
         try {
             // Spec 06: PENDING -> COMPLETED, no proof triggered automatically.
-            // The callback is wrapped by BingoCard to broadcast a card-refresh
-            // after the API call completes.
             onUpdate(cell.id, "completed");
             // Clean before close
             setIsSubmitting(false);

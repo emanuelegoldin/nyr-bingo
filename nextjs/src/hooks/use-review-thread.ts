@@ -68,22 +68,6 @@ export const useReviewThread = (
   /** Re-reads the thread without showing the loading state. */
   const refetchThread = () => fetchThread(true);
 
-  /**
-   * Tells the other thread participants to refetch, if the socket is open.
-   *
-   * @param threadId - The thread room to notify.
-   */
-  const notifyThreadRoom = (threadId: string) => {
-    const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const wsMessage: WsOutgoingMessage = {
-        type: 'thread-refresh',
-        body: { threadId },
-      };
-      ws.send(JSON.stringify(wsMessage));
-    }
-  };
-
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
@@ -189,10 +173,7 @@ export const useReviewThread = (
           files: [...(thread.files || []), uploadedFile],
         });
       }
-      // Broadcast new file to other thread participants via WebSocket
-      notifyThreadRoom(threadId);
       setSelectedFile(null);
-      onRefresh?.();
     } finally {
       setIsSubmitting(false);
     }
@@ -222,7 +203,6 @@ export const useReviewThread = (
         return;
       }
 
-      notifyThreadRoom(threadId);
       // Optimistic update of sent message - TODO: should we prefer pessimistic update?
       if (thread) {
         setThread({
@@ -231,7 +211,6 @@ export const useReviewThread = (
         });
       }
       setMessageDraft('');
-      onRefresh?.();
     } finally {
       setIsSubmitting(false);
     }
@@ -269,9 +248,6 @@ export const useReviewThread = (
         });
       }
 
-      notifyThreadRoom(threadId);
-
-      onRefresh?.();
     } finally {
       setIsSubmitting(false);
     }
@@ -304,8 +280,6 @@ export const useReviewThread = (
         return;
       }
 
-      notifyThreadRoom(threadId);
-
       onRefresh?.();
       setIsOpen(false);
     } finally {
@@ -313,15 +287,9 @@ export const useReviewThread = (
     }
   };
 
-  /** Runs after VoteBar persisted a vote: notify the room, refetch, then call `onRefresh`. */
+  /** Runs after VoteBar persisted a vote: refetch, then reload the card for vote outcomes. */
   const handleVoteSubmitted = () => {
-    const tid = currentThreadId;
-    if (tid) notifyThreadRoom(tid);
     refetchThread();
-    // onRefresh is wrapped by BingoCard to broadcast a
-    // card-refresh after the async reload completes.
-    // This covers vote outcomes that change cell state
-    // (e.g. accomplished or reverted to pending).
     onRefresh?.();
   };
 

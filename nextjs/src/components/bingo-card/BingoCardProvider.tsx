@@ -18,7 +18,6 @@ type BaseBingoCardProviderProps = {
     cardFetchInput?: string | URL | Request
     headerSlot?: React.ReactNode
     children?: React.ReactNode
-    broadcastRefresh?: () => void
 };
 
 type BingoCardContextType = {
@@ -52,8 +51,7 @@ function BingoCard(
         currentUserId,
         triggerRefresh,
         cardFetchInput,
-        headerSlot,
-        broadcastRefresh
+        headerSlot
     }: BaseBingoCardProviderProps
 ) {
     const [editMode, setEditMode] = useState(false);
@@ -88,7 +86,6 @@ function BingoCard(
                         currentUserId={currentUserId}
                         triggerRefresh={triggerRefresh}
                         fetchInput={cardFetchInput}
-                        broadcastRefresh={broadcastRefresh}
                     />
                 </BingoCard.Frame>
             </BingoCardContext>
@@ -131,8 +128,6 @@ BingoCard.ProfileInfo = ProfileInfo;
 BingoCard.Content = BingoCardContent;  // Reuse the BingoCardContent component defined in card.tsx
 
 export function TeamBingoCardProvider(props: Omit<BaseBingoCardProviderProps, 'headerSlot'>) {
-    const { broadcastCardRefresh } = useTeamWs();
-
     const headerSlot = (
         <>
             <ProfileInfo isCurrentUser={props.isOwner} />
@@ -143,7 +138,6 @@ export function TeamBingoCardProvider(props: Omit<BaseBingoCardProviderProps, 'h
         <BingoCard
             {...props}
             headerSlot={headerSlot}
-            broadcastRefresh={broadcastCardRefresh}
         />
     );
 }
@@ -160,7 +154,7 @@ export function DashboardBingoCardProvider({
     dashboardText,
     ...props
 }: DashboardBingoCardProviderProps) {
-    const { broadcastCardRefresh, teamName } = useTeamWs();
+    const { teamName } = useTeamWs();
     const headerSlot = (
         <>
             <div className="flex w-full items-start justify-between gap-4">
@@ -184,7 +178,6 @@ export function DashboardBingoCardProvider({
         <BingoCard
             {...props}
             headerSlot={headerSlot}
-            broadcastRefresh={broadcastCardRefresh}
         />
     );
 }

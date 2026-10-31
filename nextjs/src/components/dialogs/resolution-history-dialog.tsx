@@ -1,6 +1,5 @@
 "use client";
 
-import { useTeamWs } from "@/components/team-ws-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,7 +46,6 @@ export const ResolutionHistoryDialog = ({
   const { language } = useAppContext();
   const t = getDictionaryForLocale(language).ResolutionHistoryDialog;
   const { toast } = useToast();
-  const { sendWsMessage } = useTeamWs();
 
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,10 +101,6 @@ export const ResolutionHistoryDialog = ({
 
       setDraft("");
       await loadHistory();
-      sendWsMessage({
-        type: "resolution-refresh",
-        body: { resolutionId },
-      });
     } catch {
       toast({
         title: "Error",
@@ -116,7 +110,7 @@ export const ResolutionHistoryDialog = ({
     } finally {
       setSaving(false);
     }
-  }, [canSubmit, draft, loadHistory, resolutionId, sendWsMessage, toast]);
+  }, [canSubmit, draft, loadHistory, resolutionId, toast]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

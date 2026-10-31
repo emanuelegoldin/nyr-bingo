@@ -37,7 +37,7 @@ It details the mechanism behind **08 — Visibility and Updates**.
 - `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'resolution', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
 - It refuses to start without `WS_SHARED_SECRET`.
 - It performs no authentication and no membership check; any connected socket can join any room.
-- Broadcasts exclude the sending socket. Rooms are removed when their last socket leaves.
+- Clients only join rooms and listen. A signal reaches every socket in the room, including the one that made the change. Rooms are removed when their last socket leaves.
 
 ### WebSocket URL
 
@@ -56,10 +56,8 @@ Clients connect to `ws(s)://<current-host>/ws`.
 | Message                | Direction        | Body                       | Purpose                                         |
 |------------------------|------------------|----------------------------|-------------------------------------------------|
 | `join-card-room`       | client → server  | `{ teamId: string }`       | Join the team-level card room.                  |
-| `card-refresh`         | client → server  | `{ teamId: string }`       | Signal that the sender reloaded a card.         |
 | `refresh-card`         | server → clients | none                       | Tell card room members to refresh the leaderboard. |
 | `join-resolution-room` | client → server  | `{ resolutionId: string }` | Join a resolution room.                         |
-| `resolution-refresh`   | client → server  | `{ resolutionId: string }` | Signal that a resolution changed.               |
 | `refresh-resolution`   | server → clients | `resolutionId` (top level) | Tell viewers to re-fetch the resolution.        |
 
 ---
@@ -80,37 +78,6 @@ Every mutating API route signals the rooms it affected, through `notifyRooms` (`
 | Profile update | The card room of each of the user's teams |
 
 The deadline procedure runs in the database and cannot send a signal.
-
-## When Card-Refresh Is Sent
-
-`card-refresh` is sent by `reloadCard` in `BingoCardContent`, after it has fetched the card, unless the API returned an error. So it follows any operation that reloads the card through the `onRefresh` or `onUpdate` callbacks:
-
-| Operation                 | Component / Dialog                                     |
-|---------------------------|--------------------------------------------------------|
-| Mark resolution completed | `MarkCellCompleteDialog` → `onUpdate`                  |
-| Undo completion           | `ResolutionDetailDialog` → `onUpdate`                  |
-| Request proof             | `RequestProofDialog` → `onRefresh`                     |
-| Vote on review thread     | `CellThreadDialog` → `onRefresh`                       |
-| Thread message or file    | `CellThreadDialog` → `onRefresh`                       |
-| Close review thread       | `CellThreadDialog` → `onRefresh`                       |
-| Subtask or counter change | `ResolutionDetailDialog` → `onRefresh`                 |
-| Edit cell content         | `EditCellDialog` → `onRefresh`                         |
-
-`handleCellUpdate` also sends it after a failed mark or undo.
-
----
-
-## When Resolution-Refresh Is Sent
-
-| Operation            | Component                |
-|----------------------|--------------------------|
-| Subtask toggled      | `CompoundChecklist`      |
-| Counter changed      | `IterativeCounter`       |
-| Manual history note  | `ResolutionHistoryDialog` |
-
-On `refresh-resolution` for the resolution they display, the checklist and counter re-fetch it from `GET /api/resolutions/compound?id=` or `GET /api/resolutions/iterative?id=`, and the history dialog reloads its timeline.
-
----
 
 ## Conflict Resolution
 
@@ -163,9 +130,8 @@ In both cases the final state is `pending`, honouring the owner's intent.
 
 - Wraps the team page tabs and each dashboard card, and opens **one** WebSocket per provider, so all tabs and cards on a team page share it.
 - Joins `card:<teamId>` on open and queues messages sent while connecting.
-- Exposes `broadcastCardRefresh`, `sendWsMessage`, `addMessageListener` and `teamName` through `useTeamWs()`.
+- Exposes `sendWsMessage`, `addMessageListener` and `teamName` through `useTeamWs()`.
 - Dispatches every incoming message to registered listeners.
-- `broadcastCardRefresh` also dispatches `refresh-card` to its own listeners, because the server excludes the sender.
 - Closes the socket on unmount.
 
 ### `LeaderboardRefreshListener` (LeaderboardRefreshListener.tsx)
@@ -177,11 +143,11 @@ Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on
 
 ### `BingoCardContent` (BingoCardContent.tsx)
 
-- Owns the card state and `reloadCard`, and broadcasts `card-refresh` after each reload.
+- Owns the card state and `reloadCard`. It reloads the card after the viewer's own changes.
 
 ### Child Components
 
-`ResolutionCell` and its dialogs simply call `onUpdate` / `onRefresh`. They do **not** broadcast `card-refresh` themselves.
+`ResolutionCell` and its dialogs simply call `onUpdate` / `onRefresh`.
 
 ---
 
@@ -205,8 +171,8 @@ Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on
 
 ## Known Gaps
 
-- **Cards do not update live.** Clients send `card-refresh` and the server relays `refresh-card`, but only the leaderboard acts on it. Other viewers see card changes only after reloading the page.
-- The WebSocket server has no authentication, so anyone able to reach it can join rooms and trigger refresh signals. Messages carry no resolution or card content.
+- **Cards do not update live.** The server sends `refresh-card`, but only the leaderboard acts on it. Other viewers see card changes only after reloading the page.
+- The WebSocket server has no authentication, so anyone able to reach it can join rooms and see when they change. Messages carry no resolution or card content.
 
 ---
 

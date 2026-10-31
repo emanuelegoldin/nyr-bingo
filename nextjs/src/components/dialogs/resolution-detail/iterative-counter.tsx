@@ -4,7 +4,6 @@ import { apiFetch } from "@/lib/api-client";
 import { useResolutionRoom } from "@/hooks/use-resolution-room";
 import { Check, Loader2, Minus, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useTeamWs } from "../../team-ws-provider";
 import { Button } from "../../ui/button";
 import { Progress } from "../../ui/progress";
 
@@ -31,7 +30,6 @@ export const IterativeCounter = ({
 }: IterativeCounterProps) => {
   const [completedTimes, setCompletedTimes] = useState(initialCompleted);
   const [loading, setLoading] = useState(false);
-  const { sendWsMessage } = useTeamWs();
 
   const isComplete = completedTimes >= numberOfRepetition;
   const progressPercent = Math.min(
@@ -63,17 +61,12 @@ export const IterativeCounter = ({
         if (result.ok) {
           setCompletedTimes(result.data.resolution.completedTimes);
           onRefresh?.();
-          // Notify other viewers of this resolution
-          sendWsMessage({
-            type: "resolution-refresh",
-            body: { resolutionId: id },
-          });
         }
       } finally {
         setLoading(false);
       }
     },
-    [id, loading, onRefresh, sendWsMessage]
+    [id, loading, onRefresh]
   );
 
   return (

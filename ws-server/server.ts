@@ -1,11 +1,10 @@
 import { createHash, timingSafeEqual } from 'crypto';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { ThreadRefreshMessage } from './messages/thread-message';
 import { JoinThreadMessage } from './messages/join-thread';
-import { JoinCardRoomMessage, CardRefreshMessage } from './messages/card-message';
+import { JoinCardRoomMessage } from './messages/card-message';
 import { RoomNotification } from './messages/notification';
-import { JoinResolutionRoomMessage, ResolutionRefreshMessage } from './messages/resolution-message';
+import { JoinResolutionRoomMessage } from './messages/resolution-message';
 console.log('Starting WebSocket server on port', process.env.WS_PORT);
 const WS_PORT: number = parseInt(process.env.WS_PORT || '8888', 10);
 const WS_SHARED_SECRET = process.env.WS_SHARED_SECRET;
@@ -57,14 +56,6 @@ wss.on('connection', function connection(ws) {
       return;
     }
 
-    if (msgType === 'thread-refresh') {
-      const { threadId } = (message as ThreadRefreshMessage).body ?? {};
-      if (!threadId || typeof threadId !== 'string') return;
-
-      // joinRoom(threadId, ws);
-      broadcastToRoom(threadId, { type: 'refresh-thread' }, ws);
-    }
-
     // ── Card-level rooms (keyed by teamId) ────────────────────────
     if (msgType === 'join-card-room') {
       const { teamId } = (message as JoinCardRoomMessage).body ?? {};
@@ -73,28 +64,12 @@ wss.on('connection', function connection(ws) {
       return;
     }
 
-    if (msgType === 'card-refresh') {
-      const { teamId } = (message as CardRefreshMessage).body ?? {};
-      if (!teamId || typeof teamId !== 'string') return;
-      broadcastToRoom(`card:${teamId}`, { type: 'refresh-card' }, ws);
-    }
-
     // ── Resolution-level rooms (keyed by resolutionId) ────────────
     if (msgType === 'join-resolution-room') {
       const { resolutionId } = (message as JoinResolutionRoomMessage).body ?? {};
       if (!resolutionId || typeof resolutionId !== 'string') return;
       joinRoom(`resolution:${resolutionId}`, ws);
       return;
-    }
-
-    if (msgType === 'resolution-refresh') {
-      const { resolutionId } = (message as ResolutionRefreshMessage).body ?? {};
-      if (!resolutionId || typeof resolutionId !== 'string') return;
-      broadcastToRoom(
-        `resolution:${resolutionId}`,
-        { type: 'refresh-resolution', resolutionId },
-        ws
-      );
     }
   });
 });
@@ -194,22 +169,17 @@ function joinRoom(roomId: string, ws: WebSocket) {
 }
 
 /**
- * Broadcast a message to all sockets in a room, optionally excluding one.
+ * Broadcast a message to all sockets in a room.
  * @param roomId  - The room identifier (e.g. `card:<teamId>`, `resolution:<id>`)
  * @param payload - The JSON-serialisable object to send to each client
- * @param exceptSocket - Optional socket to exclude (the sender)
  */
-function broadcastToRoom(
-  roomId: string,
-  payload: Record<string, unknown>,
-  exceptSocket: WebSocket | null = null
-) {
+function broadcastToRoom(roomId: string, payload: Record<string, unknown>) {
   const room = rooms.get(roomId);
   if (!room) return;
 
   const data = JSON.stringify(payload);
   for (const client of room) {
-    if (client.readyState === WebSocket.OPEN && client !== exceptSocket) {
+    if (client.readyState === WebSocket.OPEN) {
       client.send(data);
     }
   }

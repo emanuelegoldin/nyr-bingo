@@ -16,8 +16,7 @@ export function BingoCardContent(
     teamId,
     currentUserId,
     triggerRefresh,
-    fetchInput,
-    broadcastRefresh
+    fetchInput
   }
     :
     {
@@ -27,8 +26,7 @@ export function BingoCardContent(
       teamId: string,
       currentUserId: string,
       triggerRefresh?: () => boolean,
-      fetchInput?: string | URL | Request,
-      broadcastRefresh?: () => void         // Pass through useContext for Team page to broadcast changes with websocket
+      fetchInput?: string | URL | Request
     }
 ) {
   // Hooks
@@ -64,10 +62,7 @@ export function BingoCardContent(
         variant: 'destructive',
       });
     }
-    if (broadcastRefresh) {
-      broadcastRefresh();
-    }
-  }, [currentUserId, teamId, toast, fetchUrl, broadcastRefresh]);
+  }, [currentUserId, teamId, toast, fetchUrl]);
 
   const handleCellUpdate = useCallback(
     async (cellId: string, newState: 'pending' | 'completed') => {
@@ -89,11 +84,10 @@ export function BingoCardContent(
         description: result.status === 0 ? 'An error occurred' : result.error || 'Failed to update cell',
         variant: 'destructive',
       });
-      if (broadcastRefresh) {
-        broadcastRefresh();
-      }
+      // The card may be stale, which is a common reason for the failure
+      await reloadCard();
     },
-    [reloadCard, toast, broadcastRefresh]
+    [reloadCard, toast]
   );
 
   // Effects

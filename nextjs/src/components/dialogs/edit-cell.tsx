@@ -68,8 +68,6 @@ export const EditCellDialog = ({
       setIsSubmitting(false);
       setEditFilter('');
       setIsOpen(false);
-      // onRefresh is wrapped by BingoCard to broadcast a
-      // card-refresh after the async reload completes.
       onRefresh?.();
     } finally {
       setIsSubmitting(false);

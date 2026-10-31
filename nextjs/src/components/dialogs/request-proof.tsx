@@ -46,8 +46,6 @@ export const RequestProofDialog = ({
 
             // Parent pages keep cards in local state; request-proof changes cell state server-side.
             // Best-effort refresh so the card reflects the new state/thread.
-            // onRefresh is wrapped by BingoCard to broadcast a
-            // card-refresh after the async reload completes.
             onRefresh?.();
         } catch {
             toast({

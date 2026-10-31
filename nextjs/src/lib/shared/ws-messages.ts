@@ -7,13 +7,10 @@
 /** Messages a client sends to the server. */
 export type WsOutgoingMessage =
   | { type: 'join-thread'; body: { threadId: string } }
-  | { type: 'thread-refresh'; body: { threadId: string } }
   | { type: 'join-card-room'; body: { teamId: string } }
-  | { type: 'card-refresh'; body: { teamId: string } }
-  | { type: 'join-resolution-room'; body: { resolutionId: string } }
-  | { type: 'resolution-refresh'; body: { resolutionId: string } };
+  | { type: 'join-resolution-room'; body: { resolutionId: string } };
 
-/** Messages the server relays to clients. */
+/** Messages the server sends to clients. */
 export type WsIncomingMessage =
   | { type: 'refresh-thread' }
   | { type: 'refresh-card' }

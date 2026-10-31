@@ -5,7 +5,6 @@ import type { Subtask } from "@/lib/shared/types";
 import { useResolutionRoom } from "@/hooks/use-resolution-room";
 import { Check, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useTeamWs } from "../../team-ws-provider";
 import { Progress } from "../../ui/progress";
 
 interface CompoundChecklistProps {
@@ -24,7 +23,6 @@ interface CompoundChecklistProps {
 export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: CompoundChecklistProps) => {
   const [localSubtasks, setLocalSubtasks] = useState<Subtask[]>(subtasks);
   const [loading, setLoading] = useState<number | null>(null);
-  const { sendWsMessage } = useTeamWs();
 
   const completedCount = localSubtasks.filter((s) => s.completed).length;
   const totalCount = localSubtasks.length;
@@ -54,17 +52,12 @@ export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: Compound
         if (result.ok) {
           setLocalSubtasks(result.data.resolution.subtasks);
           onRefresh?.();
-          // Notify other viewers of this resolution
-          sendWsMessage({
-            type: "resolution-refresh",
-            body: { resolutionId: id },
-          });
         }
       } finally {
         setLoading(null);
       }
     },
-    [id, loading, onRefresh, sendWsMessage]
+    [id, loading, onRefresh]
   );
 
   return (
