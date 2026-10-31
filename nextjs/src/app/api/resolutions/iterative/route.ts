@@ -11,7 +11,7 @@ import {
   getIterativeResolutionsByUser,
   getResolutionHistoryAccess,
   getIterativeResolutionById,
-  deleteIterativeResolution,
+  deleteResolution,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
 import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
@@ -58,7 +58,7 @@ export const DELETE = withAuth(async (request: NextRequest, { currentUser }: Aut
     return errorResponse('You can only delete your own resolutions', 403);
   }
 
-  const deleted = await deleteIterativeResolution(id, currentUser.id);
+  const deleted = await deleteResolution(id, currentUser.id);
   if (!deleted) {
     return errorResponse('Failed to delete resolution', 500);
   }

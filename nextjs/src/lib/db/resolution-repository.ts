@@ -196,16 +196,6 @@ export async function toggleCompoundSubtask(
   return getResolutionById(id);
 }
 
-/**
- * Delete a compound resolution. Only the owner may delete.
- */
-export async function deleteCompoundResolution(
-  id: string,
-  ownerUserId: string
-): Promise<boolean> {
-  return deleteResolution(id, ownerUserId);
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // Iterative resolutions (resolution_type = iterative)
 // ═══════════════════════════════════════════════════════════════════
@@ -226,11 +216,16 @@ export async function getIterativeResolutionById(id: string): Promise<Resolution
 }
 
 /**
- * Increment the completed_times counter.
+ * Move the completed_times counter one step. The counter never goes below zero.
+ * @param id The iterative resolution
+ * @param ownerUserId The user making the change
+ * @param delta 1 to increment, -1 to decrement
+ * @returns The resolution after the change, or null if the user may not change it
  */
-export async function incrementIterativeResolution(
+export async function adjustIterativeProgress(
   id: string,
-  ownerUserId: string
+  ownerUserId: string,
+  delta: 1 | -1
 ): Promise<Resolution | null> {
   const existing = await getIterativeResolutionById(id);
   if (!existing ||
@@ -239,45 +234,13 @@ export async function incrementIterativeResolution(
   ) {
     return null;
   }
+  if (delta < 0 && existing.completedTimes <= 0) return existing;
   const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
-    `UPDATE resolutions SET completed_times = completed_times + 1 WHERE id = ? AND ${user_id_to_compare} = ?`,
-    [id, ownerUserId]
+    `UPDATE resolutions SET completed_times = completed_times + ? WHERE id = ? AND ${user_id_to_compare} = ?`,
+    [delta, id, ownerUserId]
   );
   return getResolutionById(id);
-}
-
-/**
- * Decrement the completed_times counter.
- */
-export async function decrementIterativeResolution(
-  id: string,
-  ownerUserId: string
-): Promise<Resolution | null> {
-  const existing = await getIterativeResolutionById(id);
-  if (!existing ||
-    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId) ||   // Personal resolutions can only be modified by the owner
-    (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient  
-  ) {
-    return null;
-  }
-  if (existing.completedTimes <= 0) return existing;
-  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
-  await query(
-    `UPDATE resolutions SET completed_times = completed_times - 1 WHERE id = ? AND ${user_id_to_compare} = ?`,
-    [id, ownerUserId]
-  );
-  return getResolutionById(id);
-}
-
-/**
- * Delete an iterative resolution. Only the owner may delete.
- */
-export async function deleteIterativeResolution(
-  id: string,
-  ownerUserId: string
-): Promise<boolean> {
-  return deleteResolution(id, ownerUserId);
 }
 
 // ═══════════════════════════════════════════════════════════════════

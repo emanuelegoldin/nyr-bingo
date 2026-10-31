@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  adjustIterativeProgress,
   getIterativeResolutionById,
   autoTransitionCellState,
   createSystemResolutionHistoryEntry,
 } from '@/lib/db';
-import type { Resolution } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
 interface IterativeProgressOptions {
-  /** Repository call that applies the counter change. */
-  applyChange: (id: string, userId: string) => Promise<Resolution | null>;
+  /** Counter step to apply. */
+  delta: 1 | -1;
   /** Error message returned when the change could not be applied. */
   failureMessage: string;
   /** Key of the history event logged for the change. */
@@ -26,7 +26,7 @@ interface IterativeProgressOptions {
  * @returns The authenticated PATCH route handler
  */
 export function createIterativeProgressHandler({
-  applyChange,
+  delta,
   failureMessage,
   historyEventKey,
 }: IterativeProgressOptions) {
@@ -45,7 +45,7 @@ export function createIterativeProgressHandler({
         return errorResponse('You can only modify your own resolutions', 403);
       }
 
-      const resolution = await applyChange(id, currentUser.id);
+      const resolution = await adjustIterativeProgress(id, currentUser.id, delta);
       if (!resolution) {
         return errorResponse(failureMessage, 500);
       }

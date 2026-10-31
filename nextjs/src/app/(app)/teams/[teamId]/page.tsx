@@ -14,7 +14,7 @@ import {
   getTeamBingoCards,
   getTeamGoalResolution,
   getTeamLeaderboard,
-  getTeamProvidedResolutionsByUser,
+  getMemberProvidedResolutionsByUser,
   getTeamWithMembers,
   isTeamMember,
   type BingoCardWithCells,
@@ -125,7 +125,7 @@ async function TeamDetailContent({ teamId }: { teamId: string }) {
   const [cardsResult, goalResult, resolutionsResult, leaderboardResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
     cardPromise,
     getTeamGoalResolution(teamId),
-    getTeamProvidedResolutionsByUser(teamId, currentUser.id),
+    getMemberProvidedResolutionsByUser(teamId, currentUser.id),
     getTeamLeaderboard(teamId),
   ]);
 

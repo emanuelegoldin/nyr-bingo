@@ -7,11 +7,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import { InvitationStatus, TeamRole, TeamStatus } from '../shared/types';
 import { query, withTransaction } from './connection';
-import {
-  getMemberProvidedResolutionsByUser,
-  getMemberProvidedResolutionsForUser,
-  getTeamGoalResolution,
-} from './resolution-repository';
+import { getTeamGoalResolution } from './resolution-repository';
 import type {
   Team,
   TeamInvitation,
@@ -307,26 +303,6 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
     [teamId]
   );
   return rows.map(rowToMembership);
-}
-
-/**
- * Get team-provided resolutions for a user (resolutions others made for them)
- */
-export async function getTeamProvidedResolutionsForUser(
-  teamId: string,
-  toUserId: string
-): Promise<import('./types').Resolution[]> {
-  return getMemberProvidedResolutionsForUser(teamId, toUserId);
-}
-
-/**
- * Get team-provided resolutions by a user (resolutions they made for others)
- */
-export async function getTeamProvidedResolutionsByUser(
-  teamId: string,
-  fromUserId: string
-): Promise<import('./types').Resolution[]> {
-  return getMemberProvidedResolutionsByUser(teamId, fromUserId);
 }
 
 /**

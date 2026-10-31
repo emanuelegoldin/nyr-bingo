@@ -6,11 +6,10 @@
  * Increments the completed_times counter and auto-completes bingo cell if threshold met.
  */
 
-import { incrementIterativeResolution } from '@/lib/db';
 import { createIterativeProgressHandler } from '../progress-handler';
 
 export const PATCH = createIterativeProgressHandler({
-  applyChange: incrementIterativeResolution,
+  delta: 1,
   failureMessage: 'Failed to increment',
   historyEventKey: 'resolution.iterative_incremented',
 });
