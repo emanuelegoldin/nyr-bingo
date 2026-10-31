@@ -1,6 +1,5 @@
 "use client";
 
-import type { WsIncomingMessage } from "@/components/team-ws-provider";
 import { useTeamWs } from "@/components/team-ws-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppContext } from "@/hooks/AppContext";
+import { useResolutionRoom } from "@/hooks/use-resolution-room";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch } from "@/lib/api-client";
@@ -47,7 +47,7 @@ export const ResolutionHistoryDialog = ({
   const { language } = useAppContext();
   const t = getDictionaryForLocale(language).ResolutionHistoryDialog;
   const { toast } = useToast();
-  const { sendWsMessage, addMessageListener } = useTeamWs();
+  const { sendWsMessage } = useTeamWs();
 
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -81,22 +81,7 @@ export const ResolutionHistoryDialog = ({
     loadHistory();
   }, [isOpen, loadHistory]);
 
-  useEffect(() => {
-    if (!isOpen || !resolutionId) return;
-
-    sendWsMessage({
-      type: "join-resolution-room",
-      body: { resolutionId },
-    });
-
-    const unsubscribe = addMessageListener((msg: WsIncomingMessage) => {
-      if (msg.type === "refresh-resolution" && msg.resolutionId === resolutionId) {
-        loadHistory();
-      }
-    });
-
-    return unsubscribe;
-  }, [isOpen, resolutionId, sendWsMessage, addMessageListener, loadHistory]);
+  useResolutionRoom(resolutionId, loadHistory, isOpen && Boolean(resolutionId));
 
   const handleAddEntry = useCallback(async () => {
     if (!canSubmit) return;
