@@ -146,7 +146,7 @@ In both cases the final state is `pending`, honouring the owner's intent.
 - Wraps the Cards tab (once cards exist) and each dashboard card, and opens **one** WebSocket per provider, so all cards on a team page share it.
 - Joins `card:<teamId>` on open and queues messages sent while connecting.
 - Exposes `broadcastCardRefresh`, `sendWsMessage`, `addMessageListener` and `teamName` through `useTeamWs()`.
-- Dispatches every incoming message to registered listeners, and calls its optional `onRefresh` prop on `refresh-card` and `refresh-thread`.
+- Dispatches every incoming message to registered listeners.
 - Closes the socket on unmount.
 
 Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on `/resolutions` runs this way (spec 13).
@@ -181,7 +181,7 @@ Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on
 
 ## Known Gaps
 
-- **Cards do not update live.** Clients send `card-refresh` and the server relays `refresh-card`, but nothing acts on it: neither use of `TeamWsProvider` passes `onRefresh`, and no listener handles `refresh-card`. The `onRefresh` prop was dropped from the Cards tab in commit `b97ee3b`. Other viewers see card changes only after reloading the page.
+- **Cards do not update live.** Clients send `card-refresh` and the server relays `refresh-card`, but nothing acts on it: no listener handles `refresh-card`. Other viewers see card changes only after reloading the page.
 - The WebSocket server has no authentication, so anyone able to reach it can join rooms and trigger refresh signals. Messages carry no resolution or card content.
 
 ---

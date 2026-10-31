@@ -8,7 +8,7 @@
  * dialogs, etc.).
  *
  * Usage:
- *   <TeamWsProvider teamId={teamId} onRefresh={reloadCards}>
+ *   <TeamWsProvider teamId={teamId} teamName={teamName}>
  *     <BingoCard ... />
  *     <BingoCard ... />
  *   </TeamWsProvider>
@@ -16,8 +16,8 @@
  * Child components call `broadcastCardRefresh()` (via `useTeamWs()`) after
  * persisting a mutation. The provider sends one `card-refresh` WS message
  * which the server will broadcast to every *other* client in the same room.
- * Incoming messages from the server invoke the `onRefresh` callback once,
- * no matter how many cards are rendered.
+ * Incoming messages are dispatched to the listeners registered with
+ * `addMessageListener()`.
  *
  * Components that need resolution-level real-time updates (e.g.
  * the detail dialog showing compound subtasks or iterative counters)
@@ -66,21 +66,13 @@ interface TeamWsProviderProps {
   teamId: string;
   /** The team name (used by card components) */
   teamName: string;
-  /** Called when the server pushes a refresh event (another client changed something). */
-  onRefresh?: () => void;
   children: React.ReactNode;
 }
 
-export function TeamWsProvider({ teamId, teamName, onRefresh, children }: TeamWsProviderProps) {
+export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderProps) {
   const wsRef = useRef<WebSocket | null>(null);
   /** Messages queued while the socket is still CONNECTING. */
   const pendingMessagesRef = useRef<WsOutgoingMessage[]>([]);
-
-  // Stable ref so we don't re-open the socket when onRefresh identity changes.
-  const onRefreshRef = useRef(onRefresh);
-  useEffect(() => {
-    onRefreshRef.current = onRefresh;
-  }, [onRefresh]);
 
   // Registered message listeners (for resolution-level updates, etc.)
   const listenersRef = useRef<Set<WsMessageHandler>>(new Set());
@@ -107,27 +99,19 @@ export function TeamWsProvider({ teamId, teamName, onRefresh, children }: TeamWs
 
     ws.onmessage = (event) => {
       // Parse the incoming message
-      let parsed: WsIncomingMessage | null = null;
+      let parsed: WsIncomingMessage;
       try {
         parsed = JSON.parse(event.data as string) as WsIncomingMessage;
       } catch {
-        /* ignore malformed messages */
-      }
-
-      // Card-level refresh: invoke the onRefresh callback
-      // (backward compatible — fires for any card-level event)
-      if (!parsed || parsed.type === "refresh-card" || parsed.type === "refresh-thread") {
-        onRefreshRef.current?.();
+        return; /* ignore malformed messages */
       }
 
       // Dispatch to all registered listeners (resolution-level, etc.)
-      if (parsed) {
-        for (const handler of listenersRef.current) {
-          try {
-            handler(parsed);
-          } catch (err) {
-            console.error("[TeamWsProvider] listener error:", err);
-          }
+      for (const handler of listenersRef.current) {
+        try {
+          handler(parsed);
+        } catch (err) {
+          console.error("[TeamWsProvider] listener error:", err);
         }
       }
     };
