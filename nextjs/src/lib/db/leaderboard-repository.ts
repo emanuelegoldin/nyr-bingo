@@ -10,7 +10,8 @@
  * undoCompletion, vote resolution) and bulk-initialized when a game starts.
  */
 
-import { BINGO_GRID_SIZE as GRID_SIZE, CellState, JOKER_POSITION } from '../shared/types';
+import { BINGO_LINES } from '../shared/bingo-lines';
+import { CellState, JOKER_POSITION } from '../shared/types';
 import { query } from './connection';
 
 // ── Row types ────────────────────────────────────────────────────
@@ -47,21 +48,6 @@ function isCellDone(cell: CellForBingo): boolean {
   return DONE_STATES.has(cell.state);
 }
 
-function buildLines(): number[][] {
-  const lines: number[][] = [];
-  for (let row = 0; row < GRID_SIZE; row++) {
-    lines.push(Array.from({ length: GRID_SIZE }, (_, col) => row * GRID_SIZE + col));
-  }
-  for (let col = 0; col < GRID_SIZE; col++) {
-    lines.push(Array.from({ length: GRID_SIZE }, (_, row) => row * GRID_SIZE + col));
-  }
-  lines.push(Array.from({ length: GRID_SIZE }, (_, i) => i * GRID_SIZE + i));
-  lines.push(Array.from({ length: GRID_SIZE }, (_, i) => i * GRID_SIZE + (GRID_SIZE - 1 - i)));
-  return lines;
-}
-
-const ALL_LINES = buildLines();
-
 /**
  * Given a user's cells, compute the datetime of their first bingo line.
  * Returns null if no bingo has been achieved yet.
@@ -74,7 +60,7 @@ function computeFirstBingoAt(cells: Array<CellForBingo & { updated_at: Date | nu
 
   let earliest: Date | null = null;
 
-  for (const line of ALL_LINES) {
+  for (const line of BINGO_LINES) {
     let lineComplete = true;
     let latestUpdate: Date | null = null;
 

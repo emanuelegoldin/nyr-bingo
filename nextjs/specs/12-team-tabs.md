@@ -169,20 +169,13 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 - [ ] Positions 1 / 2 / 3 are coloured gold / silver / bronze.
 - [ ] Clicking any avatar on the team page navigates to the member's profile.
 - [ ] Clicking a source-user badge in a bingo cell navigates to the profile.
-- [ ] Confetti animation plays when a card gains a bingo line outside the
-      center row and column.
+- [ ] Confetti animation plays when a card gains a bingo line, using the same
+      lines as the leaderboard.
 
 ---
 
 ## Known Gaps
 
-- **Confetti misses center lines and has a false positive.** `cardHasBingo`
-  needs five done cells on a line but excludes the Joker, so row 3, column 3 and
-  the main diagonal can never fire. The anti-diagonal check uses
-  `position % 4 === 0`, which also matches the corners 0 and 24: it reports a
-  bingo when exactly five of the positions 0, 4, 8, 16, 20, 24 are done. With
-  all six done it reports none, so a proof request on one of them can fire
-  confetti through a `completed → pending_review` transition.
 - Deadline closures (`CloseThreads`) send no WebSocket signal, and the team
   page socket does not reconnect after it drops. In both cases the leaderboard
   does not update until the page is reloaded.
