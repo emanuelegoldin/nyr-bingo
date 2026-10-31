@@ -32,6 +32,11 @@ export enum CellSourceType {
 
 // Cell state
 // Spec: 06-bingo-gameplay.md, Resolution Review & Proof Workflow
+// Bingo cards are a fixed 5x5 grid whose center is the implicit Joker.
+// Spec: 00-system-overview.md, 05-bingo-card-generation.md
+export const BINGO_GRID_SIZE = 5;
+export const JOKER_POSITION = 12;
+
 export enum CellState {
   PENDING = 'pending',
   COMPLETED = 'completed',

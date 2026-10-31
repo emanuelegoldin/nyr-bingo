@@ -10,7 +10,7 @@
  * undoCompletion, vote resolution) and bulk-initialized when a game starts.
  */
 
-import { CellState } from '../shared/types';
+import { BINGO_GRID_SIZE as GRID_SIZE, CellState, JOKER_POSITION } from '../shared/types';
 import { query } from './connection';
 
 // ── Row types ────────────────────────────────────────────────────
@@ -30,8 +30,6 @@ interface LeaderboardRowWithUser extends LeaderboardRow {
 
 // ── Bingo detection (server-side, from raw DB rows) ─────────────
 
-const GRID_SIZE = 5;
-
 /** States that count as "done" for bingo-line purposes. */
 const DONE_STATES: ReadonlySet<string> = new Set([
   CellState.COMPLETED,
@@ -45,10 +43,8 @@ interface CellForBingo {
 }
 
 function isCellDone(cell: CellForBingo): boolean {
-  // Joker is at centre position (position 12 on a 5×5 grid)
   // The schema doesn't have is_joker anymore – joker is always at centre.
-  const isJoker = cell.position === Math.floor((GRID_SIZE * GRID_SIZE) / 2);
-  if (isJoker) return true;
+  if (cell.position === JOKER_POSITION) return true;
   if (cell.is_empty) return false;
   return DONE_STATES.has(cell.state);
 }
@@ -91,8 +87,7 @@ function computeFirstBingoAt(cells: Array<CellForBingo & { updated_at: Date | nu
         break;
       }
       // Skip joker for timestamp — it's always done
-      const isJoker = pos === Math.floor((GRID_SIZE * GRID_SIZE) / 2);
-      if (!isJoker && cell.updated_at) {
+      if (pos !== JOKER_POSITION && cell.updated_at) {
         if (!latestUpdate || cell.updated_at > latestUpdate) {
           latestUpdate = cell.updated_at;
         }

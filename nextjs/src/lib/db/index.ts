@@ -10,7 +10,9 @@ export { execute, query, withTransaction } from './connection';
 export * from './types';
 
 // Repositories
+export * from './bingo-card-generation';
 export * from './bingo-card-repository';
+export * from './bingo-cell-repository';
 export * from './leaderboard-repository';
 export * from './resolution-history-repository';
 export * from './resolution-repository';

@@ -6,12 +6,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUserVerified } from '@/lib/auth';
 import {
+  generateBingoCardsForTeam,
   startBingoGame,
   isTeamLeader,
   getTeamWithMembers,
   initializeTeamLeaderboard,
 } from '@/lib/db';
-import { generateBingoCardsForTeam } from '@/lib/db/bingo-card-repository';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
