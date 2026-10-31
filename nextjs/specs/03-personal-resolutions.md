@@ -60,7 +60,7 @@ Changing type (requires `id` and a `previousType` that differs from `type`; the 
 - Bingo cells referencing it keep their source type and state but lose the reference (`resolution_id` is set to `NULL`).
 
 ### Progress
-- `PATCH /api/resolutions/compound/[id]/toggle` with `{ subtaskIndex }` toggles one subtask.
+- `PATCH /api/resolutions/compound/[id]/toggle` with `{ subtaskIndex }` toggles one subtask. An index that is not an existing subtask's position returns `400`.
 - `PATCH /api/resolutions/iterative/[id]/increment` adds one to `completedTimes`. There is no upper limit, so the counter can exceed the target.
 - `PATCH /api/resolutions/iterative/[id]/decrement` subtracts one, with a floor of 0.
 - Each change logs a history event (spec 13) and updates linked bingo cells (spec 06).

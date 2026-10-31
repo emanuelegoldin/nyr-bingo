@@ -30,7 +30,7 @@ export const PATCH = withAuth(async (
   const body = await request.json();
   const { subtaskIndex } = body;
 
-  if (typeof subtaskIndex !== 'number' || subtaskIndex < 0) {
+  if (!Number.isInteger(subtaskIndex) || subtaskIndex < 0) {
     return errorResponse('Valid subtaskIndex is required', 400);
   }
 
@@ -40,6 +40,10 @@ export const PATCH = withAuth(async (
   }
   if (!canModifyProgress(existing, currentUser.id)) {
     return errorResponse('You can only modify your own resolutions', 403);
+  }
+
+  if (subtaskIndex >= (existing.subtasks?.length ?? 0)) {
+    return errorResponse('Valid subtaskIndex is required', 400);
   }
 
   const resolution = await toggleCompoundSubtask(id, currentUser.id, subtaskIndex);
