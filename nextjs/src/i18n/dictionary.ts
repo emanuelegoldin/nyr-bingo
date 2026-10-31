@@ -5,8 +5,8 @@ import { type Locale } from './locale';
 
 const dictionaries = {
     en: enDictionary,
-    de: deDictionary,
     it: itDictionary,
+    de: deDictionary,
 } as const;
 
 export type Dictionary = (typeof enDictionary);
