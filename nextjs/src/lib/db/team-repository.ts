@@ -356,10 +356,10 @@ export async function checkAllResolutionsProvided(teamId: string): Promise<{
 }
 
 /**
- * Start the bingo game
+ * Check whether the bingo game can start. startGameWithCards does the actual start.
  * Spec: 04-bingo-teams.md - Start Conditions
  */
-export async function startBingoGame(
+export async function checkGameCanStart(
   teamId: string,
   leaderUserId: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -389,12 +389,6 @@ export async function startBingoGame(
       error: `Not all members have provided resolutions for all other members. Missing: ${missing.length} resolutions`,
     };
   }
-
-  // Update team status
-  await query(
-    `UPDATE teams SET status = 'started' WHERE id = ?`,
-    [teamId]
-  );
 
   return { success: true };
 }

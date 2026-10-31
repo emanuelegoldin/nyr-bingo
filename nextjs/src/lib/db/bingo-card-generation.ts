@@ -7,14 +7,19 @@ import { randomUUID } from 'crypto';
 import type { PoolConnection } from 'mysql2/promise';
 import { BINGO_GRID_SIZE, CellSourceType, JOKER_POSITION, ResolutionType } from '../shared/types';
 import { CardRow, rowToCard } from './bingo-card-rows';
-import { query, withTransaction } from './connection';
+import { execute, query, withTransaction } from './connection';
 import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution } from './resolution-repository';
 import { getTeamById, getTeamMembers } from './team-repository';
-import { BingoCard, Resolution } from './types';
+import { BingoCard, Resolution, TeamStatus } from './types';
 
 const TOTAL_CELLS = BINGO_GRID_SIZE * BINGO_GRID_SIZE;
 /** The Joker takes one position and is not stored. */
 const STORED_CELLS = TOTAL_CELLS - 1;
+
+const WRONG_STATUS_ERRORS: Record<TeamStatus, string> = {
+  [TeamStatus.FORMING]: 'Team is not in forming status',
+  [TeamStatus.STARTED]: 'Team is not started',
+};
 
 interface CellPlan {
   resolutionId: string | null;
@@ -26,18 +31,20 @@ interface CellPlan {
 /**
  * Check that a team can have cards and load the goal they are built around.
  * @param teamId The team to check
+ * @param requiredStatus The status the team must be in
  * @returns The team goal, or the error explaining why cards cannot be generated
  */
 async function loadTeamGameContext(
-  teamId: string
+  teamId: string,
+  requiredStatus: TeamStatus
 ): Promise<{ teamGoalResolution: Resolution } | { error: string }> {
   const team = await getTeamById(teamId);
   if (!team) {
     return { error: 'Team not found' };
   }
 
-  if (team.status !== 'started') {
-    return { error: 'Team is not started' };
+  if (team.status !== requiredStatus) {
+    return { error: WRONG_STATUS_ERRORS[requiredStatus] };
   }
 
   if (!team.teamResolutionText) {
@@ -54,32 +61,39 @@ async function loadTeamGameContext(
 }
 
 /**
- * Generate bingo cards for all team members
- * Spec: 05-bingo-card-generation.md - Generation Rules
+ * Start a team's game: mark it as started and generate a card for every member.
+ * Both happen in one transaction, so a failure leaves the team in forming status.
+ * Spec: 04-bingo-teams.md - Start Conditions, 05-bingo-card-generation.md - Generation Rules
+ *
+ * @param teamId The team to start
+ * @returns Whether the game started, and why not if it did not
  */
-export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCard[]> {
-  const context = await loadTeamGameContext(teamId);
+export async function startGameWithCards(teamId: string): Promise<{ success: boolean; error?: string }> {
+  const context = await loadTeamGameContext(teamId, TeamStatus.FORMING);
   if ('error' in context) {
-    throw new Error(context.error);
+    return { success: false, error: context.error };
   }
 
   const members = await getTeamMembers(teamId);
 
-  return withTransaction(async (connection) => {
-    const cards: BingoCard[] = [];
+  return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
+    // The status guard stops two concurrent starts from generating cards twice.
+    const statusUpdate = await execute(
+      `UPDATE teams SET status = 'started' WHERE id = ? AND status = 'forming'`,
+      [teamId],
+      connection
+    );
 
-    for (const member of members) {
-      const card = await generateCardForUser(
-        connection,
-        teamId,
-        member.userId,
-        context.teamGoalResolution
-      );
-      cards.push(card);
+    if (statusUpdate.affectedRows === 0) {
+      return { success: false, error: WRONG_STATUS_ERRORS[TeamStatus.FORMING] };
     }
 
-    return cards;
-  });
+    for (const member of members) {
+      await generateCardForUser(connection, teamId, member.userId, context.teamGoalResolution);
+    }
+
+    return { success: true };
+  }, (outcome) => outcome.success);
 }
 
 /**
@@ -239,7 +253,7 @@ export async function ensureBingoCardForUser(
     return { created: false, card: rowToCard(existing[0]) };
   }
 
-  const context = await loadTeamGameContext(teamId);
+  const context = await loadTeamGameContext(teamId, TeamStatus.STARTED);
   if ('error' in context) {
     return { created: false, error: context.error };
   }

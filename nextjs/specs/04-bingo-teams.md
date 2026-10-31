@@ -144,8 +144,7 @@ The team leader may start bingo only when:
 Other members are verified because joining requires it.
 
 On start:
-- Team status becomes `started`
-- A bingo card is generated for every member (spec 05)
+- Team status becomes `started` and a bingo card is generated for every member (spec 05), in one transaction: if generation fails, the team stays `forming` with no cards
 - A leaderboard row is created for every member (spec 12)
 
 ---

@@ -6,8 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUserVerified } from '@/lib/auth';
 import {
-  generateBingoCardsForTeam,
-  startBingoGame,
+  checkGameCanStart,
+  startGameWithCards,
   isTeamLeader,
   getTeamWithMembers,
   initializeTeamLeaderboard,
@@ -38,16 +38,20 @@ export const POST = withAuth(async (
     return errorResponse('Only the team leader can start the game', 403);
   }
 
-  // Start the game (validates all conditions)
-  const result = await startBingoGame(teamId, currentUser.id);
+  // Validate all start conditions
+  const check = await checkGameCanStart(teamId, currentUser.id);
+
+  if (!check.success) {
+    return errorResponse(check.error, 400);
+  }
+
+  // Start the game and generate bingo cards for all members
+  // Spec: 05-bingo-card-generation.md - Cards generated automatically at start
+  const result = await startGameWithCards(teamId);
 
   if (!result.success) {
     return errorResponse(result.error, 400);
   }
-
-  // Generate bingo cards for all members
-  // Spec: 05-bingo-card-generation.md - Cards generated automatically at start
-  await generateBingoCardsForTeam(teamId);
 
   // Get updated team data
   const team = await getTeamWithMembers(teamId);
