@@ -178,5 +178,4 @@ On start:
 ## Known Gaps
 
 - A user who joins after the game has started gets a card built only from resolutions that exist at that moment, normally the team goal plus personal resolutions and empty cells.
-- Deleting a team removes review file rows but not the uploaded files on disk.
 - The team goal dialog says the goal appears "in the center of everyone's bingo card", which no longer matches the card layout.

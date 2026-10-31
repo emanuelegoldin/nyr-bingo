@@ -143,6 +143,38 @@ export async function removeThreadFiles(threadId: string): Promise<boolean> {
 }
 
 /**
+ * List the proof files of a team's cards, to remove them once the team is deleted.
+ * @param teamId The team
+ * @returns The file rows
+ */
+export async function getTeamReviewFiles(teamId: string): Promise<ThreadFilePathRow[]> {
+  return query<ThreadFilePathRow[]>(
+    `SELECT rf.id, rf.file_path
+     FROM review_files rf
+     JOIN review_threads rt ON rf.thread_id = rt.id
+     JOIN bingo_cells c ON rt.cell_id = c.id
+     JOIN bingo_cards bc ON c.card_id = bc.id
+     WHERE bc.team_id = ?`,
+    [teamId]
+  );
+}
+
+/**
+ * Remove the stored files of rows that were already deleted. Failures are logged and
+ * skipped, because the delete they follow has committed.
+ * @param files The deleted file rows
+ */
+export async function removeOrphanedFiles(files: ThreadFilePathRow[]): Promise<void> {
+  for (const file of files) {
+    try {
+      await deleteStoredFileUnlessShared(file);
+    } catch (error) {
+      console.error('Failed to remove proof file:', file.file_path, error);
+    }
+  }
+}
+
+/**
  * Remove a file from storage unless another row still references it.
  * Names are content-addressed, so identical uploads share one stored file.
  * @param file The file row being deleted

@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { InvitationStatus, TeamRole, TeamStatus } from '../shared/types';
 import { query, withTransaction } from './connection';
 import { getTeamGoalResolution } from './resolution-repository';
+import { getTeamReviewFiles, removeOrphanedFiles } from './review-file-repository';
 import type {
   Team,
   TeamInvitation,
@@ -414,11 +415,16 @@ export async function deleteTeam(
     return false;
   }
 
+  // Collected first: the cascade below removes the rows that name these files
+  const reviewFiles = await getTeamReviewFiles(teamId);
+
   // Delete the team (CASCADE will handle related data)
   await query(
     `DELETE FROM teams WHERE id = ?`,
     [teamId]
   );
+
+  await removeOrphanedFiles(reviewFiles);
 
   return true;
 }
