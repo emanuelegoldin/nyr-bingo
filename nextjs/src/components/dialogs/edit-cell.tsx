@@ -46,10 +46,7 @@ export const EditCellDialog = ({
         method: 'PUT',
         json: {
           resolutionId: opt.resolutionId,
-          resolutionType: opt.resolutionType,
           sourceType: opt.sourceType,
-          sourceUserId: opt.sourceUserId,
-          isEmpty: opt.isEmpty,
         },
       });
 

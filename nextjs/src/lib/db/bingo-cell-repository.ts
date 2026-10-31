@@ -7,7 +7,8 @@ import { CellSourceType, CellState, ResolutionType } from '../shared/types';
 import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
-import { BingoCell } from './types';
+import { getResolutionById } from './resolution-repository';
+import { BingoCell, Resolution } from './types';
 
 interface OwnedCellRow {
   is_empty: boolean | number;
@@ -30,6 +31,29 @@ const VALID_FROM_STATES: Record<CellState.PENDING | CellState.COMPLETED, CellSta
   [CellState.COMPLETED]: [CellState.PENDING],
   [CellState.PENDING]: [CellState.COMPLETED],
 };
+
+/**
+ * Check that a user may place a resolution on a cell of a team's card.
+ * Spec: 09-bingo-card-editing.md - Backend Rules
+ * @param resolution The replacement resolution
+ * @param sourceType The source the client selected
+ * @param userId The card owner
+ * @param teamId The team of the card
+ * @returns True for the owner's personal resolutions and for resolutions proposed to them in this team
+ */
+function canPlaceResolution(
+  resolution: Resolution,
+  sourceType: CellSourceType,
+  userId: string,
+  teamId: string
+): boolean {
+  if (sourceType === CellSourceType.PERSONAL) {
+    return resolution.scope === 'personal' && resolution.ownerUserId === userId;
+  }
+  return resolution.scope === 'member_provided'
+    && resolution.toUserId === userId
+    && resolution.teamId === teamId;
+}
 
 /**
  * Load a cell for a change only its card owner may make.
@@ -125,9 +149,7 @@ export async function updateCellContent(
   userId: string,
   update: {
     resolutionId: string | null;
-    resolutionType?: ResolutionType;
     sourceType: CellSourceType;
-    sourceUserId: string | null;
   }
 ): Promise<{ success: boolean; error?: string; cell?: BingoCell }> {
 
@@ -160,13 +182,20 @@ export async function updateCellContent(
     }
   }
 
-  const sourceUserId = update.sourceUserId || null;
-  const resolutionId = referencesResolution ? update.resolutionId : null;
+  // The type and source user come from the resolution, never from the client.
+  let resolutionId: string | null = null;
+  let resolutionType = ResolutionType.BASE;
+  let sourceUserId: string | null = null;
 
-  // Determine the resolution type for the cell.
-  const resolutionType = update.sourceType === 'empty'
-    ? ResolutionType.BASE
-    : update.resolutionType || ResolutionType.BASE;
+  if (referencesResolution) {
+    const resolution = await getResolutionById(update.resolutionId as string);
+    if (!resolution || !canPlaceResolution(resolution, update.sourceType, userId, owned.cell.team_id)) {
+      return { success: false, error: 'This resolution cannot be placed on this card' };
+    }
+    resolutionId = resolution.id;
+    resolutionType = resolution.resolutionType;
+    sourceUserId = resolution.ownerUserId;
+  }
 
   await query(
     `UPDATE bingo_cells

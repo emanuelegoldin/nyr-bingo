@@ -80,10 +80,8 @@ When a replacement option is selected, the system updates the cell via `PUT /api
 Request body (JSON):
 - `sourceType: 'team' | 'member_provided' | 'personal' | 'empty'` (required)
 - `resolutionId: string | null` (optional)
-- `resolutionType: 'base' | 'compound' | 'iterative'` (optional; any other value is treated as `base`)
-- `sourceUserId: string | null` (optional; when omitted or null → stored as `NULL`)
 
-The client also sends `isEmpty`, which the API ignores.
+The cell's `resolution_type` and `source_user_id` come from the resolution. Other fields in the body are ignored.
 
 Request constraints:
 - If `sourceType` is `personal` or `member_provided`, `resolutionId` is required.
@@ -94,6 +92,8 @@ Validation:
 - The authenticated user MUST be the card owner for the specified cell
 - The specified cell MUST NOT be a joker cell (`joker:` id)
 - The specified cell MUST NOT be a team goal cell
+- For `personal`, the resolution MUST be the caller's own personal resolution
+- For `member_provided`, the resolution MUST be proposed to the caller in the card's team
 
 Validation failures return `400` with a message.
 
@@ -118,7 +118,6 @@ Effects:
 - On edit, the cell updates `resolution_id`, `resolution_type`, `source_type`, `source_user_id` (NULL when absent), and resets state to `pending`.
 
 ## Known Gaps
-- The API does not validate the replacement. It does not check that `resolutionId` belongs to the caller or targets them, or that `resolutionType` and `sourceUserId` match it. Only the UI's option list constrains these values. An id that does not exist is rejected only by the foreign key, as a generic `500`.
 - `sourceType = 'team'` without a `resolutionId` is accepted, which turns the cell into a `team` cell with no resolution.
 - `sourceType = 'empty'` is accepted, so a cell can be cleared through the API although the UI has no such option.
 - Duplicates are only prevented in the UI.
