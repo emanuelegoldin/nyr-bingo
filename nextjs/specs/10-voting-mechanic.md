@@ -16,18 +16,21 @@ Located at `src/components/dialogs/vote-bar.tsx`.
 
 ### Props
 
-| Prop              | Type              | Description                                                  |
-| ----------------- | ----------------- | ------------------------------------------------------------ |
-| `threadId`        | `string`          | Review thread ID used in vote API calls.                     |
-| `votes`           | `ReviewVote[]`    | Snapshot of all current votes on the thread.                 |
-| `currentUserId`   | `string \| null`  | Authenticated user's ID — used to highlight their own vote.  |
-| `threadOpen`      | `boolean`         | Whether the thread is still open.                            |
-| `onVoteSubmitted` | `() => void`      | Callback fired after a vote is persisted (triggers refresh). |
+| Prop              | Type              | Description                                                             |
+| ----------------- | ----------------- | ----------------------------------------------------------------------- |
+| `threadId`        | `string`          | Review thread ID used in vote API calls.                                |
+| `votes`           | `ReviewVote[]`    | Snapshot of all current votes on the thread.                            |
+| `currentUserId`   | `string \| null`  | Authenticated user's ID — used to highlight their own vote.             |
+| `threadOpen`      | `boolean`         | Whether the thread is still open.                                       |
+| `canVote`         | `boolean`         | Optional, default `true`. When `false` the vote buttons are not shown.  |
+| `onVoteSubmitted` | `() => void`      | Optional callback fired after a vote is persisted.                      |
 
 ### Rendering Rules
 
-- **The component is only rendered for non-owner team members.** The parent
-  (`CellThreadDialog`) gates its visibility via the `isOwner` prop.
+- **The component is rendered for every viewer of the thread.** The parent
+  (`CellThreadDialog`) passes `canVote={!isOwner}`, so the card owner sees the
+  results bar without the buttons. The heading reads "Vote" for voters and
+  "Votes" for the card owner.
 - When `threadOpen` is `false`, the vote buttons are disabled but the results
   bar and any previously cast vote remain visible.
 
@@ -52,9 +55,10 @@ Two buttons: **Accept** and **Deny**.
 - Clicking a button submits (or updates) the user's vote via
   `POST /api/threads/[threadId]/vote`.
 - A user **may change their vote** as long as the thread is open (spec 07 §
-  Voting Rules).
-- After a successful vote, the `onVoteSubmitted` callback triggers a thread
-  refetch so the votes array — and therefore the button state — is refreshed.
+  Eligible Voters).
+- After a successful vote, the `onVoteSubmitted` callback refreshes the thread
+  so the votes array — and therefore the button state — is updated.
+- A vote rejected by the API shows an error toast.
 
 ---
 
@@ -64,10 +68,11 @@ A horizontal bar displayed below the buttons.
 
 ### Layout
 
-- Full width, rounded, fixed height (4 px / `h-4`).
+- Full width, rounded, fixed height (`h-5`).
 - **Left portion** — green (`green-500`) — represents the *accept* share.
 - **Right portion** — red (`red-500`) — represents the *deny* share.
-- Each portion displays the absolute count as a small label.
+- Each portion displays its rounded percentage as a small label. A portion with
+  no votes shows `0%`.
 
 ### Empty State
 
@@ -77,7 +82,7 @@ A horizontal bar displayed below the buttons.
 ### Accessibility
 
 - `role="progressbar"` with `aria-label`, `aria-valuenow`, `aria-valuemin`,
-  `aria-valuemax` attributes.
+  `aria-valuemax` attributes. `aria-valuenow` is the accept percentage.
 
 ---
 
@@ -92,11 +97,10 @@ POST /api/threads/[threadId]/vote  ──▶  submitVote() (DB)
         ▼
    onVoteSubmitted()
         │
-        ▼
-   refetchThread()  ──▶  GET /api/threads/[threadId]
-        │
-        ▼
-   VoteBar re-renders with updated votes[]
+        ├──▶ WS thread-refresh  ──▶  other thread viewers refetch
+        ├──▶ refetchThread()    ──▶  GET /api/threads/[threadId]
+        │                            VoteBar re-renders with updated votes[]
+        └──▶ onRefresh()        ──▶  card reload + WS card-refresh
 ```
 
 Votes are **persisted server-side** in the `review_votes` table (unique
@@ -107,7 +111,7 @@ clause handles vote changes transparently.
 
 ## Persistence & Database Notes
 
-The existing `review_votes` table already stores votes:
+The `review_votes` table stores votes:
 
 ```sql
 CREATE TABLE review_votes (
@@ -122,21 +126,11 @@ CREATE TABLE review_votes (
 );
 ```
 
-**No schema migration is required** for the current feature set. The existing
-columns are sufficient to:
+These columns:
 
 - Store one vote per user per thread.
 - Allow vote changes (`ON DUPLICATE KEY UPDATE`).
 - Return all votes with their voter IDs for the results bar.
-
-### Potential Future Migrations
-
-If requirements grow, consider:
-
-| Change | Reason |
-| ------ | ------ |
-| Add `voter_username` denormalized column on `review_votes` | Avoid a JOIN when displaying *who* voted (not currently shown in the bar). |
-| Add `accept_count` / `deny_count` cached columns on `review_threads` | Avoid counting votes on every fetch for threads with many voters. |
 
 ---
 
@@ -154,5 +148,5 @@ If requirements grow, consider:
 ## Out of Scope
 
 - Server-side vote validation (already covered in spec 07).
-- Thread closure logic (already implemented in `submitVote()`).
+- Thread closure logic (covered in spec 07).
 - Notification of voting outcome.

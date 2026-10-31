@@ -1,34 +1,90 @@
-# 03 — Personal Resolutions
+# 03 — Personal Resolutions and Resolution Types
 
 ## Purpose
-Allow users to manage a list of personal resolutions that can be used to fill their bingo card when needed.
+Allow users to manage a list of personal resolutions that can be used to fill their bingo card, and define the resolution types shared by personal, team and member-provided resolutions.
 
 ## User Stories Covered
 - Add, update, and delete resolutions
+- Choose between a simple, a checklist and a repeatable resolution
+- Track progress on checklist and repeatable resolutions
 
 ## In Scope
 - CRUD for a user's personal resolutions
+- Resolution types and their progress mechanics
+- Resolution scopes
+
+## Resolution Model
+All resolutions live in the `resolutions` table.
+
+### Types
+| Type | UI label | Type-specific data | Progress |
+| ---- | -------- | ------------------ | -------- |
+| `base` | Common | none | None; completion is set manually on the card (spec 06) |
+| `compound` | Complex | `subtasks`: `{ title, description, completed }[]` | Complete when every subtask is completed |
+| `iterative` | Iterative | `numberOfRepetition`, `completedTimes` | Complete when `completedTimes >= numberOfRepetition` |
+
+### Scopes
+| Scope | Meaning | Owner (`ownerUserId`) | Extra fields |
+| ----- | ------- | --------------------- | ------------ |
+| `personal` | The user's own resolution | The user | none |
+| `team` | The team goal; one per team (spec 04) | The team leader | `teamId` |
+| `member_provided` | Written by one member for another (spec 04) | The author | `teamId`, `toUserId` |
+
+Every type is available in every scope.
 
 ## Functional Requirements
-### Create
-- User can add a resolution (text).
+### Create and Update
+`POST /api/resolutions/save`
+
+- Without `id` the request creates a resolution; with `id` it updates one.
+- Body: `type`, `title`, optional `text`, `subtasks` (compound), `numberOfRepetition` (iterative), `previousType` (when changing type), and `scope`, `teamId`, `toUserId` for non-personal scopes.
+- `scope` defaults to `personal`.
+
+Updating without changing type:
+- `compound`: subtasks are replaced by the submitted list, including their `completed` flags.
+- `iterative`: `completedTimes` is preserved.
+
+Changing type (requires `id` and a `previousType` that differs from `type`; the form sends both):
+- Title, description and the type-specific data are rewritten, and progress resets (`completedTimes = 0`).
+- `bingo_cells.resolution_type` is updated on every cell referencing the resolution.
+- Cell states are not changed.
 
 ### Read
-- User can list and view their own resolutions.
-
-### Update
-- User can edit an existing resolution's text.
+- `GET /api/resolutions/all` lists the caller's personal resolutions of every type, newest first. `/resolutions` shows this list with a type badge and progress.
+- `GET /api/resolutions/compound` and `GET /api/resolutions/iterative` list the caller's personal resolutions of that type.
+- With `?id=<id>` those two endpoints return a single resolution, under the visibility rules of spec 13.
 
 ### Delete
-- User can delete a resolution.
+- `DELETE /api/resolutions?id=<id>`, `DELETE /api/resolutions/compound?id=<id>` and `DELETE /api/resolutions/iterative?id=<id>`.
+- The resolution's history entries are deleted with it.
+- Bingo cells referencing it keep their source type and state but lose the reference (`resolution_id` is set to `NULL`).
+
+### Progress
+- `PATCH /api/resolutions/compound/[id]/toggle` with `{ subtaskIndex }` toggles one subtask.
+- `PATCH /api/resolutions/iterative/[id]/increment` adds one to `completedTimes`. There is no upper limit, so the counter can exceed the target.
+- `PATCH /api/resolutions/iterative/[id]/decrement` subtracts one, with a floor of 0.
+- Each change logs a history event (spec 13) and updates linked bingo cells (spec 06).
+- Progress is stored on the resolution, so it is shared by every cell referencing that resolution.
 
 ## Permissions
-- Only the resolution owner can create/update/delete their own resolutions.
+- Only the owner can update or delete a resolution.
+- Progress on a `personal` resolution can only be changed by its owner.
+- Progress on a `member_provided` resolution can only be changed by its recipient (`toUserId`), not by its author.
+- Personal resolutions are available to unverified users.
 
 ## Constraints
-- Resolution text must be non-empty.
-- Max length not specified; choose a reasonable limit in implementation.
+- Title must be non-empty. It is trimmed and truncated to 255 characters.
+- Description is optional. For `base` resolutions it defaults to the title.
+- `compound` requires at least one subtask, each with a non-empty title.
+- `iterative` requires `numberOfRepetition >= 2`. The form additionally requires an integer.
 
 ## Acceptance Criteria
-- User can create, edit, delete, and list their own resolutions.
+- User can create, edit, delete, and list their own resolutions of every type.
+- User can change the type of a resolution, which resets its progress.
+- Compound subtasks can be toggled and iterative counters can be changed.
 - User cannot modify someone else's resolutions.
+
+## Known Gaps
+- Deleting a resolution that is on a bingo card leaves a blank, non-empty cell that keeps its source and has no text. A `base` cell still opens an empty dialog. A `compound` or `iterative` cell is clickable but nothing opens. The team goal can be deleted this way through the API, although the UI offers no such action.
+- `team` scope progress is not properly restricted or applied. The toggle, increment and decrement routes perform no team membership or ownership check for team goals, and the database update only matches the goal's owner. For anyone else the request returns `200` without changing progress, yet still logs a history event. It also re-evaluates linked cells against the unchanged progress, so any authenticated user can move a goal cell whose state is out of sync, for example a late joiner's `pending` cell on an already complete goal.
+- A save that does not qualify as a type change but submits a different `type` keeps the row's stored type, writes the submitted type's fields to it, and leaves cells unchanged, while the response reports the submitted type. The form avoids this by sending `id` and `previousType`.

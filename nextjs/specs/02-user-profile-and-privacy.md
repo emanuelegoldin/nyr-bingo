@@ -1,4 +1,4 @@
-# 02 — User Profile and Privacy (Updated)
+# 02 — User Profile and Privacy
 
 ## Purpose
 
@@ -12,7 +12,7 @@ Allow users to manage their profile information, configure field-level privacy, 
 - Configure which profile fields are public
 - See whether my account is verified
 - Request a new verification email if needed
-- View other users’ public profile information
+- View other users' public profile information
 
 ---
 
@@ -20,7 +20,7 @@ Allow users to manage their profile information, configure field-level privacy, 
 
 - View/edit own profile
 - Configure per-field visibility
-- View other users’ public profiles
+- View other users' public profiles
 - Display and manage verification status
 
 ---
@@ -29,52 +29,73 @@ Allow users to manage their profile information, configure field-level privacy, 
 
 ### Profile Data
 
-- Profile includes:
-  - Required identifying fields (e.g. username)
-  - Optional user-defined fields (not specified)
-- User may edit their own profile fields.
+| Field | Editable | Default visibility |
+| ----- | -------- | ------------------ |
+| Username | No | Always public |
+| Email | No | Visible to the owner only |
+| Display name | Yes | Public (`displayNamePublic = true`) |
+| Bio | Yes | Private (`bioPublic = false`) |
+| Avatar URL | API only | Public (`avatarPublic = true`) |
+
+- The display name defaults to the username at registration.
+- The profile page edits the display name, the bio and their visibility toggles.
+- `avatarUrl` and `avatarPublic` are accepted by the API but have no UI. Avatars are rendered as the first letter of the user's name everywhere; `avatarUrl` is never displayed.
+
+---
+
+### API
+
+- `GET /api/profile` — the caller's own profile, plus `{ id, username, email, emailVerified }`.
+- `GET /api/profile?userId=<id>` — the public profile of another user; `404` when the user does not exist. Passing the caller's own id returns their own profile.
+- `PUT /api/profile` — updates the caller's profile. Accepted fields: `displayName`, `bio`, `avatarUrl`, `displayNamePublic`, `bioPublic`, `avatarPublic`.
+
+All endpoints require authentication.
 
 ---
 
 ### Privacy Settings
 
-- Each optional profile field can be marked:
-  - Public
-  - Private
-- Default visibility for optional fields must be defined by implementation.
-- When viewing another user’s profile:
-  - Only public fields are visible.
+- Display name, bio and avatar URL can each be marked public or private.
+- A public profile exposes the username plus each optional field only when that field is public. Private fields are returned as `null`.
 
 ---
 
 ### Verification Status
 
-- Profile must clearly display:
+- The profile page displays:
   - `Verified`
   - `Not verified`
-- If user is **not verified**:
-  - Profile provides an action to request a new verification email
-  - Regenerated verification links must:
-    - Invalidate previous tokens
-    - Expire after 24 hours
+- If the user is **not verified**, the page also displays:
+  - A notice that verification is required to create or join teams
+  - A **Resend Verification Email** action (`POST /api/auth/resend-verification`)
+- A resent verification link expires after 24 hours.
 
 ---
 
 ## Permissions
 
-- Only the profile owner can:
-  - Edit profile fields
-  - Change privacy settings
-  - Request verification emails
+- `PUT /api/profile` and `POST /api/auth/resend-verification` always act on the authenticated user; there is no way to target another user.
 - Other users can only view public profile data.
 
 ---
 
 ## Errors & Edge Cases
 
-- Attempt to edit another user’s profile → forbidden
-- User makes all optional fields private → minimal public identity remains (e.g. username)
-- Repeated verification requests should be rate-limited if needed
+- User makes all optional fields private → the username remains as minimal public identity
+- Requesting a verification email when already verified → rejected with `400`
+
+---
+
+## Public Profile Page
+
+A dedicated page at `/profile/[userId]` displays a read-only view of another user's profile:
+
+- **Username** is always visible.
+- **Display name** is shown only if `displayNamePublic` is true.
+- **Bio** is shown only if `bioPublic` is true.
+- If the currently logged-in user visits their own public profile URL, they are redirected to the editable profile page at `/profile`.
+- Unauthenticated visitors are redirected to `/login`.
+- Avatars on the team page (cards, Members tab, Leaderboard tab) link to `/profile/[userId]`.
 
 ---
 
@@ -88,16 +109,9 @@ Allow users to manage their profile information, configure field-level privacy, 
 
 ---
 
-## Public Profile Page
+## Known Gaps
 
-A dedicated page at `/profile/[userId]` displays a read-only view of another
-user's profile:
-
-- **Username** is always visible.
-- **Display name** is shown only if `displayNamePublic` is true.
-- **Bio** is shown only if `bioPublic` is true.
-- If the currently logged-in user visits their own public profile URL, they are
-  redirected to the editable profile page at `/profile`.
-- Clickable avatars throughout the app (e.g. team member lists, bingo cards,
-  leaderboard) link to `/profile/[userId]`.
-
+- Requesting a new verification email does **not** invalidate earlier tokens. Every unexpired, unused token remains valid.
+- Verification email requests are not rate-limited.
+- The profile page has a **Password** tab with a form, but its button has no handler and no password-change endpoint exists.
+- The leaderboard shows the stored display name without checking `displayNamePublic` (see spec 12).
