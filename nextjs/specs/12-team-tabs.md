@@ -71,7 +71,8 @@ not-found page.
 - A table with four columns:
   1. **#** — Position number (1-indexed). Position 1 is gold-coloured, 2 is
      silver, 3 is bronze.
-  2. **Player** — Avatar (clickable) + display name / username.
+  2. **Player** — Avatar (clickable) + display name, if `displayNamePublic` is
+     true, otherwise username.
   3. **Completed** — The number of completed resolutions (cells with state
      `completed` or `accomplished`).
   4. **First Bingo** — The datetime when the player first completed a bingo
@@ -182,8 +183,6 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
   confetti through a `completed → pending_review` transition.
 - Members who join after the game has started have no leaderboard row until
   their first refresh, so they are missing from the table until then.
-- The leaderboard shows `user_profiles.display_name` without checking
-  `displayNamePublic`, exposing private display names to teammates.
 - Deadline closures (`CloseThreads`) send no WebSocket signal, and the team
   page socket does not reconnect after it drops. In both cases the leaderboard
   does not update until the page is reloaded.

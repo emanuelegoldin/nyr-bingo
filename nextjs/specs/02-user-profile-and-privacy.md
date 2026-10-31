@@ -114,4 +114,3 @@ A dedicated page at `/profile/[userId]` displays a read-only view of another use
 - Requesting a new verification email does **not** invalidate earlier tokens. Every unexpired, unused token remains valid.
 - Verification email requests are not rate-limited.
 - The profile page has a **Password** tab with a form, but its button has no handler and no password-change endpoint exists.
-- The leaderboard shows the stored display name without checking `displayNamePublic` (see spec 12).

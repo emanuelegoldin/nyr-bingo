@@ -117,13 +117,13 @@ export interface LeaderboardEntryWithUser {
 
 /**
  * Get the full leaderboard for a team, sorted by first-bingo-at.
- * Uses a JOIN on users for username retrieval.
+ * Uses a JOIN on users for username retrieval. Private display names are omitted.
  */
 export async function getTeamLeaderboard(teamId: string): Promise<LeaderboardEntryWithUser[]> {
   const rows = await query<LeaderboardRowWithUser[]>(
     `SELECT tl.user_id, tl.team_id, tl.first_bingo_at, tl.completed_tasks, tl.updated_at,
             u.username,
-            up.display_name
+            CASE WHEN up.display_name_public THEN up.display_name END AS display_name
      FROM team_leaderboard tl
      JOIN users u ON tl.user_id = u.id
      LEFT JOIN user_profiles up ON tl.user_id = up.user_id
