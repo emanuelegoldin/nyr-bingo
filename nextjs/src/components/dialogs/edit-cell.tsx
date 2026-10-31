@@ -1,5 +1,6 @@
 import { useEditCellOptions, type EditOption } from "@/hooks/use-edit-cell-options";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import type { BingoCellWithThread } from "@/lib/db/types";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -41,23 +42,21 @@ export const EditCellDialog = ({
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/cells/${cellId}/edit`, {
+      const result = await apiFetch<unknown>(`/api/cells/${cellId}/edit`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        json: {
           resolutionId: opt.resolutionId,
           resolutionType: opt.resolutionType,
           sourceType: opt.sourceType,
           sourceUserId: opt.sourceUserId,
           isEmpty: opt.isEmpty,
-        }),
+        },
       });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!result.ok) {
         toast({
           title: 'Error',
-          description: data?.error || 'Failed to update cell',
+          description: result.error || 'Failed to update cell',
           variant: 'destructive',
         });
         return;
