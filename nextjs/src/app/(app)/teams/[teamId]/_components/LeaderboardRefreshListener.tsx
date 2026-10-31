@@ -1,7 +1,7 @@
 "use client";
 
 import { useTeamWs } from "@/components/team-ws-provider";
-import type { WsIncomingMessage } from "@/lib/shared/ws-messages";
+import type { WsListenerMessage } from "@/lib/shared/ws-messages";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -20,8 +20,8 @@ export function LeaderboardRefreshListener() {
   const { addMessageListener } = useTeamWs();
 
   useEffect(() => {
-    return addMessageListener((msg: WsIncomingMessage) => {
-      if (msg.type === "refresh-card") {
+    return addMessageListener((msg: WsListenerMessage) => {
+      if (msg.type === "refresh-card" || msg.type === "catch-up") {
         router.refresh();
       }
     });

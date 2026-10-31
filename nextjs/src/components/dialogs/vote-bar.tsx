@@ -38,6 +38,8 @@ interface VoteBarProps {
   canVote?: boolean;
   /** Callback fired after a vote has been successfully persisted. */
   onVoteSubmitted?: () => void;
+  /** Called when a vote is refused, for example because the deadline closed the thread. */
+  onVoteFailed?: () => void;
 }
 
 export function VoteBar({
@@ -47,6 +49,7 @@ export function VoteBar({
   threadOpen,
   canVote = true,
   onVoteSubmitted,
+  onVoteFailed,
 }: VoteBarProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,6 +80,7 @@ export function VoteBar({
             description: result.error || "Failed to submit vote",
             variant: "destructive",
           });
+          onVoteFailed?.();
           return;
         }
         onVoteSubmitted?.();
@@ -84,7 +88,7 @@ export function VoteBar({
         setIsSubmitting(false);
       }
     },
-    [threadId, isSubmitting, threadOpen, toast, onVoteSubmitted],
+    [threadId, isSubmitting, threadOpen, toast, onVoteSubmitted, onVoteFailed],
   );
 
   // ── Vote buttons ────────────────────────────────────────────────

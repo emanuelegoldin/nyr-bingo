@@ -1,7 +1,7 @@
 "use client";
 
 import { useTeamWs } from "@/components/team-ws-provider";
-import type { WsIncomingMessage, WsRoom } from "@/lib/shared/ws-messages";
+import type { WsListenerMessage, WsRoom } from "@/lib/shared/ws-messages";
 import { useEffect, useRef } from "react";
 
 /**
@@ -11,7 +11,8 @@ import { useEffect, useRef } from "react";
  * @param room - The room being watched.
  * @returns True if the message is for that room.
  */
-function isRoomRefresh(msg: WsIncomingMessage, room: WsRoom): boolean {
+function isRoomRefresh(msg: WsListenerMessage, room: WsRoom): boolean {
+  if (msg.type === "catch-up") return true;
   if (room.type === "card") return msg.type === "refresh-card";
   if (room.type === "thread") return msg.type === "refresh-thread" && msg.threadId === room.id;
   return msg.type === "refresh-resolution" && msg.resolutionId === room.id;
@@ -47,7 +48,7 @@ export const useWsRoom = (
 
     const target: WsRoom = { type, id };
     const leaveRoom = joinRoom(target);
-    const unsubscribe = addMessageListener((msg: WsIncomingMessage) => {
+    const unsubscribe = addMessageListener((msg: WsListenerMessage) => {
       if (isRoomRefresh(msg, target)) {
         onRefreshRef.current();
       }

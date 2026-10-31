@@ -41,6 +41,7 @@ export const CellThreadDialog = ({
     deleteFile,
     closeThread,
     handleVoteSubmitted,
+    refetchThread,
   } = useReviewThread(cell.reviewThreadId, isOpen, { onRefresh, setIsOpen });
 
   return (
@@ -89,6 +90,7 @@ export const CellThreadDialog = ({
               threadOpen={thread.status === 'open'}
               canVote={!isOwner}
               onVoteSubmitted={handleVoteSubmitted}
+              onVoteFailed={refetchThread}
             />
 
             <ThreadMessages

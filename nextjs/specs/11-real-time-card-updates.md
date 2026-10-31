@@ -88,6 +88,15 @@ Every mutating API route signals the rooms it affected, through `notifyRooms` (`
 
 The deadline procedure runs in the database and cannot send a signal.
 
+## Catching Up
+
+Listeners get a local `catch-up` event, and refetch as if their room had been signalled, when:
+
+- The socket reconnects.
+- The tab regains focus or becomes visible, at most once every 30 seconds.
+
+This is how a deadline closure reaches an open page. A page that stays in front keeps showing it as open until its next catch-up, and a refused vote also refetches the thread.
+
 ## Conflict Resolution
 
 ### Problem

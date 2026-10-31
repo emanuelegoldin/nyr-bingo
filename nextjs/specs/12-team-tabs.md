@@ -88,8 +88,8 @@ not-found page.
   table (see _Database Impact_ below), not computed on the fly. The team page
   loads them on the server when it renders; there is no leaderboard API.
 - **Updates:** The team page re-renders from the server, keeping the selected
-  tab, when it receives `refresh-card` (spec 11). This applies on every tab of
-  the page.
+  tab, when it receives `refresh-card` or catches up (spec 11). This applies on
+  every tab of the page.
 
 ---
 
@@ -177,7 +177,7 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 ## Known Gaps
 
 - Deadline closures (`CloseThreads`) send no WebSocket signal, so the
-  leaderboard does not update until the page is reloaded.
+  leaderboard shows them only when the page next catches up (spec 11).
 - After the leader clicks **Start Bingo**, the Cards tab shows "No bingo cards
   available yet" until the page is reloaded, because its card list is only set
   from the server-rendered data.

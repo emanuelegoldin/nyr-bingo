@@ -273,5 +273,6 @@ export const useReviewThread = (
     deleteFile,
     closeThread,
     handleVoteSubmitted,
+    refetchThread,
   };
 };

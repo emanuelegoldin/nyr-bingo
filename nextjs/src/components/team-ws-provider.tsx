@@ -22,14 +22,15 @@
  */
 
 import { apiFetch } from "@/lib/api-client";
-import { getWsUrl, type WsIncomingMessage, type WsOutgoingMessage, type WsRoom } from "@/lib/shared/ws-messages";
+import { getWsUrl, type WsIncomingMessage, type WsListenerMessage, type WsOutgoingMessage, type WsRoom } from "@/lib/shared/ws-messages";
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 30 * 1000;
+const CATCH_UP_MIN_INTERVAL_MS = 30 * 1000;
 
 /** Callback signature for message listeners. */
-export type WsMessageHandler = (msg: WsIncomingMessage) => void;
+export type WsMessageHandler = (msg: WsListenerMessage) => void;
 
 // ── Context ───────────────────────────────────────────────────────
 
@@ -80,7 +81,7 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
    *
    * @param msg - The message to deliver.
    */
-  const dispatchToListeners = useCallback((msg: WsIncomingMessage) => {
+  const dispatchToListeners = useCallback((msg: WsListenerMessage) => {
     for (const handler of listenersRef.current) {
       try {
         handler(msg);
@@ -115,6 +116,7 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
 
     let disposed = false;
     let failedAttempts = 0;
+    let hasConnected = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
     const connect = () => {
@@ -127,6 +129,9 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
         for (const room of roomsRef.current) {
           sendJoin(room, ws);
         }
+        // Anything that happened while disconnected was missed
+        if (hasConnected) dispatchToListeners({ type: "catch-up" });
+        hasConnected = true;
       };
 
       ws.onmessage = (event) => {
@@ -164,6 +169,25 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
       wsRef.current = null;
     };
   }, [teamId, dispatchToListeners, sendJoin]);
+
+  // ── Catch up when the tab comes back ──────────────────────────
+  // This is also how deadline closures appear: the database cannot signal them.
+  useEffect(() => {
+    let lastCatchUp = Date.now();
+    const catchUp = () => {
+      const now = Date.now();
+      if (document.visibilityState !== "visible" || now - lastCatchUp < CATCH_UP_MIN_INTERVAL_MS) return;
+      lastCatchUp = now;
+      dispatchToListeners({ type: "catch-up" });
+    };
+
+    window.addEventListener("focus", catchUp);
+    document.addEventListener("visibilitychange", catchUp);
+    return () => {
+      window.removeEventListener("focus", catchUp);
+      document.removeEventListener("visibilitychange", catchUp);
+    };
+  }, [dispatchToListeners]);
 
   // ── Join a room (stable identity) ─────────────────────────────
   const joinRoom = useCallback((room: WsRoom): (() => void) => {

@@ -21,6 +21,12 @@ export type WsIncomingMessage =
   | { type: 'refresh-resolution'; resolutionId: string };
 
 /**
+ * What the provider hands its listeners: server messages, plus `catch-up` when signals
+ * may have been missed, so every surface should refetch.
+ */
+export type WsListenerMessage = WsIncomingMessage | { type: 'catch-up' };
+
+/**
  * Builds the URL of the WebSocket endpoint for the current page.
  *
  * @returns The WebSocket URL, or null when not running in a browser.
