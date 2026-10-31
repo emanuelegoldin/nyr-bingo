@@ -78,7 +78,8 @@ A cell's `reviewThreadId` is only set while a thread is open. Once a thread clos
 - Maximum file size: **5MB per file**. Nginx limits request bodies to 6MB.
 - Accepted types: JPEG, PNG, WebP, GIF, PDF, MP4 and QuickTime.
 - Images other than WebP are converted to WebP when possible; the original is kept if conversion fails.
-- Files are stored under `uploads/review-files/` with a content-addressed name, and served by Nginx at `/review-files/`.
+- Files are stored under `uploads/review-files/` with a content-addressed name, and served by Nginx at `/review-files/` with `X-Content-Type-Options: nosniff`.
+- The stored extension comes from the validated file type, never from the uploaded file name.
 - Identical uploads share one stored file, which is removed only when no other review file references it.
 
 ---

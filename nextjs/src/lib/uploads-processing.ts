@@ -1,6 +1,5 @@
 import sharp from 'sharp';
 import { createHash } from 'crypto';
-import { extname } from 'path';
 
 /**
  * Converts an image buffer to WEBP format.
@@ -32,13 +31,16 @@ export async function convertToWebP(
  * If it fails to convert, it will return the original file buffer as a fallback.
  * If the image already is a WEBP, it will return the original buffer without conversion.
  * @param file The File object to convert
- * @returns 
+ * @param safeExtension The validated extension to store the file under, without the dot.
+ *   It must never come straight from the user's filename, because Nginx picks the content
+ *   type from the stored name.
+ * @returns The bytes to store, their MIME type and the content-addressed file name.
  */
-export async function tryConvertToWebP(file: File): Promise<{ buffer: Uint8Array<ArrayBufferLike>, type: string, cadKey: string }> {
+export async function tryConvertToWebP(file: File, safeExtension: string): Promise<{ buffer: Uint8Array<ArrayBufferLike>, type: string, cadKey: string }> {
     // If webp already or not an image, return original buffer
     if (file.type === 'image/webp' || !file.type.startsWith('image/')) {
       const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
-      return { buffer: originalBytes, type: file.type, cadKey: contentAddressedKey(originalBytes, extname(file.name)) };
+      return { buffer: originalBytes, type: file.type, cadKey: contentAddressedKey(originalBytes, `.${safeExtension}`) };
     }
     try {
         const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
@@ -46,7 +48,7 @@ export async function tryConvertToWebP(file: File): Promise<{ buffer: Uint8Array
         return { buffer: webpBuffer, type: 'image/webp', cadKey: contentAddressedKey(originalBytes, '.webp') };
     } catch (error) {
         const originalBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await file.arrayBuffer());
-        return { buffer: originalBytes, type: file.type, cadKey: contentAddressedKey(originalBytes, extname(file.name)) };
+        return { buffer: originalBytes, type: file.type, cadKey: contentAddressedKey(originalBytes, `.${safeExtension}`) };
     }
 }
 

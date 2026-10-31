@@ -89,7 +89,7 @@ export const POST = withAuth(async (
   }
 
   // Save file to disk
-  const { buffer: convertedBuffer, type: convertedType, cadKey } = await tryConvertToWebP(file);
+  const { buffer: convertedBuffer, type: convertedType, cadKey } = await tryConvertToWebP(file, ext);
   const uploadDir = path.join(process.cwd(), 'uploads', 'review-files');
   await mkdir(uploadDir, { recursive: true });
 
