@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppContext } from "@/hooks/AppContext";
+import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
@@ -22,8 +22,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Team } from './[teamId]/types';
 
 export default function TeamsPage() {
-  const { setTitle } = useAppContext();
-  setTitle("Teams");
+  usePageTitle("Teams");
 
   const { toast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);

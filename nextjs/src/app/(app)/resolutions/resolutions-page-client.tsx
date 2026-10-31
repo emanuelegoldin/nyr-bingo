@@ -20,7 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAppContext } from "@/hooks/AppContext";
+import { useAppContext, usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch } from "@/lib/api-client";
@@ -28,7 +28,7 @@ import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
 import { History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
@@ -245,12 +245,10 @@ interface ResolutionsPageClientProps {
 export default function ResolutionsPageClient({
   initialResolutions,
 }: ResolutionsPageClientProps) {
-  const { language, setTitle } = useAppContext();
+  const { language } = useAppContext();
   const t = getDictionaryForLocale(language).ResolutionsPage;
 
-  useEffect(() => {
-    setTitle(t.headerTitle);
-  }, [setTitle, t.headerTitle]);
+  usePageTitle(t.headerTitle);
 
   return (
     <div className="space-y-6">

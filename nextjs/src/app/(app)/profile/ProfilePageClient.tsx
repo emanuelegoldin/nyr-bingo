@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useAppContext } from "@/hooks/AppContext";
+import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from '@/hooks/use-toast';
 import { apiFetch } from '@/lib/api-client';
 import type { UserProfile } from '@/lib/db/types';
@@ -37,8 +37,7 @@ export default function ProfilePageClient({
   initialUser,
   initialProfile,
 }: ProfilePageClientProps) {
-  const { setTitle } = useAppContext();
-  setTitle("Settings");
+  usePageTitle("Settings");
 
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);

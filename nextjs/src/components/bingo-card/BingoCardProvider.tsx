@@ -156,7 +156,7 @@ type DashboardBingoCardProviderProps = Omit<BaseBingoCardProviderProps, "headerS
     };
 };
 
-export async function DashboardBingoCardProvider({
+export function DashboardBingoCardProvider({
     dashboardText,
     ...props
 }: DashboardBingoCardProviderProps) {

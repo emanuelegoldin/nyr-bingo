@@ -14,7 +14,7 @@ import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-crea
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAppContext } from "@/hooks/AppContext";
+import { usePageTitle } from "@/hooks/AppContext";
 import { Crown, Loader2, Settings, Swords } from "lucide-react";
 import { useState } from 'react';
 
@@ -50,8 +50,7 @@ export default function TeamDetailPageClient({
   initialExistingResolutions,
   initialLeaderboardEntries,
 }: TeamDetailPageClientProps) {
-  const { setTitle } = useAppContext();
-  setTitle("Team");
+  usePageTitle("Team");
 
   const {
     team,

@@ -1,7 +1,7 @@
 "use client";
 
 import { LOCALE_COOKIE_NAME, type Locale } from "@/i18n/locale";
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from "react";
 
 type AppContextValue = {
   title: string;
@@ -52,6 +52,19 @@ export function useAppContext() {
     );
   }
   return context;
+}
+
+/**
+ * Set the title shown in the app header for the current page.
+ * Runs before paint so the previous page's title never flashes during navigation.
+ * @param title The header title
+ */
+export function usePageTitle(title: string): void {
+  const { setTitle } = useAppContext();
+
+  useLayoutEffect(() => {
+    setTitle(title);
+  }, [setTitle, title]);
 }
 
 // Make it optional since the language selector in the home page is outside of the AppContextProvider. TODO: refactor the home page to be inside the AppContextProvider.
