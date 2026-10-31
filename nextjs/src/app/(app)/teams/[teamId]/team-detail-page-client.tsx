@@ -11,6 +11,7 @@
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
+import { TeamWsProvider } from "@/components/team-ws-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +24,7 @@ import { TeamStatusBadge } from "@/components/team/team-status-badge";
 import type { ResolutionFormData } from "@/lib/shared/types";
 import { DeleteTeamDialog } from "./_components/DeleteTeamDialog";
 import { InviteDialog } from "./_components/InviteDialog";
+import { LeaderboardRefreshListener } from "./_components/LeaderboardRefreshListener";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
 import { useTeamActions } from "./_components/use-team-actions";
@@ -151,29 +153,32 @@ export default function TeamDetailPageClient({
       />
 
       {/* ── Tab navigation ────────────────────────────────────── */}
-      <Tabs defaultValue="cards">
-        <TabsList>
-          <TabsTrigger value="cards">Cards</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-        </TabsList>
+      <TeamWsProvider teamId={teamId} teamName={team.name}>
+        <LeaderboardRefreshListener />
+        <Tabs defaultValue="cards">
+          <TabsList>
+            <TabsTrigger value="cards">Cards</TabsTrigger>
+            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="cards" className="mt-6">
-          <CardsTab
-            team={team}
-            initialCards={initialCards}
-            currentUserId={currentUserId}
-          />
-        </TabsContent>
+          <TabsContent value="cards" className="mt-6">
+            <CardsTab
+              team={team}
+              initialCards={initialCards}
+              currentUserId={currentUserId}
+            />
+          </TabsContent>
 
-        <TabsContent value="members" className="mt-6">
-          <MembersTab team={team} currentUserId={currentUserId} />
-        </TabsContent>
+          <TabsContent value="members" className="mt-6">
+            <MembersTab team={team} currentUserId={currentUserId} />
+          </TabsContent>
 
-        <TabsContent value="leaderboard" className="mt-6">
-          <LeaderboardTab initialEntries={initialLeaderboardEntries} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="leaderboard" className="mt-6">
+            <LeaderboardTab initialEntries={initialLeaderboardEntries} />
+          </TabsContent>
+        </Tabs>
+      </TeamWsProvider>
     </div>
   );
 }

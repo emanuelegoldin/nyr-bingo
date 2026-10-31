@@ -11,7 +11,6 @@
 
 import { TeamBingoCardProvider } from "@/components/bingo-card/BingoCardProvider";
 import { TeamMembersProvider } from "@/components/team-members-context";
-import { TeamWsProvider } from "@/components/team-ws-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BingoCardWithCells } from "@/lib/db/types";
@@ -69,38 +68,36 @@ export function CardsTab({
   }
 
   return (
-    <TeamWsProvider teamId={team.id} teamName={team.name}>
-      <TeamMembersProvider members={membersMap}>
-        <div className="space-y-8">
-          <h2 className="text-2xl font-bold font-headline">Bingo Cards</h2>
+    <TeamMembersProvider members={membersMap}>
+      <div className="space-y-8">
+        <h2 className="text-2xl font-bold font-headline">Bingo Cards</h2>
 
-          {team.members.map((member, index) => {
-            const card = cards.find((c) => c.userId === member.user.userId);
-            const isCurrentUser = member.user.userId === currentUserId;
+        {team.members.map((member, index) => {
+          const card = cards.find((c) => c.userId === member.user.userId);
+          const isCurrentUser = member.user.userId === currentUserId;
 
-            return (
-              <div key={member.user.userId}>
-                {card ? (
-                  <TeamBingoCardProvider
-                    user={member.user}
-                    initialCard={card}
-                    isOwner={isCurrentUser}
-                    teamId={team.id}
-                    currentUserId={currentUserId}
-                    triggerRefresh={shouldTriggerRefresh}
-                    cardFetchInput={`/api/teams/${team.id}/cards?userId=${member.user.userId}`}
-                  />
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    No bingo card available
-                  </p>
-                )}
-                {index < team.members.length - 1 && <Separator className="my-8" />}
-              </div>
-            );
-          })}
-        </div>
-      </TeamMembersProvider>
-    </TeamWsProvider>
+          return (
+            <div key={member.user.userId}>
+              {card ? (
+                <TeamBingoCardProvider
+                  user={member.user}
+                  initialCard={card}
+                  isOwner={isCurrentUser}
+                  teamId={team.id}
+                  currentUserId={currentUserId}
+                  triggerRefresh={shouldTriggerRefresh}
+                  cardFetchInput={`/api/teams/${team.id}/cards?userId=${member.user.userId}`}
+                />
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  No bingo card available
+                </p>
+              )}
+              {index < team.members.length - 1 && <Separator className="my-8" />}
+            </div>
+          );
+        })}
+      </div>
+    </TeamMembersProvider>
   );
 }

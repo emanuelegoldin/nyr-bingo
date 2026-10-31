@@ -86,6 +86,9 @@ not-found page.
 - **Data source:** All values are read from the persisted `team_leaderboard`
   table (see _Database Impact_ below), not computed on the fly. The team page
   loads them on the server when it renders; there is no leaderboard API.
+- **Updates:** The team page re-renders from the server, keeping the selected
+  tab, when it receives `refresh-card` or when the viewer's own card reload
+  broadcasts `card-refresh` (spec 11). This applies on every tab of the page.
 
 ---
 
@@ -158,6 +161,8 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
       completed tasks descending, then alphabetically.
 - [ ] A completed line through the center (row 3, column 3 or either diagonal)
       sets the first-bingo datetime.
+- [ ] The leaderboard updates without a page reload, for the acting player and
+      for teammates, when a card change is signalled.
 - [ ] Positions 1 / 2 / 3 are coloured gold / silver / bronze.
 - [ ] Clicking any avatar on the team page navigates to the member's profile.
 - [ ] Clicking a source-user badge in a bingo cell navigates to the profile.
@@ -179,7 +184,9 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
   their first refresh, so they are missing from the table until then.
 - The leaderboard shows `user_profiles.display_name` without checking
   `displayNamePublic`, exposing private display names to teammates.
-- The leaderboard does not update until the page is reloaded.
+- Deadline closures (`CloseThreads`) send no WebSocket signal, and the team
+  page socket does not reconnect after it drops. In both cases the leaderboard
+  does not update until the page is reloaded.
 - After the leader clicks **Start Bingo**, the Cards tab shows "No bingo cards
   available yet" until the page is reloaded, because its card list is only set
   from the server-rendered data.

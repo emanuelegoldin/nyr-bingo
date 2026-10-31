@@ -20,7 +20,7 @@ Let users view other users' bingo cards in the same competition context, and def
 ### Updates
 - When a user changes a cell, that user's own card reloads from the API.
 - Other team members see the change the next time they load the page.
-- Live signals are exchanged over WebSocket, and today only two surfaces act on them: an open review thread (spec 07) and an open resolution detail or history dialog (specs 11 and 13).
+- Live signals are exchanged over WebSocket, and today only three surfaces act on them: an open review thread (spec 07), an open resolution detail or history dialog (specs 11 and 13), and the team page leaderboard (spec 12).
 
 ## Permissions
 - Only team members can view team cards. Others receive `403`.

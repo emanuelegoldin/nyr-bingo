@@ -15,9 +15,10 @@
  *
  * Child components call `broadcastCardRefresh()` (via `useTeamWs()`) after
  * persisting a mutation. The provider sends one `card-refresh` WS message
- * which the server will broadcast to every *other* client in the same room.
- * Incoming messages are dispatched to the listeners registered with
- * `addMessageListener()`.
+ * which the server will broadcast to every *other* client in the same room,
+ * and dispatches `refresh-card` to its own listeners, since the sender is
+ * excluded from that broadcast. Incoming messages are dispatched to the
+ * listeners registered with `addMessageListener()`.
  *
  * Components that need resolution-level real-time updates (e.g.
  * the detail dialog showing compound subtasks or iterative counters)
@@ -77,6 +78,22 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
   // Registered message listeners (for resolution-level updates, etc.)
   const listenersRef = useRef<Set<WsMessageHandler>>(new Set());
 
+  /**
+   * Dispatch a message to every registered listener. A failing listener does
+   * not stop the others.
+   *
+   * @param msg - The message to deliver.
+   */
+  const dispatchToListeners = useCallback((msg: WsIncomingMessage) => {
+    for (const handler of listenersRef.current) {
+      try {
+        handler(msg);
+      } catch (err) {
+        console.error("[TeamWsProvider] listener error:", err);
+      }
+    }
+  }, []);
+
   // ── Open a single WS for the lifetime of this provider ────────
   useEffect(() => {
     if (!teamId) return;
@@ -107,13 +124,7 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
       }
 
       // Dispatch to all registered listeners (resolution-level, etc.)
-      for (const handler of listenersRef.current) {
-        try {
-          handler(parsed);
-        } catch (err) {
-          console.error("[TeamWsProvider] listener error:", err);
-        }
-      }
+      dispatchToListeners(parsed);
     };
 
     ws.onerror = (e) => {
@@ -129,7 +140,7 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
         /* ignore */
       }
     };
-  }, [teamId]);
+  }, [teamId, dispatchToListeners]);
 
   // ── Send an arbitrary message over the shared WebSocket ───────
   const sendWsMessage = useCallback((msg: WsOutgoingMessage) => {
@@ -145,7 +156,8 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
   const broadcastCardRefresh = useCallback(() => {
     if (!teamId) return;
     sendWsMessage({ type: "card-refresh", body: { teamId } });
-  }, [teamId, sendWsMessage]);
+    dispatchToListeners({ type: "refresh-card" });
+  }, [teamId, sendWsMessage, dispatchToListeners]);
 
   // ── Listener subscribe/unsubscribe (stable identity) ──────────
   const addMessageListener = useCallback((handler: WsMessageHandler): (() => void) => {
