@@ -3,6 +3,7 @@
  * Spec Reference: Resolution Review & Proof Workflow - Thread Capabilities
  */
 
+import { threadErrorStatus } from '@/app/api/threads/error-status';
 import { NextRequest, NextResponse } from 'next/server';
 import { addMessage } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
@@ -25,7 +26,7 @@ export const POST = withAuth(async (
 
   const result = await addMessage(threadId, currentUser.id, content);
   if (!result.success) {
-    return errorResponse(result.error, 400);
+    return errorResponse(result.error, threadErrorStatus(result.error!));
   }
 
   return NextResponse.json({ message: result.message }, { status: 201 });

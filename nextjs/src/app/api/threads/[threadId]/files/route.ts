@@ -3,6 +3,7 @@
  * Spec Reference: Resolution Review & Proof Workflow - Thread Capabilities (max 5MB per file)
  */
 
+import { threadErrorStatus } from '@/app/api/threads/error-status';
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteThreadFile, getFileUploadError, uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -64,7 +65,7 @@ export const POST = withAuth(async (
   // Authorize first, so a rejected upload never reaches the disk
   const uploadError = await getFileUploadError(threadId, currentUser.id);
   if (uploadError) {
-    return errorResponse(uploadError, 400);
+    return errorResponse(uploadError, threadErrorStatus(uploadError));
   }
 
   const contentType = request.headers.get('content-type') || '';
@@ -115,7 +116,7 @@ export const POST = withAuth(async (
   );
 
   if (!result.success) {
-    return errorResponse(result.error, 400);
+    return errorResponse(result.error, threadErrorStatus(result.error!));
   }
 
   return NextResponse.json({ file: result.file }, { status: 201 });
@@ -139,7 +140,7 @@ export const DELETE = withAuth(async (
 
   const result = await deleteThreadFile(threadId, currentUser.id, fileId);
   if (!result.success) {
-    return errorResponse(result.error, result.error === 'File not found' ? 404 : 400);
+    return errorResponse(result.error, threadErrorStatus(result.error!));
   }
 
   return NextResponse.json({ success: true });
