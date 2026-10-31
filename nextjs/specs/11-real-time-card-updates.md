@@ -33,7 +33,9 @@ It details the mechanism behind **08 — Visibility and Updates**.
 ### WebSocket Server
 
 - `ws-server/server.ts` is a standalone Node service listening on `WS_PORT` (default `8888`). Nginx proxies `/ws` to it.
-- It only relays signals between sockets. It never touches the database.
+- It only relays signals. It never touches the database.
+- `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'resolution', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
+- It refuses to start without `WS_SHARED_SECRET`.
 - It performs no authentication and no membership check; any connected socket can join any room.
 - Broadcasts exclude the sending socket. Rooms are removed when their last socket leaves.
 
