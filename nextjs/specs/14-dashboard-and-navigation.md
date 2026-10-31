@@ -68,9 +68,3 @@ Empty states, with a **Get Started** button:
 - The dashboard shows one card per started team.
 - A failed card does not prevent the other cards from rendering.
 - Users can log out from the user menu.
-
----
-
-## Known Gaps
-
-- The "no started games" state reuses the text of the "no team" state.

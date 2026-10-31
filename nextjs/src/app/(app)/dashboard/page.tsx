@@ -137,9 +137,10 @@ async function getTeamsWithMembersForUser(userId: string): Promise<TeamWithMembe
 /**
  * Empty-state card shown when the user has no team or no started games.
  *
+ * @param hasTeams - Whether the user is in a team that has not started yet.
  * @returns The empty-state card.
  */
-async function DashboardEmptyState() {
+async function DashboardEmptyState({ hasTeams }: { hasTeams: boolean }) {
   const t = (await getDictionary()).Dashboard;
 
   return (
@@ -149,7 +150,7 @@ async function DashboardEmptyState() {
           <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-2xl font-bold font-headline mb-2">{t.headerContent}</h2>
           <p className="text-muted-foreground mb-6">
-            {t.headerDescriptionNoTeam}
+            {hasTeams ? t.headerDescriptionNoGames : t.headerDescriptionNoTeam}
           </p>
           <Button asChild>
             <Link href="/teams">
@@ -163,13 +164,9 @@ async function DashboardEmptyState() {
 }
 
 DashboardPage.Content = ({ teams, currentUserId }: { teams: TeamWithMembers[]; currentUserId: string }) => {
-  if (teams.length === 0) {
-    return <DashboardEmptyState />;
-  }
-
   const startedTeams = teams.filter((team) => team.status === 'started');
   if (startedTeams.length === 0) {
-    return <DashboardEmptyState />;
+    return <DashboardEmptyState hasTeams={teams.length > 0} />;
   }
 
   return (

@@ -8,6 +8,7 @@
         "headerContent": "Benvenuto!",
         "headerDescription": "Completa i tuoi obiettivi per ottenere un BINGO! Clicca su una cella per segnarla come completata.",
         "headerDescriptionNoTeam": "Crea o unisciti a un team per iniziare a giocare.",
+        "headerDescriptionNoGames": "Nessuno dei tuoi team ha ancora iniziato una partita.",
         "cardContentNoneAvailable": "Non hai carte disponibili in questo team"
     },
     "LoginPage": {
