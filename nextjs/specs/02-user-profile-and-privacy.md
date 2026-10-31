@@ -67,7 +67,7 @@ All endpoints require authentication.
   - `Not verified`
 - If the user is **not verified**, the page also displays:
   - A notice that verification is required to create or join teams
-  - A **Resend Verification Email** action (`POST /api/auth/resend-verification`)
+  - A **Resend Verification Email** action (`POST /api/auth/resend-verification`). A new token invalidates the user's earlier tokens.
 - A resent verification link expires after 24 hours.
 
 ---
@@ -111,6 +111,5 @@ A dedicated page at `/profile/[userId]` displays a read-only view of another use
 
 ## Known Gaps
 
-- Requesting a new verification email does **not** invalidate earlier tokens. Every unexpired, unused token remains valid.
 - Verification email requests are not rate-limited.
 - The profile page has a **Password** tab with a form, but its button has no handler and no password-change endpoint exists.

@@ -192,13 +192,19 @@ export async function checkUserExists(
 }
 
 /**
- * Create email verification token
+ * Create email verification token, invalidating the user's earlier ones.
+ * Rows are kept and marked as used, because resend limits count them.
  * Spec: 01-authentication.md - Email Verification
  */
 export async function createVerificationToken(userId: string): Promise<EmailVerificationToken> {
   const id = uuidv4();
   const token = uuidv4();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  await query(
+    `UPDATE email_verification_tokens SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL`,
+    [userId]
+  );
 
   await query(
     `INSERT INTO email_verification_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`,
