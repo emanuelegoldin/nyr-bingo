@@ -137,6 +137,8 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 
 - A "bingo" is a complete row, column, or diagonal on the 5×5 grid.
 - A cell counts as "done" when its state is `completed` or `accomplished`.
+- Position 12 (the Joker) always counts as done, whether or not a row exists
+  for it, and adds no timestamp to its line.
 - The first-bingo time equals the latest `updated_at` among the cells of the
   earliest completed line.
 - The value is recalculated on each refresh, not frozen: if the line is undone,
@@ -154,6 +156,8 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
       `completed` or `accomplished`.
 - [ ] Leaderboard sorts by: bingo-holders first (earliest bingo), then by
       completed tasks descending, then alphabetically.
+- [ ] A completed line through the center (row 3, column 3 or either diagonal)
+      sets the first-bingo datetime.
 - [ ] Positions 1 / 2 / 3 are coloured gold / silver / bronze.
 - [ ] Clicking any avatar on the team page navigates to the member's profile.
 - [ ] Clicking a source-user badge in a bingo cell navigates to the profile.
@@ -164,12 +168,7 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 
 ## Known Gaps
 
-- **Lines through the center are not detected as a bingo.** The Joker is not
-  stored on generated cards, so `refreshLeaderboardEntry` finds no cell at
-  position 12 and treats the line as incomplete. This affects row 3, column 3
-  and both diagonals. A value set by the deadline procedure for such a line is
-  overwritten by the next refresh.
-- **Confetti has the same limitation and a false positive.** `cardHasBingo`
+- **Confetti misses center lines and has a false positive.** `cardHasBingo`
   needs five done cells on a line but excludes the Joker, so row 3, column 3 and
   the main diagonal can never fire. The anti-diagonal check uses
   `position % 4 === 0`, which also matches the corners 0 and 24: it reports a

@@ -43,8 +43,6 @@ interface CellForBingo {
 }
 
 function isCellDone(cell: CellForBingo): boolean {
-  // The schema doesn't have is_joker anymore – joker is always at centre.
-  if (cell.position === JOKER_POSITION) return true;
   if (cell.is_empty) return false;
   return DONE_STATES.has(cell.state);
 }
@@ -81,13 +79,15 @@ function computeFirstBingoAt(cells: Array<CellForBingo & { updated_at: Date | nu
     let latestUpdate: Date | null = null;
 
     for (const pos of line) {
+      // The joker is implicit: always done, not stored, and adds no timestamp.
+      if (pos === JOKER_POSITION) continue;
+
       const cell = byPosition.get(pos);
       if (!cell || !isCellDone(cell)) {
         lineComplete = false;
         break;
       }
-      // Skip joker for timestamp — it's always done
-      if (pos !== JOKER_POSITION && cell.updated_at) {
+      if (cell.updated_at) {
         if (!latestUpdate || cell.updated_at > latestUpdate) {
           latestUpdate = cell.updated_at;
         }
