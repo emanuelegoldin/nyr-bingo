@@ -124,6 +124,8 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 
 - **Game start** (`POST /api/teams/[teamId]/start`): bulk-inserts a row for
   every team member with `completed_tasks = 0` and `first_bingo_at = NULL`.
+- **Late join** (`ensureBingoCardForUser`): adds a row for the new member when
+  their card is generated.
 - `refreshLeaderboardEntry` recalculates `completed_tasks` and `first_bingo_at`
   from `bingo_cells` and upserts the row after:
   - **Cell state change** (`updateCellState`, `undoCompletion`, `updateCellContent`).
@@ -181,8 +183,6 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
   bingo when exactly five of the positions 0, 4, 8, 16, 20, 24 are done. With
   all six done it reports none, so a proof request on one of them can fire
   confetti through a `completed → pending_review` transition.
-- Members who join after the game has started have no leaderboard row until
-  their first refresh, so they are missing from the table until then.
 - Deadline closures (`CloseThreads`) send no WebSocket signal, and the team
   page socket does not reconnect after it drops. In both cases the leaderboard
   does not update until the page is reloaded.

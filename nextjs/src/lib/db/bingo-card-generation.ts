@@ -9,6 +9,7 @@ import { BINGO_GRID_SIZE, CellSourceType, JOKER_POSITION, ResolutionType } from 
 import { CardRow, rowToCard } from './bingo-card-rows';
 import { autoTransitionCellState } from './bingo-cell-repository';
 import { execute, query, withTransaction } from './connection';
+import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution, isProgressComplete } from './resolution-repository';
 import { getTeamById, getTeamMembers } from './team-repository';
 import { BingoCard, Resolution, TeamStatus } from './types';
@@ -268,6 +269,8 @@ export async function ensureBingoCardForUser(
   if (goal.resolutionType !== ResolutionType.BASE) {
     await autoTransitionCellState(goal.id, goal.resolutionType, isProgressComplete(goal));
   }
+
+  await refreshLeaderboardEntry(teamId, userId);
 
   return { created: true, card };
 }
