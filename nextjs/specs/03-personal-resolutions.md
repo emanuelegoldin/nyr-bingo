@@ -86,3 +86,4 @@ Changing type (a save whose `type` differs from the stored type):
 
 ## Known Gaps
 - Deleting a resolution that is on a bingo card leaves a blank, non-empty cell that keeps its source and has no text. A `base` cell still opens an empty dialog. A `compound` or `iterative` cell is clickable but nothing opens. The team goal can be deleted this way through the API, although the UI offers no such action.
+- Saving a resolution with a changed type or target does not re-evaluate its cells, so a cell can stay `completed` after its goal was raised, or `pending` after it was lowered.
