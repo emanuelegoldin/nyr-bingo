@@ -1,7 +1,8 @@
 # Used https://depot.dev/docs/container-builds/optimal-dockerfiles/node-pnpm-dockerfile as starting point
 FROM node:lts-slim AS base
 WORKDIR /app
-RUN corepack enable pnpm
+# RUN corepack enable pnpm # corepack not found -> install pnpm instead
+RUN npm install -g pnpm
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
