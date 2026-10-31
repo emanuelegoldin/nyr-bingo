@@ -24,23 +24,43 @@ interface CellPlan {
 }
 
 /**
- * Generate bingo cards for all team members
- * Spec: 05-bingo-card-generation.md - Generation Rules
+ * Check that a team can have cards and load the goal they are built around.
+ * @param teamId The team to check
+ * @returns The team goal, or the error explaining why cards cannot be generated
  */
-export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCard[]> {
+async function loadTeamGameContext(
+  teamId: string
+): Promise<{ teamGoalResolution: Resolution } | { error: string }> {
   const team = await getTeamById(teamId);
-  if (!team || team.status !== 'started') {
-    throw new Error('Team must be in started status to generate cards');
+  if (!team) {
+    return { error: 'Team not found' };
+  }
+
+  if (team.status !== 'started') {
+    return { error: 'Team is not started' };
   }
 
   if (!team.teamResolutionText) {
-    throw new Error('Team resolution must be set');
+    return { error: 'Team resolution must be set' };
   }
 
   // Fetch the team goal resolution entity (needed for resolution_id on cells)
   const teamGoalResolution = await getTeamGoalResolution(teamId);
   if (!teamGoalResolution) {
-    throw new Error('Team goal resolution entity not found');
+    return { error: 'Team goal resolution entity not found' };
+  }
+
+  return { teamGoalResolution };
+}
+
+/**
+ * Generate bingo cards for all team members
+ * Spec: 05-bingo-card-generation.md - Generation Rules
+ */
+export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCard[]> {
+  const context = await loadTeamGameContext(teamId);
+  if ('error' in context) {
+    throw new Error(context.error);
   }
 
   const members = await getTeamMembers(teamId);
@@ -53,7 +73,7 @@ export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCa
         connection,
         teamId,
         member.userId,
-        teamGoalResolution
+        context.teamGoalResolution
       );
       cards.push(card);
     }
@@ -219,26 +239,13 @@ export async function ensureBingoCardForUser(
     return { created: false, card: rowToCard(existing[0]) };
   }
 
-  const team = await getTeamById(teamId);
-  if (!team) {
-    return { created: false, error: 'Team not found' };
-  }
-
-  if (team.status !== 'started') {
-    return { created: false, error: 'Team is not started' };
-  }
-
-  if (!team.teamResolutionText) {
-    return { created: false, error: 'Team resolution must be set' };
-  }
-
-  const teamGoalResolution = await getTeamGoalResolution(teamId);
-  if (!teamGoalResolution) {
-    return { created: false, error: 'Team goal resolution entity not found' };
+  const context = await loadTeamGameContext(teamId);
+  if ('error' in context) {
+    return { created: false, error: context.error };
   }
 
   const card = await withTransaction((connection) =>
-    generateCardForUser(connection, teamId, userId, teamGoalResolution)
+    generateCardForUser(connection, teamId, userId, context.teamGoalResolution)
   );
   return { created: true, card };
 }
