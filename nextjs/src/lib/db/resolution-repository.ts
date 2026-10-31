@@ -91,6 +91,29 @@ export async function deleteResolution(
   return rows.length === 0;
 }
 
+/**
+ * Whether a user may change a resolution's progress.
+ * Personal resolutions belong to their owner and member-provided ones to their recipient.
+ * Team goals pass this check; progressOwnerColumn then limits the write to the goal's owner.
+ * @param resolution The resolution to change
+ * @param userId The user making the change
+ * @returns True if the change is allowed
+ */
+export function canModifyProgress(resolution: Resolution, userId: string): boolean {
+  if (resolution.scope === 'personal') return resolution.ownerUserId === userId;
+  if (resolution.scope === 'member_provided') return resolution.toUserId === userId;
+  return true;
+}
+
+/**
+ * Column that must match the acting user when writing a resolution's progress.
+ * @param resolution The resolution being written
+ * @returns The column name, safe to interpolate into SQL
+ */
+function progressOwnerColumn(resolution: Resolution): 'to_user_id' | 'owner_user_id' {
+  return resolution.scope === 'member_provided' ? 'to_user_id' : 'owner_user_id';
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // Personal resolutions (scope = personal)
 // ═══════════════════════════════════════════════════════════════════
@@ -177,10 +200,7 @@ export async function toggleCompoundSubtask(
   subtaskIndex: number
 ): Promise<Resolution | null> {
   const existing = await getCompoundResolutionById(id);
-  if (!existing ||
-    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId)   // Personal resolutions can only be modified by the owner
-    || (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient
-    || !existing.subtasks) {
+  if (!existing || !canModifyProgress(existing, ownerUserId) || !existing.subtasks) {
     return null;
   }
 
@@ -188,9 +208,8 @@ export async function toggleCompoundSubtask(
 
   const updated = [...existing.subtasks];
   updated[subtaskIndex] = { ...updated[subtaskIndex], completed: !updated[subtaskIndex].completed };
-  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
-    `UPDATE resolutions SET subtasks = ? WHERE id = ? AND ${user_id_to_compare} = ?`,
+    `UPDATE resolutions SET subtasks = ? WHERE id = ? AND ${progressOwnerColumn(existing)} = ?`,
     [JSON.stringify(updated), id, ownerUserId]
   );
   return getResolutionById(id);
@@ -228,16 +247,12 @@ export async function adjustIterativeProgress(
   delta: 1 | -1
 ): Promise<Resolution | null> {
   const existing = await getIterativeResolutionById(id);
-  if (!existing ||
-    (existing.scope === 'personal' && existing.ownerUserId !== ownerUserId) ||   // Personal resolutions can only be modified by the owner
-    (existing.scope === 'member_provided' && existing.toUserId !== ownerUserId)  // Member-provided resolutions can only be modified by the recipient  
-  ) {
+  if (!existing || !canModifyProgress(existing, ownerUserId)) {
     return null;
   }
   if (delta < 0 && existing.completedTimes <= 0) return existing;
-  const user_id_to_compare: string = existing.scope === 'member_provided' ? `to_user_id` : `owner_user_id`;
   await query(
-    `UPDATE resolutions SET completed_times = completed_times + ? WHERE id = ? AND ${user_id_to_compare} = ?`,
+    `UPDATE resolutions SET completed_times = completed_times + ? WHERE id = ? AND ${progressOwnerColumn(existing)} = ?`,
     [delta, id, ownerUserId]
   );
   return getResolutionById(id);

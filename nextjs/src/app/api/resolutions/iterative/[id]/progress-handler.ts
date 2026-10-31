@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   adjustIterativeProgress,
+  canModifyProgress,
   getIterativeResolutionById,
   autoTransitionCellState,
-  createSystemResolutionHistoryEntry,
+  logResolutionHistoryEventSafe,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
@@ -38,10 +39,7 @@ export function createIterativeProgressHandler({
       if (!existing) {
         return errorResponse('Resolution not found', 404);
       }
-      if (
-        (existing.scope === 'personal' && existing.ownerUserId !== currentUser.id) ||   // Personal resolutions can only be modified by the owner
-        (existing.scope === 'member_provided' && existing.toUserId !== currentUser.id)  // Member-provided resolutions can only be modified by the recipient
-      ) {
+      if (!canModifyProgress(existing, currentUser.id)) {
         return errorResponse('You can only modify your own resolutions', 403);
       }
 
@@ -50,20 +48,16 @@ export function createIterativeProgressHandler({
         return errorResponse(failureMessage, 500);
       }
 
-      try {
-        await createSystemResolutionHistoryEntry(
-          id,
-          currentUser.id,
-          historyEventKey,
-          `Progress updated: ${resolution.completedTimes} / ${resolution.numberOfRepetition ?? 0}`,
-          {
-            completedTimes: resolution.completedTimes,
-            numberOfRepetition: resolution.numberOfRepetition,
-          },
-        );
-      } catch {
-        // Preserve the core counter change even if history logging fails.
-      }
+      await logResolutionHistoryEventSafe(
+        id,
+        currentUser.id,
+        historyEventKey,
+        `Progress updated: ${resolution.completedTimes} / ${resolution.numberOfRepetition ?? 0}`,
+        {
+          completedTimes: resolution.completedTimes,
+          numberOfRepetition: resolution.numberOfRepetition,
+        },
+      );
 
       const isComplete = resolution.completedTimes >= (resolution.numberOfRepetition ?? Infinity);
       const updatedCells = await autoTransitionCellState(

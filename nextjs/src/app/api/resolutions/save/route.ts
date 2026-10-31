@@ -16,10 +16,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  createSystemResolutionHistoryEntry,
   getResolutionById,
   isTeamLeader,
   isTeamMember,
+  logResolutionHistoryEventSafe,
   query,
   withTransaction,
 } from '@/lib/db';
@@ -391,26 +391,6 @@ async function handleTypeChange(
   );
 
   return NextResponse.json({ resolution: toUnifiedResponse(rows[0], newType) });
-}
-
-async function logResolutionHistoryEventSafe(
-  resolutionId: string,
-  actorUserId: string,
-  eventKey: string,
-  content: string,
-  metadata?: Record<string, unknown>,
-) {
-  try {
-    await createSystemResolutionHistoryEntry(
-      resolutionId,
-      actorUserId,
-      eventKey,
-      content,
-      metadata,
-    );
-  } catch {
-    // Preserve core save behavior even if history logging fails.
-  }
 }
 
 /**
