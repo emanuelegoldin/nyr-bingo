@@ -226,6 +226,9 @@ export async function updateCellContent(
     return { success: false, error: 'Cell state has changed — please refresh and try again' };
   }
 
+  // The edit resets the state to pending, which can undo a completion or a bingo
+  await refreshLeaderboardEntry(owned.cell.team_id, userId);
+
   const updatedRow = await getResolvedCellRowById(cellId);
   if (!updatedRow) {
     return { success: false, error: 'Cell not found' };

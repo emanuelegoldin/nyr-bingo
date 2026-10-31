@@ -102,6 +102,7 @@ Validation failures return `400` with a message.
 
 Effects:
 - Update the cell content fields and set state to `pending`
+- Refresh the card owner's leaderboard entry (spec 12)
 
 ### `GET /api/teams/[teamId]/resolutions?toUserId=...`
 - Auth required
@@ -123,4 +124,3 @@ Effects:
 ## Known Gaps
 - `sourceType = 'empty'` is accepted, so a cell can be cleared through the API although the UI has no such option.
 - The rule against duplicate text (spec 05) is not applied to edits: the UI and API only compare resolution ids, so a resolution with the same text as another cell can be selected.
-- Editing a cell does not refresh the leaderboard, so a completed cell that was edited stays counted until the owner's next leaderboard refresh.

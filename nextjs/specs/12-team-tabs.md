@@ -126,7 +126,7 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
   every team member with `completed_tasks = 0` and `first_bingo_at = NULL`.
 - `refreshLeaderboardEntry` recalculates `completed_tasks` and `first_bingo_at`
   from `bingo_cells` and upserts the row after:
-  - **Cell state change** (`updateCellState`, `undoCompletion`).
+  - **Cell state change** (`updateCellState`, `undoCompletion`, `updateCellContent`).
   - **Automatic completion** (`autoTransitionCellState`, spec 06).
   - **Proof request** (`requestProof` — `completed → pending_review`), because
     `pending_review` does not count toward `completed_tasks`.
