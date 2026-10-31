@@ -14,7 +14,6 @@ type BaseBingoCardProviderProps = {
     isOwner: boolean,
     teamId: string,
     currentUserId: string,
-    triggerRefresh?: () => boolean,
     cardFetchInput?: string | URL | Request
     headerSlot?: React.ReactNode
     children?: React.ReactNode
@@ -49,7 +48,6 @@ function BingoCard(
         isOwner,
         teamId,
         currentUserId,
-        triggerRefresh,
         cardFetchInput,
         headerSlot
     }: BaseBingoCardProviderProps
@@ -84,7 +82,6 @@ function BingoCard(
                         editMode={editMode}
                         teamId={teamId}
                         currentUserId={currentUserId}
-                        triggerRefresh={triggerRefresh}
                         fetchInput={cardFetchInput}
                     />
                 </BingoCard.Frame>

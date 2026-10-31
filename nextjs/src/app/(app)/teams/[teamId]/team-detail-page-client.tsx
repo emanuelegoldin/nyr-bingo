@@ -11,6 +11,7 @@
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
+import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +25,6 @@ import { TeamStatusBadge } from "@/components/team/team-status-badge";
 import type { ResolutionFormData } from "@/lib/shared/types";
 import { DeleteTeamDialog } from "./_components/DeleteTeamDialog";
 import { InviteDialog } from "./_components/InviteDialog";
-import { LeaderboardRefreshListener } from "./_components/LeaderboardRefreshListener";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
 import { useTeamActions } from "./_components/use-team-actions";
@@ -154,7 +154,7 @@ export default function TeamDetailPageClient({
 
       {/* ── Tab navigation ────────────────────────────────────── */}
       <TeamWsProvider teamId={teamId} teamName={team.name}>
-        <LeaderboardRefreshListener />
+        <TeamRefreshListener />
         <Tabs defaultValue="cards">
           <TabsList>
             <TabsTrigger value="cards">Cards</TabsTrigger>

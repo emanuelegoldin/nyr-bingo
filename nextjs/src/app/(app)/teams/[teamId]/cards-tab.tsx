@@ -14,7 +14,7 @@ import { TeamMembersProvider } from "@/components/team-members-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BingoCardWithCells } from "@/lib/db/types";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Team } from "./types";
 
 interface CardsTabProps {
@@ -25,15 +25,9 @@ interface CardsTabProps {
 
 export function CardsTab({
   team,
-  initialCards,
+  initialCards: cards,
   currentUserId,
 }: CardsTabProps) {
-  const [cards, setCards] = useState<BingoCardWithCells[]>(initialCards);
-
-  const shouldTriggerRefresh = useCallback(() => {
-    return team.status === "started" && cards.length === 0;
-  }, [team.status, cards.length]);
-
   // Build the userId → username map once from the already-loaded team data.
   const membersMap = useMemo(
     () =>
@@ -85,7 +79,6 @@ export function CardsTab({
                   isOwner={isCurrentUser}
                   teamId={team.id}
                   currentUserId={currentUserId}
-                  triggerRefresh={shouldTriggerRefresh}
                   cardFetchInput={`/api/teams/${team.id}/cards?userId=${member.user.userId}`}
                 />
               ) : (

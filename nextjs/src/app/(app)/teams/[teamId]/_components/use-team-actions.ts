@@ -3,7 +3,7 @@ import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import type { ResolutionFormData } from "@/lib/shared/types";
 import { apiFetch } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Team, TeamProvidedResolution } from "../types";
 
 interface UseTeamActionsParams {
@@ -35,6 +35,11 @@ export function useTeamActions({
     initialExistingResolutions
   );
   const [isStarting, setIsStarting] = useState(false);
+
+  // A server refresh brings new props (team changes signalled over WebSocket)
+  useEffect(() => setTeam(initialTeam), [initialTeam]);
+  useEffect(() => setTeamGoal(initialTeamGoal), [initialTeamGoal]);
+  useEffect(() => setExistingResolutions(initialExistingResolutions), [initialExistingResolutions]);
 
   // Delete team dialog (open state lives here because a successful delete closes it)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

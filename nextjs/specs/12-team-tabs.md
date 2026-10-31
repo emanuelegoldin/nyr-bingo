@@ -178,6 +178,3 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 
 - Deadline closures (`CloseThreads`) send no WebSocket signal, so the
   leaderboard shows them only when the page next catches up (spec 11).
-- After the leader clicks **Start Bingo**, the Cards tab shows "No bingo cards
-  available yet" until the page is reloaded, because its card list is only set
-  from the server-rendered data.

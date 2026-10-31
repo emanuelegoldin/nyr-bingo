@@ -15,6 +15,7 @@ It details the mechanism behind **08 — Visibility and Updates**.
 ## User Stories Covered
 
 - When a resolution's progress changes, users viewing it in an open dialog see the change in real time.
+- When a team changes, users viewing its page or dashboard card see the change in real time.
 - When two users perform conflicting actions on the same cell concurrently, a deterministic winner is chosen to prevent inconsistent state.
 
 ---
@@ -65,7 +66,7 @@ Clients connect to `ws(s)://<current-host>/ws`.
 | Message              | Direction        | Body                         | Purpose                                   |
 |----------------------|------------------|------------------------------|-------------------------------------------|
 | `join-room`          | client → server  | `token` (top level)          | Join the room the token grants.           |
-| `refresh-card`       | server → clients | none                         | Tell card room members to refresh.        |
+| `refresh-card`       | server → clients | none                         | Tell card room members to refresh the page. |
 | `refresh-resolution` | server → clients | `resolutionId` (top level)   | Tell viewers to re-fetch the resolution.  |
 | `refresh-thread`     | server → clients | `threadId` (top level)       | Tell viewers to re-fetch the thread.      |
 
@@ -153,16 +154,14 @@ In both cases the final state is `pending`, honouring the owner's intent.
 - Dispatches every incoming message to registered listeners.
 - Closes the socket on unmount.
 
-### `LeaderboardRefreshListener` (LeaderboardRefreshListener.tsx)
+### `TeamRefreshListener` (team-refresh-listener.tsx)
 
-- Rendered above the team page tabs, so it stays mounted on every tab.
-- On `refresh-card`, re-renders the page from the server so the leaderboard shows the persisted values (spec 12).
-
-Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on `/resolutions` runs this way (spec 13).
+- Rendered above the team page tabs, so it stays mounted on every tab, and in each dashboard team card.
+- On `refresh-card` or `catch-up`, re-renders the page from the server, debounced by 500 ms. Cards, leaderboard, members, team status and goal all come from those server props.
 
 ### `BingoCardContent` (BingoCardContent.tsx)
 
-- Owns the card state and `reloadCard`. It reloads the card after the viewer's own changes.
+- Owns the card state and `reloadCard`. It reloads the card right after the viewer's own changes, and takes new server props when the page refreshes.
 
 ### Child Components
 
@@ -173,6 +172,7 @@ Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on
 ## Acceptance Criteria
 
 - Users viewing a resolution in an open dialog see subtask and counter changes without reloading.
+- Users on the team page or dashboard see team changes without reloading.
 - If two users perform conflicting operations, the system resolves the conflict deterministically (owner's action prevails).
 - Failed operations due to state conflicts return a descriptive error to the acting user.
 - No WebSocket connection is leaked on component unmount.
@@ -183,14 +183,14 @@ Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on
 ## Out of Scope
 
 - Offline support / retry queues.
-- Granular cell-level diffing (clients re-fetch the full card).
+- Granular cell-level diffing (clients re-render the full page).
 - Push notifications for card changes.
 
 ---
 
 ## Known Gaps
 
-- **Cards do not update live.** The server sends `refresh-card`, but only the leaderboard acts on it. Other viewers see card changes only after reloading the page.
+- `/resolutions` and profile pages have no WebSocket, so they update on load.
 
 ---
 

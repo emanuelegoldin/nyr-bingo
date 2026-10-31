@@ -15,7 +15,6 @@ export function BingoCardContent(
     editMode,
     teamId,
     currentUserId,
-    triggerRefresh,
     fetchInput
   }
     :
@@ -25,7 +24,6 @@ export function BingoCardContent(
       editMode: boolean,
       teamId: string,
       currentUserId: string,
-      triggerRefresh?: () => boolean,
       fetchInput?: string | URL | Request
     }
 ) {
@@ -91,13 +89,11 @@ export function BingoCardContent(
   );
 
   // Effects
-  // triggerRefresh is passed down from parent components to define conditions under which
-  // reloadCard should be called (if triggerRefresh is defined)
+  // A server refresh brings new props; every mutation signals one, so the last refresh
+  // always carries the latest card.
   useEffect(() => {
-    if (triggerRefresh && triggerRefresh()) {
-      reloadCard();
-    }
-  }, [triggerRefresh, reloadCard]);
+    setCard(initialCard);
+  }, [initialCard]);
 
   return (
     <CardContent>
