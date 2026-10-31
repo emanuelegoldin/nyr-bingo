@@ -11,6 +11,7 @@ import { getResolutionById } from './resolution-repository';
 import { BingoCell, Resolution } from './types';
 
 interface OwnedCellRow {
+  card_id: string;
   is_empty: boolean | number;
   resolution_type: ResolutionType;
   source_type: CellSourceType;
@@ -68,7 +69,7 @@ async function loadOwnedCell(
   notOwnerError: string
 ): Promise<{ cell: OwnedCellRow } | { error: string }> {
   const rows = await query<OwnedCellRow[]>(
-    `SELECT c.is_empty, c.resolution_type, c.source_type, c.state, bc.user_id as card_user_id, bc.team_id
+    `SELECT c.card_id, c.is_empty, c.resolution_type, c.source_type, c.state, bc.user_id as card_user_id, bc.team_id
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
      WHERE c.id = ?`,
@@ -190,6 +191,16 @@ export async function updateCellContent(
     if (!resolution || !canPlaceResolution(resolution, update.sourceType, userId, owned.cell.team_id)) {
       return { success: false, error: 'This resolution cannot be placed on this card' };
     }
+
+    // Spec: 05-bingo-card-generation.md - No duplicates in a card
+    const duplicates = await query<Array<{ id: string }>>(
+      `SELECT id FROM bingo_cells WHERE card_id = ? AND resolution_id = ? AND id <> ? LIMIT 1`,
+      [owned.cell.card_id, resolution.id, cellId]
+    );
+    if (duplicates.length > 0) {
+      return { success: false, error: 'This resolution is already on this card' };
+    }
+
     resolutionId = resolution.id;
     resolutionType = resolution.resolutionType;
     sourceUserId = resolution.ownerUserId;

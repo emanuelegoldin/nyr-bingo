@@ -94,6 +94,7 @@ Validation:
 - The specified cell MUST NOT be a team goal cell
 - For `personal`, the resolution MUST be the caller's own personal resolution
 - For `member_provided`, the resolution MUST be proposed to the caller in the card's team
+- The resolution MUST NOT already be on another cell of the card
 
 Validation failures return `400` with a message.
 
@@ -119,6 +120,6 @@ Effects:
 
 ## Known Gaps
 - `sourceType = 'empty'` is accepted, so a cell can be cleared through the API although the UI has no such option.
-- Duplicates are only prevented in the UI.
+- The rule against duplicate text (spec 05) is not applied to edits: the UI and API only compare resolution ids, so a resolution with the same text as another cell can be selected.
 - Editing a cell does not close an open review thread on it.
 - Editing a cell does not refresh the leaderboard, so a completed cell that was edited stays counted until the owner's next leaderboard refresh.
