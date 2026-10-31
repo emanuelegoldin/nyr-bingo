@@ -95,15 +95,26 @@ export async function deleteResolution(
 /**
  * Whether a user may change a resolution's progress.
  * Personal resolutions belong to their owner and member-provided ones to their recipient.
- * Team goals pass this check; progressOwnerColumn then limits the write to the goal's owner.
+ * Team goals are owned by the team leader, so only the leader's changes count.
  * @param resolution The resolution to change
  * @param userId The user making the change
  * @returns True if the change is allowed
  */
 export function canModifyProgress(resolution: Resolution, userId: string): boolean {
-  if (resolution.scope === 'personal') return resolution.ownerUserId === userId;
   if (resolution.scope === 'member_provided') return resolution.toUserId === userId;
-  return true;
+  return resolution.ownerUserId === userId;
+}
+
+/**
+ * Whether a compound or iterative resolution has reached its goal.
+ * @param resolution The resolution to check
+ * @returns True if all subtasks are done or the counter reached its target
+ */
+export function isProgressComplete(resolution: Resolution): boolean {
+  if (resolution.resolutionType === ResolutionType.COMPOUND) {
+    return resolution.subtasks?.every((subtask) => subtask.completed) ?? false;
+  }
+  return resolution.completedTimes >= (resolution.numberOfRepetition ?? Infinity);
 }
 
 /**

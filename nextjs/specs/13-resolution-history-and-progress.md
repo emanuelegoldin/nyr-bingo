@@ -180,4 +180,3 @@ Entries are immutable.
 ## Known Gaps
 
 - Nobody can add manual notes to a team goal. A `TODO` in `getResolutionHistoryAccess` records that the card owner cannot be determined from the resolution alone.
-- A team goal progress request by a non-owner logs a system event although no progress changed (spec 03).

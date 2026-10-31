@@ -11,6 +11,7 @@ import {
   toggleCompoundSubtask,
   getCompoundResolutionById,
   autoTransitionCellState,
+  isProgressComplete,
   logResolutionHistoryEventSafe,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
@@ -73,11 +74,10 @@ export const PATCH = withAuth(async (
   }
 
   // Auto-transition bingo cells: all subtasks done → completed, otherwise → pending
-  const allDone = resolution.subtasks?.every((s) => s.completed) ?? false;
   const updatedCells = await autoTransitionCellState(
     id,
     ResolutionType.COMPOUND,
-    allDone
+    isProgressComplete(resolution)
   );
 
   return NextResponse.json({ resolution, updatedCells });

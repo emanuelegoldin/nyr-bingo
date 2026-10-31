@@ -25,6 +25,7 @@ interface ResolutionDetailResponse {
         id: string,
         title: string,
         description?: string | null,
+        ownerUserId: string,
         // Compound resolutions carry `subtasks`, iterative ones the two counters.
         subtasks: Subtask[],
         numberOfRepetition: number,
@@ -66,6 +67,7 @@ const fetchResolutionDetail = async (cell: BingoCellWithThread): Promise<Resolut
             id: data.id,
             title: data.title,
             description: data.description,
+            ownerUserId: data.ownerUserId,
             subtasks: data.subtasks,
         };
     }
@@ -74,6 +76,7 @@ const fetchResolutionDetail = async (cell: BingoCellWithThread): Promise<Resolut
         id: data.id,
         title: data.title,
         description: data.description,
+        ownerUserId: data.ownerUserId,
         numberOfRepetition: data.numberOfRepetition,
         completedTimes: data.completedTimes,
     };
@@ -235,6 +238,12 @@ export const ResolutionCell = ({
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}
                     isOwner={isOwner}
+                    canChangeProgress={
+                        isOwner && (
+                            cell.sourceType !== CellSourceType.TEAM
+                            || (detailData.type !== ResolutionType.BASE && detailData.ownerUserId === currentUserId)
+                        )
+                    }
                     sourceLabel={sourceLabel}
                     onRefresh={onRefresh}
                     onComplete={handleCompleteFromDetail}

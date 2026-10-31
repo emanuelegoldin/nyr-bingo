@@ -109,7 +109,6 @@ Verified users:
 Enforcement:
 - `POST /api/teams`, `POST /api/join` and `POST /api/teams/[teamId]/start` reject unverified users with `403`.
 - Other team actions require team membership. Membership can only be obtained through team creation or joining, and verification is never revoked, so every team member is verified.
-- The exception is the team goal progress routes, which check neither membership nor verification (spec 03, Known Gaps).
 
 ---
 

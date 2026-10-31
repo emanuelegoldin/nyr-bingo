@@ -43,6 +43,7 @@ interface CompoundData {
   id: string;
   title: string;
   description?: string | null;
+  ownerUserId: string;
   subtasks: Subtask[];
 }
 
@@ -51,6 +52,7 @@ interface IterativeData {
   id: string;
   title: string;
   description?: string | null;
+  ownerUserId: string;
   numberOfRepetition: number;
   completedTimes: number;
 }
@@ -73,6 +75,8 @@ interface ResolutionDetailDialogProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   isOwner: boolean;
+  /** Whether the viewer's progress changes take effect (only the leader's do on team goals) */
+  canChangeProgress: boolean;
   /** Human-readable source label, e.g. "Personal", "Team Goal", or a username */
   sourceLabel?: string;
   /** Called after a mutation so the parent can refresh the bingo card */
@@ -115,6 +119,7 @@ export const ResolutionDetailDialog = ({
   isOpen,
   setIsOpen,
   isOwner,
+  canChangeProgress,
   sourceLabel,
   onRefresh,
   onComplete,
@@ -156,7 +161,7 @@ export const ResolutionDetailDialog = ({
           <CompoundChecklist
             id={data.id}
             subtasks={data.subtasks}
-            isOwner={isOwner}
+            isOwner={canChangeProgress}
             onRefresh={onRefresh}
           />
         )}
@@ -166,7 +171,7 @@ export const ResolutionDetailDialog = ({
             id={data.id}
             numberOfRepetition={data.numberOfRepetition}
             completedTimes={data.completedTimes}
-            isOwner={isOwner}
+            isOwner={canChangeProgress}
             onRefresh={onRefresh}
           />
         )}

@@ -4,6 +4,7 @@ import {
   canModifyProgress,
   getIterativeResolutionById,
   autoTransitionCellState,
+  isProgressComplete,
   logResolutionHistoryEventSafe,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
@@ -59,11 +60,10 @@ export function createIterativeProgressHandler({
         },
       );
 
-      const isComplete = resolution.completedTimes >= (resolution.numberOfRepetition ?? Infinity);
       const updatedCells = await autoTransitionCellState(
         id,
         ResolutionType.ITERATIVE,
-        isComplete
+        isProgressComplete(resolution)
       );
 
       return NextResponse.json({ resolution, updatedCells });

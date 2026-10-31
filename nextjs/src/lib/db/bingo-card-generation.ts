@@ -7,8 +7,9 @@ import { randomUUID } from 'crypto';
 import type { PoolConnection } from 'mysql2/promise';
 import { BINGO_GRID_SIZE, CellSourceType, JOKER_POSITION, ResolutionType } from '../shared/types';
 import { CardRow, rowToCard } from './bingo-card-rows';
+import { autoTransitionCellState } from './bingo-cell-repository';
 import { execute, query, withTransaction } from './connection';
-import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution } from './resolution-repository';
+import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution, isProgressComplete } from './resolution-repository';
 import { getTeamById, getTeamMembers } from './team-repository';
 import { BingoCard, Resolution, TeamStatus } from './types';
 
@@ -258,8 +259,15 @@ export async function ensureBingoCardForUser(
     return { created: false, error: context.error };
   }
 
+  const goal = context.teamGoalResolution;
   const card = await withTransaction((connection) =>
-    generateCardForUser(connection, teamId, userId, context.teamGoalResolution)
+    generateCardForUser(connection, teamId, userId, goal)
   );
+
+  // A late joiner's goal cell must match progress the leader has already made
+  if (goal.resolutionType !== ResolutionType.BASE) {
+    await autoTransitionCellState(goal.id, goal.resolutionType, isProgressComplete(goal));
+  }
+
   return { created: true, card };
 }

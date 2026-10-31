@@ -74,7 +74,7 @@ Outside edit mode, clicking any non-empty, non-joker cell that still references 
 | Non-owner | `completed` | **Request Proof** (spec 07) |
 | Anyone | `pending_review` | **View Thread** (spec 07) |
 
-For `compound` and `iterative` cells the dialog shows the checklist or counter, with controls enabled for the card owner only. On `team` cells only the team leader's actions take effect; other card owners see the same controls, but they change nothing (spec 03, Known Gaps).
+For `compound` and `iterative` cells the dialog shows the checklist or counter, with controls enabled for the card owner only. On `team` cells the controls are enabled for the team leader only, and the API returns `403` to anyone else.
 
 The `base` row applies to the resolution's type, so a `base` team goal is completed manually, cell by cell, by each member.
 

@@ -94,6 +94,7 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 - If a user joins a team after it has started:
   - The team remains in `started` status.
   - The new member receives a bingo card, generated at join time under the rules of spec 05. This requires the team goal to still exist; a failure to generate the card is not reported to the user.
+  - If the team goal is `compound` or `iterative`, the new member's goal cell is set to match the goal's progress.
   - Existing members' cards are not regenerated.
 
 ---
