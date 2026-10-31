@@ -2,6 +2,8 @@
 
 Stay focused on your goals while competing with your friends with our New Year Resolutions Bingo
 
+v 2.2.1
+
 ## Requirements
 <!-- TODO: Add versions -->
 
