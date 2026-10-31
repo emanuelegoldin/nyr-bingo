@@ -1,5 +1,6 @@
 FROM node:lts-slim AS base
 WORKDIR /app
+# RUN corepack enable pnpm # corepack not found -> install pnpm instead
 RUN npm install -g pnpm
 COPY package.json ./
 COPY pnpm-lock.yaml ./
