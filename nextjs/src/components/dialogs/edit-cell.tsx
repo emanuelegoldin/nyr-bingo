@@ -1,6 +1,6 @@
 import { useEditCellOptions, type EditOption } from "@/hooks/use-edit-cell-options";
 import { useToast } from "@/hooks/use-toast";
-import type { BingoCellWithProof } from "@/lib/db/types";
+import type { BingoCellWithThread } from "@/lib/db/types";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "../ui/input";
@@ -9,7 +9,7 @@ import { EditOptionRow } from "./edit-option-row";
 
 interface EditCellDialogProps {
   cellId: string,
-  existingCells: BingoCellWithProof[],
+  existingCells: BingoCellWithThread[],
   teamId: string,
   currentUserId: string,
   isOpen: boolean,

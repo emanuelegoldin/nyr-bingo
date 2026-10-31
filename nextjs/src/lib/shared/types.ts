@@ -44,14 +44,6 @@ export enum CellState {
   ACCOMPLISHED = 'accomplished'
 }
 
-// Proof status
-// Spec: 07-proof-and-approval.md, AGENTS.md
-export enum ProofStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  DECLINED = 'declined'
-}
-
 // Review thread types
 // Spec: Resolution Review & Proof Workflow
 export enum ThreadStatus {

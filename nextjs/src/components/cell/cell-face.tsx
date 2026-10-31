@@ -1,5 +1,5 @@
-import { BingoCellWithProof } from "@/lib/db/types";
-import { CellSourceType, ProofStatus } from "@/lib/shared/types";
+import { BingoCellWithThread } from "@/lib/db/types";
+import { CellSourceType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
@@ -8,7 +8,7 @@ import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
 import { EmptyCell } from "./empty";
 
 interface CellFaceProps {
-    cell: BingoCellWithProof,
+    cell: BingoCellWithThread,
     editMode: boolean,
     isOwner: boolean,
     canInteract: boolean,
@@ -42,17 +42,8 @@ export const CellFace = ({
         completed: { icon: getCellStateIcon("completed", "h-4 w-4"), color: CELL_STATE_COLORS.completed.bg, text: CELL_STATE_COLORS.completed.text },
         pending_review: { icon: getCellStateIcon("pending_review", "h-4 w-4"), color: CELL_STATE_COLORS.pending_review.bg, text: CELL_STATE_COLORS.pending_review.text },
         accomplished: { icon: getCellStateIcon("accomplished", "h-4 w-4"), color: CELL_STATE_COLORS.accomplished.bg, text: `${CELL_STATE_COLORS.accomplished.text} line-through` },
-        declined: { icon: getCellStateIcon("declined", "h-4 w-4"), color: CELL_STATE_COLORS.declined.bg, text: CELL_STATE_COLORS.declined.text },
     };
-    // Determine visual state based on cell state and proof status
-    let visualState: keyof typeof stateConfig = cell.state;
-    if (cell.proof) {
-        if (cell.proof.status === ProofStatus.PENDING) visualState = 'pending_review';
-        else if (cell.proof.status === ProofStatus.DECLINED) visualState = 'declined';
-        else if (cell.proof.status === ProofStatus.APPROVED) visualState = 'accomplished';
-    }
-
-    const config = stateConfig[visualState] || stateConfig.pending;
+    const config = stateConfig[cell.state];
     // Resolution title for cell display (truncated with CSS ellipsis)
     const displayTitle = cell.resolutionTitle || cell.resolutionText;
 
@@ -79,7 +70,7 @@ export const CellFace = ({
                 {displayTitle}
             </p>
             <div className="absolute top-1 right-1">
-                {visualState !== 'pending' && config.icon}
+                {cell.state !== 'pending' && config.icon}
             </div>
             <Badge variant="outline" className="absolute bottom-1 right-1 text-xs hidden sm:inline-flex">
                 {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId ? (

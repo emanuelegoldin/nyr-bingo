@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api-client";
-import { BingoCellWithProof } from "@/lib/db/types";
+import { BingoCellWithThread } from "@/lib/db/types";
 import { getSourceLabel } from "@/lib/shared/cell-source";
 import { CellSourceType, CellState, ResolutionType, type Subtask } from "@/lib/shared/types";
 import { useState } from "react";
@@ -40,7 +40,7 @@ interface ResolutionDetailResponse {
  * @param cell - The cell that was opened.
  * @returns The detail data, or null if the fetch failed (failures are silent).
  */
-const fetchResolutionDetail = async (cell: BingoCellWithProof): Promise<ResolutionDetailData | null> => {
+const fetchResolutionDetail = async (cell: BingoCellWithThread): Promise<ResolutionDetailData | null> => {
     const resType = cell.resolutionType;
 
     if (resType !== ResolutionType.COMPOUND && resType !== ResolutionType.ITERATIVE) {
@@ -80,8 +80,8 @@ const fetchResolutionDetail = async (cell: BingoCellWithProof): Promise<Resoluti
 };
 
 interface ResolutionCellProps {
-    cell: BingoCellWithProof,
-    existingCells: BingoCellWithProof[],
+    cell: BingoCellWithThread,
+    existingCells: BingoCellWithThread[],
     editMode: boolean,
     teamId: string,
     isOwner: boolean,
@@ -174,7 +174,6 @@ export const ResolutionCell = ({
     const cellContext: CellContext = {
         cellId: cell.id,
         state: cell.state,
-        proofStatus: cell.proof?.status ?? null,
         reviewThreadId: cell.reviewThreadId ?? null,
     };
 

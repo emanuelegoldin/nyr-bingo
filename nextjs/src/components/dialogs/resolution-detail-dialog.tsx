@@ -19,7 +19,7 @@
 import { CELL_STATE_COLORS, getCellStateIcon } from "@/components/cell/cell-state-style";
 import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { Subtask } from "@/lib/shared/types";
-import { CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
+import { CellState, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Check, Eye, History, MessageSquare, Undo2 } from "lucide-react";
 import { Badge } from "../ui/badge";
@@ -62,7 +62,6 @@ export type ResolutionDetailData = BaseData | CompoundData | IterativeData;
 export interface CellContext {
   cellId: string;
   state: CellState;
-  proofStatus?: ProofStatus | null;
   reviewThreadId?: string | null;
 }
 
@@ -94,7 +93,7 @@ interface ResolutionDetailDialogProps {
  * Visual state config mirroring the bingo cell grid styling.
  * Reuses the same colors and icons so the detail dialog feels consistent.
  */
-const STATE_CONFIG: Record<string, {
+const STATE_CONFIG: Record<CellState, {
   label: string;
   icon: React.ReactNode;
   bg: string;
@@ -104,7 +103,6 @@ const STATE_CONFIG: Record<string, {
   [CellState.COMPLETED]:      { label: "Completed",     icon: getCellStateIcon("completed", "h-3.5 w-3.5"),      ...CELL_STATE_COLORS.completed },
   [CellState.PENDING_REVIEW]: { label: "Under Review",  icon: getCellStateIcon("pending_review", "h-3.5 w-3.5"), ...CELL_STATE_COLORS.pending_review },
   [CellState.ACCOMPLISHED]:   { label: "Accomplished",  icon: getCellStateIcon("accomplished", "h-3.5 w-3.5"),   ...CELL_STATE_COLORS.accomplished },
-  declined:                   { label: "Declined",      icon: getCellStateIcon("declined", "h-3.5 w-3.5"),       ...CELL_STATE_COLORS.declined },
 };
 
 /**
@@ -127,12 +125,7 @@ export const ResolutionDetailDialog = ({
 }: ResolutionDetailDialogProps) => {
   const isAutomatic = data.type === ResolutionType.COMPOUND || data.type === ResolutionType.ITERATIVE;
 
-  // Determine the effective visual state (proof status overrides cell state badge)
-  let effectiveStateKey: string = cell.state;
-  if (cell.proofStatus === ProofStatus.PENDING) effectiveStateKey = CellState.PENDING_REVIEW;
-  else if (cell.proofStatus === ProofStatus.APPROVED) effectiveStateKey = CellState.ACCOMPLISHED;
-  else if (cell.proofStatus === ProofStatus.DECLINED) effectiveStateKey = 'declined';
-  const effectiveConfig = STATE_CONFIG[effectiveStateKey] ?? STATE_CONFIG[CellState.PENDING];
+  const stateConfig = STATE_CONFIG[cell.state];
 
   return (
     <CellDialog
@@ -146,11 +139,11 @@ export const ResolutionDetailDialog = ({
         <div className="flex items-center gap-2 flex-wrap">
           <span className={cn(
             "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium",
-            effectiveConfig.bg,
-            effectiveConfig.text,
+            stateConfig.bg,
+            stateConfig.text,
           )}>
-            {effectiveConfig.icon}
-            {effectiveConfig.label}
+            {stateConfig.icon}
+            {stateConfig.label}
           </span>
           <Badge variant="outline">{RESOLUTION_TYPE_LABELS[data.type] ?? data.type}</Badge>
           {sourceLabel && (
@@ -216,7 +209,7 @@ export const ResolutionDetailDialog = ({
           )}
 
           {/* Any + pending_review → View Thread */}
-          {(cell.state === CellState.PENDING_REVIEW || cell.proofStatus === ProofStatus.PENDING) && onViewThread && (
+          {cell.state === CellState.PENDING_REVIEW && onViewThread && (
             <Button variant="outline" onClick={() => { setIsOpen(false); onViewThread(); }}>
               <MessageSquare className="h-4 w-4 mr-2" /> View Thread
             </Button>

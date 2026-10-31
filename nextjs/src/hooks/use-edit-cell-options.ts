@@ -1,7 +1,7 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
-import type { BingoCellWithProof } from "@/lib/db/types";
+import type { BingoCellWithThread } from "@/lib/db/types";
 import { CellSourceType, ResolutionType } from "@/lib/shared/types";
 import { useEffect, useState } from "react";
 
@@ -36,7 +36,7 @@ interface TeamResolutionItem {
 
 interface UseEditCellOptionsParams {
   cellId: string;
-  existingCells: BingoCellWithProof[];
+  existingCells: BingoCellWithThread[];
   teamId: string;
   currentUserId: string;
   /** Options are (re)loaded whenever the dialog's open state or any other parameter changes. */
@@ -68,8 +68,8 @@ export const useEditCellOptions = ({
     const loadEditOptions = async () => {
       const occupiedKeys = new Set<string>(
         (Array.isArray(existingCells) ? existingCells : [])
-          .filter((c: BingoCellWithProof) => !c.isJoker && !c.isEmpty)
-          .map((c: BingoCellWithProof) => {
+          .filter((c: BingoCellWithThread) => !c.isJoker && !c.isEmpty)
+          .map((c: BingoCellWithThread) => {
             if (c.sourceType === CellSourceType.PERSONAL && c.resolutionId) return `personal:${c.resolutionId}`;
             if (c.sourceType === CellSourceType.MEMBER_PROVIDED && c.resolutionId) return `member_provided:${c.resolutionId}`;
             // "team" and "empty" cells do not have a stable resolution id reference.

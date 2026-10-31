@@ -3,44 +3,21 @@
  * Spec Reference: 05-bingo-card-generation.md, 06-bingo-gameplay.md
  */
 
-import { CellSourceType, CellState, JOKER_POSITION, ProofStatus, ResolutionType } from '../shared/types';
+import { CellSourceType, CellState, JOKER_POSITION, ResolutionType } from '../shared/types';
 import { CardRow, CellRow, rowToCard, rowToCell, SELECT_CELL_WITH_RESOLVED_TEXT } from './bingo-card-rows';
 import { query } from './connection';
 import { isTeamMember } from './team-repository';
 import {
   BingoCardWithCells,
-  BingoCellWithProof,
-  CellProof,
+  BingoCellWithThread,
 } from './types';
-
-interface ProofRow {
-  id: string;
-  cell_id: string;
-  file_url: string | null;
-  comment: string | null;
-  status: ProofStatus;
-  created_at: Date;
-  updated_at: Date;
-}
-
-function rowToProof(row: ProofRow): CellProof {
-  return {
-    id: row.id,
-    cellId: row.cell_id,
-    fileUrl: row.file_url,
-    comment: row.comment,
-    status: row.status,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
 
 /**
  * Build the implicit Joker cell, which is not stored in the DB.
  * @param cardId The card the Joker belongs to
  * @returns The cell to show at the center of the grid
  */
-function makeJokerCell(cardId: string): BingoCellWithProof {
+function makeJokerCell(cardId: string): BingoCellWithThread {
   return {
     id: `joker:${cardId}`,
     cardId,
@@ -56,7 +33,6 @@ function makeJokerCell(cardId: string): BingoCellWithProof {
     state: CellState.PENDING,
     createdAt: new Date(),
     updatedAt: new Date(),
-    proof: null,
     reviewThreadId: null,
   };
 }
@@ -76,7 +52,7 @@ export async function getBingoCard(
   if (cardRows.length === 0) return null;
 
   const card = rowToCard(cardRows[0]);
-  const cells = await getCellsWithProofs(card.id);
+  const cells = await getCellsWithThreads(card.id);
 
   return {
     ...card,
@@ -85,9 +61,9 @@ export async function getBingoCard(
 }
 
 /**
- * Get cells with proofs for a card
+ * Get a card's cells with their open review thread
  */
-async function getCellsWithProofs(cardId: string): Promise<BingoCellWithProof[]> {
+async function getCellsWithThreads(cardId: string): Promise<BingoCellWithThread[]> {
   const cellRows = await query<CellRow[]>(
     `${SELECT_CELL_WITH_RESOLVED_TEXT}
      WHERE c.card_id = ?
@@ -95,16 +71,10 @@ async function getCellsWithProofs(cardId: string): Promise<BingoCellWithProof[]>
     [cardId]
   );
 
-  const cells: BingoCellWithProof[] = [];
+  const cells: BingoCellWithThread[] = [];
 
   for (const row of cellRows) {
     const cell = rowToCell(row);
-
-    // Get latest proof if any
-    const proofRows = await query<ProofRow[]>(
-      `SELECT * FROM cell_proofs WHERE cell_id = ? ORDER BY created_at DESC LIMIT 1`,
-      [cell.id]
-    );
 
     const threadRows = await query<{ id: string }[]>(
       `SELECT id FROM review_threads WHERE cell_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1`,
@@ -113,7 +83,6 @@ async function getCellsWithProofs(cardId: string): Promise<BingoCellWithProof[]>
 
     cells.push({
       ...cell,
-      proof: proofRows.length > 0 ? rowToProof(proofRows[0]) : null,
       reviewThreadId: threadRows.length > 0 ? threadRows[0].id : null,
     });
   }
@@ -152,7 +121,7 @@ export async function getTeamBingoCards(
 
   for (const row of cardRows) {
     const card = rowToCard(row);
-    const cells = await getCellsWithProofs(card.id);
+    const cells = await getCellsWithThreads(card.id);
     cards.push({ ...card, cells });
   }
 

@@ -84,7 +84,7 @@ Out of scope (not implemented):
 - **TeamLeaderboard** (see spec 12)
 - **ResolutionHistoryEntry** (see spec 13)
 
-The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in the schema but belong to removed flows. No code writes to them. `cell_proofs` is still read when loading a card, so `proof` on a cell is always `null` in practice.
+The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in the schema but belong to removed flows. No code reads or writes them.
 
 ## Security & Permissions (high level)
 - Authentication is required for any user-specific operation.
