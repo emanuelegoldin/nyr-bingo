@@ -95,12 +95,13 @@ User clicks Accept/Deny
 POST /api/threads/[threadId]/vote  ──▶  submitVote() (DB)
         │
         ▼
+   The API signals the thread room, and on closure the card room (spec 11)
+        │
    onVoteSubmitted()
         │
-        ├──▶ WS thread-refresh  ──▶  other thread viewers refetch
         ├──▶ refetchThread()    ──▶  GET /api/threads/[threadId]
         │                            VoteBar re-renders with updated votes[]
-        └──▶ onRefresh()        ──▶  card reload + WS card-refresh
+        └──▶ onRefresh()        ──▶  card reload
 ```
 
 Votes are **persisted server-side** in the `review_votes` table (unique

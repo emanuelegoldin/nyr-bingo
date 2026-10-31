@@ -95,26 +95,10 @@ A cell's `reviewThreadId` is only set while a thread is open. Once a thread clos
 Thread changes are signaled in real time to other users viewing the same review thread.
 
 - **Persistence remains HTTP-first**: the API writes to MariaDB and stays the source of truth.
-- **Realtime fanout is WebSocket-based**: after a successful change the client sends a minimal WS message so other viewers refetch.
-- The review dialog opens its own connection while it is open.
-
-#### Room Model
-
-- Each review thread is a **room**. The room id is the `threadId`.
-
-#### WebSocket URL
-
-- The client connects to `ws(s)://<current-host>/ws`.
-
-#### WebSocket Messages
-
-- `join-thread` (client → server): joins the socket to a thread room.
-  - Body: `{ threadId: string }`
-- `thread-refresh` (client → server): indicates that the thread changed.
-  - Body: `{ threadId: string }`
-- `refresh-thread` (server → other sockets in the room): carries no thread data.
-
-Clients send `thread-refresh` after posting a message, uploading or deleting a file, voting and closing the thread. On receipt, clients refetch `GET /api/threads/[threadId]`.
+- **Realtime fanout is WebSocket-based**: after a successful change the API signals the thread room, so viewers refetch.
+- The review dialog joins the thread room on the page's socket while it is open. Spec 11 defines the rooms and how to join them.
+- Viewers refetch `GET /api/threads/[threadId]` on `refresh-thread`.
+- Message, file and open-vote changes signal only the thread room. A thread that closes also signals the team's card room.
 
 ---
 

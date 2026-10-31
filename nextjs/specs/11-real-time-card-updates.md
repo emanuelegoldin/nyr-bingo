@@ -37,6 +37,8 @@ It details the mechanism behind **08 — Visibility and Updates**.
 - `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'resolution', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
 - It refuses to start without `WS_SHARED_SECRET`.
 - It joins a socket to a room only with a valid signed token.
+- It rejects browser connections from another site's page (the `Origin` hostname must match the `Host`).
+- Limits per socket: 4 KB per message, 30 messages per 10 seconds (the socket is closed with code `1008` beyond that), and 256 rooms.
 - Clients only join rooms and listen. A signal reaches every socket in the room, including the one that made the change. Rooms are removed when their last socket leaves.
 
 ### WebSocket URL
@@ -186,5 +188,5 @@ Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on
 - **06 — Bingo Gameplay**: defines cell state transitions.
 - **07 — Proof and Approval**: defines thread-level real-time messaging (thread rooms).
 - **08 — Visibility and Updates**: high-level behavior of updates.
-- **09 — Bingo Card Editing**: edit operations broadcast via the same mechanism.
+- **09 — Bingo Card Editing**: edit operations signal the same rooms.
 - **13 — Resolution History and Progress**: uses resolution rooms.

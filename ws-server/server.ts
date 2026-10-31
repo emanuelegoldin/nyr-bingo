@@ -11,13 +11,23 @@ if (!WS_SHARED_SECRET) {
   process.exit(1);
 }
 const MAX_NOTIFY_BODY_BYTES = 64 * 1024;
+const MAX_CLIENT_MESSAGE_BYTES = 4 * 1024;
+const MAX_ROOMS_PER_SOCKET = 256;
+const MAX_MESSAGES_PER_WINDOW = 30;
+const RATE_WINDOW_MS = 10 * 1000;
+const CLOSE_POLICY_VIOLATION = 1008;
 
 const httpServer = createServer(handleHttpRequest);
-const wss = new WebSocketServer({ server: httpServer });
+const wss = new WebSocketServer({
+  server: httpServer,
+  maxPayload: MAX_CLIENT_MESSAGE_BYTES,
+  verifyClient: ({ origin, req }: { origin?: string; req: IncomingMessage }) => isSameOrigin(origin, req.headers.host),
+});
 httpServer.listen(WS_PORT);
 
 const rooms = new Map<string, Set<WebSocket>>();
 const socketRooms = new WeakMap<WebSocket, Set<string>>();
+const socketRates = new WeakMap<WebSocket, { windowStart: number; count: number }>();
 
 wss.on('connection', function connection(ws) {
   console.log('New client connected');
@@ -36,6 +46,11 @@ wss.on('connection', function connection(ws) {
   });
 
   ws.on('message', function message(data) {
+    if (isOverRateLimit(ws)) {
+      ws.close(CLOSE_POLICY_VIOLATION);
+      return;
+    }
+
     let message: unknown;
     try {
       message = JSON.parse(data.toString());
@@ -160,7 +175,42 @@ function verifyRoomToken(token: unknown): RoomNotification | null {
   return Date.now() < exp ? { type, id } : null;
 }
 
+/**
+ * Reject pages of other sites. A request without an Origin is not from a browser page,
+ * and still needs a signed token to join anything.
+ * @param origin - The Origin header
+ * @param host - The Host header
+ * @returns True if the connection is allowed
+ */
+function isSameOrigin(origin: string | undefined, host: string | undefined): boolean {
+  if (!origin) return true;
+  try {
+    // Hostnames only: Nginx forwards a Host without the port
+    return new URL(origin).hostname === host?.split(':')[0];
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Count a message against the socket's rate window.
+ * @param ws - The socket that sent the message
+ * @returns True if the socket has sent too many messages
+ */
+function isOverRateLimit(ws: WebSocket): boolean {
+  const now = Date.now();
+  const rate = socketRates.get(ws);
+  if (!rate || now - rate.windowStart > RATE_WINDOW_MS) {
+    socketRates.set(ws, { windowStart: now, count: 1 });
+    return false;
+  }
+  rate.count += 1;
+  return rate.count > MAX_MESSAGES_PER_WINDOW;
+}
+
 function joinRoom(roomId: string, ws: WebSocket) {
+  if ((socketRooms.get(ws)?.size ?? 0) >= MAX_ROOMS_PER_SOCKET) return;
+
   let room = rooms.get(roomId);
   if (!room) {
     room = new Set<WebSocket>();
