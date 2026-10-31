@@ -8,7 +8,6 @@
  * - Client component only handles interactive mutations and local UI state
  */
 
-import type { ResolutionFormData } from '@/components/dialogs/resolution-create-edit-dialog';
 import { requireUser } from '@/lib/auth';
 import {
   getTeamBingoCards,
@@ -21,12 +20,14 @@ import {
   type Resolution,
   type TeamWithMembers,
 } from '@/lib/db';
+import { resolutionToFormData } from '@/lib/shared/resolution-form';
+import type { ResolutionFormData } from '@/lib/shared/types';
 import { Loader2 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import type { LeaderboardEntry } from './leaderboard-tab';
 import TeamDetailPageClient from './team-detail-page-client';
-import type { Team, TeamProvidedResolution } from './types';
+import type { Team } from './types';
 
 interface TeamDetailPageProps {
   params: Promise<{ teamId: string }>;
@@ -71,34 +72,12 @@ function mapTeam(team: TeamWithMembers): Team {
   };
 }
 
-function mapTeamProvidedResolutions(resolutions: Resolution[]): TeamProvidedResolution[] {
-  return resolutions.map((resolution) => ({
-    id: resolution.id,
-    ownerUserId: resolution.ownerUserId,
-    teamId: resolution.teamId,
-    toUserId: resolution.toUserId,
-    title: resolution.title,
-    description: resolution.description,
-    resolutionType: resolution.resolutionType,
-    subtasks: resolution.subtasks,
-    numberOfRepetition: resolution.numberOfRepetition,
-    completedTimes: resolution.completedTimes,
-  }));
-}
-
 function mapGoalToFormData(goal: Resolution | null): ResolutionFormData | null {
   if (!goal) {
     return null;
   }
 
-  return {
-    id: goal.id,
-    type: goal.resolutionType as ResolutionFormData['type'],
-    title: goal.title,
-    text: goal.description ?? '',
-    subtasks: goal.subtasks ?? undefined,
-    numberOfRepetition: goal.numberOfRepetition ?? undefined,
-  };
+  return resolutionToFormData(goal);
 }
 
 async function TeamDetailContent({ teamId }: { teamId: string }) {
@@ -129,7 +108,7 @@ async function TeamDetailContent({ teamId }: { teamId: string }) {
   const initialCards = cardsResult.status === 'fulfilled' ? cardsResult.value : [];
   const initialTeamGoal = goalResult.status === 'fulfilled' ? mapGoalToFormData(goalResult.value) : null;
   const initialExistingResolutions = resolutionsResult.status === 'fulfilled'
-    ? mapTeamProvidedResolutions(resolutionsResult.value)
+    ? resolutionsResult.value
     : [];
   const initialLeaderboardEntries: LeaderboardEntry[] =
     leaderboardResult.status === 'fulfilled' ? leaderboardResult.value : [];

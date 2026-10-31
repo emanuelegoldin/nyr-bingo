@@ -8,10 +8,7 @@
  * Creation and editing are handled via the ResolutionCreateEditDialog.
  */
 
-import {
-  ResolutionCreateEditDialog,
-  type ResolutionFormData,
-} from "@/components/dialogs/resolution-create-edit-dialog";
+import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
 import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,24 +23,12 @@ import { Separator } from "@/components/ui/separator";
 import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
-import type { ResolutionTypeValue, Subtask } from "@/lib/shared/types";
+import { unifiedToFormData } from "@/lib/shared/resolution-form";
+import type { ResolutionFormData, ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
 import { History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
-
-export interface UnifiedResolution {
-  id: string;
-  type: ResolutionTypeValue;
-  ownerUserId: string;
-  title: string;
-  text: string;
-  subtasks?: Subtask[];
-  numberOfRepetition?: number;
-  completedTimes?: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 /** Human-readable labels for resolution types. */
 const TYPE_LABELS: Record<ResolutionTypeValue, string> = {
@@ -102,14 +87,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
 
   /** Open dialog in edit mode with existing data. */
   const handleEdit = (res: UnifiedResolution) => {
-    setEditingResolution({
-      id: res.id,
-      type: res.type,
-      title: res.title,
-      text: res.text,
-      subtasks: res.subtasks,
-      numberOfRepetition: res.numberOfRepetition,
-    });
+    setEditingResolution(unifiedToFormData(res));
     setDialogOpen(true);
   };
 

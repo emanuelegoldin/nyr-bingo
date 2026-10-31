@@ -91,3 +91,30 @@ export interface Subtask {
   description: string;
   completed: boolean;
 }
+
+/**
+ * Resolution in the unified list shape returned by GET /api/resolutions/all.
+ * Dates are `Date` on the server and ISO strings once serialized to JSON.
+ */
+export interface UnifiedResolution {
+  id: string;
+  type: ResolutionTypeValue;
+  ownerUserId: string;
+  title: string;
+  text: string;
+  subtasks?: Subtask[];
+  numberOfRepetition?: number;
+  completedTimes?: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+/** Shape of a resolution passed to the create/edit dialog (matches the unified API response). */
+export interface ResolutionFormData {
+  id?: string;
+  type: ResolutionTypeValue;
+  title: string;
+  text: string;
+  subtasks?: Subtask[];
+  numberOfRepetition?: number;
+}

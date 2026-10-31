@@ -16,33 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
-
-interface TeamMember {
-  membership: {
-    id: string;
-    teamId: string;
-    userId: string;
-    role: 'leader' | 'member';
-    joinedAt: string;
-  };
-  user: {
-    id: string;
-    userId: string;
-    username: string;
-    displayName: string | null;
-    bio: string | null;
-    avatarUrl: string | null;
-  };
-}
-
-interface Team {
-  id: string;
-  name: string;
-  leaderUserId: string;
-  teamResolutionText: string | null;
-  status: 'forming' | 'started';
-  members: TeamMember[];
-}
+import type { Team } from './[teamId]/types';
 
 export default function TeamsPage() {
   const { setTitle } = useAppContext();

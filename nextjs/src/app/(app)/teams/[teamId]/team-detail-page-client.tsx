@@ -10,10 +10,7 @@
  *   3. Leaderboard — ranked table of first-bingo times
  */
 
-import {
-  ResolutionCreateEditDialog,
-  type ResolutionFormData,
-} from "@/components/dialogs/resolution-create-edit-dialog";
+import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +36,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from 'react';
 
 import { BingoCardWithCells } from "@/lib/db/types";
-import type { ResolutionTypeValue } from "@/lib/shared/types";
+import { resolutionToFormData, unifiedToFormData } from "@/lib/shared/resolution-form";
+import type { ResolutionFormData, ResolutionTypeValue } from "@/lib/shared/types";
 import { CardsTab } from "./cards-tab";
 import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
 import { MembersTab } from "./members-tab";
@@ -112,14 +110,7 @@ export default function TeamDetailPageClient({
         const goalRes = await fetch(`/api/teams/${teamId}/goal`);
         const goalData = await goalRes.json();
         if (goalRes.ok && goalData.goal) {
-          setTeamGoal({
-            id: goalData.goal.id,
-            type: goalData.goal.type,
-            title: goalData.goal.title,
-            text: goalData.goal.text ?? '',
-            subtasks: goalData.goal.subtasks,
-            numberOfRepetition: goalData.goal.numberOfRepetition,
-          });
+          setTeamGoal(unifiedToFormData(goalData.goal));
         } else {
           setTeamGoal(null);
         }
@@ -161,14 +152,7 @@ export default function TeamDetailPageClient({
     setEditingMemberUserId(memberId);
     setEditingMemberName(memberName);
     if (existing) {
-      setEditingMemberData({
-        id: existing.id,
-        type: existing.resolutionType as ResolutionFormData['type'],
-        title: existing.title,
-        text: existing.description ?? '',
-        subtasks: existing.subtasks ?? undefined,
-        numberOfRepetition: existing.numberOfRepetition ?? undefined,
-      });
+      setEditingMemberData(resolutionToFormData(existing));
     } else {
       setEditingMemberData(undefined);
     }

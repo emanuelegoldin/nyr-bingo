@@ -1,5 +1,6 @@
 import { useToast } from "@/hooks/use-toast";
-import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
+import type { BingoCellWithProof } from "@/lib/db/types";
+import { CellSourceType, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -7,29 +8,9 @@ import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { CellDialog } from "./cell-dialog";
 
-interface BingoCell {
-  id: string;
-  cardId: string;
-  position: number;
-  resolutionId?: string | null;
-  resolutionType: ResolutionType;
-  resolutionText: string;
-  resolutionTitle: string;
-  isJoker: boolean;
-  isEmpty: boolean;
-  sourceType: CellSourceType;
-  sourceUserId: string | null;
-  state: CellState;
-  reviewThreadId?: string | null;
-  proof: {
-    id: string;
-    status: ProofStatus;
-  } | null;
-}
-
 interface EditCellDialogProps {
   cellId: string,
-  existingCells: BingoCell[],
+  existingCells: BingoCellWithProof[],
   teamId: string,
   currentUserId: string,
   isOpen: boolean,
@@ -68,8 +49,8 @@ export const EditCellDialog = ({
     const loadEditOptions = async () => {
       const occupiedKeys = new Set<string>(
         (Array.isArray(existingCells) ? existingCells : [])
-          .filter((c: BingoCell) => !c.isJoker && !c.isEmpty)
-          .map((c: BingoCell) => {
+          .filter((c: BingoCellWithProof) => !c.isJoker && !c.isEmpty)
+          .map((c: BingoCellWithProof) => {
             if (c.sourceType === CellSourceType.PERSONAL && c.resolutionId) return `personal:${c.resolutionId}`;
             if (c.sourceType === CellSourceType.MEMBER_PROVIDED && c.resolutionId) return `member_provided:${c.resolutionId}`;
             // "team" and "empty" cells do not have a stable resolution id reference.

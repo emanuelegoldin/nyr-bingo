@@ -9,10 +9,10 @@
 
 import { requireUser } from "@/lib/auth";
 import { getResolutionsByUser, type Resolution } from "@/lib/db";
-import type { ResolutionTypeValue } from "@/lib/shared/types";
+import type { ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
 import { Suspense } from "react";
-import ResolutionsPageClient, { type UnifiedResolution } from "./resolutions-page-client";
+import ResolutionsPageClient from "./resolutions-page-client";
 
 function toIsoDateString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : value;

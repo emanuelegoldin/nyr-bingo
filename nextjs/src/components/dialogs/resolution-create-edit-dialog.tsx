@@ -14,7 +14,7 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
-import type { ResolutionTypeValue, Subtask } from "@/lib/shared/types";
+import type { ResolutionFormData, ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "../ui/button";
@@ -38,23 +38,13 @@ import { Textarea } from "../ui/textarea";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
-/** Shape of a resolution passed in for editing (matches the unified API response). */
-export interface ResolutionFormData {
-  id?: string;
-  type: ResolutionTypeValue;
-  title: string;
-  text: string;
-  subtasks?: Subtask[];
-  numberOfRepetition?: number;
-}
-
 interface ResolutionCreateEditDialogProps {
   /** If provided, the dialog is in edit mode with pre-filled data. */
   initialData?: ResolutionFormData;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  /** Called after a successful save with the saved resolution data. */
-  onSaved?: (resolution: ResolutionFormData & { id: string }) => void;
+  /** Called after a successful save. */
+  onSaved?: () => void;
   /** Resolution scope. Defaults to 'personal'. */
   scope?: "personal" | "team" | "member_provided";
   /** Required when scope is 'team' or 'member_provided'. */
@@ -165,14 +155,7 @@ export const ResolutionCreateEditDialog = ({
         return;
       }
 
-      onSaved?.({
-        id: data.resolution.id,
-        type: data.resolution.type,
-        title: data.resolution.title,
-        text: data.resolution.text ?? "",
-        subtasks: data.resolution.subtasks,
-        numberOfRepetition: data.resolution.numberOfRepetition,
-      });
+      onSaved?.();
 
       setIsOpen(false);
       toast({
