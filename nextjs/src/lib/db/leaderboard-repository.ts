@@ -10,9 +10,9 @@
  * undoCompletion, vote resolution) and bulk-initialized when a game starts.
  */
 
-import { CellState } from '../shared/types';
+import { BINGO_LINES } from '../shared/bingo-lines';
+import { CellState, JOKER_POSITION } from '../shared/types';
 import { query } from './connection';
-import type { TeamLeaderboardEntry } from './types';
 
 // ── Row types ────────────────────────────────────────────────────
 
@@ -29,21 +29,7 @@ interface LeaderboardRowWithUser extends LeaderboardRow {
   display_name: string | null;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────
-
-function rowToEntry(row: LeaderboardRow): TeamLeaderboardEntry {
-  return {
-    userId: row.user_id,
-    teamId: row.team_id,
-    firstBingoAt: row.first_bingo_at,
-    completedTasks: row.completed_tasks,
-    updatedAt: row.updated_at,
-  };
-}
-
 // ── Bingo detection (server-side, from raw DB rows) ─────────────
-
-const GRID_SIZE = 5;
 
 /** States that count as "done" for bingo-line purposes. */
 const DONE_STATES: ReadonlySet<string> = new Set([
@@ -58,28 +44,9 @@ interface CellForBingo {
 }
 
 function isCellDone(cell: CellForBingo): boolean {
-  // Joker is at centre position (position 12 on a 5×5 grid)
-  // The schema doesn't have is_joker anymore – joker is always at centre.
-  const isJoker = cell.position === Math.floor((GRID_SIZE * GRID_SIZE) / 2);
-  if (isJoker) return true;
   if (cell.is_empty) return false;
   return DONE_STATES.has(cell.state);
 }
-
-function buildLines(): number[][] {
-  const lines: number[][] = [];
-  for (let row = 0; row < GRID_SIZE; row++) {
-    lines.push(Array.from({ length: GRID_SIZE }, (_, col) => row * GRID_SIZE + col));
-  }
-  for (let col = 0; col < GRID_SIZE; col++) {
-    lines.push(Array.from({ length: GRID_SIZE }, (_, row) => row * GRID_SIZE + col));
-  }
-  lines.push(Array.from({ length: GRID_SIZE }, (_, i) => i * GRID_SIZE + i));
-  lines.push(Array.from({ length: GRID_SIZE }, (_, i) => i * GRID_SIZE + (GRID_SIZE - 1 - i)));
-  return lines;
-}
-
-const ALL_LINES = buildLines();
 
 /**
  * Given a user's cells, compute the datetime of their first bingo line.
@@ -93,19 +60,20 @@ function computeFirstBingoAt(cells: Array<CellForBingo & { updated_at: Date | nu
 
   let earliest: Date | null = null;
 
-  for (const line of ALL_LINES) {
+  for (const line of BINGO_LINES) {
     let lineComplete = true;
     let latestUpdate: Date | null = null;
 
     for (const pos of line) {
+      // The joker is implicit: always done, not stored, and adds no timestamp.
+      if (pos === JOKER_POSITION) continue;
+
       const cell = byPosition.get(pos);
       if (!cell || !isCellDone(cell)) {
         lineComplete = false;
         break;
       }
-      // Skip joker for timestamp — it's always done
-      const isJoker = pos === Math.floor((GRID_SIZE * GRID_SIZE) / 2);
-      if (!isJoker && cell.updated_at) {
+      if (cell.updated_at) {
         if (!latestUpdate || cell.updated_at > latestUpdate) {
           latestUpdate = cell.updated_at;
         }
@@ -135,13 +103,13 @@ export interface LeaderboardEntryWithUser {
 
 /**
  * Get the full leaderboard for a team, sorted by first-bingo-at.
- * Uses a JOIN on users for username retrieval.
+ * Uses a JOIN on users for username retrieval. Private display names are omitted.
  */
 export async function getTeamLeaderboard(teamId: string): Promise<LeaderboardEntryWithUser[]> {
   const rows = await query<LeaderboardRowWithUser[]>(
     `SELECT tl.user_id, tl.team_id, tl.first_bingo_at, tl.completed_tasks, tl.updated_at,
             u.username,
-            up.display_name
+            CASE WHEN up.display_name_public THEN up.display_name END AS display_name
      FROM team_leaderboard tl
      JOIN users u ON tl.user_id = u.id
      LEFT JOIN user_profiles up ON tl.user_id = up.user_id

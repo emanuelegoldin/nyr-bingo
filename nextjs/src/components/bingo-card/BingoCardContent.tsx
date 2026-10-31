@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api-client";
 import { BingoCardWithCells } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
@@ -14,9 +15,7 @@ export function BingoCardContent(
     editMode,
     teamId,
     currentUserId,
-    triggerRefresh,
-    fetchInput,
-    broadcastRefresh
+    fetchInput
   }
     :
     {
@@ -25,9 +24,7 @@ export function BingoCardContent(
       editMode: boolean,
       teamId: string,
       currentUserId: string,
-      triggerRefresh?: () => boolean,
-      fetchInput?: string | URL | Request,
-      broadcastRefresh?: () => void         // Pass through useContext for Team page to broadcast changes with websocket
+      fetchInput?: string | URL | Request
     }
 ) {
   // Hooks
@@ -63,56 +60,40 @@ export function BingoCardContent(
         variant: 'destructive',
       });
     }
-    if (broadcastRefresh) {
-      broadcastRefresh();
-    }
-  }, [currentUserId, teamId, toast, fetchUrl, broadcastRefresh]);
+  }, [currentUserId, teamId, toast, fetchUrl]);
 
   const handleCellUpdate = useCallback(
     async (cellId: string, newState: 'pending' | 'completed') => {
-      try {
-        const response =
-          newState === 'pending'
-            ? await fetch(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
-            : await fetch(`/api/cells/${cellId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ state: newState }),
-            });
+      const result =
+        newState === 'pending'
+          ? await apiFetch<unknown>(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
+          : await apiFetch<unknown>(`/api/cells/${cellId}`, {
+            method: 'PUT',
+            json: { state: newState },
+          });
 
-        if (response.ok) {
-          await reloadCard();
-          return;
-        }
+      if (result.ok) {
+        await reloadCard();
+        return;
+      }
 
-        const data = await response.json();
-        toast({
-          title: 'Error',
-          description: data.error || 'Failed to update cell',
-          variant: 'destructive',
-        });
-      } catch {
-        toast({
-          title: 'Error',
-          description: 'An error occurred',
-          variant: 'destructive',
-        });
-      }
-      if (broadcastRefresh) {
-        broadcastRefresh();
-      }
+      toast({
+        title: 'Error',
+        description: result.status === 0 ? 'An error occurred' : result.error || 'Failed to update cell',
+        variant: 'destructive',
+      });
+      // The card may be stale, which is a common reason for the failure
+      await reloadCard();
     },
-    [reloadCard, toast, broadcastRefresh]
+    [reloadCard, toast]
   );
 
   // Effects
-  // triggerRefresh is passed down from parent components to define conditions under which
-  // reloadCard should be called (if triggerRefresh is defined)
+  // A server refresh brings new props; every mutation signals one, so the last refresh
+  // always carries the latest card.
   useEffect(() => {
-    if (triggerRefresh && triggerRefresh()) {
-      reloadCard();
-    }
-  }, [triggerRefresh, reloadCard]);
+    setCard(initialCard);
+  }, [initialCard]);
 
   return (
     <CardContent>

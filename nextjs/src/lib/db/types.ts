@@ -3,10 +3,10 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { CellSourceType, CellState, DuplicateReportStatus, InvitationStatus, ProofStatus, ResolutionScope, ResolutionType, ReviewDecision, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
+import { CellSourceType, CellState, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
 
 // Re-export shared enums/types so consumers can import from db/types
-export { CellSourceType, CellState, DuplicateReportStatus, InvitationStatus, ProofStatus, ResolutionScope, ResolutionType, ReviewDecision, TeamRole, TeamStatus, ThreadStatus, VoteType };
+export { CellSourceType, CellState, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, TeamStatus, ThreadStatus, VoteType };
 export type { Subtask };
 
 // User entity
@@ -170,41 +170,6 @@ export interface BingoCell {
   updatedAt: Date;
 }
 
-// Cell proof
-// Spec: 07-proof-and-approval.md
-export interface CellProof {
-  id: string;
-  cellId: string;
-  fileUrl: string | null;
-  comment: string | null;
-  status: ProofStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Proof review
-// Spec: 07-proof-and-approval.md
-export interface ProofReview {
-  id: string;
-  proofId: string;
-  reviewerUserId: string;
-  decision: ReviewDecision;
-  comment: string | null;
-  createdAt: Date;
-}
-
-// Duplicate report
-// Spec: 05-bingo-card-generation.md
-export interface DuplicateReport {
-  id: string;
-  cellId: string;
-  reporterUserId: string;
-  replacementText: string | null;
-  status: DuplicateReportStatus;
-  createdAt: Date;
-  resolvedAt: Date | null;
-}
-
 // Extended types for API responses
 
 export interface TeamWithMembers extends Team {
@@ -217,11 +182,10 @@ export interface TeamMemberWithProfile {
 }
 
 export interface BingoCardWithCells extends BingoCard {
-  cells: BingoCellWithProof[];
+  cells: BingoCellWithThread[];
 }
 
-export interface BingoCellWithProof extends BingoCell {
-  proof: CellProof | null;
+export interface BingoCellWithThread extends BingoCell {
   reviewThreadId?: string | null;
 }
 
@@ -257,16 +221,6 @@ export interface ReviewVote {
   voterUserId: string;
   vote: VoteType;
   createdAt: Date;
-  updatedAt: Date;
-}
-
-// Team leaderboard entry (persisted)
-// Spec: 12-team-tabs.md
-export interface TeamLeaderboardEntry {
-  userId: string;
-  teamId: string;
-  firstBingoAt: Date | null;
-  completedTasks: number;
   updatedAt: Date;
 }
 

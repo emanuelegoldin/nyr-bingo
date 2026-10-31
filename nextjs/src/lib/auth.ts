@@ -7,42 +7,39 @@
 import { findSessionByToken, findUserById } from '@/lib/db';
 import type { User } from '@/lib/db/types';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 /**
  * Get the current authenticated user from the session
  * Spec: 01-authentication.md - Authentication required for any user-specific operations
+ * Database errors propagate, so an outage is not mistaken for being logged out.
  */
 export async function getCurrentUser(): Promise<User | null> {
-  try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('session_token')?.value;
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('session_token')?.value;
 
-    if (!sessionToken) {
-      return null;
-    }
-
-    const session = await findSessionByToken(sessionToken);
-    if (!session) {
-      return null;
-    }
-
-    const user = await findUserById(session.userId);
-    return user;
-  } catch (error) {
-    console.error('Error getting current user:', error);
+  if (!sessionToken) {
     return null;
   }
+
+  const session = await findSessionByToken(sessionToken);
+  if (!session) {
+    return null;
+  }
+
+  return findUserById(session.userId);
 }
 
 /**
- * Require authentication - throws if not authenticated
+ * Get the current user for a server page, redirecting to login when there is none
+ * @returns The authenticated user
  */
-export async function requireAuth(): Promise<User> {
-  const user = await getCurrentUser();
-  if (!user) {
-    throw new Error('Authentication required');
+export async function requireUser(): Promise<User> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    redirect('/login');
   }
-  return user;
+  return currentUser;
 }
 
 /**
@@ -51,22 +48,4 @@ export async function requireAuth(): Promise<User> {
  */
 export function isUserVerified(user: User): boolean {
   return user.emailVerifiedAt !== null;
-}
-
-/**
- * Require verified email - returns user if verified, null if not
- * Use this to enforce email verification for certain operations
- * Spec: Email verification required for creating/joining teams and starting games
- */
-export async function requireVerifiedEmail(): Promise<User | null> {
-  const user = await getCurrentUser();
-  if (!user) {
-    return null;
-  }
-  
-  if (!isUserVerified(user)) {
-    return null;
-  }
-  
-  return user;
 }

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -58,37 +59,25 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
   async function onSubmit(data: LoginFormData) {
     setIsLoading(true);
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+    const result = await apiFetch<unknown>('/api/auth/login', {
+      method: 'POST',
+      json: data,
+    });
+
+    if (result.ok) {
+      toast({
+        title: "Success",
+        description: "Logged in successfully!",
       });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Logged in successfully!",
-        });
-        router.push("/dashboard");
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to login",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      router.push("/dashboard");
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred. Please try again.",
+        description: result.status === 0 ? "An error occurred. Please try again." : result.error || "Failed to login",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }
 
   return (
@@ -150,37 +139,25 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
   async function onSubmit(data: RegisterFormData) {
     setIsLoading(true);
 
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+    const result = await apiFetch<unknown>('/api/auth/register', {
+      method: 'POST',
+      json: data,
+    });
+
+    if (result.ok) {
+      toast({
+        title: "Success",
+        description: "Account created! Please check your email to verify your account.",
       });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Account created! Please check your email to verify your account.",
-        });
-        router.push("/login");
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to register",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      router.push("/login");
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred. Please try again.",
+        description: result.status === 0 ? "An error occurred. Please try again." : result.error || "Failed to register",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }
 
   return (

@@ -3,8 +3,10 @@
  * Spec Reference: Resolution Review & Proof Workflow - Review Thread
  */
 
+import { threadErrorStatus } from '@/app/api/threads/error-status';
 import { NextRequest, NextResponse } from 'next/server';
-import { closeThread, getThreadById, User } from '@/lib/db';
+import { notifyThreadClosed } from '@/lib/team-signals';
+import { closeThread, getThreadById } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
@@ -14,7 +16,7 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
   const { threadId } = await params;
   const result = await getThreadById(threadId, currentUser.id);
   if (!result.success) {
-    return errorResponse(result.error!, result.error === 'Thread not found' ? 404 : 403);
+    return errorResponse(result.error!, threadErrorStatus(result.error!));
   }
   return NextResponse.json({ thread: result.thread });
 });
@@ -30,7 +32,8 @@ export const DELETE = withAuth(async (
   const { threadId } = await params;
   const result = await closeThread(threadId, currentUser.id);
   if (!result.success) {
-    return errorResponse(result.error!, result.error === 'Thread not found' ? 404 : 403);
+    return errorResponse(result.error!, threadErrorStatus(result.error!));
   }
+  await notifyThreadClosed(threadId);
   return NextResponse.json({ success: true });
 });

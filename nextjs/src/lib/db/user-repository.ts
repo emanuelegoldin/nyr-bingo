@@ -6,7 +6,7 @@
 import bcrypt from 'bcryptjs';
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { getConnection, query } from './connection';
+import { query, withTransaction } from './connection';
 import type { EmailVerificationToken, PublicUserProfile, Session, User, UserProfile } from './types';
 
 // Row type from database (snake_case)
@@ -107,7 +107,7 @@ function getSaltRounds(): number {
 
 const SALT_ROUNDS = getSaltRounds();
 
-export async function hashPassword(password: string): Promise<string> {
+async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
@@ -160,18 +160,6 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 }
 
 /**
- * Find user by username
- * Spec: 01-authentication.md - Registration (uniqueness check)
- */
-export async function findUserByUsername(username: string): Promise<User | null> {
-  const rows = await query<UserRow[]>(
-    `SELECT * FROM users WHERE username = ?`,
-    [username]
-  );
-  return rows.length > 0 ? rowToUser(rows[0]) : null;
-}
-
-/**
  * Find user by ID
  */
 export async function findUserById(id: string): Promise<User | null> {
@@ -204,13 +192,19 @@ export async function checkUserExists(
 }
 
 /**
- * Create email verification token
+ * Create email verification token, invalidating the user's earlier ones.
+ * Rows are kept and marked as used, because resend limits count them.
  * Spec: 01-authentication.md - Email Verification
  */
 export async function createVerificationToken(userId: string): Promise<EmailVerificationToken> {
   const id = uuidv4();
   const token = uuidv4();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  await query(
+    `UPDATE email_verification_tokens SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL`,
+    [userId]
+  );
 
   await query(
     `INSERT INTO email_verification_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`,
@@ -228,25 +222,36 @@ export async function createVerificationToken(userId: string): Promise<EmailVeri
 }
 
 /**
+ * Count the verification tokens created for a user in the last hour.
+ * Spec: 02-user-profile-and-privacy.md - Verification status
+ *
+ * @param userId - The user requesting a verification email.
+ * @returns The number of tokens created in the last hour, used or not.
+ */
+export async function countRecentVerificationTokens(userId: string): Promise<number> {
+  const rows = await query<Array<RowDataPacket & { total: number }>>(
+    `SELECT COUNT(*) AS total FROM email_verification_tokens
+     WHERE user_id = ? AND created_at > NOW() - INTERVAL 1 HOUR`,
+    [userId]
+  );
+  return Number(rows[0].total);
+}
+
+/**
  * Verify email token and mark user as verified
  * Spec: 01-authentication.md - Email Verification
  */
 export async function verifyEmailToken(token: string): Promise<{ success: boolean; error?: string }> {
-  const connection = await getConnection();
-  
-  try {
-    await connection.beginTransaction();
-
+  return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
     // Find valid, unused token
-    const [tokenRows] = await connection.execute<TokenRow[]>(
-      `SELECT * FROM email_verification_tokens 
+    const tokens = await query<TokenRow[]>(
+      `SELECT * FROM email_verification_tokens
        WHERE token = ? AND used_at IS NULL AND expires_at > NOW()`,
-      [token]
+      [token],
+      connection
     );
 
-    const tokens = tokenRows as TokenRow[];
     if (tokens.length === 0) {
-      await connection.rollback();
       return { success: false, error: 'Invalid or expired verification token' };
     }
 
@@ -264,14 +269,8 @@ export async function verifyEmailToken(token: string): Promise<{ success: boolea
       [verificationToken.user_id]
     );
 
-    await connection.commit();
     return { success: true };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  }, (outcome) => outcome.success);
 }
 
 /**
@@ -412,15 +411,4 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
     bio: row.bio_public ? row.bio : null,
     avatarUrl: row.avatar_public ? row.avatar_url : null,
   };
-}
-
-/**
- * Update user password
- */
-export async function updateUserPassword(userId: string, newPassword: string): Promise<void> {
-  const passwordHash = await hashPassword(newPassword);
-  await query(
-    `UPDATE users SET password_hash = ? WHERE id = ?`,
-    [passwordHash, userId]
-  );
 }

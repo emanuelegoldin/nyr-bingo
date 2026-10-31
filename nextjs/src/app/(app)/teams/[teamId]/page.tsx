@@ -8,32 +8,26 @@
  * - Client component only handles interactive mutations and local UI state
  */
 
-import type { ResolutionFormData } from '@/components/dialogs/resolution-create-edit-dialog';
-import { getCurrentUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import {
   getTeamBingoCards,
   getTeamGoalResolution,
   getTeamLeaderboard,
-  getTeamProvidedResolutionsByUser,
+  getMemberProvidedResolutionsByUser,
   getTeamWithMembers,
   isTeamMember,
   type BingoCardWithCells,
   type Resolution,
   type TeamWithMembers,
 } from '@/lib/db';
-import { Loader2 } from 'lucide-react';
-import { notFound, redirect } from 'next/navigation';
+import { resolutionToFormData } from '@/lib/shared/resolution-form';
+import type { ResolutionFormData } from '@/lib/shared/types';
+import { PageSpinner } from '@/components/page-spinner';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import type { LeaderboardEntry } from './leaderboard-tab';
 import TeamDetailPageClient from './team-detail-page-client';
-import type { Team, TeamProvidedResolution } from './types';
-
-interface LeaderboardEntry {
-  userId: string;
-  username: string;
-  displayName: string | null;
-  firstBingoAt: string | null;
-  completedTasks: number;
-}
+import type { Team } from './types';
 
 interface TeamDetailPageProps {
   params: Promise<{ teamId: string }>;
@@ -41,9 +35,7 @@ interface TeamDetailPageProps {
 
 function TeamDetailLoadingFallback() {
   return (
-    <div className="flex justify-center py-16">
-      <Loader2 className="h-8 w-8 animate-spin" />
-    </div>
+    <PageSpinner />
   );
 }
 
@@ -78,41 +70,16 @@ function mapTeam(team: TeamWithMembers): Team {
   };
 }
 
-function mapTeamProvidedResolutions(resolutions: Resolution[]): TeamProvidedResolution[] {
-  return resolutions.map((resolution) => ({
-    id: resolution.id,
-    ownerUserId: resolution.ownerUserId,
-    teamId: resolution.teamId,
-    toUserId: resolution.toUserId,
-    title: resolution.title,
-    description: resolution.description,
-    resolutionType: resolution.resolutionType,
-    subtasks: resolution.subtasks,
-    numberOfRepetition: resolution.numberOfRepetition,
-    completedTimes: resolution.completedTimes,
-  }));
-}
-
 function mapGoalToFormData(goal: Resolution | null): ResolutionFormData | null {
   if (!goal) {
     return null;
   }
 
-  return {
-    id: goal.id,
-    type: goal.resolutionType as ResolutionFormData['type'],
-    title: goal.title,
-    text: goal.description ?? '',
-    subtasks: goal.subtasks ?? undefined,
-    numberOfRepetition: goal.numberOfRepetition ?? undefined,
-  };
+  return resolutionToFormData(goal);
 }
 
 async function TeamDetailContent({ teamId }: { teamId: string }) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    redirect('/login');
-  }
+  const currentUser = await requireUser();
 
   const member = await isTeamMember(teamId, currentUser.id);
   if (!member) {
@@ -132,17 +99,18 @@ async function TeamDetailContent({ teamId }: { teamId: string }) {
   const [cardsResult, goalResult, resolutionsResult, leaderboardResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
     cardPromise,
     getTeamGoalResolution(teamId),
-    getTeamProvidedResolutionsByUser(teamId, currentUser.id),
+    getMemberProvidedResolutionsByUser(teamId, currentUser.id),
     getTeamLeaderboard(teamId),
   ]);
 
-  const initialCards = cardsResult.status === 'fulfilled' ? cardsResult.value : [];
-  const initialTeamGoal = goalResult.status === 'fulfilled' ? mapGoalToFormData(goalResult.value) : null;
+  // undefined marks a failed read, so a refresh keeps the data already on screen
+  const initialCards = cardsResult.status === 'fulfilled' ? cardsResult.value : undefined;
+  const initialTeamGoal = goalResult.status === 'fulfilled' ? mapGoalToFormData(goalResult.value) : undefined;
   const initialExistingResolutions = resolutionsResult.status === 'fulfilled'
-    ? mapTeamProvidedResolutions(resolutionsResult.value)
-    : [];
-  const initialLeaderboardEntries: LeaderboardEntry[] =
-    leaderboardResult.status === 'fulfilled' ? leaderboardResult.value : [];
+    ? resolutionsResult.value
+    : undefined;
+  const initialLeaderboardEntries: LeaderboardEntry[] | undefined =
+    leaderboardResult.status === 'fulfilled' ? leaderboardResult.value : undefined;
 
   return (
     <TeamDetailPageClient

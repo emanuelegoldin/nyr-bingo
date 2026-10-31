@@ -3,8 +3,10 @@
  * Spec Reference: Resolution Review & Proof Workflow - Thread Capabilities (max 5MB per file)
  */
 
+import { threadErrorStatus } from '@/app/api/threads/error-status';
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteThreadFile, uploadFile, User } from '@/lib/db';
+import { notifyThread } from '@/lib/team-signals';
+import { deleteThreadFile, getFileUploadError, uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
@@ -60,6 +62,13 @@ export const POST = withAuth(async (
   { params, currentUser }: AuthContext<{ threadId: string }>
 ) => {
   const { threadId } = await params;
+
+  // Authorize first, so a rejected upload never reaches the disk
+  const uploadError = await getFileUploadError(threadId, currentUser.id);
+  if (uploadError) {
+    return errorResponse(uploadError, threadErrorStatus(uploadError));
+  }
+
   const contentType = request.headers.get('content-type') || '';
 
   if (!contentType.includes('multipart/form-data')) {
@@ -89,7 +98,7 @@ export const POST = withAuth(async (
   }
 
   // Save file to disk
-  const { buffer: convertedBuffer, type: convertedType, cadKey } = await tryConvertToWebP(file);
+  const { buffer: convertedBuffer, type: convertedType, cadKey } = await tryConvertToWebP(file, ext);
   const uploadDir = path.join(process.cwd(), 'uploads', 'review-files');
   await mkdir(uploadDir, { recursive: true });
 
@@ -108,8 +117,10 @@ export const POST = withAuth(async (
   );
 
   if (!result.success) {
-    return errorResponse(result.error, 400);
+    return errorResponse(result.error, threadErrorStatus(result.error!));
   }
+
+  await notifyThread(threadId);
 
   return NextResponse.json({ file: result.file }, { status: 201 });
 });
@@ -132,8 +143,10 @@ export const DELETE = withAuth(async (
 
   const result = await deleteThreadFile(threadId, currentUser.id, fileId);
   if (!result.success) {
-    return errorResponse(result.error, result.error === 'File not found' ? 404 : 400);
+    return errorResponse(result.error, threadErrorStatus(result.error!));
   }
+
+  await notifyThread(threadId);
 
   return NextResponse.json({ success: true });
 });

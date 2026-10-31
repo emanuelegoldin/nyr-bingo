@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isTeamMember, getTeamGoalResolution, User } from '@/lib/db';
+import { isTeamMember, getTeamGoalResolution } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**

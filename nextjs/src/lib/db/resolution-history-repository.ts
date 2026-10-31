@@ -113,10 +113,8 @@ export async function getResolutionHistoryAccess(
     };
   }
 
-  if(resolution.scope === ResolutionScope.TEAM){
-    // TODO: we need a way to tell from which card the resolution is coming from in order to verify if the user is the 
-    // owner of the card. If they are, then they can edit the resolution history.
-  }
+  // TODO: for team goals, we need a way to tell from which card the resolution is coming from in order to verify if the
+  // user is the owner of the card. If they are, then they can edit the resolution history.
 
   const canWrite = 
     resolution.scope === ResolutionScope.PERSONAL && resolution.ownerUserId === requestingUserId || // Owner of the resolution
@@ -169,7 +167,7 @@ interface CreateResolutionHistoryEntryInput {
   metadata?: Record<string, unknown> | null;
 }
 
-export async function createResolutionHistoryEntry(
+async function createResolutionHistoryEntry(
   input: CreateResolutionHistoryEntryInput,
 ): Promise<ResolutionHistoryEntry> {
   const trimmedContent = input.content.trim();
@@ -231,19 +229,32 @@ export async function createManualResolutionHistoryEntry(
   });
 }
 
-export async function createSystemResolutionHistoryEntry(
+/**
+ * Record a system event in a resolution's history.
+ * Logging failures are swallowed so they never undo the change being recorded.
+ * @param resolutionId The resolution the event belongs to
+ * @param authorUserId The user who triggered the event
+ * @param eventKey The event's identifier
+ * @param content The human-readable description
+ * @param metadata Optional structured details
+ */
+export async function logResolutionHistoryEventSafe(
   resolutionId: string,
   authorUserId: string,
   eventKey: string,
   content: string,
   metadata?: Record<string, unknown> | null,
-): Promise<ResolutionHistoryEntry> {
-  return createResolutionHistoryEntry({
-    resolutionId,
-    authorUserId,
-    entryType: 'system_event',
-    eventKey,
-    content,
-    metadata,
-  });
+): Promise<void> {
+  try {
+    await createResolutionHistoryEntry({
+      resolutionId,
+      authorUserId,
+      entryType: 'system_event',
+      eventKey,
+      content,
+      metadata,
+    });
+  } catch {
+    // Preserve the core change even if history logging fails.
+  }
 }

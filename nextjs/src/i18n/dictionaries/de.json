@@ -8,7 +8,7 @@
         "headerContent": "Willkommen bei Resolution Bingo!",
         "headerDescription": "Probierst du deine Vorsätze zu erfüllen, um ein BINGO zu bekommen! Klicken Sie auf eine Zelle, um sie als abgeschlossen zu markieren.",
         "headerDescriptionNoTeam": "Treten Sie einem Team bei oder erstellen Sie eines, um zu spielen.",
-        "createTeambutton": "Loslegen",
+        "headerDescriptionNoGames": "Keines Ihrer Teams hat bereits ein Spiel gestartet.",
         "cardContentNoneAvailable": "Keine Karte verfügbar für Ihren Benutzer in diesem gestarteten Team."
     },
     "LoginPage": {

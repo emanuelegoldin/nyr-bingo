@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserProfile, updateUserProfile, getPublicUserProfile, User } from '@/lib/db';
+import { notifyUserTeams } from '@/lib/team-signals';
+import { getUserProfile, updateUserProfile, getPublicUserProfile } from '@/lib/db';
 import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
 
 /**
@@ -64,6 +65,8 @@ export const PUT = withAuth(async (request: NextRequest, { currentUser }: AuthCo
   if (!updatedProfile) {
     return errorResponse('Failed to update profile', 500);
   }
+
+  await notifyUserTeams(currentUser.id);
 
   return NextResponse.json({
     message: 'Profile updated successfully',

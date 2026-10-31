@@ -11,9 +11,9 @@ import PublicProfilePageShell from "@/components/profile/public-profile-page-she
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getPublicUserProfile, type PublicUserProfile } from "@/lib/db";
-import { Loader2 } from "lucide-react";
+import { PageSpinner } from "@/components/page-spinner";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -23,9 +23,7 @@ interface PublicProfilePageProps {
 
 function PublicProfileLoadingFallback() {
   return (
-    <div className="flex justify-center py-16">
-      <Loader2 className="h-8 w-8 animate-spin" />
-    </div>
+    <PageSpinner />
   );
 }
 
@@ -71,11 +69,7 @@ function PublicProfileCard({ profile }: { profile: PublicUserProfile }) {
 }
 
 async function PublicProfileContent({ userId }: { userId: string }) {
-  const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    redirect("/login");
-  }
+  const currentUser = await requireUser();
 
   // Owner redirect belongs on the server so we avoid client flashes.
   if (currentUser.id === userId) {

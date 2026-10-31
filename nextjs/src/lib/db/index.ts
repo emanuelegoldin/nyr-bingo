@@ -4,22 +4,19 @@
  */
 
 // Connection
-export { closePool, getConnection, getPool, query } from './connection';
+export { execute, query, withTransaction } from './connection';
 
 // Types
 export * from './types';
 
-// Schema
-export { schema } from './schema';
-
 // Repositories
+export * from './bingo-card-generation';
 export * from './bingo-card-repository';
-export * from './compound-resolution-repository';
-export * from './iterative-resolution-repository';
+export * from './bingo-cell-repository';
 export * from './leaderboard-repository';
-export * from './proof-repository';
 export * from './resolution-history-repository';
 export * from './resolution-repository';
+export { deleteThreadFile, getFileUploadError, uploadFile } from './review-file-repository';
 export * from './review-thread-repository';
 export * from './team-repository';
 export * from './user-repository';

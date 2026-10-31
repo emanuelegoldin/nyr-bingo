@@ -1,32 +1,29 @@
-# 11 — Real-Time Card Updates
+# 11 — Real-Time Updates and Conflict Resolution
 
 ## Purpose
 
-Ensure that bingo card state changes made by one team member are immediately visible to all other team members without requiring a manual page refresh.
+Define the WebSocket signaling used around bingo cards and resolutions, and the rules that keep concurrent cell mutations consistent.
 
 This specification covers:
-- **Real-time propagation** of cell state changes across team members via WebSocket.
+- **WebSocket rooms and messages** for cards and resolutions.
 - **Conflict resolution** when concurrent operations target the same cell.
 
-It extends the visibility requirements in **08 — Visibility and Updates** by prescribing a concrete WebSocket-based mechanism rather than leaving the approach unspecified.
+It details the mechanism behind **08 — Visibility and Updates**.
 
 ---
 
 ## User Stories Covered
 
-- When a team member marks a resolution as completed, other members see the change in real time.
-- When a team member undoes a completion, other members see the revert in real time.
-- When a team member requests proof, the card owner sees the cell move to "pending review" in real time.
-- When a vote closes a review thread, all members see the resulting cell state change in real time.
-- When a card cell is edited (content swap), other members see the updated card in real time.
+- When a resolution's progress changes, users viewing it in an open dialog see the change in real time.
+- When a team changes, users viewing its page or dashboard card see the change in real time.
 - When two users perform conflicting actions on the same cell concurrently, a deterministic winner is chosen to prevent inconsistent state.
 
 ---
 
 ## In Scope
 
-- Card-level WebSocket rooms
-- Real-time card refresh via WebSocket messages
+- Team-level card rooms
+- Resolution-level rooms
 - Optimistic locking (state precondition guards) on cell mutations
 - Conflict resolution rules
 
@@ -34,44 +31,72 @@ It extends the visibility requirements in **08 — Visibility and Updates** by p
 
 ## Architecture Overview
 
-### Room Model
+### WebSocket Server
 
-Each bingo card interaction uses a **team-level WebSocket room**.
-
-- **Room key**: `card:<teamId>`
-- Every `BingoCard` component instance opens a WebSocket connection on mount and joins the room for its `teamId`.
-- When any client persists a cell mutation, it sends a `card-refresh` message. The WebSocket server broadcasts a `refresh-card` event to all other sockets in the room.
-- On receipt, clients call their `onRefresh` callback to re-fetch card data from the API.
-
-This complements the existing **thread-level rooms** (keyed by `threadId`) used for real-time review thread updates (see spec 07).
-
-### WebSocket Messages
-
-| Message           | Direction         | Body                  | Purpose                                      |
-|-------------------|-------------------|-----------------------|----------------------------------------------|
-| `join-card-room`  | client → server   | `{ teamId: string }`  | Join the team-level card room.               |
-| `card-refresh`    | client → server   | `{ teamId: string }`  | Signal that a cell state change was persisted.|
-| `refresh-card`    | server → clients  | `{}`                  | Tells viewers to re-fetch card data.         |
+- `ws-server/server.ts` is a standalone Node service listening on `WS_PORT` (default `8888`). Nginx proxies `/ws` to it.
+- It only relays signals. It never touches the database.
+- `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'resolution', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
+- It refuses to start without `WS_SHARED_SECRET`.
+- It joins a socket to a room only with a valid signed token.
+- It rejects browser connections from another site's page (the `Origin` hostname must match the `Host`).
+- It pings sockets every 30 seconds and drops those that stop answering.
+- Limits per socket: 4 KB per message, 30 messages per 10 seconds (the socket is closed with code `1008` beyond that), and 256 rooms.
+- Clients only join rooms and listen. A signal reaches every socket in the room, including the one that made the change. Rooms are removed when their last socket leaves.
 
 ### WebSocket URL
 
-Same as existing thread WebSocket — the client connects to `ws(s)://<current-host>/ws`.
+Clients connect to `ws(s)://<current-host>/ws`.
+
+### Room Model
+
+| Room | Key | Joined by |
+| ---- | --- | --------- |
+| Card room | `card:<teamId>` | `TeamWsProvider` on open |
+| Resolution room | `resolution:<resolutionId>` | Compound checklist, iterative counter and history dialog, when opened; the socket stays in the room until it closes, but their listeners are removed with the dialog |
+| Thread room (spec 07) | `thread:<threadId>` | Review thread dialog, when opened, on the same terms |
+
+### Joining a Room
+
+- `GET /api/ws-token?type=card|thread|resolution&id=<id>` returns a token for one room, valid for 5 minutes. It returns `403` unless the user may see the data behind the room: team membership for cards and threads, and history access for resolutions. It returns `503` without `WS_SHARED_SECRET`.
+- The token is the base64url JSON `{ type, id, exp }` and its HMAC-SHA256 signature, made with `WS_SHARED_SECRET`. ws-server checks it, so it never needs the database.
+- A client that gets no token simply has no live updates for that room.
+
+### WebSocket Messages
+
+| Message              | Direction        | Body                         | Purpose                                   |
+|----------------------|------------------|------------------------------|-------------------------------------------|
+| `join-room`          | client → server  | `token` (top level)          | Join the room the token grants.           |
+| `refresh-card`       | server → clients | none                         | Tell card room members to refresh the page. |
+| `refresh-resolution` | server → clients | `resolutionId` (top level)   | Tell viewers to re-fetch the resolution.  |
+| `refresh-thread`     | server → clients | `threadId` (top level)       | Tell viewers to re-fetch the thread.      |
 
 ---
 
-## When Card-Refresh Is Broadcast
+## Server Signals
 
-A `card-refresh` message is sent by the acting client immediately after any of these operations:
+Every mutating API route signals the rooms it affected, through `notifyRooms` (`lib/ws-notify.ts`) after its database work. Rooms are resolved in `lib/team-signals.ts`. A failed signal is logged and never fails the mutation.
 
-| Operation                   | Component / Dialog            | Trigger                                          |
-|-----------------------------|-------------------------------|--------------------------------------------------|
-| Mark resolution completed   | `MarkCellCompleteDialog`      | After `onUpdate` callback fires                  |
-| Undo completion             | `ResolutionCell` (click handler) | After `onUpdate` callback fires               |
-| Request proof               | `RequestProofDialog`          | After API returns 201 and `onRefresh` fires       |
-| Vote on review thread       | `CellThreadDialog` / `VoteBar`| After vote API returns (may close thread)         |
-| Edit cell content           | `EditCellDialog`              | After edit API returns 200 and `onRefresh` fires  |
+| Change | Rooms signalled |
+|--------|-----------------|
+| Cell state, undo, edit, proof request | The team's card room, and the cell's threads |
+| Thread message, file, vote that keeps it open | The thread |
+| Thread closed by vote or by the completing user | The thread and the team's card room |
+| Subtask or counter change, resolution saved | The resolution, and the card room of every team showing it |
+| Resolution deleted | The card room of every team that was showing it |
+| Manual history note | The resolution |
+| Join, game start, team deletion | The team's card room |
+| Profile update | The card room of each of the user's teams |
 
----
+The deadline procedure runs in the database and cannot send a signal.
+
+## Catching Up
+
+Listeners get a local `catch-up` event, and refetch as if their room had been signalled, when:
+
+- The socket reconnects.
+- The tab regains focus or becomes visible, at most once every 30 seconds.
+
+This is how a deadline closure reaches an open page. A page that stays in front keeps showing it as open until its next catch-up, and a refused vote also refetches the thread.
 
 ## Conflict Resolution
 
@@ -79,34 +104,38 @@ A `card-refresh` message is sent by the acting client immediately after any of t
 
 Two concurrent operations may target the same cell:
 
-1. **Owner undoes completion** (`POST /api/cells/:id/undo-complete`)  
-   while simultaneously  
+1. **Owner undoes completion** (`POST /api/cells/:id/undo-complete`)
+   while simultaneously
 2. **Team member requests proof** (`POST /api/cells/:id/request-proof`)
 
 Without protection, both operations could succeed based on stale reads, leaving the cell in an inconsistent state.
 
 ### Solution — Optimistic Locking via State Precondition Guards
 
-Each mutation that changes `bingo_cells.state` includes a `WHERE state = <expected>` guard:
+The mutations of `bingo_cells.state` in this table include a `WHERE state ...` guard:
 
-| Operation         | Expected state(s)                          | Target state      |
-|-------------------|--------------------------------------------|-------------------|
-| Mark completed    | `pending`                                  | `completed`       |
-| Undo completion   | `completed`, `pending_review`, `accomplished` | `pending`       |
-| Request proof     | `completed`                                | `pending_review`  |
-| Vote → accomplished | `pending_review`                          | `accomplished`    |
-| Vote → reverted   | `pending_review`                           | `pending`         |
+| Operation                    | Expected state(s)                             | Target state     |
+|------------------------------|-----------------------------------------------|------------------|
+| Mark completed               | `pending`                                     | `completed`      |
+| `PUT` to `pending`           | `completed`                                   | `pending`        |
+| Undo completion              | `completed`, `pending_review`, `accomplished` | `pending`        |
+| Request proof                | `completed`                                   | `pending_review` |
+| Automatic completion/revert  | The state read just before                    | `completed` or `pending` |
 
-If `affectedRows === 0`, the cell was already transitioned by another operation. The API returns an error, and the client receives an appropriate message prompting a refresh.
+If `affectedRows === 0`, the cell was already transitioned by another operation and the API returns `400` with a message, for example "Cell state has changed — please refresh and try again". Automatic completion does not report this; it simply leaves the cell alone.
+
+Other mutations are not guarded on cell state:
+- Thread closure (votes or the completing user) is guarded on the thread instead: `WHERE status = 'open'`. If the thread was already closed, the transaction rolls back messages and cell state; proof files removed before the transaction stay removed.
+- Cell edits (spec 09) are guarded against `pending_review`. The deadline procedure (spec 07) writes the state without any guard.
 
 ### Owner-Prevails Rule
 
 When the owner undoes completion and a team member requests proof concurrently:
 
 - **Owner's undo** runs inside a transaction that first closes any open review thread, then sets state to `pending` with `WHERE state IN ('completed', 'pending_review', 'accomplished')`.
-- **Team member's proof request** guards the state transition with `WHERE state = 'completed'`.
+- **Team member's proof request** guards the state transition with `WHERE state = 'completed'` and rolls back when no row matched.
 
-Because the undo accepts a wider set of source states and closes the thread in the same transaction, **the owner's action always succeeds** regardless of ordering. The proof request either:
+Because the undo accepts a wider set of source states and closes the thread in the same transaction, the owner's action succeeds regardless of ordering. The proof request either:
 - Succeeds first (cell moves to `pending_review`), then the undo succeeds and reverts it.
 - Fails because the cell is already `pending` (the undo completed first).
 
@@ -116,35 +145,52 @@ In both cases the final state is `pending`, honouring the owner's intent.
 
 ## Component Responsibilities
 
-### `BingoCard` (bingo-card.tsx)
+### `TeamWsProvider` (team-ws-provider.tsx)
 
-- Opens a WebSocket connection on mount; joins `card:<teamId>`.
-- Provides a `CardWsContext` React context (available for future use by child components if needed).
-- **Wraps `onCellUpdate` and `onRefresh`** before passing them to children: after the (potentially-async) parent callback completes, the wrapper sends a `card-refresh` WS message. This guarantees the DB mutation has landed before the broadcast goes out, preventing stale reads on other clients.
-- Listens for incoming WS messages and calls the **raw** (unwrapped) `onRefresh` to reload locally — this avoids an infinite broadcast loop.
-- Cleans up the WebSocket on unmount.
+- Wraps the team page tabs and each dashboard card, and opens **one** WebSocket per provider, so all tabs and cards on a team page share it.
+- Joins `card:<teamId>` and every tracked room on open, which includes each reconnect with fresh tokens.
+- Reconnects when the socket closes, waiting 1 second and doubling up to 30 seconds. A successful open resets the wait.
+- Exposes `joinRoom`, `addMessageListener` and `teamName` through `useTeamWs()`. All rooms of a page share its one socket, through `useWsRoom`.
+- Dispatches every incoming message to registered listeners.
+- Closes the socket on unmount.
+
+### `TeamRefreshListener` (team-refresh-listener.tsx)
+
+- Rendered above the team page tabs, so it stays mounted on every tab, and in each dashboard team card.
+- On `refresh-card` or `catch-up`, re-renders the page from the server, debounced by 500 ms. Cards, leaderboard, members, team status and goal all come from those server props.
+
+### `BingoCardContent` (BingoCardContent.tsx)
+
+- Owns the card state and `reloadCard`. It reloads the card right after the viewer's own changes, and takes new server props when the page refreshes.
 
 ### Child Components
 
-Child components (`ResolutionCell`, `MarkCellCompleteDialog`, `RequestProofDialog`, `EditCellDialog`, `CellThreadDialog`) simply call `onUpdate` / `onRefresh` as normal. They do **not** need to broadcast explicitly — the wrapped callbacks handle it automatically.
+`ResolutionCell` and its dialogs simply call `onUpdate` / `onRefresh`.
 
 ---
 
 ## Acceptance Criteria
 
-- When a team member changes a cell state, other members viewing the same team see the update within seconds without refreshing the page.
+- Users viewing a resolution in an open dialog see subtask and counter changes without reloading.
+- Users on the team page or dashboard see team changes without reloading.
 - If two users perform conflicting operations, the system resolves the conflict deterministically (owner's action prevails).
 - Failed operations due to state conflicts return a descriptive error to the acting user.
 - No WebSocket connection is leaked on component unmount.
-- The WebSocket server correctly isolates card rooms from thread rooms (different key prefixes).
+- The WebSocket server isolates card, resolution and thread rooms through different key prefixes.
 
 ---
 
 ## Out of Scope
 
 - Offline support / retry queues.
-- Granular cell-level diffing (clients re-fetch the full card).
+- Granular cell-level diffing (clients re-render the full page).
 - Push notifications for card changes.
+
+---
+
+## Known Gaps
+
+- `/resolutions` and profile pages have no WebSocket, so they update on load.
 
 ---
 
@@ -152,5 +198,6 @@ Child components (`ResolutionCell`, `MarkCellCompleteDialog`, `RequestProofDialo
 
 - **06 — Bingo Gameplay**: defines cell state transitions.
 - **07 — Proof and Approval**: defines thread-level real-time messaging (thread rooms).
-- **08 — Visibility and Updates**: high-level requirement that updates become visible; this spec prescribes the WebSocket implementation.
-- **09 — Bingo Card Editing**: edit operations broadcast via the same mechanism.
+- **08 — Visibility and Updates**: high-level behavior of updates.
+- **09 — Bingo Card Editing**: edit operations signal the same rooms.
+- **13 — Resolution History and Progress**: uses resolution rooms.

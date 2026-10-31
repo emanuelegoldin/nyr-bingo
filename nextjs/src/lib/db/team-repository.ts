@@ -5,15 +5,10 @@
 
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { InvitationStatus, ResolutionType, TeamRole, TeamStatus } from '../shared/types';
-import { getConnection, query } from './connection';
-import {
-  createOrUpdateMemberProvidedResolution,
-  getMemberProvidedResolutionsByUser,
-  getMemberProvidedResolutionsForUser,
-  getTeamGoalResolution,
-  setTeamGoalResolution,
-} from './resolution-repository';
+import { InvitationStatus, TeamRole, TeamStatus } from '../shared/types';
+import { query, withTransaction } from './connection';
+import { getTeamGoalResolution } from './resolution-repository';
+import { getTeamReviewFiles, removeOrphanedFiles } from './review-file-repository';
 import type {
   Team,
   TeamInvitation,
@@ -98,14 +93,10 @@ export async function createTeam(
   name: string,
   leaderUserId: string
 ): Promise<Team> {
-  const connection = await getConnection();
-  
-  try {
-    await connection.beginTransaction();
+  const teamId = uuidv4();
+  const membershipId = uuidv4();
 
-    const teamId = uuidv4();
-    const membershipId = uuidv4();
-
+  await withTransaction(async (connection) => {
     // Create team
     await connection.execute(
       `INSERT INTO teams (id, name, leader_user_id, status) VALUES (?, ?, ?, 'forming')`,
@@ -117,21 +108,14 @@ export async function createTeam(
       `INSERT INTO team_memberships (id, team_id, user_id, role) VALUES (?, ?, ?, 'leader')`,
       [membershipId, teamId, leaderUserId]
     );
+  });
 
-    await connection.commit();
+  const rows = await query<TeamRow[]>(
+    `SELECT * FROM teams WHERE id = ?`,
+    [teamId]
+  );
 
-    const rows = await query<TeamRow[]>(
-      `SELECT * FROM teams WHERE id = ?`,
-      [teamId]
-    );
-
-    return rowToTeam(rows[0]);
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  return rowToTeam(rows[0]);
 }
 
 /**
@@ -219,33 +203,6 @@ export async function isTeamLeader(teamId: string, userId: string): Promise<bool
 }
 
 /**
- * Set team resolution (goal)
- * Spec: 04-bingo-teams.md - Team Resolution
- * Creates or updates a resolution entity with scope='team'.
- */
-export async function setTeamResolution(
-  teamId: string,
-  leaderUserId: string,
-  resolutionText: string,
-  resolutionType: ResolutionType = ResolutionType.BASE,
-  subtasks?: import('../shared/types').Subtask[],
-  numberOfRepetition?: number
-): Promise<Team | null> {
-  // Only team leader can set the team resolution
-  const leader = await isTeamLeader(teamId, leaderUserId);
-  if (!leader) {
-    return null;
-  }
-
-  const trimmed = resolutionText.trim();
-  const title = trimmed.slice(0, 255);
-
-  await setTeamGoalResolution(teamId, leaderUserId, title, trimmed, resolutionType, subtasks, numberOfRepetition);
-
-  return getTeamById(teamId);
-}
-
-/**
  * Create team invitation
  * Spec: 04-bingo-teams.md - Invitations / Joining
  */
@@ -285,60 +242,57 @@ export async function joinTeamByInviteCode(
   inviteCode: string,
   userId: string
 ): Promise<{ success: boolean; team?: Team; error?: string }> {
-  const connection = await getConnection();
+  const result = await withTransaction<{ success: boolean; teamId?: string; error?: string }>(
+    async (connection) => {
+      // Find valid invitation
+      const invitations = await query<InvitationRow[]>(
+        `SELECT * FROM team_invitations
+         WHERE invite_code = ? AND status = 'pending' AND expires_at > NOW()`,
+        [inviteCode],
+        connection
+      );
 
-  try {
-    await connection.beginTransaction();
+      if (invitations.length === 0) {
+        return { success: false, error: 'Invalid or expired invitation' };
+      }
 
-    // Find valid invitation
-    const [invitationRows] = await connection.execute<InvitationRow[]>(
-      `SELECT * FROM team_invitations 
-       WHERE invite_code = ? AND status = 'pending' AND expires_at > NOW()`,
-      [inviteCode]
-    );
+      const invitation = invitations[0];
 
-    const invitations = invitationRows as InvitationRow[];
-    if (invitations.length === 0) {
-      await connection.rollback();
-      return { success: false, error: 'Invalid or expired invitation' };
-    }
+      // Check if already a member
+      const memberRows = await query<MembershipRow[]>(
+        `SELECT * FROM team_memberships WHERE team_id = ? AND user_id = ?`,
+        [invitation.team_id, userId],
+        connection
+      );
 
-    const invitation = invitations[0];
+      if (memberRows.length > 0) {
+        return { success: false, error: 'Already a member of this team' };
+      }
 
-    // Check if already a member
-    const [memberRows] = await connection.execute<MembershipRow[]>(
-      `SELECT * FROM team_memberships WHERE team_id = ? AND user_id = ?`,
-      [invitation.team_id, userId]
-    );
+      // Add as member
+      const membershipId = uuidv4();
+      await connection.execute(
+        `INSERT INTO team_memberships (id, team_id, user_id, role) VALUES (?, ?, ?, 'member')`,
+        [membershipId, invitation.team_id, userId]
+      );
 
-    if ((memberRows as MembershipRow[]).length > 0) {
-      await connection.rollback();
-      return { success: false, error: 'Already a member of this team' };
-    }
+      // Mark invitation as accepted
+      await connection.execute(
+        `UPDATE team_invitations SET status = 'accepted', invited_user_id = ? WHERE id = ?`,
+        [userId, invitation.id]
+      );
 
-    // Add as member
-    const membershipId = uuidv4();
-    await connection.execute(
-      `INSERT INTO team_memberships (id, team_id, user_id, role) VALUES (?, ?, ?, 'member')`,
-      [membershipId, invitation.team_id, userId]
-    );
+      return { success: true, teamId: invitation.team_id };
+    },
+    (outcome) => outcome.success
+  );
 
-    // Mark invitation as accepted
-    await connection.execute(
-      `UPDATE team_invitations SET status = 'accepted', invited_user_id = ? WHERE id = ?`,
-      [userId, invitation.id]
-    );
-
-    await connection.commit();
-
-    const team = await getTeamById(invitation.team_id);
-    return { success: true, team: team || undefined };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
+  if (!result.teamId) {
+    return { success: false, error: result.error };
   }
+
+  const team = await getTeamById(result.teamId);
+  return { success: true, team: team || undefined };
 }
 
 /**
@@ -350,58 +304,6 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
     [teamId]
   );
   return rows.map(rowToMembership);
-}
-
-/**
- * Create a team-provided resolution (member to member)
- * Spec: 04-bingo-teams.md - Member-Provided Resolutions
- * Delegates to the unified resolution repository.
- */
-export async function createTeamProvidedResolution(
-  teamId: string,
-  fromUserId: string,
-  toUserId: string,
-  text: string,
-  title?: string,
-  resolutionType: ResolutionType = ResolutionType.BASE,
-  subtasks?: import('../shared/types').Subtask[],
-  numberOfRepetition?: number
-): Promise<import('./types').Resolution | null> {
-  // Verify both users are team members
-  const fromIsMember = await isTeamMember(teamId, fromUserId);
-  const toIsMember = await isTeamMember(teamId, toUserId);
-
-  if (!fromIsMember || !toIsMember) {
-    return null;
-  }
-
-  const trimmedText = text.trim();
-  const resolvedTitle = title ? title.trim().slice(0, 255) : trimmedText.slice(0, 255);
-
-  return createOrUpdateMemberProvidedResolution(
-    teamId, fromUserId, toUserId, resolvedTitle, trimmedText,
-    resolutionType, subtasks, numberOfRepetition
-  );
-}
-
-/**
- * Get team-provided resolutions for a user (resolutions others made for them)
- */
-export async function getTeamProvidedResolutionsForUser(
-  teamId: string,
-  toUserId: string
-): Promise<import('./types').Resolution[]> {
-  return getMemberProvidedResolutionsForUser(teamId, toUserId);
-}
-
-/**
- * Get team-provided resolutions by a user (resolutions they made for others)
- */
-export async function getTeamProvidedResolutionsByUser(
-  teamId: string,
-  fromUserId: string
-): Promise<import('./types').Resolution[]> {
-  return getMemberProvidedResolutionsByUser(teamId, fromUserId);
 }
 
 /**
@@ -455,10 +357,10 @@ export async function checkAllResolutionsProvided(teamId: string): Promise<{
 }
 
 /**
- * Start the bingo game
+ * Check whether the bingo game can start. startGameWithCards does the actual start.
  * Spec: 04-bingo-teams.md - Start Conditions
  */
-export async function startBingoGame(
+export async function checkGameCanStart(
   teamId: string,
   leaderUserId: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -489,24 +391,7 @@ export async function startBingoGame(
     };
   }
 
-  // Update team status
-  await query(
-    `UPDATE teams SET status = 'started' WHERE id = ?`,
-    [teamId]
-  );
-
   return { success: true };
-}
-
-/**
- * Get team invitation by code
- */
-export async function getInvitationByCode(inviteCode: string): Promise<TeamInvitation | null> {
-  const rows = await query<InvitationRow[]>(
-    `SELECT * FROM team_invitations WHERE invite_code = ?`,
-    [inviteCode]
-  );
-  return rows.length > 0 ? rowToInvitation(rows[0]) : null;
 }
 
 /**
@@ -530,11 +415,16 @@ export async function deleteTeam(
     return false;
   }
 
+  // Collected first: the cascade below removes the rows that name these files
+  const reviewFiles = await getTeamReviewFiles(teamId);
+
   // Delete the team (CASCADE will handle related data)
   await query(
     `DELETE FROM teams WHERE id = ?`,
     [teamId]
   );
+
+  await removeOrphanedFiles(reviewFiles);
 
   return true;
 }

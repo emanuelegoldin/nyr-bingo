@@ -7,28 +7,12 @@
  * - The client component only handles interactive mutations/dialog state
  */
 
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getResolutionsByUser, type Resolution } from "@/lib/db";
-import type { Subtask } from "@/lib/shared/types";
-import { Loader2 } from "lucide-react";
-import { redirect } from "next/navigation";
+import type { ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
+import { PageSpinner } from "@/components/page-spinner";
 import { Suspense } from "react";
 import ResolutionsPageClient from "./resolutions-page-client";
-
-type ResolutionTypeValue = "base" | "compound" | "iterative";
-
-interface UnifiedResolution {
-  id: string;
-  type: ResolutionTypeValue;
-  ownerUserId: string;
-  title: string;
-  text: string;
-  subtasks?: Subtask[];
-  numberOfRepetition?: number;
-  completedTimes?: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 function toIsoDateString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : value;
@@ -51,17 +35,12 @@ function mapResolution(resolution: Resolution): UnifiedResolution {
 
 function ResolutionsLoadingFallback() {
   return (
-    <div className="flex justify-center py-16">
-      <Loader2 className="h-8 w-8 animate-spin" />
-    </div>
+    <PageSpinner />
   );
 }
 
 async function ResolutionsContent() {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    redirect("/login");
-  }
+  const currentUser = await requireUser();
 
   // Personal resolutions are user-owned, so we can fetch directly on the server.
   const resolutions = await getResolutionsByUser(currentUser.id);

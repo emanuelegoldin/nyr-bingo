@@ -4,14 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyTeams } from '@/lib/team-signals';
 import { isUserVerified } from '@/lib/auth';
 import {
-  startBingoGame,
+  checkGameCanStart,
+  startGameWithCards,
   isTeamLeader,
   getTeamWithMembers,
   initializeTeamLeaderboard,
 } from '@/lib/db';
-import { generateBingoCardsForTeam } from '@/lib/db/bingo-card-repository';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
@@ -38,16 +39,20 @@ export const POST = withAuth(async (
     return errorResponse('Only the team leader can start the game', 403);
   }
 
-  // Start the game (validates all conditions)
-  const result = await startBingoGame(teamId, currentUser.id);
+  // Validate all start conditions
+  const check = await checkGameCanStart(teamId, currentUser.id);
+
+  if (!check.success) {
+    return errorResponse(check.error, 400);
+  }
+
+  // Start the game and generate bingo cards for all members
+  // Spec: 05-bingo-card-generation.md - Cards generated automatically at start
+  const result = await startGameWithCards(teamId);
 
   if (!result.success) {
     return errorResponse(result.error, 400);
   }
-
-  // Generate bingo cards for all members
-  // Spec: 05-bingo-card-generation.md - Cards generated automatically at start
-  await generateBingoCardsForTeam(teamId);
 
   // Get updated team data
   const team = await getTeamWithMembers(teamId);
@@ -57,6 +62,8 @@ export const POST = withAuth(async (
     const memberIds = team.members.map((m) => m.user.userId);
     await initializeTeamLeaderboard(teamId, memberIds);
   }
+
+  await notifyTeams([teamId]);
 
   return NextResponse.json({
     message: 'Bingo game started successfully',

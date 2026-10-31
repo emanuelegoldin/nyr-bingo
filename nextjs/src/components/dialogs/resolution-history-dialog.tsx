@@ -1,7 +1,5 @@
 "use client";
 
-import type { WsIncomingMessage } from "@/components/team-ws-provider";
-import { useTeamWs } from "@/components/team-ws-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppContext } from "@/hooks/AppContext";
+import { useWsRoom } from "@/hooks/use-ws-room";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
+import { apiFetch } from "@/lib/api-client";
 import { History, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -46,7 +46,6 @@ export const ResolutionHistoryDialog = ({
   const { language } = useAppContext();
   const t = getDictionaryForLocale(language).ResolutionHistoryDialog;
   const { toast } = useToast();
-  const { sendWsMessage, addMessageListener } = useTeamWs();
 
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,28 +58,20 @@ export const ResolutionHistoryDialog = ({
   const loadHistory = useCallback(async () => {
     if (!resolutionId) return;
     setLoading(true);
-    try {
-      const res = await fetch(`/api/resolutions/${resolutionId}/history?limit=100&offset=0`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data?.error || t.loadError,
-          variant: "destructive",
-        });
-        return;
-      }
-      setEntries(Array.isArray(data.entries) ? (data.entries as HistoryEntry[]) : []);
-      setCanWrite(Boolean(data.canWrite));
-    } catch {
+    const result = await apiFetch<{ entries?: unknown; canWrite?: boolean }>(
+      `/api/resolutions/${resolutionId}/history?limit=100&offset=0`,
+    );
+    if (result.ok) {
+      setEntries(Array.isArray(result.data.entries) ? (result.data.entries as HistoryEntry[]) : []);
+      setCanWrite(Boolean(result.data.canWrite));
+    } else {
       toast({
         title: "Error",
-        description: t.loadError,
+        description: result.error || t.loadError,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, [resolutionId, toast]);
 
   useEffect(() => {
@@ -88,38 +79,21 @@ export const ResolutionHistoryDialog = ({
     loadHistory();
   }, [isOpen, loadHistory]);
 
-  useEffect(() => {
-    if (!isOpen || !resolutionId) return;
-
-    sendWsMessage({
-      type: "join-resolution-room",
-      body: { resolutionId },
-    });
-
-    const unsubscribe = addMessageListener((msg: WsIncomingMessage) => {
-      if (msg.type === "refresh-resolution" && msg.resolutionId === resolutionId) {
-        loadHistory();
-      }
-    });
-
-    return unsubscribe;
-  }, [isOpen, resolutionId, sendWsMessage, addMessageListener, loadHistory]);
+  useWsRoom({ type: "resolution", id: resolutionId }, loadHistory, isOpen && Boolean(resolutionId));
 
   const handleAddEntry = useCallback(async () => {
     if (!canSubmit) return;
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/resolutions/${resolutionId}/history`, {
+      const result = await apiFetch<unknown>(`/api/resolutions/${resolutionId}/history`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: draft.trim() }),
+        json: { content: draft.trim() },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!result.ok) {
         toast({
           title: "Error",
-          description: data?.error || t.addError,
+          description: result.error || t.addError,
           variant: "destructive",
         });
         return;
@@ -127,10 +101,6 @@ export const ResolutionHistoryDialog = ({
 
       setDraft("");
       await loadHistory();
-      sendWsMessage({
-        type: "resolution-refresh",
-        body: { resolutionId },
-      });
     } catch {
       toast({
         title: "Error",
@@ -140,7 +110,7 @@ export const ResolutionHistoryDialog = ({
     } finally {
       setSaving(false);
     }
-  }, [canSubmit, draft, loadHistory, resolutionId, sendWsMessage, toast]);
+  }, [canSubmit, draft, loadHistory, resolutionId, toast]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

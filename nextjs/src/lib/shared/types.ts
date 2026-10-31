@@ -32,33 +32,16 @@ export enum CellSourceType {
 
 // Cell state
 // Spec: 06-bingo-gameplay.md, Resolution Review & Proof Workflow
+// Bingo cards are a fixed 5x5 grid whose center is the implicit Joker.
+// Spec: 00-system-overview.md, 05-bingo-card-generation.md
+export const BINGO_GRID_SIZE = 5;
+export const JOKER_POSITION = 12;
+
 export enum CellState {
   PENDING = 'pending',
   COMPLETED = 'completed',
   PENDING_REVIEW = 'pending_review',
   ACCOMPLISHED = 'accomplished'
-}
-
-// Proof status
-// Spec: 07-proof-and-approval.md, AGENTS.md
-export enum ProofStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  DECLINED = 'declined'
-}
-
-// Proof review decision
-// Spec: 07-proof-and-approval.md
-export enum ReviewDecision {
-  APPROVED = 'approved',
-  DECLINED = 'declined'
-}
-
-// Duplicate report status
-// Spec: 05-bingo-card-generation.md
-export enum DuplicateReportStatus {
-  PENDING = 'pending',
-  RESOLVED = 'resolved'
 }
 
 // Review thread types
@@ -81,6 +64,9 @@ export enum ResolutionType {
   ITERATIVE = 'iterative',
 }
 
+// String form of ResolutionType, for serialized data passed to the frontend
+export type ResolutionTypeValue = `${ResolutionType}`;
+
 // Resolution scope (ownership context)
 // A resolution can be personal, a team-wide goal, or written by one member for another.
 export enum ResolutionScope {
@@ -98,41 +84,29 @@ export interface Subtask {
   completed: boolean;
 }
 
-// --- Discriminated union for typed resolutions (frontend consumption) ---
-
-/** Fields shared by every resolution regardless of type. */
-export interface ResolutionBase {
-  id: string;
-  title: string;
-  description: string | null;
-  ownerUserId: string;
-  scope: ResolutionScope;
-  teamId?: string | null;
-  toUserId?: string | null;
-}
-
-export interface BaseResolution extends ResolutionBase {
-  type: 'base';
-}
-
-export interface CompoundResolution extends ResolutionBase {
-  type: 'compound';
-  subtasks: Subtask[];
-  completedTasks: number;
-  numberOfTasks: number;
-}
-
-export interface IterativeResolution extends ResolutionBase {
-  type: 'iterative';
-  numberOfRepetition: number;
-  completedTimes: number;
-}
-
 /**
- * Discriminated union for all resolution types.
- * Use the `type` field to narrow the specific variant.
+ * Resolution in the unified list shape returned by GET /api/resolutions/all.
+ * Dates are `Date` on the server and ISO strings once serialized to JSON.
  */
-export type TypedResolution =
-  | BaseResolution
-  | CompoundResolution
-  | IterativeResolution;
+export interface UnifiedResolution {
+  id: string;
+  type: ResolutionTypeValue;
+  ownerUserId: string;
+  title: string;
+  text: string;
+  subtasks?: Subtask[];
+  numberOfRepetition?: number;
+  completedTimes?: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+/** Shape of a resolution passed to the create/edit dialog (matches the unified API response). */
+export interface ResolutionFormData {
+  id?: string;
+  type: ResolutionTypeValue;
+  title: string;
+  text: string;
+  subtasks?: Subtask[];
+  numberOfRepetition?: number;
+}

@@ -3,8 +3,9 @@
  * Spec Reference: 04-bingo-teams.md - Invitations / Joining
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyTeams } from '@/lib/team-signals';
 import { isUserVerified } from '@/lib/auth';
-import { joinTeamByInviteCode, getTeamWithMembers, ensureBingoCardForUser, User } from '@/lib/db';
+import { joinTeamByInviteCode, getTeamWithMembers, ensureBingoCardForUser } from '@/lib/db';
 import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
 
 /**
@@ -42,6 +43,10 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   // Spec: 04-bingo-teams.md - Joining After Start
   if (result.team?.status === 'started') {
     await ensureBingoCardForUser(result.team.id, currentUser.id);
+  }
+
+  if (result.team) {
+    await notifyTeams([result.team.id]);
   }
 
   return NextResponse.json({

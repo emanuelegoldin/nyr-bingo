@@ -46,8 +46,37 @@ function getTransporter(): Transporter {
  * Check if email service is configured
  * Returns true if all required SMTP settings are present
  */
-export function isEmailConfigured(): boolean {
+function isEmailConfigured(): boolean {
   return !!(SMTP_HOST && SMTP_USER && SMTP_PASSWORD);
+}
+
+/**
+ * Deliver a verification token: by email when SMTP is configured, otherwise to the server log.
+ * Callers decide how to treat a failed send.
+ *
+ * @param email - Recipient email address
+ * @param username - User's username for personalization
+ * @param token - Verification token
+ * @returns Whether email is configured, and whether the email was sent
+ */
+export async function deliverVerificationToken(
+  email: string,
+  username: string,
+  token: string
+): Promise<{ emailConfigured: boolean; sent: boolean }> {
+  if (!isEmailConfigured()) {
+    // Development mode without SMTP - log token to console
+    console.log(`[DEV] Verification token for ${email}: ${token}`);
+    console.log(`[DEV] Verification URL: ${APP_BASE_URL}/verify?token=${token}`);
+    return { emailConfigured: false, sent: false };
+  }
+
+  const emailResult = await sendVerificationEmail(email, username, token);
+  if (!emailResult.success) {
+    console.error('Failed to send verification email:', emailResult.error);
+  }
+
+  return { emailConfigured: true, sent: emailResult.success };
 }
 
 /**
@@ -59,7 +88,7 @@ export function isEmailConfigured(): boolean {
  * @param token - Verification token to include in the link
  * @returns Promise<boolean> - true if email sent successfully, false otherwise
  */
-export async function sendVerificationEmail(
+async function sendVerificationEmail(
   email: string,
   username: string,
   token: string
@@ -145,25 +174,5 @@ The Resolution Bingo Team
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to send email' 
     };
-  }
-}
-
-/**
- * Verify transporter configuration (for testing purposes)
- * This can be called during application startup to ensure email is configured correctly
- */
-export async function verifyEmailConnection(): Promise<boolean> {
-  if (!isEmailConfigured()) {
-    return false;
-  }
-
-  try {
-    const transporter = getTransporter();
-    await transporter.verify();
-    console.log('[Email Service] SMTP connection verified successfully');
-    return true;
-  } catch (error) {
-    console.error('[Email Service] SMTP connection verification failed:', error);
-    return false;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAppContext } from "@/hooks/AppContext";
+import { usePageTitle } from "@/hooks/AppContext";
 import type { ReactNode } from "react";
 
 interface PublicProfilePageShellProps {
@@ -16,8 +16,7 @@ interface PublicProfilePageShellProps {
 export default function PublicProfilePageShell({
   children,
 }: PublicProfilePageShellProps) {
-  const { setTitle } = useAppContext();
-  setTitle("Profile");
+  usePageTitle("Profile");
 
   return <>{children}</>;
 }

@@ -11,42 +11,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppContext } from "@/hooks/AppContext";
+import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
+import { PageSpinner } from "@/components/page-spinner";
+import { TeamStatusBadge } from "@/components/team/team-status-badge";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
-
-interface TeamMember {
-  membership: {
-    id: string;
-    teamId: string;
-    userId: string;
-    role: 'leader' | 'member';
-    joinedAt: string;
-  };
-  user: {
-    id: string;
-    userId: string;
-    username: string;
-    displayName: string | null;
-    bio: string | null;
-    avatarUrl: string | null;
-  };
-}
-
-interface Team {
-  id: string;
-  name: string;
-  leaderUserId: string;
-  teamResolutionText: string | null;
-  status: 'forming' | 'started';
-  members: TeamMember[];
-}
+import type { Team } from './[teamId]/types';
 
 export default function TeamsPage() {
-  const { setTitle } = useAppContext();
-  setTitle("Teams");
+  usePageTitle("Teams");
 
   const { toast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
@@ -56,22 +32,18 @@ export default function TeamsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const loadTeams = useCallback(async () => {
-    try {
-      const response = await fetch('/api/teams');
-      const data = await response.json();
-
-      if (response.ok) {
-        setTeams(data.teams || []);
-      }
-    } catch (error) {
+    const result = await apiFetch<{ teams?: Team[] }>('/api/teams');
+    if (result.ok) {
+      setTeams(result.data.teams || []);
+    } else if (result.status === 0) {
+      // No usable response (network failure or non-JSON body)
       toast({
         title: "Error",
         description: "Failed to load teams",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }, [toast]);
 
   useEffect(() => {
@@ -82,46 +54,32 @@ export default function TeamsPage() {
     if (!newTeamName.trim()) return;
 
     setIsCreating(true);
-    try {
-      const response = await fetch('/api/teams', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newTeamName }),
+    const result = await apiFetch<{ team: Team }>('/api/teams', {
+      method: 'POST',
+      json: { name: newTeamName },
+    });
+
+    if (result.ok) {
+      setTeams([result.data.team, ...teams]);
+      setNewTeamName("");
+      setDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Team created successfully",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setTeams([data.team, ...teams]);
-        setNewTeamName("");
-        setDialogOpen(false);
-        toast({
-          title: "Success",
-          description: "Team created successfully",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to create team",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred",
+        description: result.status === 0 ? "An error occurred" : result.error || "Failed to create team",
         variant: "destructive",
       });
-    } finally {
-      setIsCreating(false);
     }
+    setIsCreating(false);
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+      <PageSpinner />
     );
   }
 
@@ -184,12 +142,7 @@ export default function TeamsPage() {
                     Led by {leader?.user.displayName || leader?.user.username || 'Unknown'}
                   </CardDescription>
                   <div className="mt-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${team.status === 'started'
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                      }`}>
-                      {team.status === 'started' ? 'Game Started' : 'Forming Team'}
-                    </span>
+                    <TeamStatusBadge status={team.status} />
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow">

@@ -1,85 +1,115 @@
 # 00 — System Overview
 
 ## Goal
-New Year Resolution Bingo is an application where users maintain personal resolutions, join teams, and play a team bingo game generated from team-wide and peer-provided resolutions.
+New Year Resolution Bingo is an application where users maintain resolutions, join teams, and play a team bingo game generated from a team goal, peer-provided resolutions and personal resolutions.
 
-## Scope (MVP per current requirements)
+## How to Read These Specs
+- Each spec describes the behavior of the application as it is currently implemented.
+- A **Known Gaps** section, where present, lists current behavior that diverges from the apparent intent of the feature. Those entries are facts about the code, not requirements to preserve.
+
+## Spec Index
+| Spec | Topic |
+| ---- | ----- |
+| 01 | Authentication and email verification |
+| 02 | User profile and privacy |
+| 03 | Personal resolutions and resolution types |
+| 04 | Bingo teams |
+| 05 | Bingo card generation |
+| 06 | Bingo gameplay |
+| 07 | Proof and approval |
+| 08 | Visibility and updates |
+| 09 | Bingo card editing |
+| 10 | Voting mechanic (`VoteBar`) |
+| 11 | Real-time updates and conflict resolution |
+| 12 | Team tabs, members list and leaderboard |
+| 13 | Resolution history and progress |
+| 14 | Dashboard and navigation |
+| 15 | Internationalization |
+
+## Scope
 In scope:
-- User accounts: register, login, email verification
-- User profile: ability to manage personal data and decide what is public
-- Personal resolutions CRUD
-- Bingo teams: create team, invite/join, define one team resolution
-- Team workflow: members create resolutions for other members; team leader starts game when ready
-- Bingo card generation rules (joker in center; duplicate handling; filler rules)
-- Proof upload + approval/decline with comment
-- Gameplay marking (complete / to complete) and visibility of other users' cards
-- Real-time-ish updates to other users in the group when a card changes (implementation can be polling/WebSocket; behavior is what matters)
+- User accounts: register, login, logout, email verification
+- User profile: manage personal data and decide what is public
+- Resolutions: personal CRUD; `base`, `compound` and `iterative` types; history timeline
+- Bingo teams: create team, invite/join, define one team goal, members create resolutions for each other, leader starts the game
+- Bingo card generation (joker in the center, text de-duplication, personal fallback, empty filler cells)
+- Gameplay marking (complete / undo), automatic completion for typed resolutions, viewing other members' cards
+- Card editing by the card owner
+- Proof review: requested by a teammate, discussed in a thread, decided by votes or by a deadline
+- Team leaderboard
+- WebSocket-based real-time signals
+- Language selection (English, German, Italian)
 
-Out of scope (not specified):
-- Payments, achievements, leaderboards, analytics, notifications beyond email verification
+Out of scope (not implemented):
+- Payments, achievements, analytics, notifications beyond email verification
 - Social features beyond team invites and viewing
 - Admin console
+- Leaving a team, removing a member, transferring team leadership
 
 ## Key Roles
 - **User**: owns a profile, manages personal resolutions, participates in teams.
-- **Team leader**: a user who created the team; can invite users, set team resolution, and start team bingo.
-- **Team member**: invited/joined user; can create resolutions for other members; can approve proofs.
+- **Team leader**: the user who created the team; can invite users, set the team goal, start the game and delete the team.
+- **Team member**: a user who joined through an invitation; can create resolutions for other members, request proof and vote on reviews. The leader is also a team member.
 
 ## Core Concepts / Data (logical)
 - **User**
-  - id
-  - username
-  - email
-  - passwordHash
-  - emailVerifiedAt
-  - profile fields (some public, some private)
-  - privacy settings
-- **Resolution** (personal)
-  - id, ownerUserId, text, createdAt, updatedAt
+  - id, username, email, passwordHash, emailVerifiedAt
+- **UserProfile**
+  - userId, displayName, bio, avatarUrl
+  - displayNamePublic, bioPublic, avatarPublic
+- **Session**
+  - userId, token, expiresAt
+- **Resolution** (one table for every type and scope)
+  - id, ownerUserId, title, description
+  - resolutionType: `base` | `compound` | `iterative`
+  - scope: `personal` | `team` | `member_provided`
+  - teamId, toUserId (set according to scope)
+  - subtasks, numberOfRepetition, completedTimes (set according to type)
 - **Team**
-  - id, name, leaderUserId
-  - teamResolutionText (the "joker" resolution)
-  - status: `forming` | `started`
+  - id, name, leaderUserId, status: `forming` | `started`
+  - The team goal is the resolution with `scope = team` for that team. `teamResolutionText` is derived from it on read and is not stored on the team.
 - **TeamMembership**
   - teamId, userId, role (`leader` or `member`), joinedAt
-- **TeamProvidedResolution** (a resolution authored by one member for another member)
-  - id, teamId, fromUserId, toUserId, text
-- **BingoCard** (per team per user, generated at start)
-  - id, teamId, userId
-  - gridSize (assume 5x5 unless otherwise specified)
-  - cells (25): each cell contains resolution text + metadata + state
-- **BingoCellState**
-  - `to_complete` | `completed`
-  - proof attachment(s) (optional)
-  - approval status (optional)
+- **TeamInvitation**
+  - teamId, inviteCode, invitedEmail, invitedUserId, status, expiresAt
+- **BingoCard** (one per team per user)
+  - id, teamId, userId, gridSize (always 5)
+- **BingoCell** (24 stored cells; the center Joker is not stored)
+  - id, cardId, position (0–24)
+  - resolutionId, resolutionType
+  - sourceType: `team` | `member_provided` | `personal` | `empty`
+  - sourceUserId, isEmpty (generated)
+  - state: `pending` | `completed` | `pending_review` | `accomplished`
+- **ReviewThread**, **ReviewMessage**, **ReviewFile**, **ReviewVote** (see spec 07)
+- **TeamLeaderboard** (see spec 12)
+- **ResolutionHistoryEntry** (see spec 13)
+
+The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in the schema but belong to removed flows. No code reads or writes them.
 
 ## Security & Permissions (high level)
-- Authentication required for any user-specific operations.
+- Authentication is required for any user-specific operation.
 - A user can modify only:
   - their own profile and privacy settings
   - their own personal resolutions
-  - their own bingo card state (mark complete/to complete, upload proof)
+  - their own bingo card (mark complete/undo, edit content, upload proof to threads about their cells)
+- Other members' actions can still change a cell's state: a proof request moves a cell to review, votes decide its outcome, and progress on a typed team goal moves that goal's cell on every card (spec 06).
 - Team leader can:
-  - create team, invite, start game, set team resolution
+  - invite, start the game, set the team goal, delete the team
 - Any team member can:
-  - view other team members' bingo cards (once available per visibility rules)
-  - approve/decline proofs for other members
+  - view other team members' bingo cards
+  - create and update resolutions for other members
+  - request proof on another member's completed cell, post in review threads and vote
 
 ## Primary Flows
 1. Register → email verification → login
 2. Create/update profile + choose public fields
-3. Personal resolutions: add/update/delete
-4. Team lifecycle: create team → invite/join members → members provide resolutions for each other → leader starts bingo
-5. Card gameplay: mark completed / revert → upload proof → other members approve/decline with comment
-6. Visibility: view others' cards; see updates when someone changes card state
+3. Personal resolutions: add/update/delete, track progress, keep a history
+4. Team lifecycle: create team → invite/join members → set team goal → members provide resolutions for each other → leader starts bingo
+5. Card gameplay: mark completed / undo, or complete automatically through typed progress
+6. Proof review: a teammate requests proof → the owner uploads proof → members discuss and vote → the cell becomes `accomplished` or returns to `pending`
+7. Visibility: view others' cards and the team leaderboard
 
 ## Non-Functional Requirements
-- Data integrity: prevent duplicate entries in a generated card; support reporting duplicates and replacement.
-- Auditability: keep who provided which resolution and who approved/declined.
+- Data integrity: generated cards do not contain duplicate texts; the concurrent cell mutations listed in spec 11 are guarded.
+- Auditability: resolutions record who wrote them, cells record their source user, votes record the voter, and resolution history records progress events.
 - Privacy: honor per-field public/private settings for profile data.
-
-## Open Questions (to confirm later)
-- Bingo grid size: requirements imply a standard bingo card (5x5). If different, specify.
-- How invitations work (email link, in-app notification, invite code) is not specified.
-- Proof format (image, video, file types/size) is not specified.
-- Real-time updates mechanism is not specified; only the observable behavior is required.

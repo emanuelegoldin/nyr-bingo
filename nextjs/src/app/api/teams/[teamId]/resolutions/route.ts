@@ -6,9 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   isTeamMember,
-  createTeamProvidedResolution,
-  getTeamProvidedResolutionsByUser,
-  getTeamProvidedResolutionsForUser,
+  getMemberProvidedResolutionsByUser,
+  getMemberProvidedResolutionsForUser,
   checkAllResolutionsProvided,
   getTeamMembers,
 } from '@/lib/db';
@@ -34,15 +33,15 @@ export const GET = withAuth(async (
   }
 
   if (toUserId) {
-    const resolutions = await getTeamProvidedResolutionsForUser(teamId, toUserId);
+    const resolutions = await getMemberProvidedResolutionsForUser(teamId, toUserId);
     return NextResponse.json({ resolutions });
   }
 
   // Get resolutions created by the user
-  const createdByUser = await getTeamProvidedResolutionsByUser(teamId, currentUser.id);
+  const createdByUser = await getMemberProvidedResolutionsByUser(teamId, currentUser.id);
 
   // Get resolutions created for the user
-  const createdForUser = await getTeamProvidedResolutionsForUser(teamId, currentUser.id);
+  const createdForUser = await getMemberProvidedResolutionsForUser(teamId, currentUser.id);
 
   // Get all team members
   const members = await getTeamMembers(teamId);
@@ -56,46 +55,4 @@ export const GET = withAuth(async (
     members,
     status,
   });
-});
-
-/**
- * POST /api/teams/[teamId]/resolutions - Create resolution for another member
- * Spec: 04-bingo-teams.md - Each member can create a resolution for each other member
- */
-export const POST = withAuth(async (
-  request: NextRequest,
-  { params, currentUser }: AuthContext<{ teamId: string }>
-) => {
-  const { teamId } = await params;
-  const body = await request.json();
-  const { toUserId, text } = body;
-
-  if (!toUserId) {
-    return errorResponse('Target user ID is required', 400);
-  }
-
-  if (!text || text.trim().length === 0) {
-    return errorResponse('Resolution text is required', 400);
-  }
-
-  // Spec: 04-bingo-teams.md - A member cannot create a "for myself" entry
-  if (toUserId === currentUser.id) {
-    return errorResponse('You cannot create a resolution for yourself', 400);
-  }
-
-  const resolution = await createTeamProvidedResolution(
-    teamId,
-    currentUser.id,
-    toUserId,
-    text
-  );
-
-  if (!resolution) {
-    return errorResponse('Failed to create resolution. Check that both users are team members.', 400);
-  }
-
-  // Get updated status
-  const status = await checkAllResolutionsProvided(teamId);
-
-  return NextResponse.json({ resolution, status }, { status: 201 });
 });

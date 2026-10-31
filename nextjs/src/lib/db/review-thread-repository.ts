@@ -4,138 +4,52 @@
  */
 
 import { randomUUID } from 'crypto';
-import { PoolConnection } from 'mysql2/promise';
-import { rm } from 'node:fs/promises';
-import path from 'node:path';
-import { ThreadStatus, VoteType } from '../shared/types';
-import { getConnection, query } from './connection';
+import { VoteType } from '../shared/types';
+import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
-import { isTeamMember } from './team-repository';
+import { removeThreadFiles } from './review-file-repository';
+import {
+  FileRow,
+  getCellInfo,
+  getCellInfoForMember,
+  loadOpenThread,
+  loadThread,
+  MessageAndUsernameRow,
+  rowToFile,
+  rowToMessage,
+  rowToThread,
+  rowToVote,
+  ThreadRow,
+  VoteRow,
+} from './review-thread-rows';
 import type {
-  ReviewFile,
   ReviewMessageAndAuthor,
   ReviewThread,
   ReviewThreadWithDetails,
   ReviewVote,
 } from './types';
 
-// Row types from database
-interface ThreadRow {
-  id: string;
-  cell_id: string;
-  completed_by_user_id: string;
-  status: ThreadStatus;
-  created_at: Date;
-  closed_at: Date | null;
-}
-
-interface MessageAndUsernameRow {
-  id: string;
-  content: string;
-  username: string;
-}
-
-interface FileRow {
-  id: string;
-  thread_id: string;
-  uploaded_by_user_id: string;
-  file_path: string;
-  file_size: number;
-  file_name: string;
-  mime_type: string | null;
-  created_at: Date;
-}
-
-interface ThreadFilePathRow {
-  id: string;
-  file_path: string;
-}
-
-interface VoteRow {
-  id: string;
-  thread_id: string;
-  voter_user_id: string;
-  vote: VoteType;
-  created_at: Date;
-  updated_at: Date;
-}
-
-interface CellInfoRow {
-  cell_id: string;
-  card_id: string;
-  card_user_id: string;
-  team_id: string;
-  resolution_text: string;
-  state: string;
-}
-
-// Convert functions
-function rowToThread(row: ThreadRow): ReviewThread {
-  return {
-    id: row.id,
-    cellId: row.cell_id,
-    completedByUserId: row.completed_by_user_id,
-    status: row.status,
-    createdAt: row.created_at,
-    closedAt: row.closed_at,
-  };
-}
-
-function rowToMessage(row: MessageAndUsernameRow): ReviewMessageAndAuthor {
-  return {
-    id: row.id,
-    authorUsername: row.username,
-    content: row.content
-  };
-}
-
-function rowToFile(row: FileRow): ReviewFile {
-  return {
-    id: row.id,
-    threadId: row.thread_id,
-    uploadedByUserId: row.uploaded_by_user_id,
-    filePath: row.file_path,
-    fileSize: row.file_size,
-    fileName: row.file_name,
-    mimeType: row.mime_type,
-    createdAt: row.created_at,
-  };
-}
-
-function rowToVote(row: VoteRow): ReviewVote {
-  return {
-    id: row.id,
-    threadId: row.thread_id,
-    voterUserId: row.voter_user_id,
-    vote: row.vote,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
+const SELECT_MESSAGE_WITH_AUTHOR = `
+  SELECT msg.id, msg.content, u.username
+  FROM review_messages msg
+  JOIN users u ON msg.author_user_id = u.id
+`;
 
 /**
- * Get cell and team information
+ * Decide how a thread's votes close it.
+ * Spec: ≥50% accept → accomplished, <50% → pending
+ * @param votes The votes cast so far
+ * @param eligibleVoters How many team members may vote
+ * @returns The cell's next state, or null while votes are missing or nobody can vote
  */
-async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
-  const rows = await query<CellInfoRow[]>(
-    `SELECT
-        c.id as cell_id,
-        c.card_id,
-        CASE
-          WHEN c.is_empty THEN 'Empty'
-          WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.description, r.title, '')
-          ELSE ''
-        END as resolution_text,
-        c.state,
-        bc.user_id as card_user_id,
-        bc.team_id
-     FROM bingo_cells c
-     JOIN bingo_cards bc ON c.card_id = bc.id
-     LEFT JOIN resolutions r ON c.resolution_id = r.id
-     WHERE c.id = ?`,
-    [cellId]
-  );
-  return rows.length > 0 ? rows[0] : null;
+function decideOutcome(votes: VoteRow[], eligibleVoters: number): 'accomplished' | 'pending' | null {
+  // Note: Handle edge case where there are no eligible voters (single-member team)
+  if (eligibleVoters === 0 || votes.length < eligibleVoters) {
+    return null;
+  }
+
+  const acceptVotes = votes.filter((v) => v.vote === 'accept').length;
+  return acceptVotes / votes.length >= 0.5 ? 'accomplished' : 'pending';
 }
 
 /**
@@ -146,17 +60,13 @@ export async function requestProof(
   cellId: string,
   requestingUserId: string
 ): Promise<{ success: boolean; thread?: ReviewThread; error?: string }> {
-  const cellInfo = await getCellInfo(cellId);
-
-  if (!cellInfo) {
-    return { success: false, error: 'Cell not found' };
-  }
-
   // Only team members can request proof
-  const isMember = await isTeamMember(cellInfo.team_id, requestingUserId);
-  if (!isMember) {
-    return { success: false, error: 'Only team members can request proof' };
+  const access = await getCellInfoForMember(cellId, requestingUserId, 'Only team members can request proof');
+  if ('error' in access) {
+    return { success: false, error: access.error };
   }
+
+  const { cellInfo } = access;
 
   // Cannot request proof for own cell
   if (cellInfo.card_user_id === requestingUserId) {
@@ -178,13 +88,10 @@ export async function requestProof(
     return { success: false, error: 'A review thread already exists for this cell' };
   }
 
-  const connection = await getConnection();
+  const threadId = randomUUID();
 
-  try {
-    await connection.beginTransaction();
-
+  const cellMoved = await withTransaction(async (connection) => {
     // Create thread
-    const threadId = randomUUID();
     await connection.execute(
       `INSERT INTO review_threads (id, cell_id, completed_by_user_id, status)
        VALUES (?, ?, ?, 'open')`,
@@ -195,33 +102,27 @@ export async function requestProof(
     // This prevents races with the owner undoing completion concurrently.
     // Owner actions prevail — if the owner already reverted the cell to
     // 'pending', this UPDATE touches 0 rows and we roll back.
-    const [updateResult] = await connection.execute(
+    const updateResult = await execute(
       `UPDATE bingo_cells SET state = 'pending_review' WHERE id = ? AND state = 'completed'`,
-      [cellId]
+      [cellId],
+      connection
     );
-    const affectedRows = (updateResult as { affectedRows: number }).affectedRows;
-    if (affectedRows === 0) {
-      await connection.rollback();
-      return { success: false, error: 'Cell state changed — the owner may have undone the completion' };
-    }
+    return updateResult.affectedRows > 0;
+  }, (didMove) => didMove);
 
-    await connection.commit();
-
-    // Refresh leaderboard: completed → pending_review affects completed_tasks count
-    await refreshLeaderboardEntry(cellInfo.team_id, cellInfo.card_user_id);
-
-    const threadRows = await query<ThreadRow[]>(
-      `SELECT * FROM review_threads WHERE id = ?`,
-      [threadId]
-    );
-
-    return { success: true, thread: rowToThread(threadRows[0]) };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
+  if (!cellMoved) {
+    return { success: false, error: 'Cell state changed — the owner may have undone the completion' };
   }
+
+  // Refresh leaderboard: completed → pending_review affects completed_tasks count
+  await refreshLeaderboardEntry(cellInfo.team_id, cellInfo.card_user_id);
+
+  const threadRows = await query<ThreadRow[]>(
+    `SELECT * FROM review_threads WHERE id = ?`,
+    [threadId]
+  );
+
+  return { success: true, thread: rowToThread(threadRows[0]) };
 }
 
 /**
@@ -231,35 +132,24 @@ export async function getThreadById(
   threadId: string,
   requestingUserId: string
 ): Promise<{ success: boolean; thread?: ReviewThreadWithDetails; error?: string }> {
-  const threadRows = await query<ThreadRow[]>(
-    `SELECT * FROM review_threads WHERE id = ?`,
-    [threadId]
-  );
+  const thread = await loadThread(threadId);
 
-  if (threadRows.length === 0) {
+  if (!thread) {
     return { success: false, error: 'Thread not found' };
   }
 
-  const thread = rowToThread(threadRows[0]);
-
-  // Get cell info to check team membership
-  const cellInfo = await getCellInfo(thread.cellId);
-  if (!cellInfo) {
-    return { success: false, error: 'Cell not found' };
-  }
-
   // Only team members can access thread
-  const isMember = await isTeamMember(cellInfo.team_id, requestingUserId);
-  if (!isMember) {
-    return { success: false, error: 'Only team members can access this thread' };
+  const access = await getCellInfoForMember(thread.cellId, requestingUserId, 'Only team members can access this thread');
+  if ('error' in access) {
+    return { success: false, error: access.error };
   }
+
+  const { cellInfo } = access;
 
   // Get messages
   const messages = await query<MessageAndUsernameRow[]>(
-    `SELECT msg.id, msg.content, u.username 
-    FROM review_messages msg 
-    JOIN users u ON msg.author_user_id = u.id
-    WHERE msg.thread_id = ? ORDER BY msg.created_at ASC`,
+    `${SELECT_MESSAGE_WITH_AUTHOR}
+     WHERE msg.thread_id = ? ORDER BY msg.created_at ASC`,
     [threadId]
   );
 
@@ -300,31 +190,15 @@ export async function addMessage(
     return { success: false, error: 'Message content is required' };
   }
 
-  const threadRows = await query<ThreadRow[]>(
-    `SELECT * FROM review_threads WHERE id = ?`,
-    [threadId]
-  );
-
-  if (threadRows.length === 0) {
-    return { success: false, error: 'Thread not found' };
-  }
-
-  const thread = rowToThread(threadRows[0]);
-
-  if (thread.status !== 'open') {
-    return { success: false, error: 'Thread is closed' };
-  }
-
-  // Get cell info to check team membership
-  const cellInfo = await getCellInfo(thread.cellId);
-  if (!cellInfo) {
-    return { success: false, error: 'Cell not found' };
+  const loaded = await loadOpenThread(threadId);
+  if ('error' in loaded) {
+    return { success: false, error: loaded.error };
   }
 
   // Only team members can post messages
-  const isMember = await isTeamMember(cellInfo.team_id, authorUserId);
-  if (!isMember) {
-    return { success: false, error: 'Only team members can post messages' };
+  const access = await getCellInfoForMember(loaded.thread.cellId, authorUserId, 'Only team members can post messages');
+  if ('error' in access) {
+    return { success: false, error: access.error };
   }
 
   const messageId = randomUUID();
@@ -335,115 +209,12 @@ export async function addMessage(
   );
 
   const messageRows = await query<MessageAndUsernameRow[]>(
-    `SELECT msg.id, msg.content, u.username
-     FROM review_messages msg
-     JOIN users u ON msg.author_user_id = u.id
+    `${SELECT_MESSAGE_WITH_AUTHOR}
      WHERE msg.id = ?`,
     [messageId]
   );
 
   return { success: true, message: rowToMessage(messageRows[0]) };
-}
-
-/**
- * Upload file to thread
- * Spec: Only completing user can upload files
- */
-export async function uploadFile(
-  threadId: string,
-  uploadingUserId: string,
-  filePath: string,
-  fileSize: number,
-  fileName: string,
-  mimeType?: string
-): Promise<{ success: boolean; file?: ReviewFile; error?: string }> {
-  // Validate file size (max 5MB)
-  const MAX_FILE_SIZE = 5 * 1024 * 1024;
-  if (fileSize > MAX_FILE_SIZE) {
-    return { success: false, error: 'File size exceeds 5MB limit' };
-  }
-
-  const threadRows = await query<ThreadRow[]>(
-    `SELECT * FROM review_threads WHERE id = ?`,
-    [threadId]
-  );
-
-  if (threadRows.length === 0) {
-    return { success: false, error: 'Thread not found' };
-  }
-
-  const thread = rowToThread(threadRows[0]);
-
-  if (thread.status !== 'open') {
-    return { success: false, error: 'Thread is closed' };
-  }
-
-  // Only the completing user can upload files
-  if (thread.completedByUserId !== uploadingUserId) {
-    return { success: false, error: 'Only the completing user can upload proof files' };
-  }
-
-  const fileId = randomUUID();
-  await query(
-    `INSERT INTO review_files (id, thread_id, uploaded_by_user_id, file_path, file_size, file_name, mime_type)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [fileId, threadId, uploadingUserId, filePath, fileSize, fileName, mimeType || null]
-  );
-
-  const fileRows = await query<FileRow[]>(
-    `SELECT * FROM review_files WHERE id = ?`,
-    [fileId]
-  );
-
-  return { success: true, file: rowToFile(fileRows[0]) };
-}
-
-/**
- * Delete a previously uploaded file from an open thread
- * Spec: only the completing user can delete a proof file
- */
-export async function deleteThreadFile(
-  threadId: string,
-  deletingUserId: string,
-  fileId: string
-): Promise<{ success: boolean; error?: string }> {
-  const threadRows = await query<ThreadRow[]>(
-    `SELECT * FROM review_threads WHERE id = ?`,
-    [threadId]
-  );
-
-  if (threadRows.length === 0) {
-    return { success: false, error: 'Thread not found' };
-  }
-
-  const thread = rowToThread(threadRows[0]);
-
-  if (thread.status !== 'open') {
-    return { success: false, error: 'Thread is closed' };
-  }
-
-  if (thread.completedByUserId !== deletingUserId) {
-    return { success: false, error: 'Only the completing user can delete proof files' };
-  }
-
-  const fileRows = await query<ThreadFilePathRow[]>(
-    `SELECT id, file_path FROM review_files WHERE id = ? AND thread_id = ?`,
-    [fileId, threadId]
-  );
-
-  if (fileRows.length === 0) {
-    return { success: false, error: 'File not found' };
-  }
-
-  const file = fileRows[0];
-  await deleteStoredThreadFile(file.file_path);
-
-  await query(
-    `DELETE FROM review_files WHERE id = ? AND thread_id = ?`,
-    [file.id, threadId]
-  );
-
-  return { success: true };
 }
 
 /**
@@ -455,43 +226,27 @@ export async function submitVote(
   voterUserId: string,
   vote: VoteType
 ): Promise<{ success: boolean; vote?: ReviewVote; threadClosed?: boolean; error?: string }> {
-  const threadRows = await query<ThreadRow[]>(
-    `SELECT * FROM review_threads WHERE id = ?`,
-    [threadId]
-  );
-
-  if (threadRows.length === 0) {
-    return { success: false, error: 'Thread not found' };
+  const loaded = await loadOpenThread(threadId);
+  if ('error' in loaded) {
+    return { success: false, error: loaded.error };
   }
 
-  const thread = rowToThread(threadRows[0]);
-
-  if (thread.status !== 'open') {
-    return { success: false, error: 'Thread is closed' };
-  }
-
-  // Get cell info
-  const cellInfo = await getCellInfo(thread.cellId);
-  if (!cellInfo) {
-    return { success: false, error: 'Cell not found' };
-  }
+  const { thread } = loaded;
 
   // Only team members can vote
-  const isMember = await isTeamMember(cellInfo.team_id, voterUserId);
-  if (!isMember) {
-    return { success: false, error: 'Only team members can vote' };
+  const access = await getCellInfoForMember(thread.cellId, voterUserId, 'Only team members can vote');
+  if ('error' in access) {
+    return { success: false, error: access.error };
   }
+
+  const { cellInfo } = access;
 
   // Completing user cannot vote
   if (thread.completedByUserId === voterUserId) {
     return { success: false, error: 'Completing user cannot vote on their own proof' };
   }
 
-  const connection = await getConnection();
-
-  try {
-    await connection.beginTransaction();
-
+  const { savedVote, nextCellState } = await withTransaction(async (connection) => {
     // Insert or update vote
     const voteId = randomUUID();
     await connection.execute(
@@ -502,71 +257,48 @@ export async function submitVote(
     );
 
     // Get the actual vote record (in case of update)
-    const [voteRowsUnknown] = await connection.execute(
+    const voteRows = await query<VoteRow[]>(
       `SELECT * FROM review_votes WHERE thread_id = ? AND voter_user_id = ?`,
-      [threadId, voterUserId]
+      [threadId, voterUserId],
+      connection
     );
-
-    const voteRows = voteRowsUnknown as VoteRow[];
-    const savedVote = rowToVote(voteRows[0]);
 
     // Check if all eligible voters have voted
     // Get all team members except the completing user
-    const [teamMemberRowsUnknown] = await connection.execute(
+    const teamMemberRows = await query<Array<{ user_id: string }>>(
       `SELECT user_id FROM team_memberships WHERE team_id = ? AND user_id != ?`,
-      [cellInfo.team_id, thread.completedByUserId]
+      [cellInfo.team_id, thread.completedByUserId],
+      connection
     );
 
-    const teamMemberRows = teamMemberRowsUnknown as Array<{ user_id: string }>;
-
-    const eligibleVoters = teamMemberRows.length;
-
-    const [allVoteRowsUnknown] = await connection.execute(
+    const allVoteRows = await query<VoteRow[]>(
       `SELECT * FROM review_votes WHERE thread_id = ?`,
-      [threadId]
+      [threadId],
+      connection
     );
 
-    const allVoteRows = allVoteRowsUnknown as VoteRow[];
+    return {
+      savedVote: rowToVote(voteRows[0]),
+      nextCellState: decideOutcome(allVoteRows, teamMemberRows.length),
+    };
+  });
 
-    const totalVotes = allVoteRows.length;
+  let threadClosed = false;
 
-    let threadClosed = false;
-    let nextCellState: 'accomplished' | 'pending' | null = null;
-
-    // If all eligible voters have voted, close the thread
-    // Note: Handle edge case where there are no eligible voters (single-member team)
-    if (eligibleVoters > 0 && totalVotes >= eligibleVoters) {
-      // Count accept votes
-      const acceptVotes = allVoteRows.filter((v: VoteRow) => v.vote === 'accept').length;
-      const acceptPercentage = acceptVotes / totalVotes;
-
-      // Determine new cell state based on votes
-      // Spec: ≥50% accept → accomplished, <50% → pending
-      nextCellState = acceptPercentage >= 0.5 ? 'accomplished' : 'pending';
+  if (nextCellState) {
+    const closeResult = await finalizeThreadClosure(threadId, thread.cellId, nextCellState);
+    threadClosed = closeResult.success;
+    if (!closeResult.success) {
+      console.error('Failed to close thread after all votes were submitted:', closeResult.error);
     }
-
-    await connection.commit();
-
-    if (nextCellState) {
-      const closeResult = await finalizeThreadClosure(threadId, thread.cellId, nextCellState);
-      threadClosed = closeResult.success;
-      if (!closeResult.success) {
-        console.error('Failed to close thread after all votes were submitted:', closeResult.error);
-      }
-    }
-
-    // Refresh persisted leaderboard data after vote-driven state change
-    if (threadClosed) {
-      await refreshLeaderboardEntry(cellInfo.team_id, thread.completedByUserId);
-    }
-
-    return { success: true, vote: savedVote, threadClosed };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
   }
+
+  // Refresh persisted leaderboard data after vote-driven state change
+  if (threadClosed) {
+    await refreshLeaderboardEntry(cellInfo.team_id, thread.completedByUserId);
+  }
+
+  return { success: true, vote: savedVote, threadClosed };
 }
 
 /**
@@ -577,20 +309,12 @@ export async function closeThread(
   threadId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const threadRows = await query<ThreadRow[]>(
-    `SELECT * FROM review_threads WHERE id = ?`,
-    [threadId]
-  );
-
-  if (threadRows.length === 0) {
-    return { success: false, error: 'Thread not found' };
+  const loaded = await loadOpenThread(threadId, 'Thread is already closed');
+  if ('error' in loaded) {
+    return { success: false, error: loaded.error };
   }
 
-  const thread = rowToThread(threadRows[0]);
-
-  if (thread.status !== 'open') {
-    return { success: false, error: 'Thread is already closed' };
-  }
+  const { thread } = loaded;
 
   // Get cell info
   const cellInfo = await getCellInfo(thread.cellId);
@@ -613,108 +337,37 @@ export async function closeThread(
   return { success: true };
 }
 
-/**
- * Get open thread for a cell
- */
-export async function getOpenThreadForCell(cellId: string): Promise<ReviewThread | null> {
-  const rows = await query<ThreadRow[]>(
-    `SELECT * FROM review_threads WHERE cell_id = ? AND status = 'open'`,
-    [cellId]
-  );
-
-  return rows.length > 0 ? rowToThread(rows[0]) : null;
-}
-
-async function cleanUpThreadMessages(threadId: string, connection: PoolConnection): Promise<void> {
-  await connection.execute(
-    `DELETE FROM review_messages WHERE thread_id = ?`,
-    [threadId]
-  );
-}
-
-// Based on possible alias, retrieve actual path on filesystem
-function resolveThreadFileLocation(filePath: string): string | null {
-  const normalized = path.posix.normalize((filePath || '').replace(/^\/+/, ''));
-
-  if (normalized.startsWith('review-files/')) {
-    return path.join(process.cwd(), 'uploads', normalized);
-  }
-
-  if (normalized.startsWith('uploads/review-files/')) {
-    return path.join(process.cwd(), 'public', normalized);
-  }
-
-  return null;
-}
-
-async function deleteStoredThreadFile(filePath: string): Promise<void> {
-  const fileLocation = resolveThreadFileLocation(filePath);
-  if (!fileLocation) {
-    throw new Error(`Refusing to delete unexpected file path: ${filePath}`);
-  }
-
-  try {
-    await rm(fileLocation);
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      return;
-    }
-    throw error;
-  }
-}
-
 async function finalizeThreadClosure(
   threadId: string,
   cellId: string,
   nextCellState: 'pending' | 'accomplished'
 ): Promise<{ success: boolean; error?: string }> {
-  const fileRows = await query<ThreadFilePathRow[]>(
-    `SELECT id, file_path FROM review_files WHERE thread_id = ? ORDER BY created_at ASC`,
-    [threadId]
-  );
-
-  for (const file of fileRows) {
-    try {
-      await deleteStoredThreadFile(file.file_path);
-    } catch {
-      return { success: false, error: 'Failed to delete uploaded files from storage' };
-    }
-
-    await query(
-      `DELETE FROM review_files WHERE id = ? AND thread_id = ?`,
-      [file.id, threadId]
-    );
+  const filesRemoved = await removeThreadFiles(threadId);
+  if (!filesRemoved) {
+    return { success: false, error: 'Failed to delete uploaded files from storage' };
   }
 
-  const connection = await getConnection();
-
-  try {
-    await connection.beginTransaction();
-
-    await cleanUpThreadMessages(threadId, connection);
-
+  return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
     await connection.execute(
-      `UPDATE bingo_cells SET state = ? WHERE id = ?`,
-      [nextCellState, cellId]
-    );
-
-    const [updateResult] = await connection.execute(
-      `UPDATE review_threads SET status = 'closed', closed_at = NOW() WHERE id = ? AND status = 'open'`,
+      `DELETE FROM review_messages WHERE thread_id = ?`,
       [threadId]
     );
 
-    const affectedRows = (updateResult as { affectedRows: number }).affectedRows;
-    if (affectedRows === 0) {
-      await connection.rollback();
+    await connection.execute(
+      `UPDATE bingo_cells SET state = ? WHERE id = ? AND state = 'pending_review'`,
+      [nextCellState, cellId]
+    );
+
+    const updateResult = await execute(
+      `UPDATE review_threads SET status = 'closed', closed_at = NOW() WHERE id = ? AND status = 'open'`,
+      [threadId],
+      connection
+    );
+
+    if (updateResult.affectedRows === 0) {
       return { success: false, error: 'Thread is already closed' };
     }
 
-    await connection.commit();
     return { success: true };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  }, (outcome) => outcome.success);
 }

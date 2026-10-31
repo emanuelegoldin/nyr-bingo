@@ -6,21 +6,8 @@
 
 import { NextResponse } from 'next/server';
 import { getResolutionsByUser } from '@/lib/db';
-import type { Subtask } from '@/lib/shared/types';
-import { errorResponse, withAuth, AuthContextNoParams } from '../../utils';
-
-interface UnifiedResolution {
-  id: string;
-  type: 'base' | 'compound' | 'iterative';
-  ownerUserId: string;
-  title: string;
-  text: string;
-  subtasks?: Subtask[];
-  numberOfRepetition?: number;
-  completedTimes?: number;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-}
+import type { UnifiedResolution } from '@/lib/shared/types';
+import { withAuth, AuthContextNoParams } from '../../utils';
 
 /**
  * GET /api/resolutions/all — returns all personal resolutions of all types

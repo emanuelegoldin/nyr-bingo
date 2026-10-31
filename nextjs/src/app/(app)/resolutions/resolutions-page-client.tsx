@@ -8,10 +8,7 @@
  * Creation and editing are handled via the ResolutionCreateEditDialog.
  */
 
-import {
-  ResolutionCreateEditDialog,
-  type ResolutionFormData,
-} from "@/components/dialogs/resolution-create-edit-dialog";
+import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
 import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,42 +20,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAppContext } from "@/hooks/AppContext";
+import { useAppContext, usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
-import type { Subtask } from "@/lib/shared/types";
+import { apiFetch } from "@/lib/api-client";
+import { unifiedToFormData } from "@/lib/shared/resolution-form";
+import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import type { ResolutionFormData, ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
 import { History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
-type ResolutionTypeValue = "base" | "compound" | "iterative";
-
-interface UnifiedResolution {
-  id: string;
-  type: ResolutionTypeValue;
-  ownerUserId: string;
-  title: string;
-  text: string;
-  subtasks?: Subtask[];
-  numberOfRepetition?: number;
-  completedTimes?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** Human-readable labels for resolution types. */
-const TYPE_LABELS: Record<ResolutionTypeValue, string> = {
-  base: "Common",
-  compound: "Complex",
-  iterative: "Iterative",
-};
-
-/** Badge variant per type for visual distinction. */
-const TYPE_VARIANT: Record<ResolutionTypeValue, "default" | "secondary" | "outline"> = {
-  base: "secondary",
-  compound: "default",
-  iterative: "outline",
+/** Type-specific DELETE endpoint per resolution type (base uses the generic route). */
+const DELETE_ENDPOINTS: Record<ResolutionTypeValue, string> = {
+  base: "/api/resolutions",
+  compound: "/api/resolutions/compound",
+  iterative: "/api/resolutions/iterative",
 };
 
 /* ─── Manager Component ──────────────────────────────────────────── */
@@ -81,13 +59,11 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
 
   /** Fetch all resolution types from the unified endpoint. */
   const loadResolutions = useCallback(async () => {
-    try {
-      const response = await fetch("/api/resolutions/all");
-      const data = await response.json();
-      if (response.ok) {
-        setResolutions(data.resolutions || []);
-      }
-    } catch {
+    const result = await apiFetch<{ resolutions?: UnifiedResolution[] }>("/api/resolutions/all");
+    if (result.ok) {
+      setResolutions(result.data.resolutions || []);
+    } else if (result.status === 0) {
+      // No usable response (network failure or non-JSON body)
       toast({
         title: "Error",
         description: "Failed to load resolutions",
@@ -104,14 +80,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
 
   /** Open dialog in edit mode with existing data. */
   const handleEdit = (res: UnifiedResolution) => {
-    setEditingResolution({
-      id: res.id,
-      type: res.type,
-      title: res.title,
-      text: res.text,
-      subtasks: res.subtasks,
-      numberOfRepetition: res.numberOfRepetition,
-    });
+    setEditingResolution(unifiedToFormData(res));
     setDialogOpen(true);
   };
 
@@ -126,41 +95,21 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
    */
   const handleDelete = async (res: UnifiedResolution) => {
     setDeletingId(res.id);
-    try {
-      let url: string;
-      switch (res.type) {
-        case "compound":
-          url = `/api/resolutions/compound?id=${res.id}`;
-          break;
-        case "iterative":
-          url = `/api/resolutions/iterative?id=${res.id}`;
-          break;
-        default:
-          url = `/api/resolutions?id=${res.id}`;
-      }
+    const url = `${DELETE_ENDPOINTS[res.type] ?? DELETE_ENDPOINTS.base}?id=${res.id}`;
 
-      const response = await fetch(url, { method: "DELETE" });
+    const result = await apiFetch<unknown>(url, { method: "DELETE" });
 
-      if (response.ok) {
-        setResolutions((prev) => prev.filter((r) => r.id !== res.id));
-        toast({ title: "Success", description: "Resolution deleted" });
-      } else {
-        const data = await response.json();
-        toast({
-          title: "Error",
-          description: data.error || "Failed to delete resolution",
-          variant: "destructive",
-        });
-      }
-    } catch {
+    if (result.ok) {
+      setResolutions((prev) => prev.filter((r) => r.id !== res.id));
+      toast({ title: "Success", description: "Resolution deleted" });
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred",
+        description: result.status === 0 ? "An error occurred" : result.error || "Failed to delete resolution",
         variant: "destructive",
       });
-    } finally {
-      setDeletingId(null);
     }
+    setDeletingId(null);
   };
 
   /** Called when a resolution is saved (created or updated) via the dialog. */
@@ -196,8 +145,8 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium truncate">{res.title}</span>
-                    <Badge variant={TYPE_VARIANT[res.type]} className="text-xs flex-shrink-0">
-                      {TYPE_LABELS[res.type]}
+                    <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[res.type]} className="text-xs flex-shrink-0">
+                      {RESOLUTION_TYPE_LABELS[res.type]}
                     </Badge>
                   </div>
                   {res.text && res.text !== res.title && (
@@ -296,12 +245,10 @@ interface ResolutionsPageClientProps {
 export default function ResolutionsPageClient({
   initialResolutions,
 }: ResolutionsPageClientProps) {
-  const { language, setTitle } = useAppContext();
+  const { language } = useAppContext();
   const t = getDictionaryForLocale(language).ResolutionsPage;
 
-  useEffect(() => {
-    setTitle(t.headerTitle);
-  }, [setTitle, t.headerTitle]);
+  usePageTitle(t.headerTitle);
 
   return (
     <div className="space-y-6">

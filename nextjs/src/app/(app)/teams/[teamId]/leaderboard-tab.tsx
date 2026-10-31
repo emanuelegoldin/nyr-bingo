@@ -19,7 +19,7 @@ import Link from "next/link";
 
 // ── Types ─────────────────────────────────────────────────────────
 
-/** Matches the shape returned by GET /api/teams/[teamId]/leaderboard */
+/** Matches the shape returned by getTeamLeaderboard */
 export interface LeaderboardEntry {
   userId: string;
   username: string;
