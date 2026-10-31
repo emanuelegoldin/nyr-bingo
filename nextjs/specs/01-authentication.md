@@ -121,6 +121,7 @@ Enforcement:
 - Verification token reused → reject
 - Requesting a new verification email when already verified → reject with `400`
 - Unauthenticated request to a protected API → `401`
+- Database failure while checking the session → `500` on APIs and an error page on server pages, not `401` or a redirect to login
 
 ---
 

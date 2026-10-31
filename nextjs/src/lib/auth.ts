@@ -12,27 +12,22 @@ import { redirect } from 'next/navigation';
 /**
  * Get the current authenticated user from the session
  * Spec: 01-authentication.md - Authentication required for any user-specific operations
+ * Database errors propagate, so an outage is not mistaken for being logged out.
  */
 export async function getCurrentUser(): Promise<User | null> {
-  try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('session_token')?.value;
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('session_token')?.value;
 
-    if (!sessionToken) {
-      return null;
-    }
-
-    const session = await findSessionByToken(sessionToken);
-    if (!session) {
-      return null;
-    }
-
-    const user = await findUserById(session.userId);
-    return user;
-  } catch (error) {
-    console.error('Error getting current user:', error);
+  if (!sessionToken) {
     return null;
   }
+
+  const session = await findSessionByToken(sessionToken);
+  if (!session) {
+    return null;
+  }
+
+  return findUserById(session.userId);
 }
 
 /**
