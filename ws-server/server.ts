@@ -16,6 +16,7 @@ const MAX_ROOMS_PER_SOCKET = 256;
 const MAX_MESSAGES_PER_WINDOW = 30;
 const RATE_WINDOW_MS = 10 * 1000;
 const CLOSE_POLICY_VIOLATION = 1008;
+const HEARTBEAT_INTERVAL_MS = 30 * 1000;
 
 const httpServer = createServer(handleHttpRequest);
 const wss = new WebSocketServer({
@@ -28,10 +29,13 @@ httpServer.listen(WS_PORT);
 const rooms = new Map<string, Set<WebSocket>>();
 const socketRooms = new WeakMap<WebSocket, Set<string>>();
 const socketRates = new WeakMap<WebSocket, { windowStart: number; count: number }>();
+const liveSockets = new WeakSet<WebSocket>();
 
 wss.on('connection', function connection(ws) {
   console.log('New client connected');
   ws.on('error', console.error);
+  liveSockets.add(ws);
+  ws.on('pong', () => liveSockets.add(ws));
 
   ws.on('close', () => {
     const joinedRooms = socketRooms.get(ws);
@@ -68,6 +72,18 @@ wss.on('connection', function connection(ws) {
     }
   });
 });
+
+// Drop sockets that stopped answering, so their browsers reconnect
+setInterval(() => {
+  for (const ws of wss.clients) {
+    if (!liveSockets.has(ws)) {
+      ws.terminate();
+      continue;
+    }
+    liveSockets.delete(ws);
+    ws.ping();
+  }
+}, HEARTBEAT_INTERVAL_MS);
 
 /**
  * Serve the internal notify endpoint. Nginx only proxies /ws, so this is reachable

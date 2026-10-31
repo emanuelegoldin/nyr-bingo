@@ -3,7 +3,7 @@
 /**
  * TeamWsProvider
  *
- * Manages a **single** WebSocket connection per team, shared by every
+ * Manages a **single** WebSocket connection per team, reconnecting when it drops, shared by every
  * component that needs real-time card updates (BingoCard, ResolutionCell,
  * dialogs, etc.).
  *
@@ -24,6 +24,9 @@
 import { apiFetch } from "@/lib/api-client";
 import { getWsUrl, type WsIncomingMessage, type WsOutgoingMessage, type WsRoom } from "@/lib/shared/ws-messages";
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
+
+const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_MAX_DELAY_MS = 30 * 1000;
 
 /** Callback signature for message listeners. */
 export type WsMessageHandler = (msg: WsIncomingMessage) => void;
@@ -104,46 +107,61 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
     }
   }, []);
 
-  // ── Open a single WS for the lifetime of this provider ────────
+  // ── Keep one WS open for the lifetime of this provider ───────
   useEffect(() => {
     if (!teamId) return;
     const wsUrl = getWsUrl();
     if (!wsUrl) return;
 
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    let disposed = false;
+    let failedAttempts = 0;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
-    ws.onopen = () => {
-      sendJoin({ type: "card", id: teamId }, ws);
-      for (const room of roomsRef.current) {
-        sendJoin(room, ws);
-      }
+    const connect = () => {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        failedAttempts = 0;
+        sendJoin({ type: "card", id: teamId }, ws);
+        for (const room of roomsRef.current) {
+          sendJoin(room, ws);
+        }
+      };
+
+      ws.onmessage = (event) => {
+        // Parse the incoming message
+        let parsed: WsIncomingMessage;
+        try {
+          parsed = JSON.parse(event.data as string) as WsIncomingMessage;
+        } catch {
+          return; /* ignore malformed messages */
+        }
+
+        // Dispatch to all registered listeners (resolution-level, etc.)
+        dispatchToListeners(parsed);
+      };
+
+      ws.onerror = (e) => {
+        console.error("[TeamWsProvider] WebSocket error:", e);
+      };
+
+      ws.onclose = () => {
+        if (wsRef.current === ws) wsRef.current = null;
+        if (disposed) return;
+        const delay = Math.min(RECONNECT_BASE_DELAY_MS * 2 ** failedAttempts, RECONNECT_MAX_DELAY_MS);
+        failedAttempts += 1;
+        reconnectTimer = setTimeout(connect, delay);
+      };
     };
 
-    ws.onmessage = (event) => {
-      // Parse the incoming message
-      let parsed: WsIncomingMessage;
-      try {
-        parsed = JSON.parse(event.data as string) as WsIncomingMessage;
-      } catch {
-        return; /* ignore malformed messages */
-      }
-
-      // Dispatch to all registered listeners (resolution-level, etc.)
-      dispatchToListeners(parsed);
-    };
-
-    ws.onerror = (e) => {
-      console.error("[TeamWsProvider] WebSocket error:", e);
-    };
+    connect();
 
     return () => {
-      if (wsRef.current === ws) wsRef.current = null;
-      try {
-        ws.close();
-      } catch {
-        /* ignore */
-      }
+      disposed = true;
+      clearTimeout(reconnectTimer);
+      wsRef.current?.close();
+      wsRef.current = null;
     };
   }, [teamId, dispatchToListeners, sendJoin]);
 

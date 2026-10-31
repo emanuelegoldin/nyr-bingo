@@ -38,6 +38,7 @@ It details the mechanism behind **08 — Visibility and Updates**.
 - It refuses to start without `WS_SHARED_SECRET`.
 - It joins a socket to a room only with a valid signed token.
 - It rejects browser connections from another site's page (the `Origin` hostname must match the `Host`).
+- It pings sockets every 30 seconds and drops those that stop answering.
 - Limits per socket: 4 KB per message, 30 messages per 10 seconds (the socket is closed with code `1008` beyond that), and 256 rooms.
 - Clients only join rooms and listen. A signal reaches every socket in the room, including the one that made the change. Rooms are removed when their last socket leaves.
 
@@ -137,7 +138,8 @@ In both cases the final state is `pending`, honouring the owner's intent.
 ### `TeamWsProvider` (team-ws-provider.tsx)
 
 - Wraps the team page tabs and each dashboard card, and opens **one** WebSocket per provider, so all tabs and cards on a team page share it.
-- Joins `card:<teamId>` and every tracked room on open.
+- Joins `card:<teamId>` and every tracked room on open, which includes each reconnect with fresh tokens.
+- Reconnects when the socket closes, waiting 1 second and doubling up to 30 seconds. A successful open resets the wait.
 - Exposes `joinRoom`, `addMessageListener` and `teamName` through `useTeamWs()`. All rooms of a page share its one socket, through `useWsRoom`.
 - Dispatches every incoming message to registered listeners.
 - Closes the socket on unmount.

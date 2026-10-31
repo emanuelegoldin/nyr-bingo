@@ -176,9 +176,8 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 
 ## Known Gaps
 
-- Deadline closures (`CloseThreads`) send no WebSocket signal, and the team
-  page socket does not reconnect after it drops. In both cases the leaderboard
-  does not update until the page is reloaded.
+- Deadline closures (`CloseThreads`) send no WebSocket signal, so the
+  leaderboard does not update until the page is reloaded.
 - After the leader clicks **Start Bingo**, the Cards tab shows "No bingo cards
   available yet" until the page is reloaded, because its card list is only set
   from the server-rendered data.
