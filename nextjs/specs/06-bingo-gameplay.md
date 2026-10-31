@@ -161,5 +161,4 @@ These concerns are handled in **07 — Proof and Approval**.
 
 ## Known Gaps
 
-- `PUT /api/cells/[cellId]` does not check the resolution type, so `compound` and `iterative` cells can be set manually through the API.
 - An `accomplished` cell has no Undo in the UI.

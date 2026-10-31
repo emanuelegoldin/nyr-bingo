@@ -11,6 +11,7 @@ import { BingoCell } from './types';
 
 interface OwnedCellRow {
   is_empty: boolean | number;
+  resolution_type: ResolutionType;
   source_type: CellSourceType;
   state: CellState;
   card_user_id: string;
@@ -43,7 +44,7 @@ async function loadOwnedCell(
   notOwnerError: string
 ): Promise<{ cell: OwnedCellRow } | { error: string }> {
   const rows = await query<OwnedCellRow[]>(
-    `SELECT c.is_empty, c.source_type, c.state, bc.user_id as card_user_id, bc.team_id
+    `SELECT c.is_empty, c.resolution_type, c.source_type, c.state, bc.user_id as card_user_id, bc.team_id
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
      WHERE c.id = ?`,
@@ -90,6 +91,11 @@ export async function updateCellState(
 
   if (newState !== CellState.PENDING && newState !== CellState.COMPLETED) {
     return { success: false, error: 'Only pending and completed can be set directly' };
+  }
+
+  // Spec: 06-bingo-gameplay.md - compound and iterative cells follow their progress
+  if (cell.resolution_type !== ResolutionType.BASE) {
+    return { success: false, error: 'Compound and iterative cells complete automatically' };
   }
 
   const validFromStates = VALID_FROM_STATES[newState];
