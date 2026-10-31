@@ -165,8 +165,10 @@ export const ResolutionCell = ({
     };
 
     const sourceLabel = getSourceLabel(cell, usernames);
-    // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell is selectable (including empty)
-    const canEditContent = Boolean(editMode && isOwner && cell.sourceType !== CellSourceType.TEAM);
+    // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell not under review is selectable (including empty)
+    const canEditContent = Boolean(
+        editMode && isOwner && cell.sourceType !== CellSourceType.TEAM && cell.state !== CellState.PENDING_REVIEW
+    );
     const canInteract =
         (
             canEditContent ||

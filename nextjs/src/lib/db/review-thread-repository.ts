@@ -354,7 +354,7 @@ async function finalizeThreadClosure(
     );
 
     await connection.execute(
-      `UPDATE bingo_cells SET state = ? WHERE id = ?`,
+      `UPDATE bingo_cells SET state = ? WHERE id = ? AND state = 'pending_review'`,
       [nextCellState, cellId]
     );
 

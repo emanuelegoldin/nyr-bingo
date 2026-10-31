@@ -176,6 +176,11 @@ export async function updateCellContent(
     return { success: false, error: 'Team resolution cell cannot be modified' };
   }
 
+  // Spec: 09-bingo-card-editing.md - A review stays about the content it was opened on
+  if (owned.cell.state === CellState.PENDING_REVIEW) {
+    return { success: false, error: 'A cell under review cannot be edited' };
+  }
+
   // Prevent storing ids for types that shouldn't have them
   if (update.sourceType === 'empty' && update.resolutionId) {
     return { success: false, error: 'Empty cells cannot reference a resolution id' };
@@ -206,16 +211,20 @@ export async function updateCellContent(
     sourceUserId = resolution.ownerUserId;
   }
 
-  await query(
+  const updateResult = await execute(
     `UPDATE bingo_cells
      SET resolution_id = ?,
          resolution_type = ?,
          source_type = ?,
          source_user_id = ?,
          state = 'pending'
-     WHERE id = ?`,
+     WHERE id = ? AND state <> 'pending_review'`,
     [resolutionId, resolutionType, update.sourceType, sourceUserId, cellId]
   );
+
+  if (updateResult.affectedRows === 0) {
+    return { success: false, error: 'Cell state has changed — please refresh and try again' };
+  }
 
   const updatedRow = await getResolvedCellRowById(cellId);
   if (!updatedRow) {

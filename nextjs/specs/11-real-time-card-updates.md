@@ -121,7 +121,7 @@ If `affectedRows === 0`, the cell was already transitioned by another operation 
 
 Other mutations are not guarded on cell state:
 - Thread closure (votes or the completing user) is guarded on the thread instead: `WHERE status = 'open'`. If the thread was already closed, the transaction rolls back messages and cell state; proof files removed before the transaction stay removed.
-- Cell edits (spec 09) and the deadline procedure (spec 07) write the state without any guard.
+- Cell edits (spec 09) are guarded against `pending_review`. The deadline procedure (spec 07) writes the state without any guard.
 
 ### Owner-Prevails Rule
 

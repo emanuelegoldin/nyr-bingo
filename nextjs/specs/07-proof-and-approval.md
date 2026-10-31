@@ -233,4 +233,3 @@ If a file cannot be removed from disk during an all-votes or completing-user clo
 - Undo and deadline closure leave proof files on disk with no database record of them.
 - The deadline rule differs from the voting rule: a thread with no votes is accepted.
 - `/review-files/` is served by Nginx without authentication. Access control relies on the file name being unguessable.
-- Editing a cell's content does not close an open thread on that cell (spec 09).

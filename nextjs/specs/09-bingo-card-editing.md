@@ -41,7 +41,7 @@ This spec defines:
 - While in edit mode the button reads **Done** and exits edit mode.
 
 ### 2) Selectable Cells in Edit Mode
-- While in edit mode, the card owner can select **any non-joker, non-team cell**, including empty filler cells, in any state.
+- While in edit mode, the card owner can select **any non-joker, non-team cell**, including empty filler cells, in any state except `pending_review`.
 - The joker (center) cell cannot be selected.
 - A team goal cell (`source_type = 'team'`) cannot be selected.
 
@@ -73,6 +73,7 @@ When a replacement option is selected, the system updates the cell via `PUT /api
 - Only the card owner can edit the content of cells on their card.
 - Attempts to edit the joker cell fail.
 - Attempts to edit a team goal cell fail.
+- Attempts to edit a cell under review fail, so a review always concerns the content it was opened on.
 
 ## Backend Rules
 
@@ -92,6 +93,7 @@ Validation:
 - The authenticated user MUST be the card owner for the specified cell
 - The specified cell MUST NOT be a joker cell (`joker:` id)
 - The specified cell MUST NOT be a team goal cell
+- The specified cell MUST NOT be in `pending_review`
 - For `personal`, the resolution MUST be the caller's own personal resolution
 - For `member_provided`, the resolution MUST be proposed to the caller in the card's team
 - The resolution MUST NOT already be on another cell of the card
@@ -108,7 +110,7 @@ Effects:
 
 ## Acceptance Criteria
 - A card owner can enter and exit edit mode from the dashboard.
-- In edit mode, the owner can select any non-joker, non-team cell (including empty).
+- In edit mode, the owner can select any non-joker, non-team cell not under review (including empty).
 - On selection, the UI shows a list combining:
   - `GET /api/resolutions/all`
   - `GET /api/teams/[teamId]/resolutions?toUserId=<currentUserId>`
@@ -121,5 +123,4 @@ Effects:
 ## Known Gaps
 - `sourceType = 'empty'` is accepted, so a cell can be cleared through the API although the UI has no such option.
 - The rule against duplicate text (spec 05) is not applied to edits: the UI and API only compare resolution ids, so a resolution with the same text as another cell can be selected.
-- Editing a cell does not close an open review thread on it.
 - Editing a cell does not refresh the leaderboard, so a completed cell that was edited stays counted until the owner's next leaderboard refresh.
