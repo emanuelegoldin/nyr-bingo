@@ -1,9 +1,8 @@
+import { apiFetch } from "@/lib/api-client";
 import { BingoCellWithProof } from "@/lib/db/types";
 import { getSourceLabel } from "@/lib/shared/cell-source";
-import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { CellSourceType, CellState, ResolutionType, type Subtask } from "@/lib/shared/types";
+import { useState } from "react";
 import { MarkCellCompleteDialog } from "../dialogs/complete-dialog";
 import { EditCellDialog } from "../dialogs/edit-cell";
 import { RequestProofDialog } from "../dialogs/request-proof";
@@ -15,10 +14,70 @@ import {
 import { ResolutionHistoryDialog } from "../dialogs/resolution-history-dialog";
 import { CellThreadDialog } from "../dialogs/thread-dialog";
 import { useTeamMembers } from "../team-members-context";
-import { Badge } from "../ui/badge";
-import { Cell } from "./cell";
-import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
-import { EmptyCell } from "./empty";
+import { CellFace } from "./cell-face";
+
+/** The dialog currently opened from a cell, or null when none is open. */
+type ActiveDialog = 'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | 'history' | null;
+
+/** Body of `GET /api/resolutions/{compound,iterative}?id=...`. */
+interface ResolutionDetailResponse {
+    resolution?: {
+        id: string,
+        title: string,
+        description?: string | null,
+        // Compound resolutions carry `subtasks`, iterative ones the two counters.
+        subtasks: Subtask[],
+        numberOfRepetition: number,
+        completedTimes: number,
+    },
+}
+
+/**
+ * Load the data shown by the detail dialog for a cell.
+ * For base/team: uses the cell's existing data (no extra fetch needed).
+ * For compound/iterative: fetches full data from the API.
+ *
+ * @param cell - The cell that was opened.
+ * @returns The detail data, or null if the fetch failed (failures are silent).
+ */
+const fetchResolutionDetail = async (cell: BingoCellWithProof): Promise<ResolutionDetailData | null> => {
+    const resType = cell.resolutionType;
+
+    if (resType !== ResolutionType.COMPOUND && resType !== ResolutionType.ITERATIVE) {
+        // Base or Team: no extra fetch needed, use cell data directly
+        return {
+            type: ResolutionType.BASE,
+            id: cell.resolutionId ?? cell.id,
+            title: cell.resolutionTitle || cell.resolutionText,
+            description: cell.resolutionText !== cell.resolutionTitle ? cell.resolutionText : null,
+        };
+    }
+
+    const endpoint = resType === ResolutionType.COMPOUND ? 'compound' : 'iterative';
+    const result = await apiFetch<ResolutionDetailResponse>(`/api/resolutions/${endpoint}?id=${cell.resolutionId}`);
+    if (!result.ok) return null;
+    // With ?id= the route returns a single `resolution`
+    const data = result.data.resolution;
+    if (!data) return null;
+
+    if (resType === ResolutionType.COMPOUND) {
+        return {
+            type: ResolutionType.COMPOUND,
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            subtasks: data.subtasks,
+        };
+    }
+    return {
+        type: ResolutionType.ITERATIVE,
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        numberOfRepetition: data.numberOfRepetition,
+        completedTimes: data.completedTimes,
+    };
+};
 
 interface ResolutionCellProps {
     cell: BingoCellWithProof,
@@ -41,10 +100,14 @@ export const ResolutionCell = ({
     onUpdate,
     onRefresh
 }: ResolutionCellProps) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState<'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | 'history' | null>(null);
+    const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
     const [detailData, setDetailData] = useState<ResolutionDetailData | null>(null);
     const usernames = useTeamMembers();
+
+    /** Dialogs report close requests through this; opening is done via `setActiveDialog`. */
+    const handleDialogOpenChange = (open: boolean) => {
+        if (!open) setActiveDialog(null);
+    };
 
     /**
      * Primary click handler — all non-edit clicks now route through the detail dialog.
@@ -55,8 +118,7 @@ export const ResolutionCell = ({
 
         // Edit mode: open the edit cell dialog
         if (canEditContent) {
-            setModalMode('edit_cell');
-            setIsModalOpen(true);
+            setActiveDialog('edit_cell');
             return;
         }
 
@@ -64,70 +126,19 @@ export const ResolutionCell = ({
         openDetailDialog();
     };
 
-    /**
-     * Fetch resolution data and open the detail dialog.
-     * For base/team: uses the cell's existing data (no extra fetch needed).
-     * For compound/iterative: fetches full data from the API.
-     */
+    /** Load the resolution data and open the detail dialog. */
     const openDetailDialog = async () => {
-        const resType = cell.resolutionType;
-
-        if (resType === ResolutionType.COMPOUND) {
-            try {
-                const res = await fetch(`/api/resolutions/compound?id=${cell.resolutionId}`);
-                if (!res.ok) return;
-                const { resolutions, resolution } = await res.json();
-                const data = resolution ?? (resolutions?.find?.((r: { id: string }) => r.id === cell.resolutionId));
-                if (data) {
-                    setDetailData({
-                        type: ResolutionType.COMPOUND,
-                        id: data.id,
-                        title: data.title,
-                        description: data.description,
-                        subtasks: data.subtasks,
-                    });
-                    setModalMode('detail');
-                    setIsModalOpen(true);
-                }
-            } catch { /* ignore */ }
-        } else if (resType === ResolutionType.ITERATIVE) {
-            try {
-                const res = await fetch(`/api/resolutions/iterative?id=${cell.resolutionId}`);
-                if (!res.ok) return;
-                const { resolutions, resolution } = await res.json();
-                const data = resolution ?? (resolutions?.find?.((r: { id: string }) => r.id === cell.resolutionId));
-                if (data) {
-                    setDetailData({
-                        type: ResolutionType.ITERATIVE,
-                        id: data.id,
-                        title: data.title,
-                        description: data.description,
-                        numberOfRepetition: data.numberOfRepetition,
-                        completedTimes: data.completedTimes,
-                    });
-                    setModalMode('detail');
-                    setIsModalOpen(true);
-                }
-            } catch { /* ignore */ }
-        } else {
-            // Base or Team: no extra fetch needed, use cell data directly
-            setDetailData({
-                type: ResolutionType.BASE,
-                id: cell.resolutionId ?? cell.id,
-                title: cell.resolutionTitle || cell.resolutionText,
-                description: cell.resolutionText !== cell.resolutionTitle ? cell.resolutionText : null,
-            });
-            setModalMode('detail');
-            setIsModalOpen(true);
-        }
+        const data = await fetchResolutionDetail(cell);
+        if (!data) return;
+        setDetailData(data);
+        setActiveDialog('detail');
     };
 
     /* ── Detail dialog action callbacks ──────────────────────────── */
 
     /** Owner wants to mark a base/team cell as complete — open the complete dialog. */
     const handleCompleteFromDetail = () => {
-        setModalMode('complete');
-        setIsModalOpen(true);
+        setActiveDialog('complete');
     };
 
     /** Owner wants to undo a completed base/team cell. */
@@ -137,47 +148,20 @@ export const ResolutionCell = ({
 
     /** Non-owner wants to request proof for a completed cell. */
     const handleRequestProofFromDetail = () => {
-        setModalMode('request_proof');
-        setIsModalOpen(true);
+        setActiveDialog('request_proof');
     };
 
     /** Anyone wants to view the review thread. */
     const handleViewThreadFromDetail = () => {
-        setModalMode('thread');
-        setIsModalOpen(true);
+        setActiveDialog('thread');
     };
 
     /** Open resolution history timeline dialog. */
     const handleViewHistoryFromDetail = () => {
-        setModalMode('history');
-        setIsModalOpen(true);
+        setActiveDialog('history');
     };
 
-    useEffect(() => {
-        if (!isModalOpen) {
-            setModalMode(null);
-        }
-    }, [isModalOpen]);
-
-    const stateConfig = {
-        pending: { icon: null, color: "bg-card hover:bg-secondary/50", text: "text-card-foreground" },
-        completed: { icon: getCellStateIcon("completed", "h-4 w-4"), color: CELL_STATE_COLORS.completed.bg, text: CELL_STATE_COLORS.completed.text },
-        pending_review: { icon: getCellStateIcon("pending_review", "h-4 w-4"), color: CELL_STATE_COLORS.pending_review.bg, text: CELL_STATE_COLORS.pending_review.text },
-        accomplished: { icon: getCellStateIcon("accomplished", "h-4 w-4"), color: CELL_STATE_COLORS.accomplished.bg, text: `${CELL_STATE_COLORS.accomplished.text} line-through` },
-        declined: { icon: getCellStateIcon("declined", "h-4 w-4"), color: CELL_STATE_COLORS.declined.bg, text: CELL_STATE_COLORS.declined.text },
-    };
-    // Determine visual state based on cell state and proof status
-    let visualState: keyof typeof stateConfig = cell.state;
-    if (cell.proof) {
-        if (cell.proof.status === ProofStatus.PENDING) visualState = 'pending_review';
-        else if (cell.proof.status === ProofStatus.DECLINED) visualState = 'declined';
-        else if (cell.proof.status === ProofStatus.APPROVED) visualState = 'accomplished';
-    }
-
-    const config = stateConfig[visualState] || stateConfig.pending;
     const sourceLabel = getSourceLabel(cell, usernames);
-    // Resolution title for cell display (truncated with CSS ellipsis)
-    const displayTitle = cell.resolutionTitle || cell.resolutionText;
     // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell is selectable (including empty)
     const canEditContent = Boolean(editMode && isOwner && cell.sourceType !== CellSourceType.TEAM);
     const canInteract =
@@ -196,71 +180,44 @@ export const ResolutionCell = ({
 
     return (
         <>
-            {cell.isEmpty ?
-                <EmptyCell
-                    editMode={editMode}
-                    isOwner={isOwner}
-                    onClick={handleClick} />
-                :
-                <Cell
-                    cellClassName={cn(
-                        "relative flex flex-col items-center justify-center aspect-square p-2 rounded-lg border shadow-sm text-center transition-all duration-300",
-                        config.color,
-                        canInteract ? "cursor-pointer hover:scale-105 hover:shadow-md" : "cursor-default"
-                    )}
-                    isDisabled={!canInteract}
-                    onClick={handleClick}>
-
-                    <p className={cn("text-xs md:text-sm font-medium truncate max-w-full", config.text)}>
-                        {displayTitle}
-                    </p>
-                    <div className="absolute top-1 right-1">
-                        {visualState !== 'pending' && config.icon}
-                    </div>
-                    <Badge variant="outline" className="absolute bottom-1 right-1 text-xs hidden sm:inline-flex">
-                        {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId ? (
-                            <Link
-                                href={`/profile/${cell.sourceUserId}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="hover:underline"
-                            >
-                                {sourceLabel}
-                            </Link>
-                        ) : cell.sourceType !== CellSourceType.EMPTY && sourceLabel}
-                    </Badge>
-                </Cell>
-            }
-            {modalMode === "complete" &&
+            <CellFace
+                cell={cell}
+                editMode={editMode}
+                isOwner={isOwner}
+                canInteract={canInteract}
+                sourceLabel={sourceLabel}
+                onClick={handleClick} />
+            {activeDialog === "complete" &&
                 <MarkCellCompleteDialog
                     cell={{
                         id: cell.id,
                         resolutionText: cell.resolutionText
                     }}
-                    open={isModalOpen}
-                    setIsOpen={setIsModalOpen}
+                    open={true}
+                    setIsOpen={handleDialogOpenChange}
                     onUpdate={onUpdate} />
             }
-            {modalMode === "request_proof" &&
+            {activeDialog === "request_proof" &&
                 <RequestProofDialog
                     cell={{
                         id: cell.id,
                         resolutionText: cell.resolutionText
                     }}
-                    isOpen={isModalOpen}
-                    setIsOpen={setIsModalOpen}
+                    isOpen={true}
+                    setIsOpen={handleDialogOpenChange}
                     onRefresh={onRefresh} />
             }
-            {modalMode === "edit_cell" && isOwner &&
+            {activeDialog === "edit_cell" && isOwner &&
                 <EditCellDialog
                     cellId={cell.id}
                     existingCells={existingCells}
                     teamId={teamId ? teamId : ""}
                     currentUserId={currentUserId ? currentUserId : ""}
-                    isOpen={isModalOpen}
-                    setIsOpen={setIsModalOpen}
+                    isOpen={true}
+                    setIsOpen={handleDialogOpenChange}
                     onRefresh={onRefresh} />
             }
-            {modalMode === "thread" &&
+            {activeDialog === "thread" &&
                 <CellThreadDialog
                     cell={{
                         id: cell.id,
@@ -268,16 +225,16 @@ export const ResolutionCell = ({
                         reviewThreadId: cell.reviewThreadId ? cell.reviewThreadId : ""
                     }}
                     isOwner={isOwner}
-                    isOpen={isModalOpen}
-                    setIsOpen={setIsModalOpen}
+                    isOpen={true}
+                    setIsOpen={handleDialogOpenChange}
                     onRefresh={onRefresh} />
             }
-            {modalMode === "detail" && detailData &&
+            {activeDialog === "detail" && detailData &&
                 <ResolutionDetailDialog
                     data={detailData}
                     cell={cellContext}
-                    isOpen={isModalOpen}
-                    setIsOpen={setIsModalOpen}
+                    isOpen={true}
+                    setIsOpen={handleDialogOpenChange}
                     isOwner={isOwner}
                     sourceLabel={sourceLabel}
                     onRefresh={onRefresh}
@@ -288,12 +245,12 @@ export const ResolutionCell = ({
                     onViewHistory={handleViewHistoryFromDetail}
                 />
             }
-            {modalMode === "history" && detailData &&
+            {activeDialog === "history" && detailData &&
                 <ResolutionHistoryDialog
                     resolutionId={detailData.id}
                     resolutionTitle={detailData.title}
-                    isOpen={isModalOpen}
-                    setIsOpen={setIsModalOpen}
+                    isOpen={true}
+                    setIsOpen={handleDialogOpenChange}
                 />
             }
         </>
