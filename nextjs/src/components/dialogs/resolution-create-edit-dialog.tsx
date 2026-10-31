@@ -75,7 +75,7 @@ const dialogCopy = (
   if (scope === "team") {
     return {
       title: isEdit ? "Edit Team Goal" : "Set Team Goal",
-      description: "Set the team goal that will appear in the center of everyone's bingo card.",
+      description: "Set the team goal that will appear on everyone's bingo card.",
     };
   }
   if (scope === "member_provided") {
