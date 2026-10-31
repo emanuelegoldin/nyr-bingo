@@ -149,7 +149,7 @@ export async function updateCellContent(
   userId: string,
   update: {
     resolutionId: string | null;
-    sourceType: CellSourceType;
+    sourceType: Exclude<CellSourceType, CellSourceType.TEAM>;
   }
 ): Promise<{ success: boolean; error?: string; cell?: BingoCell }> {
 
@@ -176,10 +176,8 @@ export async function updateCellContent(
   }
 
   // Prevent storing ids for types that shouldn't have them
-  if (update.sourceType === 'team' || update.sourceType === 'empty') {
-    if (update.resolutionId) {
-      return { success: false, error: 'Team/empty cells cannot reference a resolution id' };
-    }
+  if (update.sourceType === 'empty' && update.resolutionId) {
+    return { success: false, error: 'Empty cells cannot reference a resolution id' };
   }
 
   // The type and source user come from the resolution, never from the client.

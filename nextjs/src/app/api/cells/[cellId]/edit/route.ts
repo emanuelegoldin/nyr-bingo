@@ -20,7 +20,7 @@ export const PUT = withAuth(async (
   const sourceType = body?.sourceType;
   const resolutionId = typeof body?.resolutionId === 'string' ? body.resolutionId : null;
 
-  const validSourceTypes = ['team', 'member_provided', 'personal', 'empty'] as const;
+  const validSourceTypes = ['member_provided', 'personal', 'empty'] as const;
   if (!validSourceTypes.includes(sourceType)) {
     return errorResponse('Invalid sourceType', 400);
   }

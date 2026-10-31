@@ -78,14 +78,14 @@ When a replacement option is selected, the system updates the cell via `PUT /api
 
 ### `PUT /api/cells/[cellId]/edit`
 Request body (JSON):
-- `sourceType: 'team' | 'member_provided' | 'personal' | 'empty'` (required)
+- `sourceType: 'member_provided' | 'personal' | 'empty'` (required)
 - `resolutionId: string | null` (optional)
 
 The cell's `resolution_type` and `source_user_id` come from the resolution. Other fields in the body are ignored.
 
 Request constraints:
 - If `sourceType` is `personal` or `member_provided`, `resolutionId` is required.
-- If `sourceType` is `team` or `empty`, `resolutionId` must be null/omitted.
+- If `sourceType` is `empty`, `resolutionId` must be null/omitted.
 
 Validation:
 - Auth required
@@ -118,7 +118,6 @@ Effects:
 - On edit, the cell updates `resolution_id`, `resolution_type`, `source_type`, `source_user_id` (NULL when absent), and resets state to `pending`.
 
 ## Known Gaps
-- `sourceType = 'team'` without a `resolutionId` is accepted, which turns the cell into a `team` cell with no resolution.
 - `sourceType = 'empty'` is accepted, so a cell can be cleared through the API although the UI has no such option.
 - Duplicates are only prevented in the UI.
 - Editing a cell does not close an open review thread on it.
