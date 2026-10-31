@@ -103,13 +103,14 @@ async function TeamDetailContent({ teamId }: { teamId: string }) {
     getTeamLeaderboard(teamId),
   ]);
 
-  const initialCards = cardsResult.status === 'fulfilled' ? cardsResult.value : [];
-  const initialTeamGoal = goalResult.status === 'fulfilled' ? mapGoalToFormData(goalResult.value) : null;
+  // undefined marks a failed read, so a refresh keeps the data already on screen
+  const initialCards = cardsResult.status === 'fulfilled' ? cardsResult.value : undefined;
+  const initialTeamGoal = goalResult.status === 'fulfilled' ? mapGoalToFormData(goalResult.value) : undefined;
   const initialExistingResolutions = resolutionsResult.status === 'fulfilled'
     ? resolutionsResult.value
-    : [];
-  const initialLeaderboardEntries: LeaderboardEntry[] =
-    leaderboardResult.status === 'fulfilled' ? leaderboardResult.value : [];
+    : undefined;
+  const initialLeaderboardEntries: LeaderboardEntry[] | undefined =
+    leaderboardResult.status === 'fulfilled' ? leaderboardResult.value : undefined;
 
   return (
     <TeamDetailPageClient

@@ -9,8 +9,10 @@ import type { Team, TeamProvidedResolution } from "../types";
 interface UseTeamActionsParams {
   teamId: string;
   initialTeam: Team;
-  initialTeamGoal: ResolutionFormData | null;
-  initialExistingResolutions: TeamProvidedResolution[];
+  /** Undefined when the server failed to read it. */
+  initialTeamGoal?: ResolutionFormData | null;
+  /** Undefined when the server failed to read them. */
+  initialExistingResolutions?: TeamProvidedResolution[];
 }
 
 /**
@@ -30,16 +32,20 @@ export function useTeamActions({
   const router = useRouter();
   // Initial team payload is server-fetched to avoid first-render client waterfalls.
   const [team, setTeam] = useState<Team>(initialTeam);
-  const [teamGoal, setTeamGoal] = useState<ResolutionFormData | null>(initialTeamGoal);
+  const [teamGoal, setTeamGoal] = useState<ResolutionFormData | null>(initialTeamGoal ?? null);
   const [existingResolutions, setExistingResolutions] = useState<TeamProvidedResolution[]>(
-    initialExistingResolutions
+    initialExistingResolutions ?? []
   );
   const [isStarting, setIsStarting] = useState(false);
 
   // A server refresh brings new props (team changes signalled over WebSocket)
   useEffect(() => setTeam(initialTeam), [initialTeam]);
-  useEffect(() => setTeamGoal(initialTeamGoal), [initialTeamGoal]);
-  useEffect(() => setExistingResolutions(initialExistingResolutions), [initialExistingResolutions]);
+  useEffect(() => {
+    if (initialTeamGoal !== undefined) setTeamGoal(initialTeamGoal);
+  }, [initialTeamGoal]);
+  useEffect(() => {
+    if (initialExistingResolutions) setExistingResolutions(initialExistingResolutions);
+  }, [initialExistingResolutions]);
 
   // Delete team dialog (open state lives here because a successful delete closes it)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

@@ -27,6 +27,7 @@ import { DeleteTeamDialog } from "./_components/DeleteTeamDialog";
 import { InviteDialog } from "./_components/InviteDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
+import { useLastLoaded } from "./_components/use-last-loaded";
 import { useTeamActions } from "./_components/use-team-actions";
 import { CardsTab } from "./cards-tab";
 import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
@@ -36,11 +37,12 @@ import type { Team, TeamProvidedResolution } from "./types";
 interface TeamDetailPageClientProps {
   teamId: string;
   initialTeam: Team;
-  initialCards: BingoCardWithCells[];
+  /** Undefined when the server failed to read them, as for the other optional props. */
+  initialCards?: BingoCardWithCells[];
   initialCurrentUserId: string;
-  initialTeamGoal: ResolutionFormData | null;
-  initialExistingResolutions: TeamProvidedResolution[];
-  initialLeaderboardEntries: LeaderboardEntry[];
+  initialTeamGoal?: ResolutionFormData | null;
+  initialExistingResolutions?: TeamProvidedResolution[];
+  initialLeaderboardEntries?: LeaderboardEntry[];
 }
 
 export default function TeamDetailPageClient({
@@ -53,6 +55,9 @@ export default function TeamDetailPageClient({
   initialLeaderboardEntries,
 }: TeamDetailPageClientProps) {
   usePageTitle("Team");
+
+  const cards = useLastLoaded<BingoCardWithCells[]>(initialCards, []);
+  const leaderboardEntries = useLastLoaded<LeaderboardEntry[]>(initialLeaderboardEntries, []);
 
   const {
     team,
@@ -165,7 +170,7 @@ export default function TeamDetailPageClient({
           <TabsContent value="cards" className="mt-6">
             <CardsTab
               team={team}
-              initialCards={initialCards}
+              initialCards={cards}
               currentUserId={currentUserId}
             />
           </TabsContent>
@@ -175,7 +180,7 @@ export default function TeamDetailPageClient({
           </TabsContent>
 
           <TabsContent value="leaderboard" className="mt-6">
-            <LeaderboardTab initialEntries={initialLeaderboardEntries} />
+            <LeaderboardTab initialEntries={leaderboardEntries} />
           </TabsContent>
         </Tabs>
       </TeamWsProvider>
