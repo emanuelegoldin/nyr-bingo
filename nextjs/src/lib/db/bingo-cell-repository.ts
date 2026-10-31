@@ -4,7 +4,7 @@
  */
 
 import { CellSourceType, CellState, ResolutionType } from '../shared/types';
-import { CellRow, getResolvedCellRowById, rowToCell } from './bingo-card-rows';
+import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { BingoCell } from './types';
@@ -253,12 +253,12 @@ export async function undoCompletion(
   // Refresh persisted leaderboard data after undo
   await refreshLeaderboardEntry(cell.team_id, userId);
 
-  const updatedRows = await query<CellRow[]>(
-    `SELECT * FROM bingo_cells WHERE id = ?`,
-    [cellId]
-  );
+  const updatedRow = await getResolvedCellRowById(cellId);
+  if (!updatedRow) {
+    return { success: false, error: 'Cell not found' };
+  }
 
-  return { success: true, cell: rowToCell(updatedRows[0]) };
+  return { success: true, cell: rowToCell(updatedRow) };
 }
 
 /**
