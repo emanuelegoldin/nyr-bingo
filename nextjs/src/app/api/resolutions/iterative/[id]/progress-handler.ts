@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyResolution } from '@/lib/team-signals';
 import {
   adjustIterativeProgress,
   canModifyProgress,
@@ -65,6 +66,8 @@ export function createIterativeProgressHandler({
         ResolutionType.ITERATIVE,
         isProgressComplete(resolution)
       );
+
+      await notifyResolution(id);
 
       return NextResponse.json({ resolution, updatedCells });
     });

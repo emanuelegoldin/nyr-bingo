@@ -5,6 +5,7 @@
 
 import { threadErrorStatus } from '@/app/api/threads/error-status';
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyThreadClosed } from '@/lib/team-signals';
 import { closeThread, getThreadById } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
@@ -33,5 +34,6 @@ export const DELETE = withAuth(async (
   if (!result.success) {
     return errorResponse(result.error!, threadErrorStatus(result.error!));
   }
+  await notifyThreadClosed(threadId);
   return NextResponse.json({ success: true });
 });

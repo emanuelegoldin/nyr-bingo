@@ -3,6 +3,7 @@
  * Spec Reference: 06-bingo-gameplay.md - Card State
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyCell } from '@/lib/team-signals';
 import { updateCellState } from '@/lib/db';
 import type { CellState } from '@/lib/db/types';
 import { errorResponse, withAuth, AuthContext } from '../../utils';
@@ -35,6 +36,8 @@ export const PUT = withAuth(async (
       : 'Failed to update cell state';
     return errorResponse(message, 400);
   }
+
+  await notifyCell(cellId);
 
   return NextResponse.json({ cell: result.cell });
 });

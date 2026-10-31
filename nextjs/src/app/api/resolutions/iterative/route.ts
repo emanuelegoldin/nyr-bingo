@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getResolutionTeamIds, notifyTeams } from '@/lib/team-signals';
 import {
   getIterativeResolutionsByUser,
   getResolutionHistoryAccess,
@@ -58,10 +59,14 @@ export const DELETE = withAuth(async (request: NextRequest, { currentUser }: Aut
     return errorResponse('You can only delete your own resolutions', 403);
   }
 
+  // Read first: the delete clears the links from cells to the resolution
+  const teamIds = await getResolutionTeamIds(id);
   const deleted = await deleteResolution(id, currentUser.id);
   if (!deleted) {
     return errorResponse('Failed to delete resolution', 500);
   }
+
+  await notifyTeams(teamIds);
 
   return NextResponse.json({ message: 'Iterative resolution deleted successfully' });
 });

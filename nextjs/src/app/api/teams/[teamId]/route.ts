@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyTeams } from '@/lib/team-signals';
 import { getTeamWithMembers, isTeamMember, deleteTeam, getTeamById } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
@@ -62,6 +63,8 @@ export const DELETE = withAuth(async (
       { status: 403 }
     );
   }
+
+  await notifyTeams([teamId]);
 
   return NextResponse.json({
     message: 'Team deleted successfully'

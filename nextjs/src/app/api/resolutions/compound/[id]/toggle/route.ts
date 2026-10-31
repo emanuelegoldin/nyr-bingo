@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyResolution } from '@/lib/team-signals';
 import {
   canModifyProgress,
   toggleCompoundSubtask,
@@ -79,6 +80,8 @@ export const PATCH = withAuth(async (
     ResolutionType.COMPOUND,
     isProgressComplete(resolution)
   );
+
+  await notifyResolution(id);
 
   return NextResponse.json({ resolution, updatedCells });
 });

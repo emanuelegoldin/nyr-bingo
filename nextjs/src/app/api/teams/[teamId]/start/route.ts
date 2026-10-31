@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyTeams } from '@/lib/team-signals';
 import { isUserVerified } from '@/lib/auth';
 import {
   checkGameCanStart,
@@ -61,6 +62,8 @@ export const POST = withAuth(async (
     const memberIds = team.members.map((m) => m.user.userId);
     await initializeTeamLeaderboard(teamId, memberIds);
   }
+
+  await notifyTeams([teamId]);
 
   return NextResponse.json({
     message: 'Bingo game started successfully',

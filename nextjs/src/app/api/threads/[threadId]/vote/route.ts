@@ -5,6 +5,7 @@
 
 import { threadErrorStatus } from '@/app/api/threads/error-status';
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyThread, notifyThreadClosed } from '@/lib/team-signals';
 import { submitVote } from '@/lib/db';
 import type { VoteType } from '@/lib/db/types';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
@@ -26,6 +27,8 @@ export const POST = withAuth(async (request: NextRequest, { params, currentUser 
     if (!result.success) {
       return errorResponse(result.error!, threadErrorStatus(result.error!));
     }
+
+    await (result.threadClosed ? notifyThreadClosed : notifyThread)(threadId);
 
     // Return vote and whether the thread was closed
     return NextResponse.json({ 

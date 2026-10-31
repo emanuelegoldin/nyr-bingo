@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyResolution } from '@/lib/team-signals';
 import {
   changeResolutionType,
   createResolution,
@@ -226,6 +227,7 @@ async function handleCreate(
 ) {
   const id = await createResolution(userId, content, { scope, teamId, toUserId });
   const saved = await getResolutionById(id);
+  await notifyResolution(id);
 
   await logResolutionHistoryEventSafe(
     id,
@@ -249,6 +251,7 @@ async function handleCreate(
 async function handleSameTypeUpdate(id: string, userId: string, content: ResolutionContent) {
   await updateResolutionContent(id, userId, content);
   const saved = await getResolutionById(id);
+  await notifyResolution(id);
 
   await logResolutionHistoryEventSafe(
     id,
@@ -270,6 +273,7 @@ async function handleSameTypeUpdate(id: string, userId: string, content: Resolut
 async function handleTypeChange(id: string, userId: string, oldType: string, content: ResolutionContent) {
   await changeResolutionType(id, userId, content);
   const saved = await getResolutionById(id);
+  await notifyResolution(id);
 
   if (!saved) {
     return errorResponse('Failed to save resolution', 500);

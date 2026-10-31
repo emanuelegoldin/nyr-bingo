@@ -64,6 +64,23 @@ Clients connect to `ws(s)://<current-host>/ws`.
 
 ---
 
+## Server Signals
+
+Every mutating API route signals the rooms it affected, through `notifyRooms` (`lib/ws-notify.ts`) after its database work. Rooms are resolved in `lib/team-signals.ts`. A failed signal is logged and never fails the mutation.
+
+| Change | Rooms signalled |
+|--------|-----------------|
+| Cell state, undo, edit, proof request | The team's card room, and the cell's threads |
+| Thread message, file, vote that keeps it open | The thread |
+| Thread closed by vote or by the completing user | The thread and the team's card room |
+| Subtask or counter change, resolution saved | The resolution, and the card room of every team showing it |
+| Resolution deleted | The card room of every team that was showing it |
+| Manual history note | The resolution |
+| Join, game start, team deletion | The team's card room |
+| Profile update | The card room of each of the user's teams |
+
+The deadline procedure runs in the database and cannot send a signal.
+
 ## When Card-Refresh Is Sent
 
 `card-refresh` is sent by `reloadCard` in `BingoCardContent`, after it has fetched the card, unless the API returned an error. So it follows any operation that reloads the card through the `onRefresh` or `onUpdate` callbacks:

@@ -4,6 +4,7 @@
  */
 import { updateCellContent } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { notifyCell } from '@/lib/team-signals';
 import { errorResponse, withAuth, AuthContext } from "@/app/api/utils";
 
 /**
@@ -40,6 +41,8 @@ export const PUT = withAuth(async (
   if (!result.success) {
     return errorResponse(result.error || 'Failed to update cell content', 400);
   }
+
+  await notifyCell(cellId);
 
   return NextResponse.json({ cell: result.cell });
 });

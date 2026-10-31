@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyRooms } from '@/lib/ws-notify';
 import {
   createManualResolutionHistoryEntry,
   getResolutionHistoryAccess,
@@ -99,5 +100,6 @@ export const POST = withAuth(async (
   }
 
   const entry = await createManualResolutionHistoryEntry(id, currentUser.id, content);
+  await notifyRooms([{ type: 'resolution', id }]);
   return NextResponse.json({ entry }, { status: 201 });
 });

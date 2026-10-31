@@ -5,6 +5,7 @@
 
 import { threadErrorStatus } from '@/app/api/threads/error-status';
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyThread } from '@/lib/team-signals';
 import { deleteThreadFile, getFileUploadError, uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -119,6 +120,8 @@ export const POST = withAuth(async (
     return errorResponse(result.error, threadErrorStatus(result.error!));
   }
 
+  await notifyThread(threadId);
+
   return NextResponse.json({ file: result.file }, { status: 201 });
 });
 
@@ -142,6 +145,8 @@ export const DELETE = withAuth(async (
   if (!result.success) {
     return errorResponse(result.error, threadErrorStatus(result.error!));
   }
+
+  await notifyThread(threadId);
 
   return NextResponse.json({ success: true });
 });

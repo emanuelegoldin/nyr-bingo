@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyCell } from '@/lib/team-signals';
 import { requestProof } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
@@ -20,5 +21,6 @@ export const POST = withAuth(async (
   if (!result.success) {
     return errorResponse(result.error, 400);
   }
+  await notifyCell(cellId);
   return NextResponse.json({ thread: result.thread }, { status: 201 });
 });
