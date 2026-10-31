@@ -7,11 +7,10 @@
  * - The client component only handles interactive mutations/dialog state
  */
 
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getResolutionsByUser, type Resolution } from "@/lib/db";
 import type { ResolutionTypeValue } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import ResolutionsPageClient, { type UnifiedResolution } from "./resolutions-page-client";
 
@@ -43,10 +42,7 @@ function ResolutionsLoadingFallback() {
 }
 
 async function ResolutionsContent() {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    redirect("/login");
-  }
+  const currentUser = await requireUser();
 
   // Personal resolutions are user-owned, so we can fetch directly on the server.
   const resolutions = await getResolutionsByUser(currentUser.id);

@@ -7,6 +7,7 @@
 import { findSessionByToken, findUserById } from '@/lib/db';
 import type { User } from '@/lib/db/types';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 /**
  * Get the current authenticated user from the session
@@ -32,6 +33,18 @@ export async function getCurrentUser(): Promise<User | null> {
     console.error('Error getting current user:', error);
     return null;
   }
+}
+
+/**
+ * Get the current user for a server page, redirecting to login when there is none
+ * @returns The authenticated user
+ */
+export async function requireUser(): Promise<User> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    redirect('/login');
+  }
+  return currentUser;
 }
 
 /**

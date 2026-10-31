@@ -9,7 +9,7 @@ import {
   checkUserExists, 
   createVerificationToken 
 } from '@/lib/db';
-import { sendVerificationEmail, isEmailConfigured } from '@/lib/email';
+import { deliverVerificationToken } from '@/lib/email';
 import { errorResponse } from '@/app/api/utils';
 
 // Password policy: minimum 8 characters
@@ -56,25 +56,8 @@ export async function POST(request: NextRequest) {
     // Spec: 01-authentication.md - System sends a verification email
     const verificationToken = await createVerificationToken(user.id);
 
-    // Send verification email
-    // In production and when SMTP is configured, send actual email
-    // For development without SMTP config, log to console only
-    if (isEmailConfigured()) {
-      const emailResult = await sendVerificationEmail(
-        email,
-        username,
-        verificationToken.token
-      );
-      
-      if (!emailResult.success) {
-        console.error('Failed to send verification email:', emailResult.error);
-        // Continue even if email fails - user can resend later
-      }
-    } else {
-      // Development mode without SMTP - log token to console
-      console.log(`[DEV] Verification token for ${email}: ${verificationToken.token}`);
-      console.log(`[DEV] Verification URL: ${process.env.APP_BASE_URL || 'http://localhost:9002'}/verify?token=${verificationToken.token}`);
-    }
+    // Send verification email; if sending fails the user can resend later
+    const { emailConfigured } = await deliverVerificationToken(email, username, verificationToken.token);
 
     const response: { message: string; userId: string; verificationToken?: string } = {
       message: 'Registration successful. Please check your email to verify your account.',
@@ -82,7 +65,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Only include token in development for testing purposes (when email not configured)
-    if (process.env.NODE_ENV !== 'production' && !isEmailConfigured()) {
+    if (process.env.NODE_ENV !== 'production' && !emailConfigured) {
       response.verificationToken = verificationToken.token;
     }
 

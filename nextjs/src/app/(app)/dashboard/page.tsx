@@ -12,7 +12,7 @@ import DashboardTeamCardClient from '@/components/dashboard/dashboard-team-card-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getDictionary } from '@/i18n/request';
-import { getCurrentUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import {
   getBingoCard,
   getTeamWithMembers,
@@ -20,7 +20,6 @@ import {
   type TeamWithMembers,
 } from '@/lib/db';
 import { Link, Loader2, Plus, Users } from 'lucide-react';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 // TODO: we could create the loading fallback through composition with a dummy empty cell
@@ -201,11 +200,7 @@ DashboardPage.Content = ({ teams, currentUserId }: { teams: TeamWithMembers[]; c
 }
 
 export default async function DashboardPage() {
-  const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    redirect('./login');
-  }
+  const currentUser = await requireUser();
 
   const teams = await getTeamsWithMembersForUser(currentUser.id);
 

@@ -9,7 +9,7 @@
  */
 
 import type { ResolutionFormData } from '@/components/dialogs/resolution-create-edit-dialog';
-import { getCurrentUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import {
   getTeamBingoCards,
   getTeamGoalResolution,
@@ -22,7 +22,7 @@ import {
   type TeamWithMembers,
 } from '@/lib/db';
 import { Loader2 } from 'lucide-react';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import type { LeaderboardEntry } from './leaderboard-tab';
 import TeamDetailPageClient from './team-detail-page-client';
@@ -102,10 +102,7 @@ function mapGoalToFormData(goal: Resolution | null): ResolutionFormData | null {
 }
 
 async function TeamDetailContent({ teamId }: { teamId: string }) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    redirect('/login');
-  }
+  const currentUser = await requireUser();
 
   const member = await isTeamMember(teamId, currentUser.id);
   if (!member) {

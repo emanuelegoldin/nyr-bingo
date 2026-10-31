@@ -3,17 +3,12 @@
  * Spec Reference: 02-user-profile-and-privacy.md
  */
 
-import { getCurrentUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import { getUserProfile } from '@/lib/db';
-import { redirect } from 'next/navigation';
 import ProfilePageClient from './ProfilePageClient';
 
 export default async function ProfilePage() {
-  const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    redirect('/login');
-  }
+  const currentUser = await requireUser();
 
   const profile = await getUserProfile(currentUser.id);
 
