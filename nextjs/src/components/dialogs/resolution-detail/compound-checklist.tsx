@@ -2,7 +2,7 @@
 
 import { apiFetch } from "@/lib/api-client";
 import type { Subtask } from "@/lib/shared/types";
-import { useResolutionRoom } from "@/hooks/use-resolution-room";
+import { useWsRoom } from "@/hooks/use-ws-room";
 import { Check, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Progress } from "../../ui/progress";
@@ -30,7 +30,7 @@ export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: Compound
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   // ── Join the resolution room and listen for refresh events ────
-  useResolutionRoom(id, () => {
+  useWsRoom({ type: "resolution", id }, () => {
     // Re-fetch the resolution data from the API
     apiFetch<{ resolution?: { subtasks?: Subtask[] } }>(`/api/resolutions/compound?id=${id}`)
       .then((result) => {

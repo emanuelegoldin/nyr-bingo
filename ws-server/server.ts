@@ -1,10 +1,8 @@
-import { createHash, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { JoinThreadMessage } from './messages/join-thread';
-import { JoinCardRoomMessage } from './messages/card-message';
+import { JoinRoomMessage } from './messages/join-room';
 import { RoomNotification } from './messages/notification';
-import { JoinResolutionRoomMessage } from './messages/resolution-message';
 console.log('Starting WebSocket server on port', process.env.WS_PORT);
 const WS_PORT: number = parseInt(process.env.WS_PORT || '8888', 10);
 const WS_SHARED_SECRET = process.env.WS_SHARED_SECRET;
@@ -49,27 +47,9 @@ wss.on('connection', function connection(ws) {
     const msgType = (message as { type?: unknown }).type;
     if (typeof msgType !== 'string') return;
 
-    if (msgType === 'join-thread') {
-      const { threadId } = (message as JoinThreadMessage).body ?? {};
-      if (!threadId || typeof threadId !== 'string') return;
-      joinRoom(threadId, ws);
-      return;
-    }
-
-    // ── Card-level rooms (keyed by teamId) ────────────────────────
-    if (msgType === 'join-card-room') {
-      const { teamId } = (message as JoinCardRoomMessage).body ?? {};
-      if (!teamId || typeof teamId !== 'string') return;
-      joinRoom(`card:${teamId}`, ws);
-      return;
-    }
-
-    // ── Resolution-level rooms (keyed by resolutionId) ────────────
-    if (msgType === 'join-resolution-room') {
-      const { resolutionId } = (message as JoinResolutionRoomMessage).body ?? {};
-      if (!resolutionId || typeof resolutionId !== 'string') return;
-      joinRoom(`resolution:${resolutionId}`, ws);
-      return;
+    if (msgType === 'join-room') {
+      const room = verifyRoomToken((message as JoinRoomMessage).token);
+      if (room) joinRoom(roomKey(room), ws);
     }
   });
 });
@@ -146,10 +126,38 @@ function parseNotifications(body: string): RoomNotification[] | null {
  * Tell the viewers of a room to refetch.
  * @param notification - The room that changed
  */
-function deliverNotification({ type, id }: RoomNotification) {
-  if (type === 'card') broadcastToRoom(`card:${id}`, { type: 'refresh-card' });
-  if (type === 'thread') broadcastToRoom(id, { type: 'refresh-thread' });
-  if (type === 'resolution') broadcastToRoom(`resolution:${id}`, { type: 'refresh-resolution', resolutionId: id });
+function deliverNotification(room: RoomNotification) {
+  const { type, id } = room;
+  if (type === 'card') broadcastToRoom(roomKey(room), { type: 'refresh-card' });
+  if (type === 'thread') broadcastToRoom(roomKey(room), { type: 'refresh-thread', threadId: id });
+  if (type === 'resolution') broadcastToRoom(roomKey(room), { type: 'refresh-resolution', resolutionId: id });
+}
+
+/**
+ * Build the key of a room. The prefix keeps the three kinds of room apart.
+ * @param room - The room
+ * @returns The key used in the rooms map
+ */
+function roomKey({ type, id }: RoomNotification): string {
+  return `${type}:${id}`;
+}
+
+/**
+ * Check a join token signed by the Next.js server.
+ * @param token - The token, as `<base64url payload>.<base64url signature>`
+ * @returns The room it grants, or null if it is invalid or expired
+ */
+function verifyRoomToken(token: unknown): RoomNotification | null {
+  if (typeof token !== 'string') return null;
+  const [payload, signature] = token.split('.');
+  if (!payload || !signature) return null;
+
+  const expected = createHmac('sha256', WS_SHARED_SECRET as string).update(payload).digest();
+  const received = Buffer.from(signature, 'base64url');
+  if (received.length !== expected.length || !timingSafeEqual(received, expected)) return null;
+
+  const { type, id, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString());
+  return Date.now() < exp ? { type, id } : null;
 }
 
 function joinRoom(roomId: string, ws: WebSocket) {
@@ -170,7 +178,7 @@ function joinRoom(roomId: string, ws: WebSocket) {
 
 /**
  * Broadcast a message to all sockets in a room.
- * @param roomId  - The room identifier (e.g. `card:<teamId>`, `resolution:<id>`)
+ * @param roomId  - The room key (see roomKey)
  * @param payload - The JSON-serialisable object to send to each client
  */
 function broadcastToRoom(roomId: string, payload: Record<string, unknown>) {

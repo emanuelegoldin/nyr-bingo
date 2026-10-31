@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppContext } from "@/hooks/AppContext";
-import { useResolutionRoom } from "@/hooks/use-resolution-room";
+import { useWsRoom } from "@/hooks/use-ws-room";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch } from "@/lib/api-client";
@@ -79,7 +79,7 @@ export const ResolutionHistoryDialog = ({
     loadHistory();
   }, [isOpen, loadHistory]);
 
-  useResolutionRoom(resolutionId, loadHistory, isOpen && Boolean(resolutionId));
+  useWsRoom({ type: "resolution", id: resolutionId }, loadHistory, isOpen && Boolean(resolutionId));
 
   const handleAddEntry = useCallback(async () => {
     if (!canSubmit) return;

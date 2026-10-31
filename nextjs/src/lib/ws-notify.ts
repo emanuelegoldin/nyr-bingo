@@ -2,12 +2,10 @@
  * Server-side signals to the WebSocket server (spec 11).
  */
 
+import type { WsRoom } from './shared/ws-messages';
+
 /** A room whose viewers must refetch. */
-export interface RoomNotification {
-  type: 'card' | 'thread' | 'resolution';
-  /** The team, thread or resolution id. */
-  id: string;
-}
+export type RoomNotification = WsRoom;
 
 const NOTIFY_TIMEOUT_MS = 1000;
 

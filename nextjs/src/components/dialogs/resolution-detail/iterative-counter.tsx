@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import { useResolutionRoom } from "@/hooks/use-resolution-room";
+import { useWsRoom } from "@/hooks/use-ws-room";
 import { Check, Loader2, Minus, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "../../ui/button";
@@ -38,7 +38,7 @@ export const IterativeCounter = ({
   );
 
   // ── Join the resolution room and listen for refresh events ────
-  useResolutionRoom(id, () => {
+  useWsRoom({ type: "resolution", id }, () => {
     // Re-fetch the resolution data from the API
     apiFetch<{ resolution?: { completedTimes?: unknown } }>(`/api/resolutions/iterative?id=${id}`)
       .then((result) => {

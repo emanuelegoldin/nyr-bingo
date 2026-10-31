@@ -36,7 +36,7 @@ It details the mechanism behind **08 — Visibility and Updates**.
 - It only relays signals. It never touches the database.
 - `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'resolution', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
 - It refuses to start without `WS_SHARED_SECRET`.
-- It performs no authentication and no membership check; any connected socket can join any room.
+- It joins a socket to a room only with a valid signed token.
 - Clients only join rooms and listen. A signal reaches every socket in the room, including the one that made the change. Rooms are removed when their last socket leaves.
 
 ### WebSocket URL
@@ -49,16 +49,22 @@ Clients connect to `ws(s)://<current-host>/ws`.
 | ---- | --- | --------- |
 | Card room | `card:<teamId>` | `TeamWsProvider` on open |
 | Resolution room | `resolution:<resolutionId>` | Compound checklist, iterative counter and history dialog, when opened; the socket stays in the room until it closes, but their listeners are removed with the dialog |
-| Thread room (spec 07) | `<threadId>` | Review thread dialog, while open |
+| Thread room (spec 07) | `thread:<threadId>` | Review thread dialog, when opened, on the same terms |
+
+### Joining a Room
+
+- `GET /api/ws-token?type=card|thread|resolution&id=<id>` returns a token for one room, valid for 5 minutes. It returns `403` unless the user may see the data behind the room: team membership for cards and threads, and history access for resolutions. It returns `503` without `WS_SHARED_SECRET`.
+- The token is the base64url JSON `{ type, id, exp }` and its HMAC-SHA256 signature, made with `WS_SHARED_SECRET`. ws-server checks it, so it never needs the database.
+- A client that gets no token simply has no live updates for that room.
 
 ### WebSocket Messages
 
-| Message                | Direction        | Body                       | Purpose                                         |
-|------------------------|------------------|----------------------------|-------------------------------------------------|
-| `join-card-room`       | client → server  | `{ teamId: string }`       | Join the team-level card room.                  |
-| `refresh-card`         | server → clients | none                       | Tell card room members to refresh the leaderboard. |
-| `join-resolution-room` | client → server  | `{ resolutionId: string }` | Join a resolution room.                         |
-| `refresh-resolution`   | server → clients | `resolutionId` (top level) | Tell viewers to re-fetch the resolution.        |
+| Message              | Direction        | Body                         | Purpose                                   |
+|----------------------|------------------|------------------------------|-------------------------------------------|
+| `join-room`          | client → server  | `token` (top level)          | Join the room the token grants.           |
+| `refresh-card`       | server → clients | none                         | Tell card room members to refresh.        |
+| `refresh-resolution` | server → clients | `resolutionId` (top level)   | Tell viewers to re-fetch the resolution.  |
+| `refresh-thread`     | server → clients | `threadId` (top level)       | Tell viewers to re-fetch the thread.      |
 
 ---
 
@@ -129,8 +135,8 @@ In both cases the final state is `pending`, honouring the owner's intent.
 ### `TeamWsProvider` (team-ws-provider.tsx)
 
 - Wraps the team page tabs and each dashboard card, and opens **one** WebSocket per provider, so all tabs and cards on a team page share it.
-- Joins `card:<teamId>` on open and queues messages sent while connecting.
-- Exposes `sendWsMessage`, `addMessageListener` and `teamName` through `useTeamWs()`.
+- Joins `card:<teamId>` and every tracked room on open.
+- Exposes `joinRoom`, `addMessageListener` and `teamName` through `useTeamWs()`. All rooms of a page share its one socket, through `useWsRoom`.
 - Dispatches every incoming message to registered listeners.
 - Closes the socket on unmount.
 
@@ -172,7 +178,6 @@ Outside a provider, `useTeamWs()` returns no-op functions. The history dialog on
 ## Known Gaps
 
 - **Cards do not update live.** The server sends `refresh-card`, but only the leaderboard acts on it. Other viewers see card changes only after reloading the page.
-- The WebSocket server has no authentication, so anyone able to reach it can join rooms and see when they change. Messages carry no resolution or card content.
 
 ---
 

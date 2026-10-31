@@ -17,13 +17,12 @@
  * Incoming messages are dispatched to the listeners registered with
  * `addMessageListener()`.
  *
- * Components that need resolution-level real-time updates (e.g.
- * the detail dialog showing compound subtasks or iterative counters)
- * can use `sendWsMessage()` and `addMessageListener()` to join
- * resolution rooms and react to `refresh-resolution` events.
+ * Components that watch a thread or a resolution use `useWsRoom()`, which joins
+ * the room on this socket and reacts to its refresh events.
  */
 
-import { getWsUrl, type WsIncomingMessage, type WsOutgoingMessage } from "@/lib/shared/ws-messages";
+import { apiFetch } from "@/lib/api-client";
+import { getWsUrl, type WsIncomingMessage, type WsOutgoingMessage, type WsRoom } from "@/lib/shared/ws-messages";
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 
 /** Callback signature for message listeners. */
@@ -32,8 +31,8 @@ export type WsMessageHandler = (msg: WsIncomingMessage) => void;
 // ── Context ───────────────────────────────────────────────────────
 
 interface TeamWsContextValue {
-  /** Send an arbitrary JSON message over the shared WebSocket. */
-  sendWsMessage: (msg: WsOutgoingMessage) => void;
+  /** Join a room on the shared WebSocket. Returns a function that stops tracking it. */
+  joinRoom: (room: WsRoom) => () => void;
   /**
    * Register a listener for incoming WS messages.
    * Returns an unsubscribe function.
@@ -44,7 +43,7 @@ interface TeamWsContextValue {
 }
 
 const TeamWsContext = createContext<TeamWsContextValue>({
-  sendWsMessage: () => { },
+  joinRoom: () => () => { },
   addMessageListener: () => () => { },
   teamName: ""
 });
@@ -66,8 +65,8 @@ interface TeamWsProviderProps {
 
 export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderProps) {
   const wsRef = useRef<WebSocket | null>(null);
-  /** Messages queued while the socket is still CONNECTING. */
-  const pendingMessagesRef = useRef<WsOutgoingMessage[]>([]);
+  /** Rooms joined by descendants, joined again whenever the socket opens. */
+  const roomsRef = useRef<Set<WsRoom>>(new Set());
 
   // Registered message listeners (for resolution-level updates, etc.)
   const listenersRef = useRef<Set<WsMessageHandler>>(new Set());
@@ -88,6 +87,23 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
     }
   }, []);
 
+  /**
+   * Ask the API for a room token and join with it. A refused token is ignored: the
+   * viewer simply gets no live updates for that room.
+   *
+   * @param room - The room to join.
+   * @param ws - The socket to join on.
+   */
+  const sendJoin = useCallback(async (room: WsRoom, ws: WebSocket) => {
+    if (ws.readyState !== WebSocket.OPEN) return;
+    const query = new URLSearchParams({ type: room.type, id: room.id });
+    const result = await apiFetch<{ token: string }>(`/api/ws-token?${query}`);
+    if (result.ok && ws.readyState === WebSocket.OPEN) {
+      const joinMessage: WsOutgoingMessage = { type: "join-room", token: result.data.token };
+      ws.send(JSON.stringify(joinMessage));
+    }
+  }, []);
+
   // ── Open a single WS for the lifetime of this provider ────────
   useEffect(() => {
     if (!teamId) return;
@@ -98,14 +114,10 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
     wsRef.current = ws;
 
     ws.onopen = () => {
-      const joinMessage: WsOutgoingMessage = { type: "join-card-room", body: { teamId } };
-      ws.send(JSON.stringify(joinMessage));
-
-      // Flush any messages that were queued while CONNECTING
-      for (const msg of pendingMessagesRef.current) {
-        ws.send(JSON.stringify(msg));
+      sendJoin({ type: "card", id: teamId }, ws);
+      for (const room of roomsRef.current) {
+        sendJoin(room, ws);
       }
-      pendingMessagesRef.current = [];
     };
 
     ws.onmessage = (event) => {
@@ -127,24 +139,22 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
 
     return () => {
       if (wsRef.current === ws) wsRef.current = null;
-      pendingMessagesRef.current = [];
       try {
         ws.close();
       } catch {
         /* ignore */
       }
     };
-  }, [teamId, dispatchToListeners]);
+  }, [teamId, dispatchToListeners, sendJoin]);
 
-  // ── Send an arbitrary message over the shared WebSocket ───────
-  const sendWsMessage = useCallback((msg: WsOutgoingMessage) => {
-    const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(msg));
-    } else if (ws && ws.readyState === WebSocket.CONNECTING) {
-      pendingMessagesRef.current.push(msg);
-    }
-  }, []);
+  // ── Join a room (stable identity) ─────────────────────────────
+  const joinRoom = useCallback((room: WsRoom): (() => void) => {
+    roomsRef.current.add(room);
+    if (wsRef.current) sendJoin(room, wsRef.current);
+    return () => {
+      roomsRef.current.delete(room);
+    };
+  }, [sendJoin]);
 
   // ── Listener subscribe/unsubscribe (stable identity) ──────────
   const addMessageListener = useCallback((handler: WsMessageHandler): (() => void) => {
@@ -155,7 +165,7 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
   }, []);
 
   return (
-    <TeamWsContext.Provider value={{ sendWsMessage, addMessageListener, teamName }}>
+    <TeamWsContext.Provider value={{ joinRoom, addMessageListener, teamName }}>
       {children}
     </TeamWsContext.Provider>
   );

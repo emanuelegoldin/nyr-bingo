@@ -4,15 +4,19 @@
  * in ws-server/messages/; message strings must stay in sync with them.
  */
 
+/** A room viewers can join: a team's cards, a review thread or a resolution. */
+export interface WsRoom {
+  type: 'card' | 'thread' | 'resolution';
+  /** The team, thread or resolution id. */
+  id: string;
+}
+
 /** Messages a client sends to the server. */
-export type WsOutgoingMessage =
-  | { type: 'join-thread'; body: { threadId: string } }
-  | { type: 'join-card-room'; body: { teamId: string } }
-  | { type: 'join-resolution-room'; body: { resolutionId: string } };
+export type WsOutgoingMessage = { type: 'join-room'; token: string };
 
 /** Messages the server sends to clients. */
 export type WsIncomingMessage =
-  | { type: 'refresh-thread' }
+  | { type: 'refresh-thread'; threadId: string }
   | { type: 'refresh-card' }
   | { type: 'refresh-resolution'; resolutionId: string };
 

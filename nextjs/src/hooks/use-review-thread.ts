@@ -1,10 +1,10 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
+import { useWsRoom } from "@/hooks/use-ws-room";
 import { apiFetch } from "@/lib/api-client";
 import { ReviewFile, ReviewThreadWithDetails } from "@/lib/db/types";
-import { getWsUrl, type WsOutgoingMessage } from "@/lib/shared/ws-messages";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface UseReviewThreadOptions {
   /** Called after a successful mutation so the parent can reload the card. */
@@ -15,7 +15,7 @@ interface UseReviewThreadOptions {
 
 /**
  * Owns the state of a review thread dialog: the thread itself, fetching it,
- * the thread's own WebSocket room and every mutation (message, file upload,
+ * its WebSocket room and every mutation (message, file upload,
  * file delete, vote notification, close).
  *
  * @param reviewThreadId - Thread id taken from the cell (may be empty).
@@ -36,7 +36,6 @@ export const useReviewThread = (
   const { toast } = useToast();
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
 
   const currentThreadId = reviewThreadId || thread?.id;
 
@@ -92,40 +91,7 @@ export const useReviewThread = (
     };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const threadId = currentThreadId;
-    if (!threadId) return;
-
-    const wsUrl = getWsUrl();
-    if (!wsUrl) return;
-
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      const joinMessage: WsOutgoingMessage = {
-        type: 'join-thread',
-        body: { threadId },
-      };
-      ws.send(JSON.stringify(joinMessage));
-    };
-
-    ws.onmessage = () => { refetchThread(); };
-
-    ws.onerror = (e) => {
-      console.error('WebSocket error occurred:', e);
-    };
-
-    return () => {
-      if (wsRef.current === ws) wsRef.current = null;
-      try {
-        ws.close();
-      } catch (error) {
-        console.error('Error closing WebSocket:', error);
-      }
-    };
-  }, [reviewThreadId, isOpen, thread?.id]);
+  useWsRoom(currentThreadId ? { type: 'thread', id: currentThreadId } : null, refetchThread, isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
