@@ -13,7 +13,8 @@ RUN pnpm run build
 
 FROM node:lts-slim AS runner
 WORKDIR /app
-RUN corepack enable pnpm
+# RUN corepack enable pnpm # corepack not found -> install pnpm instead
+RUN npm install -g pnpm
 RUN groupadd -g 1001 appgroup && \
     useradd -u 1001 -g appgroup -m -d /app -s /bin/false appuser
 COPY --from=base /app/package.json ./
