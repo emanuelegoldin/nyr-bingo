@@ -222,6 +222,22 @@ export async function createVerificationToken(userId: string): Promise<EmailVeri
 }
 
 /**
+ * Count the verification tokens created for a user in the last hour.
+ * Spec: 02-user-profile-and-privacy.md - Verification status
+ *
+ * @param userId - The user requesting a verification email.
+ * @returns The number of tokens created in the last hour, used or not.
+ */
+export async function countRecentVerificationTokens(userId: string): Promise<number> {
+  const rows = await query<Array<RowDataPacket & { total: number }>>(
+    `SELECT COUNT(*) AS total FROM email_verification_tokens
+     WHERE user_id = ? AND created_at > NOW() - INTERVAL 1 HOUR`,
+    [userId]
+  );
+  return Number(rows[0].total);
+}
+
+/**
  * Verify email token and mark user as verified
  * Spec: 01-authentication.md - Email Verification
  */

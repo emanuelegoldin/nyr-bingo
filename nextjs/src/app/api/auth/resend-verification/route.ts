@@ -6,9 +6,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createVerificationToken } from '@/lib/db';
+import { countRecentVerificationTokens, createVerificationToken } from '@/lib/db';
 import { deliverVerificationToken } from '@/lib/email';
 import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
+
+const MAX_VERIFICATION_EMAILS_PER_HOUR = 3;
 
 /**
  * POST /api/auth/resend-verification - Resend verification email
@@ -18,6 +20,10 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     // Check if user is already verified
   if (currentUser.emailVerifiedAt !== null) {
     return errorResponse('Email is already verified', 400);
+  }
+
+  if (await countRecentVerificationTokens(currentUser.id) >= MAX_VERIFICATION_EMAILS_PER_HOUR) {
+    return errorResponse('Too many verification emails. Please try again later.', 429);
   }
 
   // Create a new verification token
