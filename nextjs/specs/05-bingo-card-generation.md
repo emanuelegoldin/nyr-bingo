@@ -57,6 +57,3 @@ Generation runs in a transaction. Cards are generated once: at game start for al
 - Remaining cells follow selection and fallback rules.
 - A generated card contains no duplicate resolution text.
 - If insufficient content, "empty" non-checkable cells are used.
-
-## Known Gaps
-- The personal fallback query filters with `description NOT IN (...)`, which excludes rows with a `NULL` description. Personal `compound` and `iterative` resolutions saved without a description are therefore never selected.

@@ -301,7 +301,7 @@ export async function getRandomResolutions(
   const params: unknown[] = [userId];
 
   if (excludeTexts.length > 0) {
-    sql += ` AND description NOT IN (${excludeTexts.map(() => '?').join(', ')})`;
+    sql += ` AND COALESCE(description, title) NOT IN (${excludeTexts.map(() => '?').join(', ')})`;
     params.push(...excludeTexts);
   }
 
