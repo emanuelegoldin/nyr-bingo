@@ -1,4 +1,5 @@
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { DialogFooter } from "../ui/dialog";
@@ -27,13 +28,12 @@ export const RequestProofDialog = ({
         if (isSubmitting) return;
         setIsSubmitting(true);
         try {
-            const res = await fetch(`/api/cells/${cell.id}/request-proof`, { method: 'POST' });
-            const data = await res.json().catch(() => ({}));
+            const result = await apiFetch<unknown>(`/api/cells/${cell.id}/request-proof`, { method: 'POST' });
 
-            if (!res.ok) {
+            if (!result.ok) {
                 toast({
                     title: 'Error',
-                    description: data?.error || 'Failed to request proof',
+                    description: result.error || 'Failed to request proof',
                     variant: 'destructive',
                 });
                 return;

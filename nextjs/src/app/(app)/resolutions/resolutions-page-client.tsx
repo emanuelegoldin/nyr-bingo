@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
+import { apiFetch } from "@/lib/api-client";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import type { ResolutionFormData, ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
 import { History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
@@ -64,13 +65,11 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
 
   /** Fetch all resolution types from the unified endpoint. */
   const loadResolutions = useCallback(async () => {
-    try {
-      const response = await fetch("/api/resolutions/all");
-      const data = await response.json();
-      if (response.ok) {
-        setResolutions(data.resolutions || []);
-      }
-    } catch {
+    const result = await apiFetch<{ resolutions?: UnifiedResolution[] }>("/api/resolutions/all");
+    if (result.ok) {
+      setResolutions(result.data.resolutions || []);
+    } else if (result.status === 0) {
+      // No usable response (network failure or non-JSON body)
       toast({
         title: "Error",
         description: "Failed to load resolutions",
@@ -102,41 +101,31 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
    */
   const handleDelete = async (res: UnifiedResolution) => {
     setDeletingId(res.id);
-    try {
-      let url: string;
-      switch (res.type) {
-        case "compound":
-          url = `/api/resolutions/compound?id=${res.id}`;
-          break;
-        case "iterative":
-          url = `/api/resolutions/iterative?id=${res.id}`;
-          break;
-        default:
-          url = `/api/resolutions?id=${res.id}`;
-      }
+    let url: string;
+    switch (res.type) {
+      case "compound":
+        url = `/api/resolutions/compound?id=${res.id}`;
+        break;
+      case "iterative":
+        url = `/api/resolutions/iterative?id=${res.id}`;
+        break;
+      default:
+        url = `/api/resolutions?id=${res.id}`;
+    }
 
-      const response = await fetch(url, { method: "DELETE" });
+    const result = await apiFetch<unknown>(url, { method: "DELETE" });
 
-      if (response.ok) {
-        setResolutions((prev) => prev.filter((r) => r.id !== res.id));
-        toast({ title: "Success", description: "Resolution deleted" });
-      } else {
-        const data = await response.json();
-        toast({
-          title: "Error",
-          description: data.error || "Failed to delete resolution",
-          variant: "destructive",
-        });
-      }
-    } catch {
+    if (result.ok) {
+      setResolutions((prev) => prev.filter((r) => r.id !== res.id));
+      toast({ title: "Success", description: "Resolution deleted" });
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred",
+        description: result.status === 0 ? "An error occurred" : result.error || "Failed to delete resolution",
         variant: "destructive",
       });
-    } finally {
-      setDeletingId(null);
     }
+    setDeletingId(null);
   };
 
   /** Called when a resolution is saved (created or updated) via the dialog. */

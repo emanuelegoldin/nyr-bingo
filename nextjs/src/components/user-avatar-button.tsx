@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -35,14 +36,10 @@ export function UserAvatarButton() {
 
   useEffect(() => {
     async function loadUser() {
-      try {
-        const response = await fetch('/api/profile');
-        const data = await response.json();
-        if (response.ok && data.user) {
-          setUser(data.user);
-        }
-      } catch (error) {
-        // Silently fail - user might not be logged in
+      // Silently fail - user might not be logged in
+      const result = await apiFetch<{ user?: UserInfo }>('/api/profile');
+      if (result.ok && result.data.user) {
+        setUser(result.data.user);
       }
     }
     loadUser();

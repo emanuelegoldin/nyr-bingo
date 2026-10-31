@@ -16,6 +16,7 @@
 
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import type { Subtask } from "@/lib/shared/types";
 import { CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
@@ -269,14 +270,12 @@ const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: CompoundCheckli
     const unsubscribe = addMessageListener((msg: WsIncomingMessage) => {
       if (msg.type === "refresh-resolution" && msg.resolutionId === id) {
         // Re-fetch the resolution data from the API
-        fetch(`/api/resolutions/compound?id=${id}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
-            if (data?.resolution?.subtasks) {
-              setLocalSubtasks(data.resolution.subtasks);
+        apiFetch<{ resolution?: { subtasks?: Subtask[] } }>(`/api/resolutions/compound?id=${id}`)
+          .then((result) => {
+            if (result.ok && result.data?.resolution?.subtasks) {
+              setLocalSubtasks(result.data.resolution.subtasks);
             }
-          })
-          .catch(() => { /* ignore */ });
+          });
       }
     });
 
@@ -288,14 +287,12 @@ const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: CompoundCheckli
       if (loading !== null) return;
       setLoading(index);
       try {
-        const res = await fetch(`/api/resolutions/compound/${id}/toggle`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subtaskIndex: index }),
-        });
-        if (res.ok) {
-          const { resolution } = await res.json();
-          setLocalSubtasks(resolution.subtasks);
+        const result = await apiFetch<{ resolution: { subtasks: Subtask[] } }>(
+          `/api/resolutions/compound/${id}/toggle`,
+          { method: "PATCH", json: { subtaskIndex: index } },
+        );
+        if (result.ok) {
+          setLocalSubtasks(result.data.resolution.subtasks);
           onRefresh?.();
           // Notify other viewers of this resolution
           sendWsMessage({
@@ -411,14 +408,13 @@ const IterativeCounter = ({
     const unsubscribe = addMessageListener((msg: WsIncomingMessage) => {
       if (msg.type === "refresh-resolution" && msg.resolutionId === id) {
         // Re-fetch the resolution data from the API
-        fetch(`/api/resolutions/iterative?id=${id}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
-            if (data?.resolution && typeof data.resolution.completedTimes === "number") {
-              setCompletedTimes(data.resolution.completedTimes);
+        apiFetch<{ resolution?: { completedTimes?: unknown } }>(`/api/resolutions/iterative?id=${id}`)
+          .then((result) => {
+            const completed = result.ok ? result.data?.resolution?.completedTimes : undefined;
+            if (typeof completed === "number") {
+              setCompletedTimes(completed);
             }
-          })
-          .catch(() => { /* ignore */ });
+          });
       }
     });
 
@@ -430,12 +426,12 @@ const IterativeCounter = ({
       if (loading) return;
       setLoading(true);
       try {
-        const res = await fetch(`/api/resolutions/iterative/${id}/${action}`, {
-          method: "PATCH",
-        });
-        if (res.ok) {
-          const { resolution } = await res.json();
-          setCompletedTimes(resolution.completedTimes);
+        const result = await apiFetch<{ resolution: { completedTimes: number } }>(
+          `/api/resolutions/iterative/${id}/${action}`,
+          { method: "PATCH" },
+        );
+        if (result.ok) {
+          setCompletedTimes(result.data.resolution.completedTimes);
           onRefresh?.();
           // Notify other viewers of this resolution
           sendWsMessage({

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
@@ -30,22 +31,18 @@ export default function TeamsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const loadTeams = useCallback(async () => {
-    try {
-      const response = await fetch('/api/teams');
-      const data = await response.json();
-
-      if (response.ok) {
-        setTeams(data.teams || []);
-      }
-    } catch (error) {
+    const result = await apiFetch<{ teams?: Team[] }>('/api/teams');
+    if (result.ok) {
+      setTeams(result.data.teams || []);
+    } else if (result.status === 0) {
+      // No usable response (network failure or non-JSON body)
       toast({
         title: "Error",
         description: "Failed to load teams",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }, [toast]);
 
   useEffect(() => {
@@ -56,39 +53,27 @@ export default function TeamsPage() {
     if (!newTeamName.trim()) return;
 
     setIsCreating(true);
-    try {
-      const response = await fetch('/api/teams', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newTeamName }),
+    const result = await apiFetch<{ team: Team }>('/api/teams', {
+      method: 'POST',
+      json: { name: newTeamName },
+    });
+
+    if (result.ok) {
+      setTeams([result.data.team, ...teams]);
+      setNewTeamName("");
+      setDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Team created successfully",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setTeams([data.team, ...teams]);
-        setNewTeamName("");
-        setDialogOpen(false);
-        toast({
-          title: "Success",
-          description: "Team created successfully",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to create team",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred",
+        description: result.status === 0 ? "An error occurred" : result.error || "Failed to create team",
         variant: "destructive",
       });
-    } finally {
-      setIsCreating(false);
     }
+    setIsCreating(false);
   };
 
   if (isLoading) {

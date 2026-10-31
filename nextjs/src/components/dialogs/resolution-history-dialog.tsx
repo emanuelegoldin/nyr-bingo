@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
+import { apiFetch } from "@/lib/api-client";
 import { History, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -59,28 +60,20 @@ export const ResolutionHistoryDialog = ({
   const loadHistory = useCallback(async () => {
     if (!resolutionId) return;
     setLoading(true);
-    try {
-      const res = await fetch(`/api/resolutions/${resolutionId}/history?limit=100&offset=0`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data?.error || t.loadError,
-          variant: "destructive",
-        });
-        return;
-      }
-      setEntries(Array.isArray(data.entries) ? (data.entries as HistoryEntry[]) : []);
-      setCanWrite(Boolean(data.canWrite));
-    } catch {
+    const result = await apiFetch<{ entries?: unknown; canWrite?: boolean }>(
+      `/api/resolutions/${resolutionId}/history?limit=100&offset=0`,
+    );
+    if (result.ok) {
+      setEntries(Array.isArray(result.data.entries) ? (result.data.entries as HistoryEntry[]) : []);
+      setCanWrite(Boolean(result.data.canWrite));
+    } else {
       toast({
         title: "Error",
-        description: t.loadError,
+        description: result.error || t.loadError,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, [resolutionId, toast]);
 
   useEffect(() => {
@@ -110,16 +103,14 @@ export const ResolutionHistoryDialog = ({
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/resolutions/${resolutionId}/history`, {
+      const result = await apiFetch<unknown>(`/api/resolutions/${resolutionId}/history`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: draft.trim() }),
+        json: { content: draft.trim() },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!result.ok) {
         toast({
           title: "Error",
-          description: data?.error || t.addError,
+          description: result.error || t.addError,
           variant: "destructive",
         });
         return;

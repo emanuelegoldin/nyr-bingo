@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api-client";
 import { BingoCardWithCells } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
@@ -70,34 +71,24 @@ export function BingoCardContent(
 
   const handleCellUpdate = useCallback(
     async (cellId: string, newState: 'pending' | 'completed') => {
-      try {
-        const response =
-          newState === 'pending'
-            ? await fetch(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
-            : await fetch(`/api/cells/${cellId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ state: newState }),
-            });
+      const result =
+        newState === 'pending'
+          ? await apiFetch<unknown>(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
+          : await apiFetch<unknown>(`/api/cells/${cellId}`, {
+            method: 'PUT',
+            json: { state: newState },
+          });
 
-        if (response.ok) {
-          await reloadCard();
-          return;
-        }
-
-        const data = await response.json();
-        toast({
-          title: 'Error',
-          description: data.error || 'Failed to update cell',
-          variant: 'destructive',
-        });
-      } catch {
-        toast({
-          title: 'Error',
-          description: 'An error occurred',
-          variant: 'destructive',
-        });
+      if (result.ok) {
+        await reloadCard();
+        return;
       }
+
+      toast({
+        title: 'Error',
+        description: result.status === 0 ? 'An error occurred' : result.error || 'Failed to update cell',
+        variant: 'destructive',
+      });
       if (broadcastRefresh) {
         broadcastRefresh();
       }

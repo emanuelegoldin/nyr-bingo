@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from '@/hooks/use-toast';
+import { apiFetch } from '@/lib/api-client';
 import type { UserProfile } from '@/lib/db/types';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
@@ -49,73 +50,50 @@ export default function ProfilePageClient({
 
   const handleSave = async () => {
     setIsSaving(true);
-    try {
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          displayName,
-          bio,
-          displayNamePublic,
-          bioPublic,
-        }),
+    const result = await apiFetch<unknown>('/api/profile', {
+      method: 'PUT',
+      json: {
+        displayName,
+        bio,
+        displayNamePublic,
+        bioPublic,
+      },
+    });
+
+    if (result.ok) {
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Profile updated successfully",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to update profile",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred",
+        description: result.status === 0 ? "An error occurred" : result.error || "Failed to update profile",
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
+    setIsSaving(false);
   };
 
   const handleResendVerification = async () => {
     setIsResendingVerification(true);
-    try {
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
+    const result = await apiFetch<{ message?: string }>('/api/auth/resend-verification', {
+      method: 'POST',
+    });
+
+    if (result.ok) {
+      toast({
+        title: "Success",
+        description: result.data.message || "Verification email sent successfully",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: data.message || "Verification email sent successfully",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to resend verification email",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred",
+        description: result.status === 0 ? "An error occurred" : result.error || "Failed to resend verification email",
         variant: "destructive",
       });
-    } finally {
-      setIsResendingVerification(false);
     }
+    setIsResendingVerification(false);
   };
 
   return (

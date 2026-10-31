@@ -14,6 +14,7 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import type { ResolutionFormData, ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -138,18 +139,15 @@ export const ResolutionCreateEditDialog = ({
         body.numberOfRepetition = numberOfRepetition;
       }
 
-      const res = await fetch("/api/resolutions/save", {
+      const result = await apiFetch<unknown>("/api/resolutions/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        json: body,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (!result.ok) {
         toast({
           title: "Error",
-          description: data.error || "Failed to save resolution",
+          description: result.status === 0 ? "An error occurred while saving" : result.error || "Failed to save resolution",
           variant: "destructive",
         });
         return;

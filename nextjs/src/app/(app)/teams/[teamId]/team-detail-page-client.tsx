@@ -35,6 +35,7 @@ import { Check, Copy, Crown, Loader2, Pencil, Plus, Send, Settings, Swords, Tras
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from 'react';
 
+import { apiFetch } from "@/lib/api-client";
 import { BingoCardWithCells } from "@/lib/db/types";
 import { resolutionToFormData, unifiedToFormData } from "@/lib/shared/resolution-form";
 import type { ResolutionFormData, ResolutionTypeValue } from "@/lib/shared/types";
@@ -167,37 +168,25 @@ export default function TeamDetailPageClient({
 
   const handleCreateInvite = async () => {
     setIsCreatingInvite(true);
-    try {
-      const response = await fetch(`/api/teams/${teamId}/invite`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+    const result = await apiFetch<{ invitation: { inviteCode: string } }>(`/api/teams/${teamId}/invite`, {
+      method: 'POST',
+      json: {},
+    });
+
+    if (result.ok) {
+      setInviteCode(result.data.invitation.inviteCode);
+      toast({
+        title: "Success",
+        description: "Invite link created",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setInviteCode(data.invitation.inviteCode);
-        toast({
-          title: "Success",
-          description: "Invite link created",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to create invite",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred",
+        description: result.status === 0 ? "An error occurred" : result.error || "Failed to create invite",
         variant: "destructive",
       });
-    } finally {
-      setIsCreatingInvite(false);
     }
+    setIsCreatingInvite(false);
   };
 
   const copyInviteLink = () => {
@@ -209,35 +198,24 @@ export default function TeamDetailPageClient({
 
   const handleStartBingo = async () => {
     setIsStarting(true);
-    try {
-      const response = await fetch(`/api/teams/${teamId}/start`, {
-        method: 'POST',
+    const result = await apiFetch<unknown>(`/api/teams/${teamId}/start`, {
+      method: 'POST',
+    });
+
+    if (result.ok) {
+      toast({
+        title: "Success",
+        description: "Bingo game started!",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Bingo game started!",
-        });
-        loadTeam(); // Reload to show cards
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to start game",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      loadTeam(); // Reload to show cards
+    } else {
       toast({
         title: "Error",
-        description: "An error occurred",
+        description: result.status === 0 ? "An error occurred" : result.error || "Failed to start game",
         variant: "destructive",
       });
-    } finally {
-      setIsStarting(false);
     }
+    setIsStarting(false);
   };
 
   const handleDeleteTeam = async () => {

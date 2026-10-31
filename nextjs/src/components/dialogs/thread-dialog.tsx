@@ -1,6 +1,7 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import { ReviewFile, ReviewMessageAndAuthor, ReviewThreadWithDetails } from "@/lib/db/types";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "../ui/badge";
@@ -51,25 +52,16 @@ export const CellThreadDialog = ({
     const threadId = cell.reviewThreadId || thread?.id;
     if (!threadId) return;
 
-    try {
-      const res = await fetch(`/api/threads/${threadId}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast({
-          title: 'Error',
-          description: data?.error || 'Failed to refresh review thread',
-          variant: 'destructive',
-        });
-        return;
-      }
-      setThread(data.thread);
-    } catch {
+    const result = await apiFetch<{ thread: ReviewThreadWithDetails }>(`/api/threads/${threadId}`);
+    if (!result.ok) {
       toast({
         title: 'Error',
-        description: 'Failed to refresh review thread',
+        description: result.error || 'Failed to refresh review thread',
         variant: 'destructive',
       });
+      return;
     }
+    setThread(result.data.thread);
   };
 
   useEffect(() => {
@@ -77,19 +69,16 @@ export const CellThreadDialog = ({
     let cancelled = false;
 
     const loadCurrentUsername = async () => {
-      try {
-        const res = await fetch('/api/profile');
-        const data = await res.json().catch(() => ({}));
-        const username = data?.user?.username;
-        const userId = data?.user?.id;
-        if (!cancelled && res.ok && typeof username === 'string' && username) {
-          setCurrentUsername(username);
-        }
-        if (!cancelled && res.ok && typeof userId === 'string' && userId) {
-          setCurrentUserId(userId);
-        }
-      } catch {
-        // ignore
+      // Failures are ignored on purpose
+      const result = await apiFetch<{ user?: { username?: unknown; id?: unknown } }>('/api/profile');
+      if (!result.ok) return;
+      const username = result.data?.user?.username;
+      const userId = result.data?.user?.id;
+      if (!cancelled && typeof username === 'string' && username) {
+        setCurrentUsername(username);
+      }
+      if (!cancelled && typeof userId === 'string' && userId) {
+        setCurrentUserId(userId);
       }
     };
 
@@ -141,27 +130,17 @@ export const CellThreadDialog = ({
       if (!threadId) return;
 
       setIsThreadLoading(true);
-      try {
-        const res = await fetch(`/api/threads/${threadId}`);
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          toast({
-            title: 'Error',
-            description: data?.error || 'Failed to load review thread',
-            variant: 'destructive',
-          });
-          return;
-        }
-        setThread(data.thread);
-      } catch {
+      const result = await apiFetch<{ thread: ReviewThreadWithDetails }>(`/api/threads/${threadId}`);
+      if (result.ok) {
+        setThread(result.data.thread);
+      } else {
         toast({
           title: 'Error',
-          description: 'Failed to load review thread',
+          description: result.error || 'Failed to load review thread',
           variant: 'destructive',
         });
-      } finally {
-        setIsThreadLoading(false);
       }
+      setIsThreadLoading(false);
     };
 
     loadThread();
