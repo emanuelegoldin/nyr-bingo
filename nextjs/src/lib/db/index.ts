@@ -4,7 +4,7 @@
  */
 
 // Connection
-export { getConnection, query } from './connection';
+export { execute, query, withTransaction } from './connection';
 
 // Types
 export * from './types';

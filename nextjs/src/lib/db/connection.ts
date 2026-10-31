@@ -35,12 +35,65 @@ function getPool(): mysql.Pool {
   return pool;
 }
 
-export async function query<T>(sql: string, params?: unknown[]): Promise<T> {
-  const connection = getPool();
-  const [rows] = await connection.execute(sql, params);
+/** Anything that can run a statement: the pool, or a connection inside a transaction. */
+type Executor = Pick<mysql.Pool, 'execute'>;
+
+/**
+ * Run a statement and return its rows.
+ * @param sql The statement to run
+ * @param params The statement's placeholder values
+ * @param executor Where to run it; pass the transaction's connection to run inside it
+ * @returns The rows, typed as T
+ */
+export async function query<T>(sql: string, params?: unknown[], executor: Executor = getPool()): Promise<T> {
+  const [rows] = await executor.execute(sql, params);
   return rows as T;
 }
 
-export async function getConnection(): Promise<mysql.PoolConnection> {
-  return getPool().getConnection();
+/**
+ * Run a write statement and return its result header.
+ * @param sql The statement to run
+ * @param params The statement's placeholder values
+ * @param executor Where to run it; pass the transaction's connection to run inside it
+ * @returns The header, whose affectedRows tells whether a guarded write matched
+ */
+export async function execute(
+  sql: string,
+  params?: unknown[],
+  executor: Executor = getPool()
+): Promise<mysql.ResultSetHeader> {
+  const [header] = await executor.execute<mysql.ResultSetHeader>(sql, params);
+  return header;
+}
+
+/**
+ * Run work inside a transaction on its own connection.
+ * The transaction rolls back when the work throws, and the error is rethrown.
+ * @param work The statements to run, given the transaction's connection
+ * @param shouldCommit Decides from the result whether to commit or roll back; commits by default
+ * @returns The value returned by work
+ */
+export async function withTransaction<T>(
+  work: (connection: mysql.PoolConnection) => Promise<T>,
+  shouldCommit: (result: T) => boolean = () => true
+): Promise<T> {
+  const connection = await getPool().getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const result = await work(connection);
+
+    if (shouldCommit(result)) {
+      await connection.commit();
+    } else {
+      await connection.rollback();
+    }
+
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }

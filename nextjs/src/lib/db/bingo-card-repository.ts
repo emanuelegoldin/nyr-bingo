@@ -4,8 +4,9 @@
  */
 
 import { randomUUID } from 'crypto';
+import type { PoolConnection } from 'mysql2/promise';
 import { CellSourceType, CellState, ProofStatus, ResolutionType } from '../shared/types';
-import { getConnection, query } from './connection';
+import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution } from './resolution-repository';
 import { getTeamById, getTeamMembers, isTeamMember } from './team-repository';
@@ -155,12 +156,9 @@ export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCa
   }
 
   const members = await getTeamMembers(teamId);
-  const cards: BingoCard[] = [];
 
-  const connection = await getConnection();
-
-  try {
-    await connection.beginTransaction();
+  return withTransaction(async (connection) => {
+    const cards: BingoCard[] = [];
 
     for (const member of members) {
       const card = await generateCardForUser(
@@ -172,14 +170,8 @@ export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCa
       cards.push(card);
     }
 
-    await connection.commit();
     return cards;
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  });
 }
 
 /**
@@ -187,7 +179,7 @@ export async function generateBingoCardsForTeam(teamId: string): Promise<BingoCa
  * Internal helper
  */
 async function generateCardForUser(
-  connection: Awaited<ReturnType<typeof getConnection>>,
+  connection: PoolConnection,
   teamId: string,
   userId: string,
   teamGoalResolution: Resolution
@@ -388,21 +380,10 @@ export async function ensureBingoCardForUser(
     return { created: false, error: 'Team goal resolution entity not found' };
   }
 
-  const connection = await getConnection();
-  try {
-    await connection.beginTransaction();
-    const card = await generateCardForUser(
-      connection, teamId, userId,
-      teamGoalResolution
-    );
-    await connection.commit();
-    return { created: true, card };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  const card = await withTransaction((connection) =>
+    generateCardForUser(connection, teamId, userId, teamGoalResolution)
+  );
+  return { created: true, card };
 }
 
 /**
@@ -534,13 +515,11 @@ export async function updateCellState(
   }
 
   const placeholders = validFromStates.map(() => '?').join(', ');
-  const updateResult = await query<{ affectedRows: number }>(
+  const updateResult = await execute(
     `UPDATE bingo_cells SET state = ? WHERE id = ? AND state IN (${placeholders})`,
     [newState, cellId, ...validFromStates]
   );
 
-  // For UPDATE queries, query<T>() returns the mysql2 ResultSetHeader
-  // which has an affectedRows field.
   if (updateResult.affectedRows === 0) {
     return { success: false, error: 'Cell state has changed — please refresh and try again' };
   }
@@ -670,18 +649,13 @@ export async function undoCompletion(
     return { success: false, error: 'Cell is not completed' };
   }
 
-  const connection = await getConnection();
-
-  try {
-    await connection.beginTransaction();
-
+  const reverted = await withTransaction(async (connection) => {
     // Check for open review thread
-    const [threadRowsUnknown] = await connection.execute(
+    const threadRows = await query<Array<{ id: string; status: string }>>(
       `SELECT id, status FROM review_threads WHERE cell_id = ? AND status = 'open'`,
-      [cellId]
+      [cellId],
+      connection
     );
-
-    const threadRows = threadRowsUnknown as Array<{ id: string; status: string }>;
 
     if (threadRows.length > 0) {
       const threadId = threadRows[0].id;
@@ -709,33 +683,27 @@ export async function undoCompletion(
     // proof-request operations — if a team member moved the cell to
     // pending_review in the meantime, we still honour the owner's undo
     // because the thread closure above already handled that thread.
-    const [undoResult] = await connection.execute(
+    const undoResult = await execute(
       `UPDATE bingo_cells SET state = 'pending' WHERE id = ? AND state IN ('completed', 'pending_review', 'accomplished')`,
-      [cellId]
+      [cellId],
+      connection
     );
-    const affectedRows = (undoResult as { affectedRows: number }).affectedRows;
-    if (affectedRows === 0) {
-      await connection.rollback();
-      return { success: false, error: 'Cell is not in a completable state' };
-    }
+    return undoResult.affectedRows > 0;
+  }, (didRevert) => didRevert);
 
-    await connection.commit();
-
-    // Refresh persisted leaderboard data after undo
-    await refreshLeaderboardEntry(cell.team_id, userId);
-
-    const updatedRows = await query<CellRow[]>(
-      `SELECT * FROM bingo_cells WHERE id = ?`,
-      [cellId]
-    );
-
-    return { success: true, cell: rowToCell(updatedRows[0]) };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
+  if (!reverted) {
+    return { success: false, error: 'Cell is not in a completable state' };
   }
+
+  // Refresh persisted leaderboard data after undo
+  await refreshLeaderboardEntry(cell.team_id, userId);
+
+  const updatedRows = await query<CellRow[]>(
+    `SELECT * FROM bingo_cells WHERE id = ?`,
+    [cellId]
+  );
+
+  return { success: true, cell: rowToCell(updatedRows[0]) };
 }
 
 /**

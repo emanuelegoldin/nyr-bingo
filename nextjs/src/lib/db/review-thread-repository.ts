@@ -8,7 +8,7 @@ import { PoolConnection } from 'mysql2/promise';
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { ThreadStatus, VoteType } from '../shared/types';
-import { getConnection, query } from './connection';
+import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { isTeamMember } from './team-repository';
 import type {
@@ -178,13 +178,10 @@ export async function requestProof(
     return { success: false, error: 'A review thread already exists for this cell' };
   }
 
-  const connection = await getConnection();
+  const threadId = randomUUID();
 
-  try {
-    await connection.beginTransaction();
-
+  const cellMoved = await withTransaction(async (connection) => {
     // Create thread
-    const threadId = randomUUID();
     await connection.execute(
       `INSERT INTO review_threads (id, cell_id, completed_by_user_id, status)
        VALUES (?, ?, ?, 'open')`,
@@ -195,33 +192,27 @@ export async function requestProof(
     // This prevents races with the owner undoing completion concurrently.
     // Owner actions prevail — if the owner already reverted the cell to
     // 'pending', this UPDATE touches 0 rows and we roll back.
-    const [updateResult] = await connection.execute(
+    const updateResult = await execute(
       `UPDATE bingo_cells SET state = 'pending_review' WHERE id = ? AND state = 'completed'`,
-      [cellId]
+      [cellId],
+      connection
     );
-    const affectedRows = (updateResult as { affectedRows: number }).affectedRows;
-    if (affectedRows === 0) {
-      await connection.rollback();
-      return { success: false, error: 'Cell state changed — the owner may have undone the completion' };
-    }
+    return updateResult.affectedRows > 0;
+  }, (didMove) => didMove);
 
-    await connection.commit();
-
-    // Refresh leaderboard: completed → pending_review affects completed_tasks count
-    await refreshLeaderboardEntry(cellInfo.team_id, cellInfo.card_user_id);
-
-    const threadRows = await query<ThreadRow[]>(
-      `SELECT * FROM review_threads WHERE id = ?`,
-      [threadId]
-    );
-
-    return { success: true, thread: rowToThread(threadRows[0]) };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
+  if (!cellMoved) {
+    return { success: false, error: 'Cell state changed — the owner may have undone the completion' };
   }
+
+  // Refresh leaderboard: completed → pending_review affects completed_tasks count
+  await refreshLeaderboardEntry(cellInfo.team_id, cellInfo.card_user_id);
+
+  const threadRows = await query<ThreadRow[]>(
+    `SELECT * FROM review_threads WHERE id = ?`,
+    [threadId]
+  );
+
+  return { success: true, thread: rowToThread(threadRows[0]) };
 }
 
 /**
@@ -487,11 +478,7 @@ export async function submitVote(
     return { success: false, error: 'Completing user cannot vote on their own proof' };
   }
 
-  const connection = await getConnection();
-
-  try {
-    await connection.beginTransaction();
-
+  const { savedVote, nextCellState } = await withTransaction(async (connection) => {
     // Insert or update vote
     const voteId = randomUUID();
     await connection.execute(
@@ -502,36 +489,31 @@ export async function submitVote(
     );
 
     // Get the actual vote record (in case of update)
-    const [voteRowsUnknown] = await connection.execute(
+    const voteRows = await query<VoteRow[]>(
       `SELECT * FROM review_votes WHERE thread_id = ? AND voter_user_id = ?`,
-      [threadId, voterUserId]
+      [threadId, voterUserId],
+      connection
     );
-
-    const voteRows = voteRowsUnknown as VoteRow[];
-    const savedVote = rowToVote(voteRows[0]);
 
     // Check if all eligible voters have voted
     // Get all team members except the completing user
-    const [teamMemberRowsUnknown] = await connection.execute(
+    const teamMemberRows = await query<Array<{ user_id: string }>>(
       `SELECT user_id FROM team_memberships WHERE team_id = ? AND user_id != ?`,
-      [cellInfo.team_id, thread.completedByUserId]
+      [cellInfo.team_id, thread.completedByUserId],
+      connection
     );
-
-    const teamMemberRows = teamMemberRowsUnknown as Array<{ user_id: string }>;
 
     const eligibleVoters = teamMemberRows.length;
 
-    const [allVoteRowsUnknown] = await connection.execute(
+    const allVoteRows = await query<VoteRow[]>(
       `SELECT * FROM review_votes WHERE thread_id = ?`,
-      [threadId]
+      [threadId],
+      connection
     );
-
-    const allVoteRows = allVoteRowsUnknown as VoteRow[];
 
     const totalVotes = allVoteRows.length;
 
-    let threadClosed = false;
-    let nextCellState: 'accomplished' | 'pending' | null = null;
+    let nextState: 'accomplished' | 'pending' | null = null;
 
     // If all eligible voters have voted, close the thread
     // Note: Handle edge case where there are no eligible voters (single-member team)
@@ -542,31 +524,28 @@ export async function submitVote(
 
       // Determine new cell state based on votes
       // Spec: ≥50% accept → accomplished, <50% → pending
-      nextCellState = acceptPercentage >= 0.5 ? 'accomplished' : 'pending';
+      nextState = acceptPercentage >= 0.5 ? 'accomplished' : 'pending';
     }
 
-    await connection.commit();
+    return { savedVote: rowToVote(voteRows[0]), nextCellState: nextState };
+  });
 
-    if (nextCellState) {
-      const closeResult = await finalizeThreadClosure(threadId, thread.cellId, nextCellState);
-      threadClosed = closeResult.success;
-      if (!closeResult.success) {
-        console.error('Failed to close thread after all votes were submitted:', closeResult.error);
-      }
+  let threadClosed = false;
+
+  if (nextCellState) {
+    const closeResult = await finalizeThreadClosure(threadId, thread.cellId, nextCellState);
+    threadClosed = closeResult.success;
+    if (!closeResult.success) {
+      console.error('Failed to close thread after all votes were submitted:', closeResult.error);
     }
-
-    // Refresh persisted leaderboard data after vote-driven state change
-    if (threadClosed) {
-      await refreshLeaderboardEntry(cellInfo.team_id, thread.completedByUserId);
-    }
-
-    return { success: true, vote: savedVote, threadClosed };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
   }
+
+  // Refresh persisted leaderboard data after vote-driven state change
+  if (threadClosed) {
+    await refreshLeaderboardEntry(cellInfo.team_id, thread.completedByUserId);
+  }
+
+  return { success: true, vote: savedVote, threadClosed };
 }
 
 /**
@@ -674,11 +653,7 @@ async function finalizeThreadClosure(
     );
   }
 
-  const connection = await getConnection();
-
-  try {
-    await connection.beginTransaction();
-
+  return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
     await cleanUpThreadMessages(threadId, connection);
 
     await connection.execute(
@@ -686,23 +661,16 @@ async function finalizeThreadClosure(
       [nextCellState, cellId]
     );
 
-    const [updateResult] = await connection.execute(
+    const updateResult = await execute(
       `UPDATE review_threads SET status = 'closed', closed_at = NOW() WHERE id = ? AND status = 'open'`,
-      [threadId]
+      [threadId],
+      connection
     );
 
-    const affectedRows = (updateResult as { affectedRows: number }).affectedRows;
-    if (affectedRows === 0) {
-      await connection.rollback();
+    if (updateResult.affectedRows === 0) {
       return { success: false, error: 'Thread is already closed' };
     }
 
-    await connection.commit();
     return { success: true };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  }, (outcome) => outcome.success);
 }

@@ -6,7 +6,7 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import { InvitationStatus, TeamRole, TeamStatus } from '../shared/types';
-import { getConnection, query } from './connection';
+import { query, withTransaction } from './connection';
 import {
   getMemberProvidedResolutionsByUser,
   getMemberProvidedResolutionsForUser,
@@ -96,14 +96,10 @@ export async function createTeam(
   name: string,
   leaderUserId: string
 ): Promise<Team> {
-  const connection = await getConnection();
-  
-  try {
-    await connection.beginTransaction();
+  const teamId = uuidv4();
+  const membershipId = uuidv4();
 
-    const teamId = uuidv4();
-    const membershipId = uuidv4();
-
+  await withTransaction(async (connection) => {
     // Create team
     await connection.execute(
       `INSERT INTO teams (id, name, leader_user_id, status) VALUES (?, ?, ?, 'forming')`,
@@ -115,21 +111,14 @@ export async function createTeam(
       `INSERT INTO team_memberships (id, team_id, user_id, role) VALUES (?, ?, ?, 'leader')`,
       [membershipId, teamId, leaderUserId]
     );
+  });
 
-    await connection.commit();
+  const rows = await query<TeamRow[]>(
+    `SELECT * FROM teams WHERE id = ?`,
+    [teamId]
+  );
 
-    const rows = await query<TeamRow[]>(
-      `SELECT * FROM teams WHERE id = ?`,
-      [teamId]
-    );
-
-    return rowToTeam(rows[0]);
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  return rowToTeam(rows[0]);
 }
 
 /**
@@ -256,60 +245,57 @@ export async function joinTeamByInviteCode(
   inviteCode: string,
   userId: string
 ): Promise<{ success: boolean; team?: Team; error?: string }> {
-  const connection = await getConnection();
+  const result = await withTransaction<{ success: boolean; teamId?: string; error?: string }>(
+    async (connection) => {
+      // Find valid invitation
+      const invitations = await query<InvitationRow[]>(
+        `SELECT * FROM team_invitations
+         WHERE invite_code = ? AND status = 'pending' AND expires_at > NOW()`,
+        [inviteCode],
+        connection
+      );
 
-  try {
-    await connection.beginTransaction();
+      if (invitations.length === 0) {
+        return { success: false, error: 'Invalid or expired invitation' };
+      }
 
-    // Find valid invitation
-    const [invitationRows] = await connection.execute<InvitationRow[]>(
-      `SELECT * FROM team_invitations 
-       WHERE invite_code = ? AND status = 'pending' AND expires_at > NOW()`,
-      [inviteCode]
-    );
+      const invitation = invitations[0];
 
-    const invitations = invitationRows as InvitationRow[];
-    if (invitations.length === 0) {
-      await connection.rollback();
-      return { success: false, error: 'Invalid or expired invitation' };
-    }
+      // Check if already a member
+      const memberRows = await query<MembershipRow[]>(
+        `SELECT * FROM team_memberships WHERE team_id = ? AND user_id = ?`,
+        [invitation.team_id, userId],
+        connection
+      );
 
-    const invitation = invitations[0];
+      if (memberRows.length > 0) {
+        return { success: false, error: 'Already a member of this team' };
+      }
 
-    // Check if already a member
-    const [memberRows] = await connection.execute<MembershipRow[]>(
-      `SELECT * FROM team_memberships WHERE team_id = ? AND user_id = ?`,
-      [invitation.team_id, userId]
-    );
+      // Add as member
+      const membershipId = uuidv4();
+      await connection.execute(
+        `INSERT INTO team_memberships (id, team_id, user_id, role) VALUES (?, ?, ?, 'member')`,
+        [membershipId, invitation.team_id, userId]
+      );
 
-    if ((memberRows as MembershipRow[]).length > 0) {
-      await connection.rollback();
-      return { success: false, error: 'Already a member of this team' };
-    }
+      // Mark invitation as accepted
+      await connection.execute(
+        `UPDATE team_invitations SET status = 'accepted', invited_user_id = ? WHERE id = ?`,
+        [userId, invitation.id]
+      );
 
-    // Add as member
-    const membershipId = uuidv4();
-    await connection.execute(
-      `INSERT INTO team_memberships (id, team_id, user_id, role) VALUES (?, ?, ?, 'member')`,
-      [membershipId, invitation.team_id, userId]
-    );
+      return { success: true, teamId: invitation.team_id };
+    },
+    (outcome) => outcome.success
+  );
 
-    // Mark invitation as accepted
-    await connection.execute(
-      `UPDATE team_invitations SET status = 'accepted', invited_user_id = ? WHERE id = ?`,
-      [userId, invitation.id]
-    );
-
-    await connection.commit();
-
-    const team = await getTeamById(invitation.team_id);
-    return { success: true, team: team || undefined };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
+  if (!result.teamId) {
+    return { success: false, error: result.error };
   }
+
+  const team = await getTeamById(result.teamId);
+  return { success: true, team: team || undefined };
 }
 
 /**

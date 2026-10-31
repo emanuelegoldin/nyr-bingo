@@ -17,11 +17,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   createSystemResolutionHistoryEntry,
-  getConnection,
   getResolutionById,
   isTeamLeader,
   isTeamMember,
   query,
+  withTransaction,
 } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '@/lib/shared/types';
@@ -334,12 +334,9 @@ async function handleTypeChange(
   subtasks?: Subtask[],
   numberOfRepetition?: number,
 ) {
-  const conn = await getConnection();
   const description = newType === 'base' ? (text || title) : (text || null);
 
-  try {
-    await conn.beginTransaction();
-
+  await withTransaction(async (conn) => {
     // Update the resolution row: change type and type-specific fields
     if (newType === 'base') {
       await conn.execute(
@@ -371,14 +368,7 @@ async function handleTypeChange(
       `UPDATE bingo_cells SET resolution_type = ? WHERE resolution_id = ?`,
       [newType, id]
     );
-
-    await conn.commit();
-  } catch (error) {
-    await conn.rollback();
-    throw error;
-  } finally {
-    conn.release();
-  }
+  });
 
   const rows = await query<Array<Record<string, unknown>>>(
     `SELECT * FROM resolutions WHERE id = ?`, [id]

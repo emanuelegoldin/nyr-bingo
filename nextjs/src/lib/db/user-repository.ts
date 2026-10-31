@@ -6,7 +6,7 @@
 import bcrypt from 'bcryptjs';
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { getConnection, query } from './connection';
+import { query, withTransaction } from './connection';
 import type { EmailVerificationToken, PublicUserProfile, Session, User, UserProfile } from './types';
 
 // Row type from database (snake_case)
@@ -220,21 +220,16 @@ export async function createVerificationToken(userId: string): Promise<EmailVeri
  * Spec: 01-authentication.md - Email Verification
  */
 export async function verifyEmailToken(token: string): Promise<{ success: boolean; error?: string }> {
-  const connection = await getConnection();
-  
-  try {
-    await connection.beginTransaction();
-
+  return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
     // Find valid, unused token
-    const [tokenRows] = await connection.execute<TokenRow[]>(
-      `SELECT * FROM email_verification_tokens 
+    const tokens = await query<TokenRow[]>(
+      `SELECT * FROM email_verification_tokens
        WHERE token = ? AND used_at IS NULL AND expires_at > NOW()`,
-      [token]
+      [token],
+      connection
     );
 
-    const tokens = tokenRows as TokenRow[];
     if (tokens.length === 0) {
-      await connection.rollback();
       return { success: false, error: 'Invalid or expired verification token' };
     }
 
@@ -252,14 +247,8 @@ export async function verifyEmailToken(token: string): Promise<{ success: boolea
       [verificationToken.user_id]
     );
 
-    await connection.commit();
     return { success: true };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  }, (outcome) => outcome.success);
 }
 
 /**
