@@ -66,7 +66,7 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 
 - Only the team leader can delete a team (`403` otherwise; `404` when the team does not exist).
 - The UI asks for confirmation.
-- Deletion is a **hard delete**.
+- Deletion is a **hard delete**. Stored proof files of the team's threads are removed too, unless another thread uses the same file.
 - Due to database `ON DELETE CASCADE` constraints, deleting a team also deletes associated data, including:
   - Team memberships
   - Team invitations

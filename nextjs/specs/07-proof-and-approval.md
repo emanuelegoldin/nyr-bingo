@@ -162,7 +162,7 @@ The API responds with the vote and a `threadClosed` flag.
 
 ## Closure by Deadline
 
-The migration `V4_0_0` defines the `CloseThreads` procedure and the daily `CloseThreadsEvent` MariaDB event.
+The migration `V4_0_0` defines the `CloseThreads` procedure and the daily `CloseThreadsEvent` MariaDB event. MariaDB's `event_scheduler` is off by default; production enables it through a server configuration file outside this repository.
 
 - It closes every open thread whose cell still references a resolution, for which `CURDATE() > created_at + 2 days`.
 - The cell becomes `accomplished` when any of these holds, and `pending` otherwise:
@@ -228,7 +228,6 @@ If a file cannot be removed from disk during any closure except the deadline, th
 
 ## Known Gaps
 
-- No file in the repository enables MariaDB's `event_scheduler`, which is off by default. Unless it is enabled on the server, `CloseThreadsEvent` never runs and threads have no deadline.
 - Deleting a resolution while its cell is under review leaves the cell without a reference, so the deadline procedure never picks up that thread.
 - Deadline closure leaves proof files on disk with no database record of them.
 - The deadline rule differs from the voting rule: a thread with no votes is accepted.
