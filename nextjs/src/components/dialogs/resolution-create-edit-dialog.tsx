@@ -127,7 +127,6 @@ export const ResolutionCreateEditDialog = ({
   const [isSaving, setIsSaving] = useState(false);
 
   /** Original type (for detecting type changes on edit). */
-  const originalType = initialData?.type;
 
   const canSave = () => {
     if (!title.trim()) return false;
@@ -155,9 +154,6 @@ export const ResolutionCreateEditDialog = ({
 
       if (isEdit && initialData?.id) {
         body.id = initialData.id;
-        if (originalType && originalType !== type) {
-          body.previousType = originalType;
-        }
       }
 
       if (type === "compound") {
@@ -198,7 +194,7 @@ export const ResolutionCreateEditDialog = ({
       setIsSaving(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, title, text, subtasks, numberOfRepetition, isSaving, initialData, isEdit, originalType, scope, teamId, toUserId]);
+  }, [type, title, text, subtasks, numberOfRepetition, isSaving, initialData, isEdit, scope, teamId, toUserId]);
 
   const copy = dialogCopy(scope, isEdit, recipientName);
 

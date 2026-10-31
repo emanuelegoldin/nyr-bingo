@@ -44,7 +44,7 @@ Updating without changing type:
 - `compound`: subtasks are replaced by the submitted list, including their `completed` flags.
 - `iterative`: `completedTimes` is preserved.
 
-Changing type (requires `id` and a `previousType` that differs from `type`; the form sends both):
+Changing type (a save whose `type` differs from the stored type):
 - Title, description and the type-specific data are rewritten, and progress resets (`completedTimes = 0`).
 - `bingo_cells.resolution_type` is updated on every cell referencing the resolution.
 - Cell states are not changed.
@@ -86,4 +86,3 @@ Changing type (requires `id` and a `previousType` that differs from `type`; the 
 
 ## Known Gaps
 - Deleting a resolution that is on a bingo card leaves a blank, non-empty cell that keeps its source and has no text. A `base` cell still opens an empty dialog. A `compound` or `iterative` cell is clickable but nothing opens. The team goal can be deleted this way through the API, although the UI offers no such action.
-- A save that does not qualify as a type change but submits a different `type` keeps the row's stored type, writes the submitted type's fields to it, and leaves cells unchanged, while the response reports the submitted type. The form avoids this by sending `id` and `previousType`.

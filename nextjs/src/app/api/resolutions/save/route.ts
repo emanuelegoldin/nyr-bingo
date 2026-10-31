@@ -6,7 +6,6 @@
  *
  * Body:
  *   - id?: string               — if provided, this is an update; otherwise a create
- *   - previousType?: string     — the old resolution type (required if changing types on update)
  *   - type: 'base' | 'compound' | 'iterative'
  *   - title: string
  *   - text?: string             — description / text (called "text" for base, "description" for others)
@@ -76,7 +75,6 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     const body = await request.json();
   const {
     id,
-    previousType,
     type,
     title,
     text,
@@ -87,7 +85,6 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     toUserId,
   } = body as {
     id?: string;
-    previousType?: string;
     type: string;
     title: string;
     text?: string;
@@ -163,7 +160,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     if (scope === 'team') {
       const existingGoal = await getTeamGoalResolution(teamId!);
       if (existingGoal) {
-        return handleSameTypeUpdate(existingGoal.id, currentUser.id, content);
+        return updateExisting(existingGoal, currentUser.id, content);
       }
     }
     // For member_provided scope, if a resolution from→to already exists, update it
@@ -171,29 +168,39 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
       const provided = await getMemberProvidedResolutionsByUser(teamId!, currentUser.id);
       const existingMp = provided.find((resolution) => resolution.toUserId === toUserId);
       if (existingMp) {
-        return handleSameTypeUpdate(existingMp.id, currentUser.id, content);
+        return updateExisting(existingMp, currentUser.id, content);
       }
     }
     return handleCreate(currentUser.id, content, scope as ResolutionScope, teamId, toUserId);
   }
 
   // ── UPDATE (with id) ───────────────────────────────────────
-  const effectivePrevType = previousType || type;
-
   // Verify ownership of existing resolution
   const ownerErr = await verifyOwnership(id, currentUser.id);
   if (ownerErr) return ownerErr;
 
-  // Same type → simple update
-  if (effectivePrevType === type) {
-    return handleSameTypeUpdate(id, currentUser.id, content);
-  }
-
-  // Type changed → atomic update of the resolution and its cells
-  return handleTypeChange(id, currentUser.id, effectivePrevType, content);
+  return updateExisting((await getResolutionById(id))!, currentUser.id, content);
 });
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
+
+/**
+ * Update a resolution, comparing the submitted type with the stored one.
+ *
+ * @param existing - The stored resolution.
+ * @param userId - The user saving it.
+ * @param content - The submitted content.
+ * @returns The route response.
+ */
+async function updateExisting(existing: Resolution, userId: string, content: ResolutionContent) {
+  // Same type → simple update
+  if (existing.resolutionType === content.type) {
+    return handleSameTypeUpdate(existing.id, userId, content);
+  }
+
+  // Type changed → atomic update of the resolution and its cells
+  return handleTypeChange(existing.id, userId, existing.resolutionType, content);
+}
 
 async function verifyOwnership(id: string, userId: string): Promise<NextResponse | null> {
   const existing = await getResolutionById(id);
