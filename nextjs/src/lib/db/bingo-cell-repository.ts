@@ -8,6 +8,7 @@ import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getResolutionById } from './resolution-repository';
+import { removeThreadFiles } from './review-file-repository';
 import { BingoCell, Resolution } from './types';
 
 interface OwnedCellRow {
@@ -258,6 +259,15 @@ export async function undoCompletion(
     return { success: false, error: 'Cell is not completed' };
   }
 
+  // Storage cannot roll back, so files go first, as in every other thread closure
+  const openThreads = await query<Array<{ id: string }>>(
+    `SELECT id FROM review_threads WHERE cell_id = ? AND status = 'open'`,
+    [cellId]
+  );
+  if (openThreads.length > 0 && !(await removeThreadFiles(openThreads[0].id))) {
+    return { success: false, error: 'Failed to delete uploaded files from storage' };
+  }
+
   const reverted = await withTransaction(async (connection) => {
     // Check for open review thread
     const threadRows = await query<Array<{ id: string; status: string }>>(
@@ -269,7 +279,7 @@ export async function undoCompletion(
     if (threadRows.length > 0) {
       const threadId = threadRows[0].id;
 
-      // Delete messages and files
+      // Delete messages, and any files uploaded since the removal above
       await connection.execute(
         `DELETE FROM review_messages WHERE thread_id = ?`,
         [threadId]

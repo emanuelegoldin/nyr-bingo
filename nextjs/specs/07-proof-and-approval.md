@@ -182,11 +182,11 @@ The migration `V4_0_0` defines the `CloseThreads` procedure and the daily `Close
 | Cell state | `accomplished` or `pending` | `pending` | `pending` | `accomplished` or `pending` |
 | Messages deleted | Yes | Yes | Yes | Yes |
 | File rows deleted | Yes | Yes | Yes | Yes |
-| Files deleted from disk | Yes | Yes | **No** | **No** |
+| Files deleted from disk | Yes | Yes | Yes | **No** |
 
 The thread row and its votes are kept in every case.
 
-If a file cannot be removed from disk during an all-votes or completing-user closure, the closure fails and the thread stays open.
+If a file cannot be removed from disk during any closure except the deadline, the closure fails and the thread stays open.
 
 ---
 
@@ -230,6 +230,6 @@ If a file cannot be removed from disk during an all-votes or completing-user clo
 
 - No file in the repository enables MariaDB's `event_scheduler`, which is off by default. Unless it is enabled on the server, `CloseThreadsEvent` never runs and threads have no deadline.
 - Deleting a resolution while its cell is under review leaves the cell without a reference, so the deadline procedure never picks up that thread.
-- Undo and deadline closure leave proof files on disk with no database record of them.
+- Deadline closure leaves proof files on disk with no database record of them.
 - The deadline rule differs from the voting rule: a thread with no votes is accepted.
 - `/review-files/` is served by Nginx without authentication. Access control relies on the file name being unguessable.
