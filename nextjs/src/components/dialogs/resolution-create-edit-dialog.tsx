@@ -15,6 +15,7 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
+import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -55,14 +56,6 @@ interface ResolutionCreateEditDialogProps {
   /** Display name of the recipient (for member_provided scope). */
   recipientName?: string;
 }
-
-/* ─── Human-readable labels ──────────────────────────────────────── */
-
-const TYPE_LABELS: Record<ResolutionTypeValue, string> = {
-  base: "Common",
-  compound: "Complex",
-  iterative: "Iterative",
-};
 
 /* ─── Component ──────────────────────────────────────────────────── */
 
@@ -211,9 +204,9 @@ export const ResolutionCreateEditDialog = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="base">{TYPE_LABELS.base}</SelectItem>
-              <SelectItem value="compound">{TYPE_LABELS.compound}</SelectItem>
-              <SelectItem value="iterative">{TYPE_LABELS.iterative}</SelectItem>
+              <SelectItem value="base">{RESOLUTION_TYPE_LABELS.base}</SelectItem>
+              <SelectItem value="compound">{RESOLUTION_TYPE_LABELS.compound}</SelectItem>
+              <SelectItem value="iterative">{RESOLUTION_TYPE_LABELS.iterative}</SelectItem>
             </SelectContent>
           </Select>
         </div>

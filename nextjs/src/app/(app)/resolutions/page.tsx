@@ -10,7 +10,7 @@
 import { requireUser } from "@/lib/auth";
 import { getResolutionsByUser, type Resolution } from "@/lib/db";
 import type { ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
-import { Loader2 } from "lucide-react";
+import { PageSpinner } from "@/components/page-spinner";
 import { Suspense } from "react";
 import ResolutionsPageClient from "./resolutions-page-client";
 
@@ -35,9 +35,7 @@ function mapResolution(resolution: Resolution): UnifiedResolution {
 
 function ResolutionsLoadingFallback() {
   return (
-    <div className="flex justify-center py-16">
-      <Loader2 className="h-8 w-8 animate-spin" />
-    </div>
+    <PageSpinner />
   );
 }
 

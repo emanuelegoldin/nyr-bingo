@@ -1,7 +1,7 @@
 import { BingoCellWithProof } from "@/lib/db/types";
+import { getSourceLabel } from "@/lib/shared/cell-source";
 import { CellSourceType, CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
-import { Check, Hourglass, ThumbsUp, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MarkCellCompleteDialog } from "../dialogs/complete-dialog";
@@ -17,6 +17,7 @@ import { CellThreadDialog } from "../dialogs/thread-dialog";
 import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
+import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
 import { EmptyCell } from "./empty";
 
 interface ResolutionCellProps {
@@ -160,10 +161,10 @@ export const ResolutionCell = ({
 
     const stateConfig = {
         pending: { icon: null, color: "bg-card hover:bg-secondary/50", text: "text-card-foreground" },
-        completed: { icon: <Check className="h-4 w-4 text-green-500" />, color: "bg-green-100 dark:bg-green-900/50", text: "text-green-800 dark:text-green-300" },
-        pending_review: { icon: <Hourglass className="h-4 w-4 text-amber-500" />, color: "bg-amber-100 dark:bg-amber-900/50", text: "text-amber-800 dark:text-amber-300" },
-        accomplished: { icon: <ThumbsUp className="h-4 w-4 text-green-500" />, color: "bg-green-100 dark:bg-green-900/50", text: "text-green-800 dark:text-green-300 line-through" },
-        declined: { icon: <X className="h-4 w-4 text-red-500" />, color: "bg-red-100 dark:bg-red-900/50", text: "text-red-800 dark:text-red-300" },
+        completed: { icon: getCellStateIcon("completed", "h-4 w-4"), color: CELL_STATE_COLORS.completed.bg, text: CELL_STATE_COLORS.completed.text },
+        pending_review: { icon: getCellStateIcon("pending_review", "h-4 w-4"), color: CELL_STATE_COLORS.pending_review.bg, text: CELL_STATE_COLORS.pending_review.text },
+        accomplished: { icon: getCellStateIcon("accomplished", "h-4 w-4"), color: CELL_STATE_COLORS.accomplished.bg, text: `${CELL_STATE_COLORS.accomplished.text} line-through` },
+        declined: { icon: getCellStateIcon("declined", "h-4 w-4"), color: CELL_STATE_COLORS.declined.bg, text: CELL_STATE_COLORS.declined.text },
     };
     // Determine visual state based on cell state and proof status
     let visualState: keyof typeof stateConfig = cell.state;
@@ -174,6 +175,7 @@ export const ResolutionCell = ({
     }
 
     const config = stateConfig[visualState] || stateConfig.pending;
+    const sourceLabel = getSourceLabel(cell, usernames);
     // Resolution title for cell display (truncated with CSS ellipsis)
     const displayTitle = cell.resolutionTitle || cell.resolutionText;
     // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell is selectable (including empty)
@@ -216,19 +218,15 @@ export const ResolutionCell = ({
                         {visualState !== 'pending' && config.icon}
                     </div>
                     <Badge variant="outline" className="absolute bottom-1 right-1 text-xs hidden sm:inline-flex">
-                        {cell.sourceType === CellSourceType.TEAM && "Team Goal"}
-                        {cell.sourceType === CellSourceType.MEMBER_PROVIDED && (
-                            cell.sourceUserId ? (
-                                <Link
-                                    href={`/profile/${cell.sourceUserId}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="hover:underline"
-                                >
-                                    {usernames[cell.sourceUserId] ?? "Team member"}
-                                </Link>
-                            ) : "Team member"
-                        )}
-                        {cell.sourceType === CellSourceType.PERSONAL && "Personal"}
+                        {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId ? (
+                            <Link
+                                href={`/profile/${cell.sourceUserId}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="hover:underline"
+                            >
+                                {sourceLabel}
+                            </Link>
+                        ) : cell.sourceType !== CellSourceType.EMPTY && sourceLabel}
                     </Badge>
                 </Cell>
             }
@@ -281,13 +279,7 @@ export const ResolutionCell = ({
                     isOpen={isModalOpen}
                     setIsOpen={setIsModalOpen}
                     isOwner={isOwner}
-                    sourceLabel={
-                        cell.sourceType === CellSourceType.TEAM
-                            ? "Team Goal"
-                            : cell.sourceType === CellSourceType.MEMBER_PROVIDED
-                                ? (cell.sourceUserId ? (usernames[cell.sourceUserId] ?? "Team member") : "Team member")
-                                : "Personal"
-                    }
+                    sourceLabel={sourceLabel}
                     onRefresh={onRefresh}
                     onComplete={handleCompleteFromDetail}
                     onUndo={handleUndoFromDetail}

@@ -15,6 +15,8 @@ import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
+import { PageSpinner } from "@/components/page-spinner";
+import { TeamStatusBadge } from "@/components/team/team-status-badge";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
 import type { Team } from './[teamId]/types';
@@ -78,9 +80,7 @@ export default function TeamsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+      <PageSpinner />
     );
   }
 
@@ -143,12 +143,7 @@ export default function TeamsPage() {
                     Led by {leader?.user.displayName || leader?.user.username || 'Unknown'}
                   </CardDescription>
                   <div className="mt-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${team.status === 'started'
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                      }`}>
-                      {team.status === 'started' ? 'Game Started' : 'Forming Team'}
-                    </span>
+                    <TeamStatusBadge status={team.status} />
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow">

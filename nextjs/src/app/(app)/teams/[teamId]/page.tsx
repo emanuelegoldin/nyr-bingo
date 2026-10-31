@@ -22,7 +22,7 @@ import {
 } from '@/lib/db';
 import { resolutionToFormData } from '@/lib/shared/resolution-form';
 import type { ResolutionFormData } from '@/lib/shared/types';
-import { Loader2 } from 'lucide-react';
+import { PageSpinner } from '@/components/page-spinner';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import type { LeaderboardEntry } from './leaderboard-tab';
@@ -35,9 +35,7 @@ interface TeamDetailPageProps {
 
 function TeamDetailLoadingFallback() {
   return (
-    <div className="flex justify-center py-16">
-      <Loader2 className="h-8 w-8 animate-spin" />
-    </div>
+    <PageSpinner />
   );
 }
 

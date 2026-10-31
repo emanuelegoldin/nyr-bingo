@@ -38,6 +38,8 @@ import { useCallback, useState } from 'react';
 import { apiFetch } from "@/lib/api-client";
 import { BingoCardWithCells } from "@/lib/db/types";
 import { resolutionToFormData, unifiedToFormData } from "@/lib/shared/resolution-form";
+import { TeamStatusBadge } from "@/components/team/team-status-badge";
+import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, ResolutionTypeValue } from "@/lib/shared/types";
 import { CardsTab } from "./cards-tab";
 import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
@@ -269,12 +271,7 @@ export default function TeamDetailPageClient({
               Team Leader: {leader?.user.displayName || leader?.user.username || 'Unknown'}
             </CardDescription>
             <div className="mt-2">
-              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${team.status === 'started'
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                }`}>
-                {team.status === 'started' ? 'Game Started' : 'Forming Team'}
-              </span>
+              <TeamStatusBadge status={team.status} />
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -467,18 +464,6 @@ export default function TeamDetailPageClient({
 
 /* ─── Human-readable labels ──────────────────────────────────────── */
 
-const TYPE_LABELS: Record<ResolutionTypeValue, string> = {
-  base: "Common",
-  compound: "Complex",
-  iterative: "Iterative",
-};
-
-const TYPE_VARIANT: Record<ResolutionTypeValue, "default" | "secondary" | "outline"> = {
-  base: "secondary",
-  compound: "default",
-  iterative: "outline",
-};
-
 /* ─── TeamGoalDisplay ────────────────────────────────────────────── */
 
 interface TeamGoalDisplayProps {
@@ -507,8 +492,8 @@ function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps) {
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold text-foreground">Team Goal:</span>
         <span className="text-sm font-medium">{goal.title}</span>
-        <Badge variant={TYPE_VARIANT[goal.type]} className="text-xs">
-          {TYPE_LABELS[goal.type]}
+        <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[goal.type]} className="text-xs">
+          {RESOLUTION_TYPE_LABELS[goal.type]}
         </Badge>
         {isLeader && (
           <Button
@@ -560,10 +545,10 @@ function MemberResolutionRow({ memberName, resolution, onEdit }: MemberResolutio
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-sm truncate">{resolution.title}</span>
             <Badge
-              variant={TYPE_VARIANT[resolution.resolutionType as ResolutionTypeValue]}
+              variant={RESOLUTION_TYPE_BADGE_VARIANTS[resolution.resolutionType as ResolutionTypeValue]}
               className="text-xs flex-shrink-0"
             >
-              {TYPE_LABELS[resolution.resolutionType as ResolutionTypeValue]}
+              {RESOLUTION_TYPE_LABELS[resolution.resolutionType as ResolutionTypeValue]}
             </Badge>
           </div>
         ) : (

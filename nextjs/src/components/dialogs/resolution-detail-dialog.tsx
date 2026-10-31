@@ -16,11 +16,13 @@
 
 "use client";
 
+import { CELL_STATE_COLORS, getCellStateIcon } from "@/components/cell/cell-state-style";
 import { apiFetch } from "@/lib/api-client";
+import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { Subtask } from "@/lib/shared/types";
 import { CellState, ProofStatus, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
-import { Check, Eye, History, Hourglass, Loader2, MessageSquare, Minus, Plus, ThumbsUp, Undo2, X } from "lucide-react";
+import { Check, Eye, History, Loader2, MessageSquare, Minus, Plus, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { WsIncomingMessage } from "../team-ws-provider";
 import { useTeamWs } from "../team-ws-provider";
@@ -102,17 +104,10 @@ const STATE_CONFIG: Record<string, {
   text: string;
 }> = {
   [CellState.PENDING]:        { label: "Pending",       icon: null,                                                  bg: "bg-secondary",                           text: "text-secondary-foreground" },
-  [CellState.COMPLETED]:      { label: "Completed",     icon: <Check className="h-3.5 w-3.5 text-green-500" />,      bg: "bg-green-100 dark:bg-green-900/50",      text: "text-green-800 dark:text-green-300" },
-  [CellState.PENDING_REVIEW]: { label: "Under Review",  icon: <Hourglass className="h-3.5 w-3.5 text-amber-500" />, bg: "bg-amber-100 dark:bg-amber-900/50",      text: "text-amber-800 dark:text-amber-300" },
-  [CellState.ACCOMPLISHED]:   { label: "Accomplished",  icon: <ThumbsUp className="h-3.5 w-3.5 text-green-500" />,  bg: "bg-green-100 dark:bg-green-900/50",      text: "text-green-800 dark:text-green-300" },
-  declined:                   { label: "Declined",      icon: <X className="h-3.5 w-3.5 text-red-500" />,           bg: "bg-red-100 dark:bg-red-900/50",          text: "text-red-800 dark:text-red-300" },
-};
-
-/** Human-readable type labels */
-const TYPE_LABELS: Record<string, string> = {
-  [ResolutionType.BASE]: "Common",
-  [ResolutionType.COMPOUND]: "Complex",
-  [ResolutionType.ITERATIVE]: "Iterative",
+  [CellState.COMPLETED]:      { label: "Completed",     icon: getCellStateIcon("completed", "h-3.5 w-3.5"),      ...CELL_STATE_COLORS.completed },
+  [CellState.PENDING_REVIEW]: { label: "Under Review",  icon: getCellStateIcon("pending_review", "h-3.5 w-3.5"), ...CELL_STATE_COLORS.pending_review },
+  [CellState.ACCOMPLISHED]:   { label: "Accomplished",  icon: getCellStateIcon("accomplished", "h-3.5 w-3.5"),   ...CELL_STATE_COLORS.accomplished },
+  declined:                   { label: "Declined",      icon: getCellStateIcon("declined", "h-3.5 w-3.5"),       ...CELL_STATE_COLORS.declined },
 };
 
 /**
@@ -160,7 +155,7 @@ export const ResolutionDetailDialog = ({
             {effectiveConfig.icon}
             {effectiveConfig.label}
           </span>
-          <Badge variant="outline">{TYPE_LABELS[data.type] ?? data.type}</Badge>
+          <Badge variant="outline">{RESOLUTION_TYPE_LABELS[data.type] ?? data.type}</Badge>
           {sourceLabel && (
             <Badge variant="secondary">{sourceLabel}</Badge>
           )}

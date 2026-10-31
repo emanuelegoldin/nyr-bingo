@@ -1,5 +1,6 @@
 import { useToast } from "@/hooks/use-toast";
 import type { BingoCellWithProof } from "@/lib/db/types";
+import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import { CellSourceType, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -232,8 +233,7 @@ export const EditCellDialog = ({
               .map((opt) => {
                 const isMemberProvided = opt.sourceType === CellSourceType.MEMBER_PROVIDED;
                 const providerName = opt.sourceUserId ? (usernames[opt.sourceUserId] ?? 'Team member') : null;
-                const typeLabel = opt.resolutionType === ResolutionType.COMPOUND ? 'Complex'
-                  : opt.resolutionType === ResolutionType.ITERATIVE ? 'Iterative' : null;
+                const typeLabel = opt.resolutionType === ResolutionType.BASE ? null : RESOLUTION_TYPE_LABELS[opt.resolutionType];
                 return (
                   <button
                     key={opt.key}
