@@ -1,6 +1,7 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api-client";
 import { ReviewVote } from "@/lib/db/types";
 import { VoteType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
@@ -66,16 +67,14 @@ export function VoteBar({
 
       setIsSubmitting(true);
       try {
-        const res = await fetch(`/api/threads/${threadId}/vote`, {
+        const result = await apiFetch<unknown>(`/api/threads/${threadId}/vote`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ vote }),
+          json: { vote },
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
+        if (!result.ok) {
           toast({
             title: "Error",
-            description: data?.error || "Failed to submit vote",
+            description: result.error || "Failed to submit vote",
             variant: "destructive",
           });
           return;

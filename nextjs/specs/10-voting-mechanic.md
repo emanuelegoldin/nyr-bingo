@@ -58,7 +58,7 @@ Two buttons: **Accept** and **Deny**.
   Eligible Voters).
 - After a successful vote, the `onVoteSubmitted` callback refreshes the thread
   so the votes array — and therefore the button state — is updated.
-- A vote rejected by the API shows an error toast.
+- A vote that is rejected by the API or fails to reach it shows an error toast.
 
 ---
 

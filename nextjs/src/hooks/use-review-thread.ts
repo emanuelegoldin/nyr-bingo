@@ -160,21 +160,20 @@ export const useReviewThread = (
       const form = new FormData();
       form.set('file', selectedFile);
 
-      const res = await fetch(`/api/threads/${threadId}/files`, {
+      const result = await apiFetch<{ file?: ReviewFile }>(`/api/threads/${threadId}/files`, {
         method: 'POST',
         body: form,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!result.ok) {
         toast({
           title: 'Error',
-          description: data?.error || 'Failed to upload file',
+          description: result.error || 'Failed to upload file',
           variant: 'destructive',
         });
         return;
       }
-      // If succesful, res.file contains the uploaded file info.
-      const uploadedFile = data.file as ReviewFile | undefined;
+      // If succesful, the response contains the uploaded file info.
+      const uploadedFile = result.data.file;
       if (!uploadedFile) {
         toast({
           title: 'Error',
@@ -210,16 +209,14 @@ export const useReviewThread = (
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/threads/${threadId}/messages`, {
+      const result = await apiFetch<unknown>(`/api/threads/${threadId}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        json: { content },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!result.ok) {
         toast({
           title: 'Error',
-          description: data?.error || 'Failed to post message',
+          description: result.error || 'Failed to post message',
           variant: 'destructive',
         });
         return;
@@ -252,16 +249,14 @@ export const useReviewThread = (
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/threads/${threadId}/files`, {
+      const result = await apiFetch<unknown>(`/api/threads/${threadId}/files`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId }),
+        json: { fileId },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!result.ok) {
         toast({
           title: 'Error',
-          description: data?.error || 'Failed to delete file',
+          description: result.error || 'Failed to delete file',
           variant: 'destructive',
         });
         return;
@@ -297,14 +292,13 @@ export const useReviewThread = (
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/threads/${threadId}`, {
+      const result = await apiFetch<unknown>(`/api/threads/${threadId}`, {
         method: 'DELETE',
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!result.ok) {
         toast({
           title: 'Error',
-          description: data?.error || 'Failed to close thread',
+          description: result.error || 'Failed to close thread',
           variant: 'destructive',
         });
         return;
