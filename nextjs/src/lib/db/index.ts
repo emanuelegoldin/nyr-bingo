@@ -16,7 +16,7 @@ export * from './bingo-cell-repository';
 export * from './leaderboard-repository';
 export * from './resolution-history-repository';
 export * from './resolution-repository';
-export { deleteThreadFile, uploadFile } from './review-file-repository';
+export { deleteThreadFile, getFileUploadError, uploadFile } from './review-file-repository';
 export * from './review-thread-repository';
 export * from './team-repository';
 export * from './user-repository';

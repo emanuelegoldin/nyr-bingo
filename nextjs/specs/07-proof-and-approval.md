@@ -232,7 +232,6 @@ If a file cannot be removed from disk during an all-votes or completing-user clo
 - Deleting a resolution while its cell is under review leaves the cell without a reference, so the deadline procedure never picks up that thread.
 - Undo and deadline closure leave proof files on disk with no database record of them.
 - The deadline rule differs from the voting rule: a thread with no votes is accepted.
-- The upload route writes the file to disk before the authorization check runs, so a rejected upload still leaves a file behind.
 - `/review-files/` is served by Nginx without authentication. Access control relies on the file name being unguessable.
 - Editing a cell's content does not close an open thread on that cell (spec 09).
 - Vote, message and file authorization failures return `400`, not `403`.

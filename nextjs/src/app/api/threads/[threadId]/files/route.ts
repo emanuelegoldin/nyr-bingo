@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteThreadFile, uploadFile } from '@/lib/db';
+import { deleteThreadFile, getFileUploadError, uploadFile } from '@/lib/db';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
@@ -60,6 +60,13 @@ export const POST = withAuth(async (
   { params, currentUser }: AuthContext<{ threadId: string }>
 ) => {
   const { threadId } = await params;
+
+  // Authorize first, so a rejected upload never reaches the disk
+  const uploadError = await getFileUploadError(threadId, currentUser.id);
+  if (uploadError) {
+    return errorResponse(uploadError, 400);
+  }
+
   const contentType = request.headers.get('content-type') || '';
 
   if (!contentType.includes('multipart/form-data')) {

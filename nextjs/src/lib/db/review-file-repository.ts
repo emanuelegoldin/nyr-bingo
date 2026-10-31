@@ -16,6 +16,28 @@ interface ThreadFilePathRow {
 }
 
 /**
+ * Check that a user may upload proof files to a thread.
+ * Spec: Only completing user can upload files, and only while the thread is open
+ *
+ * @param threadId - The thread being uploaded to.
+ * @param uploadingUserId - The user uploading the file.
+ * @returns An error message, or null when the upload is allowed.
+ */
+export async function getFileUploadError(
+  threadId: string,
+  uploadingUserId: string
+): Promise<string | null> {
+  const loaded = await loadOpenThread(threadId);
+  if ('error' in loaded) {
+    return loaded.error;
+  }
+  if (loaded.thread.completedByUserId !== uploadingUserId) {
+    return 'Only the completing user can upload proof files';
+  }
+  return null;
+}
+
+/**
  * Upload file to thread
  * Spec: Only completing user can upload files
  */
@@ -33,14 +55,10 @@ export async function uploadFile(
     return { success: false, error: 'File size exceeds 5MB limit' };
   }
 
-  const loaded = await loadOpenThread(threadId);
-  if ('error' in loaded) {
-    return { success: false, error: loaded.error };
-  }
-
-  // Only the completing user can upload files
-  if (loaded.thread.completedByUserId !== uploadingUserId) {
-    return { success: false, error: 'Only the completing user can upload proof files' };
+  // Repeated here because the thread can close while the route stores the file
+  const uploadError = await getFileUploadError(threadId, uploadingUserId);
+  if (uploadError) {
+    return { success: false, error: uploadError };
   }
 
   const fileId = randomUUID();
