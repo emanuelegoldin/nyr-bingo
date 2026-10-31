@@ -3,20 +3,8 @@
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
 import { ReviewFile, ReviewThreadWithDetails } from "@/lib/db/types";
+import { getWsUrl, type WsOutgoingMessage } from "@/lib/shared/ws-messages";
 import { useEffect, useRef, useState } from "react";
-
-/**
- * Builds the URL of the websocket endpoint for the current page.
- *
- * @returns The websocket URL, or null when not running in a browser.
- */
-function getWsUrl(): string | null {
-  if (typeof window !== 'undefined') {
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${proto}//${window.location.host}/ws`;
-  }
-  return null;
-}
 
 interface UseReviewThreadOptions {
   /** Called after a successful mutation so the parent can reload the card. */
@@ -88,7 +76,7 @@ export const useReviewThread = (
   const notifyThreadRoom = (threadId: string) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
-      const wsMessage: ThreadRefreshMessage = {
+      const wsMessage: WsOutgoingMessage = {
         type: 'thread-refresh',
         body: { threadId },
       };
@@ -132,7 +120,7 @@ export const useReviewThread = (
     wsRef.current = ws;
 
     ws.onopen = () => {
-      const joinMessage: JoinThreadWSMessage = {
+      const joinMessage: WsOutgoingMessage = {
         type: 'join-thread',
         body: { threadId },
       };

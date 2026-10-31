@@ -1,7 +1,7 @@
 "use client";
 
-import type { WsIncomingMessage } from "@/components/team-ws-provider";
 import { useTeamWs } from "@/components/team-ws-provider";
+import type { WsIncomingMessage } from "@/lib/shared/ws-messages";
 import { useEffect, useRef } from "react";
 
 /**

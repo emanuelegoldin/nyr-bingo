@@ -25,25 +25,8 @@
  * resolution rooms and react to `refresh-resolution` events.
  */
 
+import { getWsUrl, type WsIncomingMessage, type WsOutgoingMessage } from "@/lib/shared/ws-messages";
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
-
-// ── WS URL helper ─────────────────────────────────────────────────
-
-function getWsUrl(): string | null {
-  if (typeof window !== "undefined") {
-    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${proto}//${window.location.host}/ws`;
-  }
-  return null;
-}
-
-// ── Types for parsed incoming WS messages ─────────────────────────
-
-/** Shape of a parsed WS message received from the server. */
-export interface WsIncomingMessage {
-  type: string;
-  [key: string]: unknown;
-}
 
 /** Callback signature for message listeners. */
 export type WsMessageHandler = (msg: WsIncomingMessage) => void;
@@ -54,7 +37,7 @@ interface TeamWsContextValue {
   /** Send a card-refresh message so other viewers re-fetch. */
   broadcastCardRefresh: () => void;
   /** Send an arbitrary JSON message over the shared WebSocket. */
-  sendWsMessage: (msg: object) => void;
+  sendWsMessage: (msg: WsOutgoingMessage) => void;
   /**
    * Register a listener for incoming WS messages.
    * Returns an unsubscribe function.
@@ -91,7 +74,7 @@ interface TeamWsProviderProps {
 export function TeamWsProvider({ teamId, teamName, onRefresh, children }: TeamWsProviderProps) {
   const wsRef = useRef<WebSocket | null>(null);
   /** Messages queued while the socket is still CONNECTING. */
-  const pendingMessagesRef = useRef<object[]>([]);
+  const pendingMessagesRef = useRef<WsOutgoingMessage[]>([]);
 
   // Stable ref so we don't re-open the socket when onRefresh identity changes.
   const onRefreshRef = useRef(onRefresh);
@@ -112,12 +95,8 @@ export function TeamWsProvider({ teamId, teamName, onRefresh, children }: TeamWs
     wsRef.current = ws;
 
     ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "join-card-room",
-          body: { teamId },
-        })
-      );
+      const joinMessage: WsOutgoingMessage = { type: "join-card-room", body: { teamId } };
+      ws.send(JSON.stringify(joinMessage));
 
       // Flush any messages that were queued while CONNECTING
       for (const msg of pendingMessagesRef.current) {
@@ -169,7 +148,7 @@ export function TeamWsProvider({ teamId, teamName, onRefresh, children }: TeamWs
   }, [teamId]);
 
   // ── Send an arbitrary message over the shared WebSocket ───────
-  const sendWsMessage = useCallback((msg: object) => {
+  const sendWsMessage = useCallback((msg: WsOutgoingMessage) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(msg));
