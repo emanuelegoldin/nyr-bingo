@@ -73,7 +73,7 @@ export const SELECT_CELL_WITH_RESOLVED_TEXT = `
     c.resolution_type,
     CASE
       WHEN c.is_empty THEN 'Empty'
-      WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.description, '')
+      WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.description, r.title, '')
       ELSE ''
     END AS resolution_text,
     CASE
