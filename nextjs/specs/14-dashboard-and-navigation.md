@@ -73,5 +73,4 @@ Empty states, with a **Get Started** button:
 
 ## Known Gaps
 
-- The **Get Started** buttons do not navigate. `dashboard/page.tsx` imports `Link` from `lucide-react`, which is an icon, instead of from `next/link`.
 - The "no started games" state reuses the text of the "no team" state.

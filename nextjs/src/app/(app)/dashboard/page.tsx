@@ -19,7 +19,8 @@ import {
   getTeamsForUser,
   type TeamWithMembers,
 } from '@/lib/db';
-import { Link, Loader2, Plus, Users } from 'lucide-react';
+import { Loader2, Plus, Users } from 'lucide-react';
+import Link from 'next/link';
 import { Suspense, type ReactNode } from 'react';
 
 /**
@@ -135,7 +136,6 @@ async function getTeamsWithMembersForUser(userId: string): Promise<TeamWithMembe
 
 /**
  * Empty-state card shown when the user has no team or no started games.
- * Note: `Link` is imported from lucide-react (known gap, spec 14); kept as is.
  *
  * @returns The empty-state card.
  */
