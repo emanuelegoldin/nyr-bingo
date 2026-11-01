@@ -68,7 +68,7 @@ export function NotificationBell() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
+      <DropdownMenuContent align="end" collisionPadding={16} className="w-80 max-w-[calc(100vw-2rem)]">
         <div className="flex items-center justify-between gap-2">
           <DropdownMenuLabel>{strings.title}</DropdownMenuLabel>
           {unreadCount > 0 && (
