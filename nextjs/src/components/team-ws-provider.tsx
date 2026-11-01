@@ -62,12 +62,12 @@ export function useTeamWs(): TeamWsContextValue {
 interface TeamWsProviderProps {
   /** The team whose card-room we join. */
   teamId: string;
-  /** The game name (used by card components) */
-  gameName: string;
+  /** The game name (used by card components). Pages without a game leave it out. */
+  gameName?: string;
   children: React.ReactNode;
 }
 
-export function TeamWsProvider({ teamId, gameName, children }: TeamWsProviderProps) {
+export function TeamWsProvider({ teamId, gameName = "", children }: TeamWsProviderProps) {
   const wsRef = useRef<WebSocket | null>(null);
   /** Rooms joined by descendants, joined again whenever the socket opens. */
   const roomsRef = useRef<Set<WsRoom>>(new Set());

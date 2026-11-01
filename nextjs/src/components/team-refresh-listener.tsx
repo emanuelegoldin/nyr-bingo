@@ -13,7 +13,7 @@ const REFRESH_DEBOUNCE_MS = 500;
  * built from server props updates without a reload.
  * Spec Reference: 11-real-time-card-updates.md, 12-team-tabs.md
  *
- * Must be rendered inside `TeamWsProvider`, and on the team page above the tabs,
+ * Must be rendered inside `TeamWsProvider`, and on the game page above the tabs,
  * because inactive tabs are unmounted.
  *
  * @returns Nothing; this component only subscribes to WebSocket messages.
