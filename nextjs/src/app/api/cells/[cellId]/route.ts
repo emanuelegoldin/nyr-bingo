@@ -3,6 +3,7 @@
  * Spec Reference: 06-bingo-gameplay.md - Card State
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { announceCellChanges } from '@/lib/notifications';
 import { notifyCell } from '@/lib/team-signals';
 import { updateCellState } from '@/lib/db';
 import type { CellState } from '@/lib/db/types';
@@ -38,6 +39,7 @@ export const PUT = withAuth(async (
   }
 
   await notifyCell(cellId);
+  if (result.cell) await announceCellChanges([result.cell], currentUser.id);
 
   return NextResponse.json({ cell: result.cell });
 });

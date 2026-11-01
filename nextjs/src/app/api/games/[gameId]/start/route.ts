@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifications } from '@/lib/notifications';
 import { notifyTeams } from '@/lib/team-signals';
 import { isUserVerified } from '@/lib/auth';
 import {
@@ -70,6 +71,7 @@ export const POST = withAuth(async (
   }
 
   await notifyTeams([runningGame.teamId]);
+  await notifications.publish({ type: 'game_started', gameId, actorUserId: currentUser.id });
 
   return NextResponse.json({
     message: 'Bingo game started successfully',

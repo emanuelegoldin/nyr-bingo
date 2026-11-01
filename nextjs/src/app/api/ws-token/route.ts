@@ -17,18 +17,19 @@ import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
  * @returns True if the user may join.
  */
 async function canJoinRoom(room: WsRoom, userId: string): Promise<boolean> {
+  if (room.type === 'user') return room.id === userId;
   if (room.type === 'card') return isTeamMember(room.id, userId);
   if (room.type === 'thread') return (await getThreadById(room.id, userId)).success;
   return (await getResolutionHistoryAccess(room.id, userId)).canView;
 }
 
 /**
- * GET /api/ws-token?type=card|thread|resolution&id=... - Get a token to join a room
+ * GET /api/ws-token?type=card|thread|resolution|user&id=... - Get a token to join a room
  */
 export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
   const type = request.nextUrl.searchParams.get('type');
   const id = request.nextUrl.searchParams.get('id');
-  if (!id || (type !== 'card' && type !== 'thread' && type !== 'resolution')) {
+  if (!id || (type !== 'card' && type !== 'thread' && type !== 'resolution' && type !== 'user')) {
     return errorResponse('A room type and id are required', 400);
   }
 

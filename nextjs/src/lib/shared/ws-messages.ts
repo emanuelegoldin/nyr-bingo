@@ -4,10 +4,10 @@
  * in ws-server/messages/; message strings must stay in sync with them.
  */
 
-/** A room viewers can join: a team's cards, a review thread or a resolution. */
+/** A room viewers can join: a team's cards, a review thread, a resolution or a user's notifications. */
 export interface WsRoom {
-  type: 'card' | 'thread' | 'resolution';
-  /** The team, thread or resolution id. */
+  type: 'card' | 'thread' | 'resolution' | 'user';
+  /** The team, thread, resolution or user id. */
   id: string;
 }
 
@@ -18,7 +18,8 @@ export type WsOutgoingMessage = { type: 'join-room'; token: string };
 export type WsIncomingMessage =
   | { type: 'refresh-thread'; threadId: string }
   | { type: 'refresh-card' }
-  | { type: 'refresh-resolution'; resolutionId: string };
+  | { type: 'refresh-resolution'; resolutionId: string }
+  | { type: 'refresh-notifications' };
 
 /**
  * What the provider hands its listeners: server messages, plus `catch-up` when signals

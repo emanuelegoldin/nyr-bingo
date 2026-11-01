@@ -3,6 +3,7 @@
  * Spec Reference: 04-bingo-teams.md - Invitations / Joining
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { notifications } from '@/lib/notifications';
 import { notifyTeams } from '@/lib/team-signals';
 import { isUserVerified } from '@/lib/auth';
 import { joinTeamByInviteCode, getRunningGamesForTeam, getTeamWithMembers, ensureBingoCardForUser, GameStatus } from '@/lib/db';
@@ -65,6 +66,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   if (result.team) {
     await generateCardsForNewMember(result.team.id, currentUser.id);
     await notifyTeams([result.team.id]);
+    await notifications.publish({ type: 'member_joined', teamId: result.team.id, actorUserId: currentUser.id });
   }
 
   return NextResponse.json({

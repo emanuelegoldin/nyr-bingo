@@ -10,6 +10,7 @@
  * undoCompletion, vote resolution) and bulk-initialized when a game starts.
  */
 
+import { notifications } from '../notifications';
 import { BINGO_LINES } from '../shared/bingo-lines';
 import { CellState, JOKER_POSITION } from '../shared/types';
 import { query } from './connection';
@@ -138,6 +139,7 @@ export async function getGameLeaderboard(gameId: string): Promise<LeaderboardEnt
  *
  * `completed_tasks` counts cells with state 'completed' or 'accomplished' only.
  * `first_bingo_at` is computed from bingo line detection on the card.
+ * Gaining or losing it is reported to the notification module (spec 19).
  */
 export async function refreshLeaderboardEntry(
   gameId: string,
@@ -160,6 +162,12 @@ export async function refreshLeaderboardEntry(
   // Compute first bingo timestamp
   const firstBingoAt = computeFirstBingoAt(cells);
 
+  const previous = await query<Array<{ first_bingo_at: Date | null }>>(
+    `SELECT first_bingo_at FROM team_leaderboard WHERE game_id = ? AND user_id = ?`,
+    [gameId, userId]
+  );
+  const hadBingo = Boolean(previous[0]?.first_bingo_at);
+
   await query(
     `INSERT INTO team_leaderboard (user_id, team_id, game_id, first_bingo_at, completed_tasks)
      SELECT ?, team_id, id, ?, ? FROM games WHERE id = ?
@@ -168,6 +176,12 @@ export async function refreshLeaderboardEntry(
        completed_tasks = VALUES(completed_tasks)`,
     [userId, firstBingoAt, completedTasks, gameId]
   );
+
+  if (firstBingoAt && !hadBingo) {
+    await notifications.publish({ type: 'bingo_scored', gameId, actorUserId: userId });
+  } else if (!firstBingoAt && hadBingo) {
+    await notifications.cancelBingo(gameId, userId);
+  }
 }
 
 /**

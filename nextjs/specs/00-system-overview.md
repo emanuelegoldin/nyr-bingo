@@ -28,6 +28,7 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 | 16 | Games |
 | 17 | Prepared resolutions |
 | 18 | Game archive |
+| 19 | Notifications |
 
 ## Scope
 In scope:
@@ -43,10 +44,11 @@ In scope:
 - Game leaderboard
 - Game archive: a read-only snapshot of every finished game, for the players who took part
 - WebSocket-based real-time signals
+- In-app notifications of team events, on login and while online
 - Language selection (English, German, Italian)
 
 Out of scope (not implemented):
-- Payments, achievements, analytics, notifications beyond email verification
+- Payments, achievements, analytics, email and push notifications beyond email verification
 - Social features beyond team invites and viewing
 - Admin console
 - Leaving a team, removing a member, transferring team leadership
@@ -92,6 +94,7 @@ Out of scope (not implemented):
 - **ReviewThread**, **ReviewMessage**, **ReviewFile**, **ReviewVote** (see spec 07)
 - **TeamLeaderboard** (see spec 12)
 - **ResolutionHistoryEntry** (see spec 13)
+- **NotificationEvent**, **NotificationRecipient**, **NotificationSetting** (see spec 19)
 
 The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in the schema but belong to removed flows. No code reads or writes them.
 
@@ -118,6 +121,7 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
 5. Card gameplay: mark completed / undo, or complete automatically through typed progress
 6. Proof review: a teammate requests proof → the owner uploads proof → members discuss and vote → the cell becomes `accomplished` or returns to `pending`
 7. Visibility: view others' cards and the team leaderboard
+8. Notifications: an event is held briefly, then released to the team's bell
 
 ## Non-Functional Requirements
 - Data integrity: generated cards do not contain duplicate texts; the concurrent cell mutations listed in spec 11 are guarded.

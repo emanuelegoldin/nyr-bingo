@@ -73,5 +73,23 @@
         "progressLabel": "Progress",
         "loadError": "Failed to load resolution history",
         "addError": "Failed to add history entry"
+    },
+    "Notifications": {
+        "title": "Benachrichtigungen",
+        "open": "Benachrichtigungen öffnen",
+        "markAllRead": "Alle als gelesen markieren",
+        "empty": "Nichts Neues",
+        "someone": "Jemand",
+        "cardProgressOne": "{actor} hat einen Vorsatz erfüllt",
+        "cardProgressMany": "{actor} hat {count} Vorsätze erfüllt",
+        "memberJoined": "{actor} ist dem Team beigetreten",
+        "gameStarted": "{actor} hat das Spiel gestartet",
+        "gameEnded": "{actor} hat das Spiel beendet",
+        "gameEndedAtDeadline": "Die Frist des Spiels ist abgelaufen",
+        "bingoScored": "{actor} hat ein BINGO erzielt!",
+        "proofRequested": "{actor} möchte einen Nachweis für deinen Vorsatz",
+        "settingLabel": "Benachrichtigungen",
+        "settingDescription": "Zeigt Neuigkeiten aus deinen Teams an der Glocke. Solange dies ausgeschaltet ist, werden Neuigkeiten nicht aufbewahrt.",
+        "settingError": "Benachrichtigungen konnten nicht geändert werden"
     }
 }

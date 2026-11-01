@@ -35,7 +35,7 @@ It details the mechanism behind **08 — Visibility and Updates**.
 
 - `ws-server/server.ts` is a standalone Node service listening on `WS_PORT` (default `8888`). Nginx proxies `/ws` to it.
 - It only relays signals. It never touches the database.
-- `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'resolution', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
+- `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'resolution' | 'user', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
 - It refuses to start without `WS_SHARED_SECRET`.
 - It joins a socket to a room only with a valid signed token.
 - It rejects browser connections from another site's page (the `Origin` hostname must match the `Host`).
@@ -54,10 +54,11 @@ Clients connect to `ws(s)://<current-host>/ws`.
 | Card room | `card:<teamId>`, shared by all games of the team | `TeamWsProvider` on open |
 | Resolution room | `resolution:<resolutionId>` | Compound checklist, iterative counter and history dialog, when opened; the socket stays in the room until it closes, but their listeners are removed with the dialog |
 | Thread room (spec 07) | `thread:<threadId>` | Review thread dialog, when opened, on the same terms |
+| User room (spec 19) | `user:<userId>` | The notification bell, on its own socket, on every page of the shell |
 
 ### Joining a Room
 
-- `GET /api/ws-token?type=card|thread|resolution&id=<id>` returns a token for one room, valid for 5 minutes. It returns `403` unless the user may see the data behind the room: team membership for cards and threads, and history access for resolutions. It returns `503` without `WS_SHARED_SECRET`.
+- `GET /api/ws-token?type=card|thread|resolution|user&id=<id>` returns a token for one room, valid for 5 minutes. It returns `403` unless the user may see the data behind the room: team membership for cards and threads, history access for resolutions, and being that user for user rooms. It returns `503` without `WS_SHARED_SECRET`.
 - The token is the base64url JSON `{ type, id, exp }` and its HMAC-SHA256 signature, made with `WS_SHARED_SECRET`. ws-server checks it, so it never needs the database.
 - A client that gets no token simply has no live updates for that room.
 
@@ -69,6 +70,7 @@ Clients connect to `ws(s)://<current-host>/ws`.
 | `refresh-card`       | server → clients | none                         | Tell card room members to refresh the page. |
 | `refresh-resolution` | server → clients | `resolutionId` (top level)   | Tell viewers to re-fetch the resolution.  |
 | `refresh-thread`     | server → clients | `threadId` (top level)       | Tell viewers to re-fetch the thread.      |
+| `refresh-notifications` | server → clients | none                      | Tell the bell to re-fetch notifications.  |
 
 ---
 
@@ -86,6 +88,7 @@ Every mutating API route, and the deadline sweep (spec 07), signals the rooms it
 | Manual history note | The resolution |
 | Join, game creation, start, end or deletion, team deletion | The team's card room |
 | Profile update | The card room of each of the user's teams |
+| Notifications released (spec 19) | The user room of each recipient |
 
 ## Catching Up
 
@@ -173,7 +176,7 @@ In both cases the final state is `pending`, honouring the owner's intent.
 - If two users perform conflicting operations, the system resolves the conflict deterministically (owner's action prevails).
 - Failed operations due to state conflicts return a descriptive error to the acting user.
 - No WebSocket connection is leaked on component unmount.
-- The WebSocket server isolates card, resolution and thread rooms through different key prefixes.
+- The WebSocket server isolates card, resolution, thread and user rooms through different key prefixes.
 
 ---
 
@@ -181,7 +184,7 @@ In both cases the final state is `pending`, honouring the owner's intent.
 
 - Offline support / retry queues.
 - Granular cell-level diffing (clients re-render the full page).
-- Push notifications for card changes.
+- Browser push notifications.
 
 ---
 
@@ -198,3 +201,4 @@ In both cases the final state is `pending`, honouring the owner's intent.
 - **08 — Visibility and Updates**: high-level behavior of updates.
 - **09 — Bingo Card Editing**: edit operations signal the same rooms.
 - **13 — Resolution History and Progress**: uses resolution rooms.
+- **19 — Notifications**: uses user rooms.

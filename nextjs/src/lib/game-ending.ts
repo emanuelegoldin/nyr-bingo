@@ -5,6 +5,7 @@
 
 import { archiveGame, closeOpenGameThreads, endGame, getEndedGames, getExpiredGames } from './db';
 import type { Game } from './db';
+import { notifications } from './notifications';
 import { notifyTeams, notifyThreadClosed } from './team-signals';
 
 /**
@@ -24,11 +25,15 @@ async function closeThreadsAndArchive(game: Game): Promise<void> {
  * finishes the work.
  *
  * @param game - The game to end.
+ * @param actorUserId - The leader who ended it; left out when it ended at its deadline.
  * @returns False if the game was not in started status.
  */
-export async function finishGame(game: Game): Promise<boolean> {
+export async function finishGame(game: Game, actorUserId: string | null = null): Promise<boolean> {
   const ended = await endGame(game.id);
   if (!ended) return false;
+
+  // Before archiving, which deletes the game
+  await notifications.publish({ type: 'game_ended', gameId: game.id, actorUserId });
 
   try {
     await closeThreadsAndArchive(game);

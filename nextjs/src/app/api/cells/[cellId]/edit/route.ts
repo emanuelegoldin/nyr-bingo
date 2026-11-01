@@ -4,6 +4,7 @@
  */
 import { updateCellContent } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { notifications } from '@/lib/notifications';
 import { notifyCell } from '@/lib/team-signals';
 import { errorResponse, withAuth, AuthContext } from "@/app/api/utils";
 
@@ -43,6 +44,7 @@ export const PUT = withAuth(async (
   }
 
   await notifyCell(cellId);
+  await notifications.cancelCell(cellId);
 
   return NextResponse.json({ cell: result.cell });
 });

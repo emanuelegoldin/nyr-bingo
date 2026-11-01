@@ -318,3 +318,30 @@ it with its cards, cells, leaderboard rows, closed threads and game resolutions.
 ### Idempotency
 
 `CREATE TABLE IF NOT EXISTS` skips a table that already exists, so the migration can run again.
+
+## 5.5.0 - Notifications
+
+Stores team events, their recipients and each user's notification setting (spec 19).
+
+### Schema changes
+
+Three new tables:
+
+- `notification_events`: one row per event. Pending while `published_at` is `NULL`.
+- `notification_recipients`: one row per notification received, with its read state.
+- `notification_settings`: one row per user who changed the setting. No row means on.
+
+### Data migration
+
+None. Existing users have notifications on.
+
+### Design notes
+
+- `team_id`, `game_id` and `cell_id` have no foreign key, and team and game names are plain values:
+  archiving deletes a game right after it ends, and a notification must outlive it.
+- A pending `card_progress` event has one row per cell, so cancelling is a plain delete.
+- Only the type is stored, never text, so the browser can translate it.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips a table that already exists, so the migration can run again.
