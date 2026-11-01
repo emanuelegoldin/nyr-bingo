@@ -72,16 +72,20 @@ export const CellFace = ({
             <div className="absolute top-1 right-1">
                 {cell.state !== 'pending' && config.icon}
             </div>
-            <Badge variant="outline" className="absolute bottom-1 right-1 text-xs hidden sm:inline-flex">
+            <Badge variant="outline" className="absolute bottom-1 right-1 max-w-[calc(100%-0.5rem)] text-xs hidden sm:inline-flex">
                 {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId ? (
                     <Link
                         href={`/profile/${cell.sourceUserId}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="hover:underline"
+                        className="truncate hover:underline"
                     >
                         {sourceLabel}
                     </Link>
-                ) : cell.sourceType !== CellSourceType.EMPTY && sourceLabel}
+                ) : (
+                    <span className="truncate">
+                        {cell.sourceType !== CellSourceType.EMPTY && sourceLabel}
+                    </span>
+                )}
             </Badge>
         </Cell>
     );
