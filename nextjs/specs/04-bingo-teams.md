@@ -49,7 +49,7 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 - The creator becomes the team leader.
 - A new team has no games.
 
-`GET /api/teams` lists the caller's teams. `GET /api/teams/[teamId]` returns one team to its members only (`403` otherwise). `GET /api/teams/[teamId]/members` returns a `userId → username` map to members only.
+`GET /api/teams` lists the caller's teams. `GET /api/teams/[teamId]` returns one team to its members only (`403` otherwise).
 
 ---
 
