@@ -1,9 +1,9 @@
-// This component shows confetti on an overlay when the user achieves a bingo
+// This component plays the confetti effect when a card achieves a bingo
 
 import { BingoCell } from "@/lib/db/types";
 import { hasBingoLine } from "@/lib/shared/bingo-lines";
-import { useEffect, useState } from "react";
-import { Confetti } from "../confetti";
+import { useEffect, useRef } from "react";
+import { fireBingoConfetti } from "../confetti";
 
 /**
  * Whether a card has a complete bingo line, using the same lines as the leaderboard.
@@ -21,28 +21,17 @@ function cardHasBingo(cells: BingoCell[]): boolean {
 }
 
 export function ConfettiLayer({ cells }: { cells: BingoCell[] }) {
-    const [showConfetti, setShowConfetti] = useState(false);
-    const [hadBingo, setHadBingo] = useState(cardHasBingo(cells));
+    const hadBingo = useRef(cardHasBingo(cells));
 
     useEffect(() => {
         const hasBingoAfterChange = cardHasBingo(cells);
 
-        if (!hadBingo && hasBingoAfterChange) {
-            setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 5000); // Show confetti for 5 seconds
-            setHadBingo(true);
-            return;
+        if (!hadBingo.current && hasBingoAfterChange) {
+            void fireBingoConfetti();
         }
 
-        if (hadBingo && !hasBingoAfterChange) {
-            setHadBingo(false);
-            return;
-        }
+        hadBingo.current = hasBingoAfterChange;
     }, [cells]); // trigger effect whenever cells change
 
-    return (
-        <>
-            {showConfetti && <Confetti />}
-        </>
-    );
+    return null;
 }
