@@ -69,6 +69,8 @@ When a replacement option is selected, the system updates the cell via `PUT /api
 
 `is_empty` follows from these values because it is a generated column.
 
+A `prepared` cell (spec 05) can be replaced like any other, but not chosen as a replacement. The replaced copy is left unused until its game is deleted.
+
 ### 6) Permissions & Safety
 - Only the card owner can edit the content of cells on their card.
 - Attempts to edit the joker cell fail.

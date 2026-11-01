@@ -77,7 +77,7 @@ export interface Resolution {
   resolutionType: ResolutionType;
   scope: ResolutionScope;
   teamId: string | null;
-  /** The game of a team or member-provided resolution; null for personal ones. */
+  /** The game of a team, member-provided or prepared resolution; null for personal ones. */
   gameId: string | null;
   toUserId: string | null;
   subtasks: Subtask[] | null;

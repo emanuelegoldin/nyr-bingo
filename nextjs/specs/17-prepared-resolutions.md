@@ -10,6 +10,7 @@ Offer a shared pool of ready-made resolutions, so that users do not have to come
 ## In Scope
 - The pool and its categories
 - Browsing the pool and copying entries into personal resolutions
+- The pool as a fallback for card generation, whose rules are defined in spec 05
 
 ## Out of Scope
 - Managing the pool from the application. Entries are added through database migrations.
@@ -55,6 +56,9 @@ On `/resolutions`, the **Browse ideas** button next to the add button opens a di
 - Returns `201` with the id of the copy.
 - Returns `404` for an unknown entry.
 - Returns `409` if the caller already has a personal resolution with the same text, compared as in spec 05. A user who changes the text of a copy can add the entry again.
+
+### Fallbacks on Bingo Cards
+At game start, card generation copies entries onto cards where proposals or resolutions are missing (spec 05). These copies have `scope = 'prepared'` and belong to the game, so they do not appear in the owner's personal resolutions. On a card they are labeled **Suggested**.
 
 ## Permissions
 - Both endpoints require authentication.

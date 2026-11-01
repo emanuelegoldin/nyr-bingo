@@ -68,6 +68,7 @@ Who can write depends on the resolution's scope:
 | Scope | Allowed writer |
 | ----- | -------------- |
 | `personal` | The resolution owner |
+| `prepared` | The resolution owner, who is the card owner |
 | `member_provided` | The recipient (`toUserId`), not the author |
 | `team` | Nobody |
 
@@ -76,7 +77,7 @@ Manual entry content must be non-empty text.
 ### 3) History Visibility
 
 - Owner can always view the history of their own resolution.
-- For `scope = team` and `scope = member_provided` resolutions:
+- For `scope = team`, `scope = member_provided` and `scope = prepared` resolutions:
   - Team members of the associated team can view history.
 - For `scope = personal` resolutions:
   - A user can view history only if the resolution appears in at least one bingo card of a team they belong to.

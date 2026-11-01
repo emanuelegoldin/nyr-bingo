@@ -67,6 +67,31 @@ export async function getPreparedResolutions(): Promise<PreparedResolution[]> {
 }
 
 /**
+ * Get random entries of a category, to fill a card.
+ * Spec: 05-bingo-card-generation.md - Generation Rules
+ * @param category The category to pick from
+ * @param limit The most entries to return
+ * @param excludeTexts Texts already used on the card
+ * @returns Up to `limit` entries, in random order
+ */
+export async function getRandomPreparedResolutions(
+  category: PreparedResolutionCategory,
+  limit: number,
+  excludeTexts: string[]
+): Promise<PreparedResolution[]> {
+  if (limit <= 0) return [];
+
+  const exclusion = excludeTexts.length > 0
+    ? `AND LOWER(COALESCE(description, title)) NOT IN (${excludeTexts.map(() => '?').join(', ')})`
+    : '';
+  const rows = await query<PreparedResolutionRow[]>(
+    `SELECT * FROM prepared_resolutions WHERE category = ? ${exclusion} ORDER BY RAND() LIMIT ?`,
+    [category, ...excludeTexts, limit]
+  );
+  return rows.map(rowToPreparedResolution);
+}
+
+/**
  * Add a copy of a pool entry to a user's personal resolutions.
  * Spec: 17-prepared-resolutions.md - Adding to Personal Resolutions
  * @param preparedId The pool entry to copy

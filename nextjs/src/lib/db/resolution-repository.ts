@@ -10,7 +10,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '../shared/types';
 import { ResolutionScope, ResolutionType } from '../shared/types';
-import { query, withTransaction } from './connection';
+import { query, withTransaction, type Executor } from './connection';
 import type { Resolution } from './types';
 
 // ── Row type from database (snake_case) ──────────────────────────
@@ -84,7 +84,7 @@ export async function getResolutionById(id: string): Promise<Resolution | null> 
  * Whether a resolution belongs to a game that has ended, which freezes it.
  * Spec: 16-games.md - Ending a Game
  * @param resolution The resolution to check
- * @returns True for a team goal or member-provided resolution of an ended game
+ * @returns True for a team goal, member-provided or prepared resolution of an ended game
  */
 export async function isResolutionFrozen(resolution: Resolution): Promise<boolean> {
   if (!resolution.gameId) return false;
@@ -193,12 +193,14 @@ function toColumnValues({ type, title, text, subtasks, numberOfRepetition }: Res
  * @param ownerUserId The user creating it
  * @param content The validated content
  * @param placement The scope, plus the team, game and recipient where the scope needs them
+ * @param executor Where to run the insert; pass the transaction's connection to run inside it
  * @returns The new resolution's id
  */
 export async function createResolution(
   ownerUserId: string,
   content: ResolutionContent,
-  placement: { scope: ResolutionScope; teamId?: string; gameId?: string; toUserId?: string }
+  placement: { scope: ResolutionScope; teamId?: string; gameId?: string; toUserId?: string },
+  executor?: Executor
 ): Promise<string> {
   const id = uuidv4();
   const { description, subtasks, numberOfRepetition } = toColumnValues(content);
@@ -219,7 +221,8 @@ export async function createResolution(
       placement.toUserId || null,
       subtasks,
       numberOfRepetition,
-    ]
+    ],
+    executor
   );
 
   return id;

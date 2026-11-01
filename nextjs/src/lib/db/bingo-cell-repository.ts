@@ -158,7 +158,7 @@ export async function updateCellContent(
   userId: string,
   update: {
     resolutionId: string | null;
-    sourceType: Exclude<CellSourceType, CellSourceType.TEAM>;
+    sourceType: Exclude<CellSourceType, CellSourceType.TEAM | CellSourceType.PREPARED>;
   }
 ): Promise<{ success: boolean; error?: string; cell?: BingoCell }> {
 

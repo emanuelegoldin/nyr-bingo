@@ -28,7 +28,8 @@ export enum CellSourceType {
   TEAM = 'team',
   MEMBER_PROVIDED = 'member_provided',
   PERSONAL = 'personal',
-  EMPTY = 'empty'
+  EMPTY = 'empty',
+  PREPARED = 'prepared'
 }
 
 // Cell state
@@ -69,11 +70,13 @@ export enum ResolutionType {
 export type ResolutionTypeValue = `${ResolutionType}`;
 
 // Resolution scope (ownership context)
-// A resolution can be personal, a team-wide goal, or written by one member for another.
+// A resolution can be personal, a team-wide goal, written by one member for another, or a
+// prepared resolution copied onto a card as a fallback.
 export enum ResolutionScope {
   PERSONAL = 'personal',
   TEAM = 'team',
   MEMBER_PROVIDED = 'member_provided',
+  PREPARED = 'prepared',
 }
 
 /**
