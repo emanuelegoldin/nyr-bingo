@@ -36,7 +36,7 @@ function getPool(): mysql.Pool {
 }
 
 /** Anything that can run a statement: the pool, or a connection inside a transaction. */
-type Executor = Pick<mysql.Pool, 'execute'>;
+export type Executor = Pick<mysql.Pool, 'execute'>;
 
 /**
  * Run a statement and return its rows.

@@ -40,7 +40,25 @@
         "title": "Your Personal Resolutions",
         "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
         "headerTitle": "Resolutions",
-        "viewHistoryAriaLabel": "View resolution history"
+        "viewHistoryAriaLabel": "View resolution history",
+        "browseIdeas": "Browse ideas"
+    },
+    "PreparedResolutionsDialog": {
+        "title": "Resolution ideas",
+        "description": "Add any of these prepared resolutions to your personal list. You can edit your copy afterwards.",
+        "add": "Add",
+        "added": "Added",
+        "loadError": "Could not load the ideas. Close this window and try again.",
+        "categories": {
+            "short": "Short",
+            "medium": "Medium",
+            "long": "Long"
+        },
+        "categoryHints": {
+            "short": "Done in a few days, with no preparation.",
+            "medium": "Done in a few weeks, or more demanding but over in days.",
+            "long": "Takes months, up to the whole year."
+        }
     },
     "ResolutionHistoryDialog": {
         "title": "Resolution History",

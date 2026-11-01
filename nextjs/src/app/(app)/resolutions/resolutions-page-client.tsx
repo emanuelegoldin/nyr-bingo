@@ -9,6 +9,7 @@
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
+import { PreparedResolutionsDialog } from "@/components/dialogs/prepared-resolutions-dialog";
 import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ import { apiFetch } from "@/lib/api-client";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
-import { History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { History, Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
@@ -56,6 +57,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
   const [editingResolution, setEditingResolution] = useState<ResolutionFormData | undefined>(undefined);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyResolution, setHistoryResolution] = useState<{ id: string; title: string } | null>(null);
+  const [browseOpen, setBrowseOpen] = useState(false);
 
   /** Fetch all resolution types from the unified endpoint. */
   const loadResolutions = useCallback(async () => {
@@ -129,9 +131,15 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
               {t.description}
             </CardDescription>
           </div>
-          <Button size="icon" onClick={handleCreate} aria-label="Add resolution">
-            <Plus className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+            <Button variant="outline" onClick={() => setBrowseOpen(true)}>
+              <Lightbulb className="h-4 w-4 mr-2" />
+              {t.browseIdeas}
+            </Button>
+            <Button size="icon" onClick={handleCreate} aria-label="Add resolution">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -224,6 +232,13 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
         isOpen={dialogOpen}
         setIsOpen={setDialogOpen}
         onSaved={handleSaved}
+      />
+
+      <PreparedResolutionsDialog
+        personalResolutions={resolutions}
+        isOpen={browseOpen}
+        setIsOpen={setBrowseOpen}
+        onAdded={loadResolutions}
       />
 
       {historyResolution && (

@@ -77,7 +77,7 @@ export interface Resolution {
   resolutionType: ResolutionType;
   scope: ResolutionScope;
   teamId: string | null;
-  /** The game of a team or member-provided resolution; null for personal ones. */
+  /** The game of a team, member-provided or prepared resolution; null for personal ones. */
   gameId: string | null;
   toUserId: string | null;
   subtasks: Subtask[] | null;
@@ -133,6 +133,8 @@ export interface Game {
   createdAt: Date;
   updatedAt: Date;
   endedAt: Date | null;
+  /** Last playable day as YYYY-MM-DD, or null when the game only ends manually. */
+  deadline: string | null;
 }
 
 // Team membership

@@ -202,3 +202,119 @@ MariaDB DDL cannot be rolled back, so a run that fails halfway leaves its earlie
 steps applied. Every step can run again, using `IF [NOT] EXISTS` clauses, the
 `Create_Column` and `Drop_Column` procedures, `information_schema` guards on the
 foreign keys, and backfills limited to rows still unset.
+
+## 5.1.0 - Game Deadline
+
+Adds an optional deadline to games (spec 16).
+
+### Schema changes
+
+- `games`: adds `deadline DATE NULL`, the last playable day of the game.
+
+### Data migration
+
+None. Existing games keep `deadline = NULL` and still end only manually.
+
+### Design notes
+
+- `DATE` rather than `DATETIME`: the picker selects a day, so there is no time or
+  time zone to convert. A game ends once `deadline < CURDATE()`.
+- No index: the hourly sweep is the only reader that filters on it.
+
+### Idempotency
+
+`Create_Column` skips a column that already exists, so the migration can run again.
+
+## 5.2.0 - Prepared Resolutions
+
+Adds a shared pool of ready-made resolutions (spec 17).
+
+### Schema changes
+
+- New table `prepared_resolutions`: `id`, `category` (`short`, `medium`, `long`),
+  `resolution_type`, `title`, `description`, `subtasks`, `number_of_repetition` and
+  `created_at`, with an index on `category`.
+- `resolutions.scope`: adds `prepared`.
+- `bingo_cells.source_type`: adds `prepared`.
+
+### Data migration
+
+None. Existing rows keep their scope and source type.
+
+### Design notes
+
+- The pool is a separate table because its rows have no owner and no progress. Everything
+  users receive from it is a copy in `resolutions`.
+- `prepared` is a scope of its own because a copy on a card belongs to one game and must not
+  appear in its owner's personal resolutions.
+- The pool has no foreign keys: nothing references it, so a copy survives if its entry is
+  removed.
+- `is_empty` is unaffected: it only compares `source_type` to `'empty'`.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips an existing table, and `MODIFY COLUMN` sets each column to
+the same definition on a second run, so the migration can run again.
+
+## 5.2.1 - Seed Prepared Resolutions
+
+Fills the pool created in 5.2.0 (spec 17).
+
+### Data migration
+
+Inserts 60 entries, 20 per category, mixing the `base`, `compound` and `iterative` types. The
+text is in English only.
+
+### Design notes
+
+- `long` and `medium` together hold more than the 23 cells a card could need from them, so a
+  card only gets `empty` cells when duplicates or a very short pool get in the way.
+- The pool has no admin interface. Later changes to it are new migrations.
+- Ids are readable slugs such as `prepared-short-01`, which fit the `VARCHAR(36)` column.
+
+### Idempotency
+
+Ids are fixed, and `INSERT IGNORE` skips ids already present, so the migration can run again.
+
+## 5.3.0 - Failed Cell State
+
+Adds the `failed` cell state (spec 06).
+
+### Schema changes
+
+`bingo_cells.state` gains the `failed` value. It goes last in the enum, so existing rows keep
+their state.
+
+### Idempotency
+
+`MODIFY COLUMN` sets the column to the same definition on a second run, so the migration can
+run again.
+
+## 5.4.0 - Game Archive
+
+Adds read-only snapshots of finished games (spec 18).
+
+### Schema changes
+
+Four new tables, each cascading from the one before it:
+
+- `archived_games`: one row per game, keyed by the id the game had.
+- `archived_game_players`: who can view the game, and each player's final leaderboard line.
+- `archived_cells`: the cells of each card, without the implicit Joker.
+- `archived_cell_subtasks`: the subtasks of `compound` cells.
+
+### Data migration
+
+None in SQL. The server's sweep archives every game in `ended` status at startup, then deletes
+it with its cards, cells, leaderboard rows, closed threads and game resolutions. Games with no
+`ended_at` use `updated_at` as their end date.
+
+### Design notes
+
+- The tables hold plain values and have no foreign key to `games`, `teams` or `resolutions`, so an
+  archived game outlives all of them.
+- `source_user_id` has no foreign key: it only links to a profile.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips a table that already exists, so the migration can run again.

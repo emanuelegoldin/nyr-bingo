@@ -43,7 +43,8 @@ members only; others get a not-found page.
 - Other members' cards are view-only, apart from proof review actions.
 - If the game has not started, a placeholder message is shown.
 - **Confetti animation:** When a card goes from having no bingo line to having
-  one, a confetti animation plays from the top of the screen.
+  one, a confetti animation shoots from both bottom corners of the screen. The
+  pieces rise, slow down, then fall while fading out.
   - It is evaluated in the viewer's browser on every card rendered there,
     including other members' cards, whenever that card's cells change.
   - Cards that already have a bingo when first rendered do not play it.
@@ -51,7 +52,9 @@ members only; others get a not-found page.
     `completed → pending_review` transition cannot complete a line. See Known
     Gaps for the false positive that can still fire on this transition.
   - If the line is lost and completed again, it plays again.
-  - The confetti is CSS-based and self-destructs after ~3.5 seconds.
+  - The confetti is canvas-based, is loaded on demand at the first bingo so it
+    does not slow down page load, and removes itself after ~4-5 seconds.
+  - It does not play when the user's system prefers reduced motion.
 - **Clickable source-user badges:** On each cell, the badge showing the
   resolution source user (for `member_provided` cells) is a link to that
   user's profile page.

@@ -19,13 +19,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
-import { Crown, Flag, Loader2, Settings, Swords, Trash2 } from "lucide-react";
+import { CalendarClock, Crown, Flag, Loader2, Settings, Swords, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from 'react';
 
 import { BingoCardWithCells } from "@/lib/db/types";
 import type { ResolutionFormData } from "@/lib/shared/types";
 import { GameActionDialog } from "./_components/GameActionDialog";
+import { GameConfigDialog } from "./_components/GameConfigDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
 import { useLastLoaded } from "./_components/use-last-loaded";
@@ -96,6 +97,12 @@ export default function GameDetailPageClient({
               <Crown className="h-4 w-4 text-amber-500" />
               Team Leader: {leader?.user.displayName || leader?.user.username || 'Unknown'}
             </CardDescription>
+            {game.deadline && (
+              <CardDescription className="flex items-center gap-2 mt-2">
+                <CalendarClock className="h-4 w-4" />
+                Last day: {game.deadline}
+              </CardDescription>
+            )}
             <div className="mt-2">
               <GameStatusBadge status={game.status} />
             </div>
@@ -106,6 +113,10 @@ export default function GameDetailPageClient({
                 <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
                   <Settings className="h-4 w-4 mr-2" /> Set Goal
                 </Button>
+
+                {game.status === 'forming' && (
+                  <GameConfigDialog gameId={game.id} deadline={game.deadline} onSaved={loadGame} />
+                )}
 
                 {game.status !== 'started' && (
                   <Button onClick={handleStartBingo} disabled={isStarting}>
@@ -120,7 +131,7 @@ export default function GameDetailPageClient({
                     triggerIcon={Flag}
                     triggerVariant="outline"
                     title="End this game?"
-                    description="The game finishes for everyone and leaves your lists. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
+                    description="The game finishes for everyone and moves to the archive. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
                     confirmLabel="End Game"
                     onConfirm={handleEndGame}
                     isPending={isEnding}

@@ -20,6 +20,8 @@ interface GameRow extends RowDataPacket {
   created_at: Date;
   updated_at: Date;
   ended_at: Date | null;
+  // The deadline as text: a DATE read as a Date object can shift a day when serialized
+  deadline_date: string | null;
   // Derived from the JOIN with teams
   team_name: string;
   leader_user_id: string;
@@ -28,7 +30,7 @@ interface GameRow extends RowDataPacket {
 }
 
 const SELECT_GAME = `
-  SELECT g.*, t.name AS team_name, t.leader_user_id,
+  SELECT g.*, CAST(g.deadline AS CHAR) AS deadline_date, t.name AS team_name, t.leader_user_id,
          COALESCE(r.description, r.title) AS team_resolution_text
   FROM games g
   JOIN teams t ON g.team_id = t.id
@@ -47,6 +49,7 @@ function rowToGame(row: GameRow): Game {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     endedAt: row.ended_at,
+    deadline: row.deadline_date,
   };
 }
 
@@ -153,6 +156,57 @@ export async function endGame(gameId: string): Promise<boolean> {
 }
 
 /**
+ * Set or clear the deadline of a game. Only a forming game can be configured.
+ * Spec: 16-games.md - Game Configuration
+ * @param gameId The game
+ * @param deadline The last playable day as YYYY-MM-DD, or null for no deadline
+ * @returns False if the game was not in forming status
+ */
+export async function setGameDeadline(gameId: string, deadline: string | null): Promise<boolean> {
+  const result = await execute(
+    `UPDATE games SET deadline = ? WHERE id = ? AND status = 'forming'`,
+    [deadline, gameId]
+  );
+  return result.affectedRows > 0;
+}
+
+/**
+ * Check whether a deadline is over. The chosen day itself is still playable.
+ * Spec: 16-games.md - Game Configuration
+ * @param deadline The last playable day as YYYY-MM-DD
+ * @returns True if that day is before today on the database clock
+ */
+export async function isDeadlinePast(deadline: string): Promise<boolean> {
+  const rows = await query<Array<RowDataPacket & { is_past: number }>>(
+    `SELECT ? < CURDATE() AS is_past`,
+    [deadline]
+  );
+  return rows[0].is_past === 1;
+}
+
+/**
+ * List the started games whose deadline is over.
+ * Spec: 16-games.md - Ending a Game
+ * @returns The games to end
+ */
+export async function getExpiredGames(): Promise<Game[]> {
+  const rows = await query<GameRow[]>(
+    `${SELECT_GAME} WHERE g.status = 'started' AND g.deadline < CURDATE()`
+  );
+  return rows.map(rowToGame);
+}
+
+/**
+ * List the ended games that have not been archived yet.
+ * Spec: 18-game-archive.md - Archiving a Game
+ * @returns The games to archive
+ */
+export async function getEndedGames(): Promise<Game[]> {
+  const rows = await query<GameRow[]>(`${SELECT_GAME} WHERE g.status = 'ended'`);
+  return rows.map(rowToGame);
+}
+
+/**
  * Delete a game. This is a hard delete: ON DELETE CASCADE foreign keys remove its
  * resolutions, leaderboard rows and bingo cards (and their cells, reviews, etc.).
  * Spec: 16-games.md - Deleting a Game
@@ -168,8 +222,9 @@ export async function deleteGame(gameId: string): Promise<void> {
 }
 
 /**
- * Check if all required resolutions are provided
- * Spec: 16-games.md - Start Conditions
+ * Check which member-provided resolutions exist. Missing ones do not block the start: they
+ * are replaced by prepared resolutions.
+ * Spec: 16-games.md - Member-Provided Resolutions
  */
 export async function checkAllResolutionsProvided(game: Pick<Game, 'id' | 'teamId'>): Promise<{
   ready: boolean;
@@ -180,8 +235,8 @@ export async function checkAllResolutionsProvided(game: Pick<Game, 'id' | 'teamI
   const memberIds = members.map(m => m.userId);
 
   // If there are fewer than 2 members, there are no (from -> to) pairs required.
-  // Spec: 16-games.md - all members have provided a resolution for every other member.
-  // For a 1-person team, that condition is vacuously satisfied.
+  // Spec: 16-games.md - each member is expected to provide one for every other member.
+  // For a 1-person team, that is vacuously satisfied.
   if (memberIds.length < 2) {
     return { ready: true, missing: [] };
   }
@@ -241,19 +296,15 @@ export async function checkGameCanStart(
     return { success: false, error: 'Game is not in forming status' };
   }
 
+  // A game must not start only to be ended by the next sweep
+  if (game.deadline && await isDeadlinePast(game.deadline)) {
+    return { success: false, error: 'The game deadline has passed' };
+  }
+
   // Check if team resolution is set (via resolution entity)
   const teamGoal = await getGameGoalResolution(gameId);
   if (!teamGoal) {
     return { success: false, error: 'Team resolution must be set before starting' };
-  }
-
-  // Check if all resolutions are provided
-  const { ready, missing } = await checkAllResolutionsProvided(game);
-  if (!ready) {
-    return {
-      success: false,
-      error: `Not all members have provided resolutions for all other members. Missing: ${missing.length} resolutions`,
-    };
   }
 
   return { success: true };
