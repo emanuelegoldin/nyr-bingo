@@ -40,7 +40,25 @@
         "title": "Ihre persönlichen Auflösungen",
         "description": "Verwalten Sie Ihre persönlichen Auflösungen. Diese können verwendet werden, um Ihre Bingo-Karten zu füllen.",
         "headerTitle": "Auflösungen",
-        "viewHistoryAriaLabel": "Auflösungshistorie anzeigen"
+        "viewHistoryAriaLabel": "Auflösungshistorie anzeigen",
+        "browseIdeas": "Ideen entdecken"
+    },
+    "PreparedResolutionsDialog": {
+        "title": "Ideen für Auflösungen",
+        "description": "Fügen Sie eine dieser vorbereiteten Auflösungen zu Ihrer persönlichen Liste hinzu. Ihre Kopie können Sie danach bearbeiten.",
+        "add": "Hinzufügen",
+        "added": "Hinzugefügt",
+        "loadError": "Die Ideen konnten nicht geladen werden. Schließen Sie dieses Fenster und versuchen Sie es erneut.",
+        "categories": {
+            "short": "Kurz",
+            "medium": "Mittel",
+            "long": "Lang"
+        },
+        "categoryHints": {
+            "short": "In wenigen Tagen erledigt, ohne Vorbereitung.",
+            "medium": "In wenigen Wochen erledigt, oder anspruchsvoller, aber in Tagen vorbei.",
+            "long": "Dauert Monate, bis zum ganzen Jahr."
+        }
     },
     "ResolutionHistoryDialog": {
         "title": "Auflösungshistorie",

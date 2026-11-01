@@ -48,7 +48,8 @@ Let users choose the language of the application.
 | `LoginPage` | Login page title, description and register link |
 | `RegisterPage` | Registration page title, description and login link |
 | `Dashboard` | Dashboard card title and description, empty-state heading and text, missing-card message |
-| `ResolutionsPage` | Resolutions page title, description and history button label |
+| `ResolutionsPage` | Resolutions page title, description, history button label and browse button |
+| `PreparedResolutionsDialog` | Prepared resolutions dialog text (spec 17) |
 | `ResolutionHistoryDialog` | History dialog text |
 
 Everything else is English only, including:
@@ -56,6 +57,7 @@ Everything else is English only, including:
 - The login and registration form fields, buttons and messages
 - The dashboard's **Get Started** button and loading and error text
 - The language selector's own labels and the landing page's version line
+- The prepared resolutions themselves (spec 17)
 - Toast titles and API error messages
 
 ### Localized Assets

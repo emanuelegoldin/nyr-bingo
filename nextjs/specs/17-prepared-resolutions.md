@@ -45,6 +45,8 @@ A goal is categorized by the total effort it takes, not by the length of its las
 ### Browsing the Pool
 `GET /api/resolutions/prepared` returns every entry, grouped in a stable order by category.
 
+On `/resolutions`, the **Browse ideas** button next to the add button opens a dialog with one tab per category. Each entry shows its title, description and type, and an **Add** button. An entry whose text matches one of the user's personal resolutions shows **Added** instead, and its button is disabled.
+
 ### Adding to Personal Resolutions
 `POST /api/resolutions/prepared/[id]/add`
 
@@ -59,7 +61,7 @@ A goal is categorized by the total effort it takes, not by the length of its las
 - Both are available to unverified users, like personal resolutions (spec 03).
 
 ## Acceptance Criteria
-- A user can list the pool.
+- A user can browse the pool by category from `/resolutions`.
 - A user can add an entry, which appears in their personal resolutions.
 - Two users can add the same entry, and each gets an independent copy.
-- Adding an entry the user already has fails with `409` and creates nothing.
+- Adding an entry the user already has fails with `409` and creates nothing, and the dialog shows such an entry as added.
