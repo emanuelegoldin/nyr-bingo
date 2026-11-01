@@ -5,6 +5,7 @@
  * Spec Reference: 02-user-profile-and-privacy.md
  */
 
+import { NotificationSetting } from "@/components/notifications/notification-setting";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -191,6 +192,11 @@ export default function ProfilePageClient({
                 Save Changes
               </Button>
             </CardFooter>
+          </Card>
+          <Card className="mt-6">
+            <CardContent className="pt-6">
+              <NotificationSetting />
+            </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="password" className="mt-6">
