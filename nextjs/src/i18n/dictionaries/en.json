@@ -73,5 +73,23 @@
         "progressLabel": "Progress",
         "loadError": "Failed to load resolution history",
         "addError": "Failed to add history entry"
+    },
+    "Notifications": {
+        "title": "Notifications",
+        "open": "Open notifications",
+        "markAllRead": "Mark all as read",
+        "empty": "Nothing new",
+        "someone": "Someone",
+        "cardProgressOne": "{actor} completed a resolution",
+        "cardProgressMany": "{actor} completed {count} resolutions",
+        "memberJoined": "{actor} joined the team",
+        "gameStarted": "{actor} started the game",
+        "gameEnded": "{actor} ended the game",
+        "gameEndedAtDeadline": "The game reached its deadline",
+        "bingoScored": "{actor} scored a BINGO!",
+        "proofRequested": "{actor} asked for proof of your resolution",
+        "settingLabel": "Notifications",
+        "settingDescription": "Show updates from your teams in the bell. While this is off, updates are not kept for later.",
+        "settingError": "Failed to update notifications"
     }
 }
