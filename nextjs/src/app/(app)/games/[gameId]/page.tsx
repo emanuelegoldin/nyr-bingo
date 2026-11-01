@@ -52,6 +52,7 @@ function mapGame(game: GameWithMembers): Game {
     name: game.name,
     teamResolutionText: game.teamResolutionText,
     status: game.status,
+    deadline: game.deadline,
     members: game.members.map((member) => ({
       membership: {
         id: member.membership.id,

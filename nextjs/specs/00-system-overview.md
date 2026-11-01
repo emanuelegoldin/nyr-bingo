@@ -71,7 +71,7 @@ Out of scope (not implemented):
 - **Team**
   - id, name, leaderUserId
 - **Game** (see spec 16)
-  - id, teamId, name, status: `forming` | `started` | `ended`, endedAt
+  - id, teamId, name, status: `forming` | `started` | `ended`, deadline (optional), endedAt
   - The team goal is the resolution with `scope = team` for that game. `teamResolutionText` is derived from it on read and is not stored on the game.
 - **TeamMembership**
   - teamId, userId, role (`leader` or `member`), joinedAt

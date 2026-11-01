@@ -13,8 +13,9 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 - See the games I am playing in one list
 - Define a team goal for a game
 - Create resolutions for the other members of a game
+- Set a deadline before starting a game
 - Start bingo once setup is complete
-- End a game
+- End a game, or have it end at its deadline
 - Delete a game
 
 ---
@@ -24,6 +25,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 - Game creation, listing and deletion
 - Game lifecycle
 - Game page
+- Game configuration
 - Team goal and member-provided resolutions of a game
 - Bingo start conditions
 - Ending a game
@@ -36,6 +38,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 
 - A game belongs to one team and has a non-empty name.
 - `status` is `forming`, `started` or `ended`.
+- `deadline` is optional. It is the last playable day of the game. A game without one only ends manually.
 - The players of a game are the current members of its team. There is no per-game roster.
 - The leader of a game is the leader of its team.
 - The team goal, member-provided resolutions, bingo cards and leaderboard rows belong to one game. Nothing carries over between games.
@@ -78,17 +81,32 @@ A **running** game is one in `forming` or `started`.
 
 `/games/[gameId]` shows a running game to the members of its team; others get a not-found page, as they do for an ended game.
 
-The header holds the game name, the team name linking to the team page, the leader, the status, the team goal and the actions. The tabs below it are defined in spec 12.
+The header holds the game name, the team name linking to the team page, the leader, the deadline if one is set, the status, the team goal and the actions. The tabs below it are defined in spec 12.
 
 | Action | Who | When |
 | ------ | --- | ---- |
 | **Set Goal** | Leader | Always |
+| **Configure** | Leader | `forming` |
 | **Start Bingo** | Leader | `forming` |
 | **End Game** | Leader | `started`, after confirmation |
 | **Delete Game** | Leader | Always, after confirmation |
 | **Propose Resolutions** | Any member | Always |
 
 `/games` lists the caller's running games with their name, team, status and a link to the game page. New games are created from the team page (spec 04).
+
+---
+
+### Game Configuration
+
+`PATCH /api/games/[gameId]` with `deadline`, a date as `YYYY-MM-DD` or `null` for no deadline.
+
+- Only the leader can configure a game (`403` otherwise), and it must be `forming` (`400` otherwise).
+- `deadline` must be a real date that is not before today (`400` otherwise). `null` removes the deadline.
+- A new game has no deadline. Setting one is optional.
+- Once the game has started, the deadline cannot be set, changed or removed.
+- The **Configure** dialog sets the deadline with a date picker.
+
+The deadline is a calendar date with no time or time zone. "Today" is the date on the database server's clock. The chosen day is still playable: the deadline is over once that date has passed.
 
 ---
 
@@ -132,6 +150,7 @@ The header holds the game name, the team name linking to the team page, the lead
 The leader may start bingo only when:
 - The leader is verified
 - The game is in `forming` status
+- The deadline, if any, is not over
 - The team goal is set
 - Every member has provided a resolution for every other member (trivially true for a one-person team)
 
@@ -155,9 +174,13 @@ A user who joins a team (spec 04) receives a card in **every** `started` game of
 
 ### Ending a Game
 
-`POST /api/games/[gameId]/end`
+A game ends in one of two ways, and both follow the same steps:
 
-- Only the leader can end a game (`403` otherwise), and it must be `started` (`400` otherwise).
+- **Manually:** `POST /api/games/[gameId]/end`. Only the leader can end a game (`403` otherwise), and it must be `started` (`400` otherwise). This is allowed at any time, whether or not the game has a deadline.
+- **At the deadline:** every `started` game whose deadline is over is ended by `finishExpiredGames`, which runs in the same sweep as the thread deadline (spec 07): at server startup and then every hour. A game can therefore end up to an hour after its last day. A `forming` game is never ended this way.
+
+Steps:
+
 - The status becomes `ended` first, so no further change can start while the game closes.
 - Every open review thread of the game is then closed under the deadline rule (spec 07): the cell becomes `accomplished` when accept votes ≥ deny votes, which includes a thread with no votes, and `pending` otherwise. Each closure refreshes the leaderboard entry of the completing user. A thread that fails to close is picked up by the deadline sweep.
 - An ended game leaves `/games`, the team page and the dashboard. There is no UI to view it. Its cards and leaderboard stay in the database.
@@ -185,7 +208,7 @@ After a game has ended:
 
 - Only verified users can create or start games.
 - Only the team leader can:
-  - Create, start, end and delete a game
+  - Create, configure, start, end and delete a game
   - Define the team goal
 - Team members can:
   - Provide resolutions for other members
@@ -203,10 +226,11 @@ After a game has ended:
 | `status` | ENUM | `forming`, `started`, `ended` |
 | `created_at`, `updated_at` | DATETIME | |
 | `ended_at` | DATETIME | NULL until the game ends |
+| `deadline` | DATE | Last playable day. NULL when the game only ends manually |
 
 `bingo_cards`, `team_leaderboard` and `resolutions` carry both `game_id` and `team_id`. `resolutions.game_id` is `NULL` for personal resolutions. Each of those tables is unique per game, not per team.
 
-**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged.
+**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games.
 
 ---
 
@@ -217,6 +241,11 @@ After a game has ended:
 - Unverified users cannot create or start a game.
 - Each game has its own goal, member-provided resolutions, cards and leaderboard.
 - Bingo cannot start until the team goal and all required resolutions exist.
+- A leader can set, change or remove the deadline of a forming game, and only of a forming game.
+- A game with no deadline only ends manually.
+- A started game is ended automatically once its deadline is over, the same way as a manual end.
+- A leader can end a started game before its deadline.
+- Bingo cannot start after the deadline is over.
 - `/games` lists the caller's running games.
 - A member joining a team receives a card in each of its started games.
 - Ending a game closes its open review threads and removes it from every list.

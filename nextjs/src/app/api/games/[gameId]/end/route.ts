@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { notifyTeams, notifyThreadClosed } from '@/lib/team-signals';
-import { closeOpenGameThreads, endGame, getRunningGame, isTeamLeader } from '@/lib/db';
+import { getRunningGame, isTeamLeader } from '@/lib/db';
+import { finishGame } from '@/lib/game-ending';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
@@ -27,14 +27,10 @@ export const POST = withAuth(async (
     return errorResponse('Only the team leader can end the game', 403);
   }
 
-  const ended = await endGame(gameId);
+  const ended = await finishGame(game);
   if (!ended) {
     return errorResponse('Only a started game can be ended', 400);
   }
-
-  const closedThreadIds = await closeOpenGameThreads(gameId);
-  await Promise.all(closedThreadIds.map(notifyThreadClosed));
-  await notifyTeams([game.teamId]);
 
   return NextResponse.json({ message: 'Game ended successfully' });
 });

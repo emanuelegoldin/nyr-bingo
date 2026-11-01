@@ -202,3 +202,25 @@ MariaDB DDL cannot be rolled back, so a run that fails halfway leaves its earlie
 steps applied. Every step can run again, using `IF [NOT] EXISTS` clauses, the
 `Create_Column` and `Drop_Column` procedures, `information_schema` guards on the
 foreign keys, and backfills limited to rows still unset.
+
+## 5.1.0 - Game Deadline
+
+Adds an optional deadline to games (spec 16).
+
+### Schema changes
+
+- `games`: adds `deadline DATE NULL`, the last playable day of the game.
+
+### Data migration
+
+None. Existing games keep `deadline = NULL` and still end only manually.
+
+### Design notes
+
+- `DATE` rather than `DATETIME`: the picker selects a day, so there is no time or
+  time zone to convert. A game ends once `deadline < CURDATE()`.
+- No index: the hourly sweep is the only reader that filters on it.
+
+### Idempotency
+
+`Create_Column` skips a column that already exists, so the migration can run again.

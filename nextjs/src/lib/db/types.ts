@@ -133,6 +133,8 @@ export interface Game {
   createdAt: Date;
   updatedAt: Date;
   endedAt: Date | null;
+  /** Last playable day as YYYY-MM-DD, or null when the game only ends manually. */
+  deadline: string | null;
 }
 
 // Team membership

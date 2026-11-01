@@ -16,6 +16,8 @@ export interface Game {
   name: string;
   teamResolutionText: string | null;
   status: GameStatus;
+  /** Last playable day as YYYY-MM-DD, or null when the game only ends manually. */
+  deadline: string | null;
   members: TeamMember[];
 }
 
