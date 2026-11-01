@@ -1,8 +1,8 @@
 /**
- * Leaderboard Repository – persisted team leaderboard data
+ * Leaderboard Repository – persisted game leaderboard data
  * Spec Reference: 12-team-tabs.md
  *
- * The `team_leaderboard` table stores per-user-per-team stats:
+ * The `team_leaderboard` table stores per-user-per-game stats:
  *   - `completed_tasks`: count of cells with state "completed" or "accomplished"
  *   - `first_bingo_at`: earliest datetime a complete bingo line was achieved
  *
@@ -13,12 +13,13 @@
 import { BINGO_LINES } from '../shared/bingo-lines';
 import { CellState, JOKER_POSITION } from '../shared/types';
 import { query } from './connection';
+import type { Game } from './types';
 
 // ── Row types ────────────────────────────────────────────────────
 
 interface LeaderboardRow {
   user_id: string;
-  team_id: string;
+  game_id: string;
   first_bingo_at: Date | null;
   completed_tasks: number;
   updated_at: Date;
@@ -102,24 +103,24 @@ export interface LeaderboardEntryWithUser {
 }
 
 /**
- * Get the full leaderboard for a team, sorted by first-bingo-at.
+ * Get the full leaderboard of a game, sorted by first-bingo-at.
  * Uses a JOIN on users for username retrieval. Private display names are omitted.
  */
-export async function getTeamLeaderboard(teamId: string): Promise<LeaderboardEntryWithUser[]> {
+export async function getGameLeaderboard(gameId: string): Promise<LeaderboardEntryWithUser[]> {
   const rows = await query<LeaderboardRowWithUser[]>(
-    `SELECT tl.user_id, tl.team_id, tl.first_bingo_at, tl.completed_tasks, tl.updated_at,
+    `SELECT tl.user_id, tl.game_id, tl.first_bingo_at, tl.completed_tasks, tl.updated_at,
             u.username,
             CASE WHEN up.display_name_public THEN up.display_name END AS display_name
      FROM team_leaderboard tl
      JOIN users u ON tl.user_id = u.id
      LEFT JOIN user_profiles up ON tl.user_id = up.user_id
-     WHERE tl.team_id = ?
+     WHERE tl.game_id = ?
      ORDER BY
        CASE WHEN tl.first_bingo_at IS NOT NULL THEN 0 ELSE 1 END,
        tl.first_bingo_at ASC,
        tl.completed_tasks DESC,
        u.username ASC`,
-    [teamId]
+    [gameId]
   );
 
   return rows.map((row) => ({
@@ -132,23 +133,23 @@ export async function getTeamLeaderboard(teamId: string): Promise<LeaderboardEnt
 }
 
 /**
- * Recalculate and upsert the leaderboard entry for a specific user in a team.
+ * Recalculate and upsert the leaderboard entry for a specific user in a game.
  * Call this after any cell state change.
  *
  * `completed_tasks` counts cells with state 'completed' or 'accomplished' only.
  * `first_bingo_at` is computed from bingo line detection on the card.
  */
 export async function refreshLeaderboardEntry(
-  teamId: string,
+  gameId: string,
   userId: string
 ): Promise<void> {
-  // Get the user's card cells for this team
+  // Get the user's card cells for this game
   const cells = await query<Array<CellForBingo & { updated_at: Date | null }>>(
     `SELECT c.position, c.state, c.is_empty, c.updated_at
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
-     WHERE bc.team_id = ? AND bc.user_id = ?`,
-    [teamId, userId]
+     WHERE bc.game_id = ? AND bc.user_id = ?`,
+    [gameId, userId]
   );
 
   // Count completed_tasks: only 'completed' or 'accomplished'
@@ -160,12 +161,12 @@ export async function refreshLeaderboardEntry(
   const firstBingoAt = computeFirstBingoAt(cells);
 
   await query(
-    `INSERT INTO team_leaderboard (user_id, team_id, first_bingo_at, completed_tasks)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO team_leaderboard (user_id, team_id, game_id, first_bingo_at, completed_tasks)
+     SELECT ?, team_id, id, ?, ? FROM games WHERE id = ?
      ON DUPLICATE KEY UPDATE
        first_bingo_at = VALUES(first_bingo_at),
        completed_tasks = VALUES(completed_tasks)`,
-    [userId, teamId, firstBingoAt, completedTasks]
+    [userId, firstBingoAt, completedTasks, gameId]
   );
 }
 
@@ -173,17 +174,17 @@ export async function refreshLeaderboardEntry(
  * Initialize leaderboard rows for all members when a game starts.
  * All entries start with completed_tasks = 0 and first_bingo_at = NULL.
  */
-export async function initializeTeamLeaderboard(
-  teamId: string,
+export async function initializeGameLeaderboard(
+  game: Pick<Game, 'id' | 'teamId'>,
   userIds: string[]
 ): Promise<void> {
   if (userIds.length === 0) return;
 
-  const placeholders = userIds.map(() => '(?, ?, NULL, 0)').join(', ');
-  const params = userIds.flatMap((uid) => [uid, teamId]);
+  const placeholders = userIds.map(() => '(?, ?, ?, NULL, 0)').join(', ');
+  const params = userIds.flatMap((uid) => [uid, game.teamId, game.id]);
 
   await query(
-    `INSERT INTO team_leaderboard (user_id, team_id, first_bingo_at, completed_tasks)
+    `INSERT INTO team_leaderboard (user_id, team_id, game_id, first_bingo_at, completed_tasks)
      VALUES ${placeholders}
      ON DUPLICATE KEY UPDATE completed_tasks = completed_tasks`,
     params

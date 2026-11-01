@@ -53,6 +53,7 @@ export interface CellInfoRow {
   cell_id: string;
   card_id: string;
   card_user_id: string;
+  game_id: string;
   team_id: string;
   resolution_text: string;
   state: string;
@@ -117,6 +118,7 @@ export async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
         END as resolution_text,
         c.state,
         bc.user_id as card_user_id,
+        bc.game_id,
         bc.team_id
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id

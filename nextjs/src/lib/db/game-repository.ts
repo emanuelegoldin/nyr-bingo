@@ -7,7 +7,8 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import { GameStatus } from '../shared/types';
 import { query } from './connection';
-import { getTeamWithMembers } from './team-repository';
+import { getGameGoalResolution } from './resolution-repository';
+import { getTeamMembers, getTeamWithMembers, isTeamLeader } from './team-repository';
 import type { Game, GameWithMembers } from './types';
 
 interface GameRow extends RowDataPacket {
@@ -132,4 +133,96 @@ export async function getRunningGamesForTeam(teamId: string): Promise<Game[]> {
     [teamId]
   );
   return rows.map(rowToGame);
+}
+
+/**
+ * Check if all required resolutions are provided
+ * Spec: 16-games.md - Start Conditions
+ */
+export async function checkAllResolutionsProvided(game: Pick<Game, 'id' | 'teamId'>): Promise<{
+  ready: boolean;
+  missing: { fromUserId: string; toUserId: string }[];
+}> {
+  // Get all team members
+  const members = await getTeamMembers(game.teamId);
+  const memberIds = members.map(m => m.userId);
+
+  // If there are fewer than 2 members, there are no (from -> to) pairs required.
+  // Spec: 16-games.md - all members have provided a resolution for every other member.
+  // For a 1-person team, that condition is vacuously satisfied.
+  if (memberIds.length < 2) {
+    return { ready: true, missing: [] };
+  }
+
+  // Get all provided resolutions (from unified resolutions table)
+  const providedRows = await query<{ owner_user_id: string; to_user_id: string }[]>(
+    `SELECT owner_user_id, to_user_id FROM resolutions
+     WHERE scope = 'member_provided' AND game_id = ?`,
+    [game.id]
+  );
+
+  const providedSet = new Set(
+    providedRows.map(r => `${r.owner_user_id}->${r.to_user_id}`)
+  );
+
+  // Check each pair
+  const missing: { fromUserId: string; toUserId: string }[] = [];
+
+  for (const fromId of memberIds) {
+    for (const toId of memberIds) {
+      if (fromId !== toId) {
+        const key = `${fromId}->${toId}`;
+        if (!providedSet.has(key)) {
+          missing.push({ fromUserId: fromId, toUserId: toId });
+        }
+      }
+    }
+  }
+
+  return {
+    ready: missing.length === 0,
+    missing,
+  };
+}
+
+/**
+ * Check whether the bingo game can start. startGameWithCards does the actual start.
+ * Spec: 16-games.md - Start Conditions
+ */
+export async function checkGameCanStart(
+  gameId: string,
+  leaderUserId: string
+): Promise<{ success: boolean; error?: string }> {
+  const game = await getGameById(gameId);
+  if (!game) {
+    return { success: false, error: 'Game not found' };
+  }
+
+  // Only team leader can start
+  const isLeader = await isTeamLeader(game.teamId, leaderUserId);
+  if (!isLeader) {
+    return { success: false, error: 'Only the team leader can start the game' };
+  }
+
+  // Check if game is still in forming status
+  if (game.status !== GameStatus.FORMING) {
+    return { success: false, error: 'Game is not in forming status' };
+  }
+
+  // Check if team resolution is set (via resolution entity)
+  const teamGoal = await getGameGoalResolution(gameId);
+  if (!teamGoal) {
+    return { success: false, error: 'Team resolution must be set before starting' };
+  }
+
+  // Check if all resolutions are provided
+  const { ready, missing } = await checkAllResolutionsProvided(game);
+  if (!ready) {
+    return {
+      success: false,
+      error: `Not all members have provided resolutions for all other members. Missing: ${missing.length} resolutions`,
+    };
+  }
+
+  return { success: true };
 }

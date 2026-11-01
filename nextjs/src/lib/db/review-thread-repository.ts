@@ -39,7 +39,7 @@ interface ExpiredThreadRow {
   id: string;
   cell_id: string;
   completed_by_user_id: string;
-  team_id: string;
+  game_id: string;
   accept_votes: number;
   deny_votes: number;
 }
@@ -124,7 +124,7 @@ export async function requestProof(
   }
 
   // Refresh leaderboard: completed → pending_review affects completed_tasks count
-  await refreshLeaderboardEntry(cellInfo.team_id, cellInfo.card_user_id);
+  await refreshLeaderboardEntry(cellInfo.game_id, cellInfo.card_user_id);
 
   const threadRows = await query<ThreadRow[]>(
     `SELECT * FROM review_threads WHERE id = ?`,
@@ -304,7 +304,7 @@ export async function submitVote(
 
   // Refresh persisted leaderboard data after vote-driven state change
   if (threadClosed) {
-    await refreshLeaderboardEntry(cellInfo.team_id, thread.completedByUserId);
+    await refreshLeaderboardEntry(cellInfo.game_id, thread.completedByUserId);
   }
 
   return { success: true, vote: savedVote, threadClosed };
@@ -341,7 +341,7 @@ export async function closeThread(
     return closeResult;
   }
 
-  await refreshLeaderboardEntry(cellInfo.team_id, thread.completedByUserId);
+  await refreshLeaderboardEntry(cellInfo.game_id, thread.completedByUserId);
 
   return { success: true };
 }
@@ -353,7 +353,7 @@ export async function closeThread(
  */
 export async function closeExpiredThreads(): Promise<string[]> {
   const threads = await query<ExpiredThreadRow[]>(
-    `SELECT rt.id, rt.cell_id, rt.completed_by_user_id, bc.team_id,
+    `SELECT rt.id, rt.cell_id, rt.completed_by_user_id, bc.game_id,
             COUNT(CASE WHEN rv.vote = 'accept' THEN 1 END) AS accept_votes,
             COUNT(CASE WHEN rv.vote = 'deny' THEN 1 END) AS deny_votes
      FROM review_threads rt
@@ -361,7 +361,7 @@ export async function closeExpiredThreads(): Promise<string[]> {
      JOIN bingo_cards bc ON c.card_id = bc.id
      LEFT JOIN review_votes rv ON rv.thread_id = rt.id
      WHERE rt.status = 'open' AND rt.created_at <= NOW() - INTERVAL 2 DAY
-     GROUP BY rt.id, rt.cell_id, rt.completed_by_user_id, bc.team_id`
+     GROUP BY rt.id, rt.cell_id, rt.completed_by_user_id, bc.game_id`
   );
 
   const closedThreadIds: string[] = [];
@@ -374,7 +374,7 @@ export async function closeExpiredThreads(): Promise<string[]> {
         console.error('Failed to close expired thread:', thread.id, closeResult.error);
         continue;
       }
-      await refreshLeaderboardEntry(thread.team_id, thread.completed_by_user_id);
+      await refreshLeaderboardEntry(thread.game_id, thread.completed_by_user_id);
       closedThreadIds.push(thread.id);
     } catch (error) {
       console.error('Failed to close expired thread:', thread.id, error);

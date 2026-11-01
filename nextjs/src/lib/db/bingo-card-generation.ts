@@ -1,5 +1,5 @@
 /**
- * Bingo Card Generation - Builds the cards of a started team
+ * Bingo Card Generation - Builds the cards of a started game
  * Spec Reference: 05-bingo-card-generation.md
  */
 
@@ -10,17 +10,21 @@ import { CardRow, rowToCard } from './bingo-card-rows';
 import { autoTransitionCellState } from './bingo-cell-repository';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
-import { getMemberProvidedResolutionsForUser, getRandomResolutions, getTeamGoalResolution, isProgressComplete } from './resolution-repository';
-import { getTeamById, getTeamMembers } from './team-repository';
-import { BingoCard, Resolution, TeamStatus } from './types';
+import { getGameById } from './game-repository';
+import { getGameGoalResolution, getMemberProvidedResolutionsForUser, getRandomResolutions, isProgressComplete } from './resolution-repository';
+import { getTeamMembers } from './team-repository';
+import { BingoCard, Game, GameStatus, Resolution } from './types';
 
 const TOTAL_CELLS = BINGO_GRID_SIZE * BINGO_GRID_SIZE;
 /** The Joker takes one position and is not stored. */
 const STORED_CELLS = TOTAL_CELLS - 1;
 
-const WRONG_STATUS_ERRORS: Record<TeamStatus, string> = {
-  [TeamStatus.FORMING]: 'Team is not in forming status',
-  [TeamStatus.STARTED]: 'Team is not started',
+/** The statuses in which a game can receive cards. */
+type CardGenerationStatus = GameStatus.FORMING | GameStatus.STARTED;
+
+const WRONG_STATUS_ERRORS: Record<CardGenerationStatus, string> = {
+  [GameStatus.FORMING]: 'Game is not in forming status',
+  [GameStatus.STARTED]: 'Game is not started',
 };
 
 interface CellPlan {
@@ -31,67 +35,68 @@ interface CellPlan {
 }
 
 /**
- * Check that a team can have cards and load the goal they are built around.
- * @param teamId The team to check
- * @param requiredStatus The status the team must be in
- * @returns The team goal, or the error explaining why cards cannot be generated
+ * Check that a game can have cards and load the goal they are built around.
+ * @param gameId The game to check
+ * @param requiredStatus The status the game must be in
+ * @returns The game and its team goal, or the error explaining why cards cannot be generated
  */
-async function loadTeamGameContext(
-  teamId: string,
-  requiredStatus: TeamStatus
-): Promise<{ teamGoalResolution: Resolution } | { error: string }> {
-  const team = await getTeamById(teamId);
-  if (!team) {
-    return { error: 'Team not found' };
+async function loadGameContext(
+  gameId: string,
+  requiredStatus: CardGenerationStatus
+): Promise<{ game: Game; teamGoalResolution: Resolution } | { error: string }> {
+  const game = await getGameById(gameId);
+  if (!game) {
+    return { error: 'Game not found' };
   }
 
-  if (team.status !== requiredStatus) {
+  if (game.status !== requiredStatus) {
     return { error: WRONG_STATUS_ERRORS[requiredStatus] };
   }
 
-  if (!team.teamResolutionText) {
+  if (!game.teamResolutionText) {
     return { error: 'Team resolution must be set' };
   }
 
   // Fetch the team goal resolution entity (needed for resolution_id on cells)
-  const teamGoalResolution = await getTeamGoalResolution(teamId);
+  const teamGoalResolution = await getGameGoalResolution(gameId);
   if (!teamGoalResolution) {
     return { error: 'Team goal resolution entity not found' };
   }
 
-  return { teamGoalResolution };
+  return { game, teamGoalResolution };
 }
 
 /**
- * Start a team's game: mark it as started and generate a card for every member.
- * Both happen in one transaction, so a failure leaves the team in forming status.
- * Spec: 04-bingo-teams.md - Start Conditions, 05-bingo-card-generation.md - Generation Rules
+ * Start a game: mark it as started and generate a card for every team member.
+ * Both happen in one transaction, so a failure leaves the game in forming status.
+ * Spec: 16-games.md - Start Conditions, 05-bingo-card-generation.md - Generation Rules
  *
- * @param teamId The team to start
+ * @param gameId The game to start
  * @returns Whether the game started, and why not if it did not
  */
-export async function startGameWithCards(teamId: string): Promise<{ success: boolean; error?: string }> {
-  const context = await loadTeamGameContext(teamId, TeamStatus.FORMING);
+export async function startGameWithCards(gameId: string): Promise<{ success: boolean; error?: string }> {
+  const context = await loadGameContext(gameId, GameStatus.FORMING);
   if ('error' in context) {
     return { success: false, error: context.error };
   }
 
-  const members = await getTeamMembers(teamId);
+  const { game, teamGoalResolution } = context;
+  const members = await getTeamMembers(game.teamId);
 
   return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
     // The status guard stops two concurrent starts from generating cards twice.
     const statusUpdate = await execute(
-      `UPDATE teams SET status = 'started' WHERE id = ? AND status = 'forming'`,
-      [teamId],
+      `UPDATE games SET status = 'started' WHERE id = ? AND status = 'forming'`,
+      [gameId],
       connection
     );
 
     if (statusUpdate.affectedRows === 0) {
-      return { success: false, error: WRONG_STATUS_ERRORS[TeamStatus.FORMING] };
+      return { success: false, error: WRONG_STATUS_ERRORS[GameStatus.FORMING] };
     }
 
     for (const member of members) {
-      await generateCardForUser(connection, teamId, member.userId, context.teamGoalResolution);
+      await generateCardForUser(connection, game, member.userId, teamGoalResolution);
     }
 
     return { success: true };
@@ -100,13 +105,13 @@ export async function startGameWithCards(teamId: string): Promise<{ success: boo
 
 /**
  * Choose the content of a user's stored cells, in shuffled order.
- * @param teamId The team the card belongs to
+ * @param gameId The game the card belongs to
  * @param userId The card owner
  * @param teamGoalResolution The team goal
  * @returns One plan per stored cell
  */
 async function planCells(
-  teamId: string,
+  gameId: string,
   userId: string,
   teamGoalResolution: Resolution
 ): Promise<CellPlan[]> {
@@ -133,7 +138,7 @@ async function planCells(
 
   // Add member-provided resolutions (highest priority)
   // Spec: 05-bingo-card-generation.md - Step 3
-  addUnique(await getMemberProvidedResolutionsForUser(teamId, userId), CellSourceType.MEMBER_PROVIDED);
+  addUnique(await getMemberProvidedResolutionsForUser(gameId, userId), CellSourceType.MEMBER_PROVIDED);
 
   // Add team resolution as a completable cell (second priority)
   if (plan.length < STORED_CELLS) {
@@ -181,18 +186,18 @@ async function planCells(
  */
 async function generateCardForUser(
   connection: PoolConnection,
-  teamId: string,
+  game: Game,
   userId: string,
   teamGoalResolution: Resolution
 ): Promise<BingoCard> {
   // Create the card
   const cardId = randomUUID();
   await connection.execute(
-    `INSERT INTO bingo_cards (id, team_id, user_id, grid_size) VALUES (?, ?, ?, ?)`,
-    [cardId, teamId, userId, BINGO_GRID_SIZE]
+    `INSERT INTO bingo_cards (id, team_id, game_id, user_id, grid_size) VALUES (?, ?, ?, ?, ?)`,
+    [cardId, game.teamId, game.id, userId, BINGO_GRID_SIZE]
   );
 
-  const plan = await planCells(teamId, userId, teamGoalResolution);
+  const plan = await planCells(game.id, userId, teamGoalResolution);
 
   // Insert cells into database
   // The Joker cell is implicit (always at center position) and is NOT stored in the database.
@@ -221,7 +226,8 @@ async function generateCardForUser(
 
   return {
     id: cardId,
-    teamId,
+    gameId: game.id,
+    teamId: game.teamId,
     userId,
     gridSize: BINGO_GRID_SIZE,
     createdAt: new Date(),
@@ -239,30 +245,30 @@ function shuffleArray<T>(array: T[]): void {
 }
 
 /**
- * Ensure a user has a bingo card for a started team.
- * Spec: 04-bingo-teams.md - Joining After Start
+ * Ensure a user has a bingo card for a started game.
+ * Spec: 16-games.md - Joining After Start
  */
 export async function ensureBingoCardForUser(
-  teamId: string,
+  gameId: string,
   userId: string
 ): Promise<{ created: boolean; card?: BingoCard; error?: string }> {
   const existing = await query<CardRow[]>(
-    `SELECT * FROM bingo_cards WHERE team_id = ? AND user_id = ? LIMIT 1`,
-    [teamId, userId]
+    `SELECT * FROM bingo_cards WHERE game_id = ? AND user_id = ? LIMIT 1`,
+    [gameId, userId]
   );
 
   if (existing.length > 0) {
     return { created: false, card: rowToCard(existing[0]) };
   }
 
-  const context = await loadTeamGameContext(teamId, TeamStatus.STARTED);
+  const context = await loadGameContext(gameId, GameStatus.STARTED);
   if ('error' in context) {
     return { created: false, error: context.error };
   }
 
-  const goal = context.teamGoalResolution;
+  const { game, teamGoalResolution: goal } = context;
   const card = await withTransaction((connection) =>
-    generateCardForUser(connection, teamId, userId, goal)
+    generateCardForUser(connection, game, userId, goal)
   );
 
   // A late joiner's goal cell must match progress the leader has already made
@@ -270,7 +276,7 @@ export async function ensureBingoCardForUser(
     await autoTransitionCellState(goal.id, goal.resolutionType, isProgressComplete(goal));
   }
 
-  await refreshLeaderboardEntry(teamId, userId);
+  await refreshLeaderboardEntry(gameId, userId);
 
   return { created: true, card };
 }

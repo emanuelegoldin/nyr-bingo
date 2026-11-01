@@ -1,10 +1,3 @@
-// Team status
-// Spec: 04-bingo-teams.md
-export enum TeamStatus {
-  FORMING = 'forming',
-  STARTED = 'started'
-}
-
 // Game status
 // Spec: 16-games.md
 export enum GameStatus {

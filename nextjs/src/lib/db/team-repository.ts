@@ -5,9 +5,8 @@
 
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { InvitationStatus, TeamRole, TeamStatus } from '../shared/types';
+import { InvitationStatus, TeamRole } from '../shared/types';
 import { query, withTransaction } from './connection';
-import { getTeamGoalResolution } from './resolution-repository';
 import { getTeamReviewFiles, removeOrphanedFiles } from './review-file-repository';
 import type {
   Team,
@@ -23,9 +22,6 @@ interface TeamRow extends RowDataPacket {
   id: string;
   name: string;
   leader_user_id: string;
-  // Derived from LEFT JOIN with resolutions (scope='team')
-  team_resolution_text: string | null;
-  status: TeamStatus;
   created_at: Date;
   updated_at: Date;
 }
@@ -55,8 +51,6 @@ function rowToTeam(row: TeamRow): Team {
     id: row.id,
     name: row.name,
     leaderUserId: row.leader_user_id,
-    teamResolutionText: row.team_resolution_text,
-    status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -99,7 +93,7 @@ export async function createTeam(
   await withTransaction(async (connection) => {
     // Create team
     await connection.execute(
-      `INSERT INTO teams (id, name, leader_user_id, status) VALUES (?, ?, ?, 'forming')`,
+      `INSERT INTO teams (id, name, leader_user_id) VALUES (?, ?, ?)`,
       [teamId, name, leaderUserId]
     );
 
@@ -120,14 +114,10 @@ export async function createTeam(
 
 /**
  * Get team by ID
- * Derives teamResolutionText from the team goal resolution entity.
  */
 export async function getTeamById(id: string): Promise<Team | null> {
   const rows = await query<TeamRow[]>(
-    `SELECT t.*, COALESCE(r.description, r.title) AS team_resolution_text
-     FROM teams t
-     LEFT JOIN resolutions r ON r.team_id = t.id AND r.scope = 'team'
-     WHERE t.id = ?`,
+    `SELECT * FROM teams WHERE id = ?`,
     [id]
   );
   return rows.length > 0 ? rowToTeam(rows[0]) : null;
@@ -167,10 +157,9 @@ export async function getTeamWithMembers(teamId: string): Promise<TeamWithMember
  */
 export async function getTeamsForUser(userId: string): Promise<Team[]> {
   const rows = await query<TeamRow[]>(
-    `SELECT t.*, COALESCE(r.description, r.title) AS team_resolution_text
+    `SELECT t.*
      FROM teams t
      JOIN team_memberships m ON t.id = m.team_id
-     LEFT JOIN resolutions r ON r.team_id = t.id AND r.scope = 'team'
      WHERE m.user_id = ?
      ORDER BY t.created_at DESC`,
     [userId]
@@ -307,94 +296,6 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
 }
 
 /**
- * Check if all required resolutions are provided
- * Spec: 04-bingo-teams.md - Start Conditions
- */
-export async function checkAllResolutionsProvided(teamId: string): Promise<{
-  ready: boolean;
-  missing: { fromUserId: string; toUserId: string }[];
-}> {
-  // Get all team members
-  const members = await getTeamMembers(teamId);
-  const memberIds = members.map(m => m.userId);
-
-  // If there are fewer than 2 members, there are no (from -> to) pairs required.
-  // Spec: 04-bingo-teams.md - all members have provided a resolution for every other member.
-  // For a 1-person team, that condition is vacuously satisfied.
-  if (memberIds.length < 2) {
-    return { ready: true, missing: [] };
-  }
-
-  // Get all provided resolutions (from unified resolutions table)
-  const providedRows = await query<{ owner_user_id: string; to_user_id: string }[]>(
-    `SELECT owner_user_id, to_user_id FROM resolutions
-     WHERE scope = 'member_provided' AND team_id = ?`,
-    [teamId]
-  );
-
-  const providedSet = new Set(
-    providedRows.map(r => `${r.owner_user_id}->${r.to_user_id}`)
-  );
-
-  // Check each pair
-  const missing: { fromUserId: string; toUserId: string }[] = [];
-
-  for (const fromId of memberIds) {
-    for (const toId of memberIds) {
-      if (fromId !== toId) {
-        const key = `${fromId}->${toId}`;
-        if (!providedSet.has(key)) {
-          missing.push({ fromUserId: fromId, toUserId: toId });
-        }
-      }
-    }
-  }
-
-  return {
-    ready: missing.length === 0,
-    missing,
-  };
-}
-
-/**
- * Check whether the bingo game can start. startGameWithCards does the actual start.
- * Spec: 04-bingo-teams.md - Start Conditions
- */
-export async function checkGameCanStart(
-  teamId: string,
-  leaderUserId: string
-): Promise<{ success: boolean; error?: string }> {
-  // Only team leader can start
-  const isLeader = await isTeamLeader(teamId, leaderUserId);
-  if (!isLeader) {
-    return { success: false, error: 'Only the team leader can start the game' };
-  }
-
-  // Check if team is still in forming status
-  const team = await getTeamById(teamId);
-  if (!team || team.status !== 'forming') {
-    return { success: false, error: 'Team is not in forming status' };
-  }
-
-  // Check if team resolution is set (via resolution entity)
-  const teamGoal = await getTeamGoalResolution(teamId);
-  if (!teamGoal) {
-    return { success: false, error: 'Team resolution must be set before starting' };
-  }
-
-  // Check if all resolutions are provided
-  const { ready, missing } = await checkAllResolutionsProvided(teamId);
-  if (!ready) {
-    return {
-      success: false,
-      error: `Not all members have provided resolutions for all other members. Missing: ${missing.length} resolutions`,
-    };
-  }
-
-  return { success: true };
-}
-
-/**
  * Delete a team
  * Spec: 04-bingo-teams.md - Only team leader can manage the team
  * 
@@ -402,8 +303,7 @@ export async function checkGameCanStart(
  * will automatically delete:
  * - Team memberships
  * - Team invitations
- * - Team-provided resolutions
- * - Bingo cards (and their cells, proofs, reviews, etc.)
+ * - Games, with their resolutions and bingo cards (and cells, proofs, reviews, etc.)
  */
 export async function deleteTeam(
   teamId: string,

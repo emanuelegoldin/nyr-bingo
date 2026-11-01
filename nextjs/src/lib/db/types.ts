@@ -3,10 +3,10 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
+import { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, ThreadStatus, VoteType } from "../shared/types";
 
 // Re-export shared enums/types so consumers can import from db/types
-export { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, TeamStatus, ThreadStatus, VoteType };
+export { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, ThreadStatus, VoteType };
 export type { Subtask };
 
 // User entity
@@ -77,6 +77,8 @@ export interface Resolution {
   resolutionType: ResolutionType;
   scope: ResolutionScope;
   teamId: string | null;
+  /** The game of a team or member-provided resolution; null for personal ones. */
+  gameId: string | null;
   toUserId: string | null;
   subtasks: Subtask[] | null;
   numberOfRepetition: number | null;
@@ -111,9 +113,6 @@ export interface Team {
   id: string;
   name: string;
   leaderUserId: string;
-  /** Team goal resolution text, derived from the associated resolution entity. */
-  teamResolutionText: string | null;
-  status: TeamStatus;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -163,6 +162,7 @@ export interface TeamInvitation {
 // Spec: 05-bingo-card-generation.md
 export interface BingoCard {
   id: string;
+  gameId: string;
   teamId: string;
   userId: string;
   gridSize: number;
