@@ -13,6 +13,7 @@ export * from './types';
 export * from './bingo-card-generation';
 export * from './bingo-card-repository';
 export * from './bingo-cell-repository';
+export * from './game-repository';
 export * from './leaderboard-repository';
 export * from './resolution-history-repository';
 export * from './resolution-repository';

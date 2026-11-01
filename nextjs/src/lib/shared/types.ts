@@ -5,6 +5,14 @@ export enum TeamStatus {
   STARTED = 'started'
 }
 
+// Game status
+// Spec: 16-games.md
+export enum GameStatus {
+  FORMING = 'forming',
+  STARTED = 'started',
+  ENDED = 'ended'
+}
+
 // Team membership role
 // Spec: 04-bingo-teams.md
 export enum TeamRole {

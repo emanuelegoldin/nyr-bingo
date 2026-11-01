@@ -3,10 +3,10 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { CellSourceType, CellState, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
+import { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
 
 // Re-export shared enums/types so consumers can import from db/types
-export { CellSourceType, CellState, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, TeamStatus, ThreadStatus, VoteType };
+export { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, TeamStatus, ThreadStatus, VoteType };
 export type { Subtask };
 
 // User entity
@@ -118,6 +118,24 @@ export interface Team {
   updatedAt: Date;
 }
 
+// Game entity
+// Spec: 16-games.md
+export interface Game {
+  id: string;
+  teamId: string;
+  /** Derived from the game's team. */
+  teamName: string;
+  /** Derived from the game's team: the team leader leads its games. */
+  leaderUserId: string;
+  name: string;
+  /** Team goal resolution text, derived from the associated resolution entity. */
+  teamResolutionText: string | null;
+  status: GameStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  endedAt: Date | null;
+}
+
 // Team membership
 // Spec: 04-bingo-teams.md
 export interface TeamMembership {
@@ -173,6 +191,10 @@ export interface BingoCell {
 // Extended types for API responses
 
 export interface TeamWithMembers extends Team {
+  members: TeamMemberWithProfile[];
+}
+
+export interface GameWithMembers extends Game {
   members: TeamMemberWithProfile[];
 }
 
