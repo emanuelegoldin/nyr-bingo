@@ -255,3 +255,23 @@ None. Existing rows keep their scope and source type.
 
 `CREATE TABLE IF NOT EXISTS` skips an existing table, and `MODIFY COLUMN` sets each column to
 the same definition on a second run, so the migration can run again.
+
+## 5.2.1 - Seed Prepared Resolutions
+
+Fills the pool created in 5.2.0 (spec 17).
+
+### Data migration
+
+Inserts 60 entries, 20 per category, mixing the `base`, `compound` and `iterative` types. The
+text is in English only.
+
+### Design notes
+
+- `long` and `medium` together hold more than the 23 cells a card could need from them, so a
+  card only gets `empty` cells when duplicates or a very short pool get in the way.
+- The pool has no admin interface. Later changes to it are new migrations.
+- Ids are readable slugs such as `prepared-short-01`, which fit the `VARCHAR(36)` column.
+
+### Idempotency
+
+Ids are fixed, and `INSERT IGNORE` skips ids already present, so the migration can run again.
