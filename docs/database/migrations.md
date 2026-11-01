@@ -224,3 +224,34 @@ None. Existing games keep `deadline = NULL` and still end only manually.
 ### Idempotency
 
 `Create_Column` skips a column that already exists, so the migration can run again.
+
+## 5.2.0 - Prepared Resolutions
+
+Adds a shared pool of ready-made resolutions (spec 17).
+
+### Schema changes
+
+- New table `prepared_resolutions`: `id`, `category` (`short`, `medium`, `long`),
+  `resolution_type`, `title`, `description`, `subtasks`, `number_of_repetition` and
+  `created_at`, with an index on `category`.
+- `resolutions.scope`: adds `prepared`.
+- `bingo_cells.source_type`: adds `prepared`.
+
+### Data migration
+
+None. Existing rows keep their scope and source type.
+
+### Design notes
+
+- The pool is a separate table because its rows have no owner and no progress. Everything
+  users receive from it is a copy in `resolutions`.
+- `prepared` is a scope of its own because a copy on a card belongs to one game and must not
+  appear in its owner's personal resolutions.
+- The pool has no foreign keys: nothing references it, so a copy survives if its entry is
+  removed.
+- `is_empty` is unaffected: it only compares `source_type` to `'empty'`.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips an existing table, and `MODIFY COLUMN` sets each column to
+the same definition on a second run, so the migration can run again.
