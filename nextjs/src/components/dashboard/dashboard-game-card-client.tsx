@@ -5,7 +5,7 @@ import { TeamMembersMap, TeamMembersProvider } from '@/components/team-members-c
 import { TeamRefreshListener } from '@/components/team-refresh-listener';
 import { TeamWsProvider } from '@/components/team-ws-provider';
 import { Card } from '@/components/ui/card';
-import type { BingoCardWithCells, TeamWithMembers } from '@/lib/db/types';
+import type { BingoCardWithCells, GameWithMembers } from '@/lib/db/types';
 import { useMemo } from 'react';
 
 // Helper type for passing translation strings to avoid issues with importing server functions into client components
@@ -14,29 +14,29 @@ type DashboardText = {
   headerDescription: string;
 };
 
-interface DashboardTeamCardClientProps {
-  team: TeamWithMembers;
+interface DashboardGameCardClientProps {
+  game: GameWithMembers;
   currentUserId: string;
   initialCard: BingoCardWithCells;
   dashboardText: DashboardText;
 }
 
-export default function DashboardTeamCardClient({
-  team,
+export default function DashboardGameCardClient({
+  game,
   currentUserId,
   initialCard,
   dashboardText,
-}: DashboardTeamCardClientProps) {
+}: DashboardGameCardClientProps) {
   const membersMap = useMemo<TeamMembersMap>(() => {
     const map: TeamMembersMap = {};
-    for (const member of team.members) {
+    for (const member of game.members) {
       map[member.user.userId] = member.user.displayName || member.user.username;
     }
     return map;
-  }, [team.members]);
+  }, [game.members]);
 
   return (
-    <TeamWsProvider teamId={team.id} teamName={team.name}>
+    <TeamWsProvider teamId={game.teamId} gameName={game.name}>
       <TeamRefreshListener />
       <TeamMembersProvider members={membersMap}>
         <Card className="w-full max-w-4xl mx-auto">
@@ -44,9 +44,9 @@ export default function DashboardTeamCardClient({
             user={{ id: currentUserId, username: membersMap[currentUserId] || 'Unknown User' }}
             initialCard={initialCard}
             isOwner={true}
-            teamId={team.id}
+            gameId={game.id}
             currentUserId={currentUserId}
-            cardFetchInput={`/api/teams/${team.id}/cards?userId=${currentUserId}`}
+            cardFetchInput={`/api/games/${game.id}/cards?userId=${currentUserId}`}
             // Pass translation strings to avoid issues with importing server functions into client components
             dashboardText={dashboardText}
           />
