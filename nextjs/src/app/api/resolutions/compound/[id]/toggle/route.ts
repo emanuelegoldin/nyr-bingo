@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { announceCellChanges } from '@/lib/notifications';
 import { notifyResolution } from '@/lib/team-signals';
 import {
   canModifyProgress,
@@ -86,6 +87,7 @@ export const PATCH = withAuth(async (
   );
 
   await notifyResolution(id);
+  await announceCellChanges(updatedCells, currentUser.id);
 
   return NextResponse.json({ resolution, updatedCells });
 });

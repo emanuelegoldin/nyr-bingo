@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { notifications } from '@/lib/notifications';
 import { notifyCell } from '@/lib/team-signals';
 import { undoCompletion } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
@@ -22,5 +23,6 @@ export const POST = withAuth(async (
     return errorResponse(result.error, 400);
   }
   await notifyCell(cellId);
+  await notifications.cancelCell(cellId);
   return NextResponse.json({ cell: result.cell });
 });
