@@ -3,7 +3,7 @@
  * Spec Reference: 06-bingo-gameplay.md, 09-bingo-card-editing.md
  */
 
-import { CellSourceType, CellState, ResolutionType } from '../shared/types';
+import { CellSourceType, CellState, GameStatus, ResolutionType } from '../shared/types';
 import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
@@ -19,6 +19,7 @@ interface OwnedCellRow {
   state: CellState;
   card_user_id: string;
   game_id: string;
+  game_status: GameStatus;
 }
 
 /**
@@ -70,9 +71,10 @@ async function loadOwnedCell(
   notOwnerError: string
 ): Promise<{ cell: OwnedCellRow } | { error: string }> {
   const rows = await query<OwnedCellRow[]>(
-    `SELECT c.card_id, c.is_empty, c.resolution_type, c.source_type, c.state, bc.user_id as card_user_id, bc.game_id
+    `SELECT c.card_id, c.is_empty, c.resolution_type, c.source_type, c.state, bc.user_id as card_user_id, bc.game_id, g.status as game_status
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
+     JOIN games g ON bc.game_id = g.id
      WHERE c.id = ?`,
     [cellId]
   );
@@ -83,6 +85,11 @@ async function loadOwnedCell(
 
   if (rows[0].card_user_id !== userId) {
     return { error: notOwnerError };
+  }
+
+  // Spec: 16-games.md - Ending a Game
+  if (rows[0].game_status === GameStatus.ENDED) {
+    return { error: 'This game has ended' };
   }
 
   return { cell: rows[0] };
@@ -343,12 +350,13 @@ export async function autoTransitionCellState(
   resolutionType: ResolutionType,
   isComplete: boolean
 ): Promise<BingoCell[]> {
-  // Find all bingo cells linked to this resolution
+  // Find all bingo cells linked to this resolution. Ended games keep their final state.
   const cellRows = await query<Array<{ id: string; state: CellState; game_id: string; user_id: string }>>(
     `SELECT c.id, c.state, bc.game_id, bc.user_id
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
-     WHERE c.resolution_id = ? AND c.resolution_type = ?`,
+     JOIN games g ON bc.game_id = g.id
+     WHERE c.resolution_id = ? AND c.resolution_type = ? AND g.status <> 'ended'`,
     [resolutionId, resolutionType]
   );
 

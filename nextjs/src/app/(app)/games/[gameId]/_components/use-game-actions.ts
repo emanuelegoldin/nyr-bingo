@@ -2,6 +2,7 @@ import { useToast } from "@/hooks/use-toast";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import type { ResolutionFormData } from "@/lib/shared/types";
 import { apiFetch } from "@/lib/api-client";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Game, TeamProvidedResolution } from "../types";
 
@@ -16,7 +17,7 @@ interface UseGameActionsParams {
 
 /**
  * Owns the game page data (game, team goal, member-provided resolutions) together with
- * the actions that reload or mutate it: load and start bingo.
+ * the actions that reload or mutate it: load, start bingo, end and delete.
  *
  * @param params - The game id and the server-fetched initial payloads.
  * @returns The current data, the actions and their loading flags.
@@ -28,6 +29,7 @@ export function useGameActions({
   initialExistingResolutions,
 }: UseGameActionsParams) {
   const { toast } = useToast();
+  const router = useRouter();
   // Initial game payload is server-fetched to avoid first-render client waterfalls.
   const [game, setGame] = useState<Game>(initialGame);
   const [teamGoal, setTeamGoal] = useState<ResolutionFormData | null>(initialTeamGoal ?? null);
@@ -35,6 +37,8 @@ export function useGameActions({
     initialExistingResolutions ?? []
   );
   const [isStarting, setIsStarting] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // A server refresh brings new props (team changes signalled over WebSocket)
   useEffect(() => setGame(initialGame), [initialGame]);
@@ -109,6 +113,49 @@ export function useGameActions({
     setIsStarting(false);
   };
 
+  /**
+   * Runs an action that removes the game from view, then returns to the games list.
+   *
+   * @param path - The API route to call.
+   * @param method - The HTTP method.
+   * @param successTitle - Toast title shown on success.
+   * @param failureMessage - Toast text when the API gives no reason.
+   */
+  const leaveGameAfter = async (
+    path: string,
+    method: 'POST' | 'DELETE',
+    successTitle: string,
+    failureMessage: string,
+  ) => {
+    const result = await apiFetch<unknown>(path, { method });
+
+    if (result.ok) {
+      toast({ title: successTitle });
+      router.push('/games');
+      router.refresh();
+    } else {
+      toast({
+        title: "Error",
+        description: result.status === 0 ? "An error occurred" : result.error || failureMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  /** Ends the game, closing its open reviews. */
+  const handleEndGame = async () => {
+    setIsEnding(true);
+    await leaveGameAfter(`/api/games/${gameId}/end`, 'POST', 'Game ended', 'Failed to end game');
+    setIsEnding(false);
+  };
+
+  /** Deletes the game and everything in it. */
+  const handleDeleteGame = async () => {
+    setIsDeleting(true);
+    await leaveGameAfter(`/api/games/${gameId}`, 'DELETE', 'Game deleted', 'Failed to delete game');
+    setIsDeleting(false);
+  };
+
   return {
     game,
     teamGoal,
@@ -116,5 +163,9 @@ export function useGameActions({
     loadGame,
     isStarting,
     handleStartBingo,
+    isEnding,
+    handleEndGame,
+    isDeleting,
+    handleDeleteGame,
   };
 }

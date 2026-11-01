@@ -3,7 +3,7 @@
  * Internal to lib/db: not exported from the barrel.
  */
 
-import { ThreadStatus, VoteType } from '../shared/types';
+import { GameStatus, ThreadStatus, VoteType } from '../shared/types';
 import { query } from './connection';
 import { isTeamMember } from './team-repository';
 import type {
@@ -54,6 +54,7 @@ export interface CellInfoRow {
   card_id: string;
   card_user_id: string;
   game_id: string;
+  game_status: GameStatus;
   team_id: string;
   resolution_text: string;
   state: string;
@@ -119,9 +120,11 @@ export async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
         c.state,
         bc.user_id as card_user_id,
         bc.game_id,
+        g.status as game_status,
         bc.team_id
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
+     JOIN games g ON bc.game_id = g.id
      LEFT JOIN resolutions r ON c.resolution_id = r.id
      WHERE c.id = ?`,
     [cellId]

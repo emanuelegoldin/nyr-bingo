@@ -19,12 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
-import { Crown, Loader2, Settings, Swords } from "lucide-react";
+import { Crown, Flag, Loader2, Settings, Swords, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from 'react';
 
 import { BingoCardWithCells } from "@/lib/db/types";
 import type { ResolutionFormData } from "@/lib/shared/types";
+import { GameActionDialog } from "./_components/GameActionDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
 import { useLastLoaded } from "./_components/use-last-loaded";
@@ -63,6 +64,10 @@ export default function GameDetailPageClient({
     loadGame,
     isStarting,
     handleStartBingo,
+    isEnding,
+    handleEndGame,
+    isDeleting,
+    handleDeleteGame,
   } = useGameActions({ gameId: initialGame.id, initialGame, initialTeamGoal, initialExistingResolutions });
   const [currentUserId] = useState<string>(initialCurrentUserId);
 
@@ -108,6 +113,30 @@ export default function GameDetailPageClient({
                     <Swords className="h-4 w-4 mr-2" /> Start Bingo
                   </Button>
                 )}
+
+                {game.status === 'started' && (
+                  <GameActionDialog
+                    triggerLabel="End Game"
+                    triggerIcon={Flag}
+                    triggerVariant="outline"
+                    title="End this game?"
+                    description="The game finishes for everyone and leaves your lists. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
+                    confirmLabel="End Game"
+                    onConfirm={handleEndGame}
+                    isPending={isEnding}
+                  />
+                )}
+
+                <GameActionDialog
+                  triggerLabel="Delete Game"
+                  triggerIcon={Trash2}
+                  triggerVariant="destructive"
+                  title="Delete this game?"
+                  description="This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone."
+                  confirmLabel="Delete"
+                  onConfirm={handleDeleteGame}
+                  isPending={isDeleting}
+                />
               </>
             )}
 

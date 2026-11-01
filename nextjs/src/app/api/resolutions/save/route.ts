@@ -23,6 +23,7 @@ import {
   getResolutionById,
   getRunningGame,
   isTeamLeader,
+  isResolutionFrozen,
   isTeamMember,
   logResolutionHistoryEventSafe,
   updateResolutionContent,
@@ -189,7 +190,12 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   const ownerErr = await verifyOwnership(id, currentUser.id);
   if (ownerErr) return ownerErr;
 
-  return updateExisting((await getResolutionById(id))!, currentUser.id, content);
+  const existing = (await getResolutionById(id))!;
+  if (await isResolutionFrozen(existing)) {
+    return errorResponse('This game has ended', 400);
+  }
+
+  return updateExisting(existing, currentUser.id, content);
 });
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */

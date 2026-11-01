@@ -77,14 +77,32 @@ export async function getResolutionById(id: string): Promise<Resolution | null> 
 }
 
 /**
- * Delete a resolution. Only the owner may delete.
+ * Whether a resolution belongs to a game that has ended, which freezes it.
+ * Spec: 16-games.md - Ending a Game
+ * @param resolution The resolution to check
+ * @returns True for a team goal or member-provided resolution of an ended game
+ */
+export async function isResolutionFrozen(resolution: Resolution): Promise<boolean> {
+  if (!resolution.gameId) return false;
+
+  const rows = await query<RowDataPacket[]>(
+    `SELECT id FROM games WHERE id = ? AND status = 'ended'`,
+    [resolution.gameId]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Delete a resolution. Only the owner may delete, and not if its game has ended.
  */
 export async function deleteResolution(
   id: string,
   ownerUserId: string
 ): Promise<boolean> {
   await query(
-    `DELETE FROM resolutions WHERE id = ? AND owner_user_id = ?`,
+    `DELETE FROM resolutions
+     WHERE id = ? AND owner_user_id = ?
+       AND (game_id IS NULL OR game_id NOT IN (SELECT id FROM games WHERE status = 'ended'))`,
     [id, ownerUserId]
   );
   const rows = await query<ResolutionRow[]>(

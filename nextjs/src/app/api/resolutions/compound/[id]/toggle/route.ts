@@ -13,6 +13,7 @@ import {
   getCompoundResolutionById,
   autoTransitionCellState,
   isProgressComplete,
+  isResolutionFrozen,
   logResolutionHistoryEventSafe,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
@@ -42,6 +43,9 @@ export const PATCH = withAuth(async (
   }
   if (!canModifyProgress(existing, currentUser.id)) {
     return errorResponse('You can only modify your own resolutions', 403);
+  }
+  if (await isResolutionFrozen(existing)) {
+    return errorResponse('This game has ended', 400);
   }
 
   if (subtaskIndex >= (existing.subtasks?.length ?? 0)) {

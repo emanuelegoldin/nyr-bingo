@@ -6,8 +6,9 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import { GameStatus } from '../shared/types';
-import { query } from './connection';
+import { execute, query } from './connection';
 import { getGameGoalResolution } from './resolution-repository';
+import { getGameReviewFiles, removeOrphanedFiles } from './review-file-repository';
 import { getTeamMembers, getTeamWithMembers, isTeamLeader } from './team-repository';
 import type { Game, GameWithMembers } from './types';
 
@@ -133,6 +134,37 @@ export async function getRunningGamesForTeam(teamId: string): Promise<Game[]> {
     [teamId]
   );
   return rows.map(rowToGame);
+}
+
+/**
+ * Mark a started game as ended. Spec 16 requires this to come first, so nothing new can
+ * start while the caller closes the game's open review threads.
+ * Spec: 16-games.md - Ending a Game
+ * @param gameId The game to end
+ * @returns False if the game was not in started status
+ */
+export async function endGame(gameId: string): Promise<boolean> {
+  // The status guard stops two concurrent ends, and ending a game that never started.
+  const result = await execute(
+    `UPDATE games SET status = 'ended', ended_at = NOW() WHERE id = ? AND status = 'started'`,
+    [gameId]
+  );
+  return result.affectedRows > 0;
+}
+
+/**
+ * Delete a game. This is a hard delete: ON DELETE CASCADE foreign keys remove its
+ * resolutions, leaderboard rows and bingo cards (and their cells, reviews, etc.).
+ * Spec: 16-games.md - Deleting a Game
+ * @param gameId The game to delete
+ */
+export async function deleteGame(gameId: string): Promise<void> {
+  // Collected first: the cascade below removes the rows that name these files
+  const reviewFiles = await getGameReviewFiles(gameId);
+
+  await query(`DELETE FROM games WHERE id = ?`, [gameId]);
+
+  await removeOrphanedFiles(reviewFiles);
 }
 
 /**
