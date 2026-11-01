@@ -18,15 +18,16 @@ import { notifyResolution } from '@/lib/team-signals';
 import {
   changeResolutionType,
   createResolution,
+  getGameGoalResolution,
   getMemberProvidedResolutionsByUser,
   getResolutionById,
-  getTeamGoalResolution,
+  getRunningGame,
   isTeamLeader,
   isTeamMember,
   logResolutionHistoryEventSafe,
   updateResolutionContent,
 } from '@/lib/db';
-import type { Resolution, ResolutionContent } from '@/lib/db';
+import type { Game, Resolution, ResolutionContent } from '@/lib/db';
 import type { ResolutionScope, ResolutionType, Subtask } from '@/lib/shared/types';
 import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 
@@ -82,7 +83,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     subtasks,
     numberOfRepetition,
     scope: rawScope,
-    teamId,
+    gameId,
     toUserId,
   } = body as {
     id?: string;
@@ -92,7 +93,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     subtasks?: Subtask[];
     numberOfRepetition?: number;
     scope?: string;
-    teamId?: string;
+    gameId?: string;
     toUserId?: string;
   };
 
@@ -128,28 +129,36 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   };
 
   // ── Scope authorization ────────────────────────────────────
-  if (scope === 'team') {
-    if (!teamId) {
-      return errorResponse('Team ID is required for team scope', 400);
+  let game: Game | null = null;
+  if (scope === 'team' || scope === 'member_provided') {
+    if (!gameId) {
+      return errorResponse('Game ID is required for this scope', 400);
     }
-    const leader = await isTeamLeader(teamId, currentUser.id);
+    game = await getRunningGame(gameId);
+    if (!game) {
+      return errorResponse('Game not found', 404);
+    }
+  }
+
+  if (scope === 'team') {
+    const leader = await isTeamLeader(game!.teamId, currentUser.id);
     if (!leader) {
       return errorResponse('Only the team leader can set the team goal', 403);
     }
   }
 
   if (scope === 'member_provided') {
-    if (!teamId || !toUserId) {
-      return errorResponse('Team ID and target user ID are required', 400);
+    if (!toUserId) {
+      return errorResponse('Target user ID is required', 400);
     }
     if (toUserId === currentUser.id) {
       return errorResponse('You cannot create a resolution for yourself', 400);
     }
-    const member = await isTeamMember(teamId, currentUser.id);
+    const member = await isTeamMember(game!.teamId, currentUser.id);
     if (!member) {
       return errorResponse('You must be a team member', 403);
     }
-    const targetMember = await isTeamMember(teamId, toUserId);
+    const targetMember = await isTeamMember(game!.teamId, toUserId);
     if (!targetMember) {
       return errorResponse('Target user is not a team member', 400);
     }
@@ -159,20 +168,20 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   if (!id) {
     // For team scope, if a goal already exists, update it instead
     if (scope === 'team') {
-      const existingGoal = await getTeamGoalResolution(teamId!);
+      const existingGoal = await getGameGoalResolution(game!.id);
       if (existingGoal) {
         return updateExisting(existingGoal, currentUser.id, content);
       }
     }
     // For member_provided scope, if a resolution from→to already exists, update it
     if (scope === 'member_provided') {
-      const provided = await getMemberProvidedResolutionsByUser(teamId!, currentUser.id);
+      const provided = await getMemberProvidedResolutionsByUser(game!.id, currentUser.id);
       const existingMp = provided.find((resolution) => resolution.toUserId === toUserId);
       if (existingMp) {
         return updateExisting(existingMp, currentUser.id, content);
       }
     }
-    return handleCreate(currentUser.id, content, scope as ResolutionScope, teamId, toUserId);
+    return handleCreate(currentUser.id, content, scope as ResolutionScope, game, toUserId);
   }
 
   // ── UPDATE (with id) ───────────────────────────────────────
@@ -222,10 +231,15 @@ async function handleCreate(
   userId: string,
   content: ResolutionContent,
   scope: ResolutionScope,
-  teamId?: string,
+  game: Game | null,
   toUserId?: string,
 ) {
-  const id = await createResolution(userId, content, { scope, teamId, toUserId });
+  const id = await createResolution(userId, content, {
+    scope,
+    teamId: game?.teamId,
+    gameId: game?.id,
+    toUserId,
+  });
   const saved = await getResolutionById(id);
   await notifyResolution(id);
 
@@ -237,7 +251,8 @@ async function handleCreate(
     {
       type: content.type,
       scope,
-      teamId: teamId || null,
+      teamId: game?.teamId ?? null,
+      gameId: game?.id ?? null,
       toUserId: toUserId || null,
     },
   );
