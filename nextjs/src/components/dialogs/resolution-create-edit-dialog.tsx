@@ -52,7 +52,7 @@ interface ResolutionCreateEditDialogProps {
   /** Resolution scope. Defaults to 'personal'. */
   scope?: "personal" | "team" | "member_provided";
   /** Required when scope is 'team' or 'member_provided'. */
-  teamId?: string;
+  gameId?: string;
   /** Required when scope is 'member_provided'. */
   toUserId?: string;
   /** Display name of the recipient (for member_provided scope). */
@@ -104,7 +104,7 @@ export const ResolutionCreateEditDialog = ({
   setIsOpen,
   onSaved,
   scope = "personal",
-  teamId,
+  gameId,
   toUserId,
   recipientName,
 }: ResolutionCreateEditDialogProps) => {
@@ -148,7 +148,7 @@ export const ResolutionCreateEditDialog = ({
 
       if (scope !== "personal") {
         body.scope = scope;
-        if (teamId) body.teamId = teamId;
+        if (gameId) body.gameId = gameId;
         if (toUserId) body.toUserId = toUserId;
       }
 
@@ -194,7 +194,7 @@ export const ResolutionCreateEditDialog = ({
       setIsSaving(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, title, text, subtasks, numberOfRepetition, isSaving, initialData, isEdit, scope, teamId, toUserId]);
+  }, [type, title, text, subtasks, numberOfRepetition, isSaving, initialData, isEdit, scope, gameId, toUserId]);
 
   const copy = dialogCopy(scope, isEdit, recipientName);
 

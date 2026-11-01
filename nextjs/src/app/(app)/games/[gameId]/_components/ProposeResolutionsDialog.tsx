@@ -7,11 +7,10 @@ import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/sh
 import type { ResolutionFormData, ResolutionTypeValue } from "@/lib/shared/types";
 import { Pencil, Plus, Send } from "lucide-react";
 import { useState } from "react";
-import type { Team, TeamProvidedResolution } from "../types";
+import type { Game, TeamProvidedResolution } from "../types";
 
 interface ProposeResolutionsDialogProps {
-  teamId: string;
-  team: Team;
+  game: Game;
   currentUserId: string;
   existingResolutions: TeamProvidedResolution[];
   onReload: () => void;
@@ -19,12 +18,11 @@ interface ProposeResolutionsDialogProps {
 
 /**
  * Propose Resolutions button, the dialog listing every other team member, and the
- * per-member create/edit dialog. Opening the dialog triggers a reload of the team data.
+ * per-member create/edit dialog. Opening the dialog triggers a reload of the game data.
  * The edit state is kept while this component stays mounted.
  */
 export function ProposeResolutionsDialog({
-  teamId,
-  team,
+  game,
   currentUserId,
   existingResolutions,
   onReload,
@@ -71,7 +69,7 @@ export function ProposeResolutionsDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-4 max-h-96 overflow-y-auto">
-            {team.members
+            {game.members
               .filter(m => m.user.userId !== currentUserId)
               .map(member => {
                 const existing = existingResolutions.find(r => r.toUserId === member.user.userId);
@@ -98,7 +96,7 @@ export function ProposeResolutionsDialog({
           setIsOpen={setMemberEditDialogOpen}
           onSaved={handleMemberResolutionSaved}
           scope="member_provided"
-          teamId={teamId}
+          gameId={game.id}
           toUserId={editingMemberUserId}
           recipientName={editingMemberName}
         />

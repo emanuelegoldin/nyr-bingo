@@ -12,7 +12,7 @@ type BaseBingoCardProviderProps = {
     user: { id: string; username: string },
     initialCard: BingoCardWithCells,
     isOwner: boolean,
-    teamId: string,
+    gameId: string,
     currentUserId: string,
     cardFetchInput?: string | URL | Request
     headerSlot?: React.ReactNode
@@ -46,7 +46,7 @@ function BingoCard(
         user,
         initialCard,
         isOwner,
-        teamId,
+        gameId,
         currentUserId,
         cardFetchInput,
         headerSlot
@@ -80,7 +80,7 @@ function BingoCard(
                         initialCard={initialCard}
                         isOwner={isOwner}
                         editMode={editMode}
-                        teamId={teamId}
+                        gameId={gameId}
                         currentUserId={currentUserId}
                         fetchInput={cardFetchInput}
                     />
@@ -151,13 +151,13 @@ export function DashboardBingoCardProvider({
     dashboardText,
     ...props
 }: DashboardBingoCardProviderProps) {
-    const { teamName } = useTeamWs();
+    const { gameName } = useTeamWs();
     const headerSlot = (
         <>
             <div className="flex w-full items-start justify-between gap-4">
                 <div className="min-w-0">
                     <CardTitle className="font-headline text-2xl">
-                        {dashboardText.cardTitle.replace('{teamName}', teamName)}
+                        {dashboardText.cardTitle.replace('{gameName}', gameName)}
                     </CardTitle>
                     <CardDescription>
                         {dashboardText.headerDescription}

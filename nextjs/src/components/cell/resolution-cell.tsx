@@ -86,7 +86,7 @@ interface ResolutionCellProps {
     cell: BingoCellWithThread,
     existingCells: BingoCellWithThread[],
     editMode: boolean,
-    teamId: string,
+    gameId: string,
     isOwner: boolean,
     currentUserId: string,
     onUpdate?: (cellId: string, cellState: "pending" | "completed") => void,
@@ -97,7 +97,7 @@ export const ResolutionCell = ({
     cell,
     existingCells,
     editMode,
-    teamId,
+    gameId,
     isOwner,
     currentUserId,
     onUpdate,
@@ -215,7 +215,7 @@ export const ResolutionCell = ({
                 <EditCellDialog
                     cellId={cell.id}
                     existingCells={existingCells}
-                    teamId={teamId ? teamId : ""}
+                    gameId={gameId ? gameId : ""}
                     currentUserId={currentUserId ? currentUserId : ""}
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}

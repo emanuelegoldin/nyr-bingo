@@ -1,24 +1,24 @@
 /**
- * Team Detail Page
- * Spec Reference: 04-bingo-teams.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md
+ * Game Page
+ * Spec Reference: 16-games.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md
  *
  * Server-first implementation:
  * - Authentication and team membership checks run on the server
- * - Initial team/cards/goal/resolution payloads are fetched on the server
+ * - Initial game/cards/goal/resolution payloads are fetched on the server
  * - Client component only handles interactive mutations and local UI state
  */
 
 import { requireUser } from '@/lib/auth';
 import {
-  getTeamBingoCards,
-  getTeamGoalResolution,
-  getTeamLeaderboard,
+  getGameBingoCards,
+  getGameGoalResolution,
+  getGameLeaderboard,
+  getGameWithMembers,
   getMemberProvidedResolutionsByUser,
-  getTeamWithMembers,
   isTeamMember,
   type BingoCardWithCells,
+  type GameWithMembers,
   type Resolution,
-  type TeamWithMembers,
 } from '@/lib/db';
 import { resolutionToFormData } from '@/lib/shared/resolution-form';
 import type { ResolutionFormData } from '@/lib/shared/types';
@@ -26,14 +26,14 @@ import { PageSpinner } from '@/components/page-spinner';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import type { LeaderboardEntry } from './leaderboard-tab';
-import TeamDetailPageClient from './team-detail-page-client';
-import type { Team } from './types';
+import GameDetailPageClient from './game-detail-page-client';
+import type { Game } from './types';
 
-interface TeamDetailPageProps {
-  params: Promise<{ teamId: string }>;
+interface GameDetailPageProps {
+  params: Promise<{ gameId: string }>;
 }
 
-function TeamDetailLoadingFallback() {
+function GameDetailLoadingFallback() {
   return (
     <PageSpinner />
   );
@@ -43,14 +43,16 @@ function toIsoDateString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : value;
 }
 
-function mapTeam(team: TeamWithMembers): Team {
+function mapGame(game: GameWithMembers): Game {
   return {
-    id: team.id,
-    name: team.name,
-    leaderUserId: team.leaderUserId,
-    teamResolutionText: team.teamResolutionText,
-    status: team.status,
-    members: team.members.map((member) => ({
+    id: game.id,
+    teamId: game.teamId,
+    teamName: game.teamName,
+    leaderUserId: game.leaderUserId,
+    name: game.name,
+    teamResolutionText: game.teamResolutionText,
+    status: game.status,
+    members: game.members.map((member) => ({
       membership: {
         id: member.membership.id,
         teamId: member.membership.teamId,
@@ -78,29 +80,30 @@ function mapGoalToFormData(goal: Resolution | null): ResolutionFormData | null {
   return resolutionToFormData(goal);
 }
 
-async function TeamDetailContent({ teamId }: { teamId: string }) {
+async function GameDetailContent({ gameId }: { gameId: string }) {
   const currentUser = await requireUser();
 
-  const member = await isTeamMember(teamId, currentUser.id);
+  // An ended game is not found either (spec 16)
+  const game = await getGameWithMembers(gameId);
+  if (!game) {
+    notFound();
+  }
+
+  const member = await isTeamMember(game.teamId, currentUser.id);
   if (!member) {
     notFound();
   }
 
-  const team = await getTeamWithMembers(teamId);
-  if (!team) {
-    notFound();
-  }
-
   // Non-critical sections are settled independently so one failed query does not block the page.
-  const cardPromise = team.status === 'started'
-    ? getTeamBingoCards(teamId, currentUser.id)
+  const cardPromise = game.status === 'started'
+    ? getGameBingoCards(gameId, currentUser.id)
     : Promise.resolve([] as BingoCardWithCells[]);
 
   const [cardsResult, goalResult, resolutionsResult, leaderboardResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
     cardPromise,
-    getTeamGoalResolution(teamId),
-    getMemberProvidedResolutionsByUser(teamId, currentUser.id),
-    getTeamLeaderboard(teamId),
+    getGameGoalResolution(gameId),
+    getMemberProvidedResolutionsByUser(gameId, currentUser.id),
+    getGameLeaderboard(gameId),
   ]);
 
   // undefined marks a failed read, so a refresh keeps the data already on screen
@@ -113,9 +116,8 @@ async function TeamDetailContent({ teamId }: { teamId: string }) {
     leaderboardResult.status === 'fulfilled' ? leaderboardResult.value : undefined;
 
   return (
-    <TeamDetailPageClient
-      teamId={teamId}
-      initialTeam={mapTeam(team)}
+    <GameDetailPageClient
+      initialGame={mapGame(game)}
       initialCards={initialCards}
       initialCurrentUserId={currentUser.id}
       initialTeamGoal={initialTeamGoal}
@@ -125,12 +127,12 @@ async function TeamDetailContent({ teamId }: { teamId: string }) {
   );
 }
 
-export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
-  const { teamId } = await params;
+export default async function GameDetailPage({ params }: GameDetailPageProps) {
+  const { gameId } = await params;
 
   return (
-    <Suspense fallback={<TeamDetailLoadingFallback />}>
-      <TeamDetailContent teamId={teamId} />
+    <Suspense fallback={<GameDetailLoadingFallback />}>
+      <GameDetailContent gameId={gameId} />
     </Suspense>
   );
 }
