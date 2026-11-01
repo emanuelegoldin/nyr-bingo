@@ -171,7 +171,6 @@ export function TeamWsProvider({ teamId, teamName, children }: TeamWsProviderPro
   }, [teamId, dispatchToListeners, sendJoin]);
 
   // ── Catch up when the tab comes back ──────────────────────────
-  // This is also how deadline closures appear: the database cannot signal them.
   useEffect(() => {
     let lastCatchUp = Date.now();
     const catchUp = () => {
