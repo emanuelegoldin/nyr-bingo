@@ -1,7 +1,7 @@
 # 05 — Bingo Card Generation
 
 ## Purpose
-Define the rules for generating each team member's bingo card when the team game is started, or when a member joins a started game.
+Define the rules for generating each team member's bingo card when a game is started, or when a member joins a team with a started game.
 
 ## User Stories Covered
 - Cards generated automatically at start
@@ -16,8 +16,8 @@ Define the rules for generating each team member's bingo card when the team game
 - The center cell is position 12.
 
 ## Inputs
-- Team goal resolution (`scope = team`)
-- Member-provided resolutions targeted to the card owner (`scope = member_provided`)
+- The game's team goal resolution (`scope = team`)
+- The game's member-provided resolutions targeted to the card owner (`scope = member_provided`)
 - Card owner's personal resolutions (`scope = personal`), used as fallback
 
 ## Data Model Notes
@@ -37,7 +37,7 @@ Define the rules for generating each team member's bingo card when the team game
 6. Shuffle the 24 cells across the non-center positions.
 7. Every stored cell starts in state `pending`.
 
-Generation runs in a transaction. Cards are generated once: at game start for all members, and at join time for a member joining a started game. A user has at most one card per team, and cards are never regenerated.
+Generation runs in a transaction. Cards are generated once: at game start for all members, and at join time for a member joining a team, in each of its started games. A user has at most one card per game, and cards are never regenerated.
 
 ## Duplicate Handling
 - Generation rejects duplicates by text. A resolution's text is its description or, without one, its title, compared case-insensitively.
@@ -48,11 +48,11 @@ Generation runs in a transaction. Cards are generated once: at game start for al
 ## Constraints
 - Joker cell is always present and immutable.
 - `empty` cells cannot be marked completed.
-- Generation requires the team to be `started` and the team goal to exist.
+- Generation requires the game to be `started` and its team goal to exist.
 
 ## Acceptance Criteria
 - Starting the game generates a card for each team member.
-- Joining a started team generates a card for the new member.
+- Joining a team generates a card for the new member in each of its started games.
 - Center cell is the Joker.
 - Remaining cells follow selection and fallback rules.
 - A generated card contains no duplicate resolution text.
