@@ -1,7 +1,7 @@
 # 00 — System Overview
 
 ## Goal
-New Year Resolution Bingo is an application where users maintain resolutions, join teams, and play bingo games with their team. Each game is generated from a team goal, peer-provided resolutions and personal resolutions.
+New Year Resolution Bingo is an application where users maintain resolutions, join teams, and play bingo games with their team. Each game is generated from a team goal, peer-provided resolutions and personal resolutions, with prepared resolutions filling any gaps.
 
 ## How to Read These Specs
 - Each spec describes the behavior of the application as it is currently implemented.
@@ -32,10 +32,10 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 In scope:
 - User accounts: register, login, logout, email verification
 - User profile: manage personal data and decide what is public
-- Resolutions: personal CRUD; `base`, `compound` and `iterative` types; history timeline
+- Resolutions: personal CRUD; `base`, `compound` and `iterative` types; history timeline; a pool of prepared resolutions to copy from
 - Bingo teams: create team, invite/join
 - Bingo games: the leader creates any number of games for a team; each has one team goal, members create resolutions for each other, and the leader starts and ends it
-- Bingo card generation (joker in the center, text de-duplication, personal fallback, empty filler cells)
+- Bingo card generation (joker in the center, text de-duplication, personal and prepared fallbacks, empty filler cells)
 - Gameplay marking (complete / undo), automatic completion for typed resolutions, viewing other members' cards
 - Card editing by the card owner
 - Proof review: requested by a teammate, discussed in a thread, decided by votes or by a deadline

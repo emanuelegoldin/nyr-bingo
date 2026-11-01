@@ -123,7 +123,7 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 
 ### Member-Provided Resolutions
 
-- For each game, each member is expected to create one resolution for every **other** member.
+- For each game, each member is expected to create one resolution for every **other** member. A missing resolution does not block the game: at start, the recipient gets a prepared resolution instead (spec 05).
 - `POST /api/resolutions/save` with `scope = 'member_provided'`, `gameId` and `toUserId`. Any type is allowed.
 - Rules:
   - The author and the target must both be members of the game's team.
@@ -139,7 +139,7 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 
 #### New Member Effects
 
-- The requirement to provide resolutions for every other member is only evaluated at game start. After the game has started, nothing enforces resolutions for or from a new member.
+- Nothing enforces resolutions for or from a new member after the game has started.
 
 ---
 
@@ -152,7 +152,6 @@ The leader may start bingo only when:
 - The game is in `forming` status
 - The deadline, if any, is not over
 - The team goal is set
-- Every member has provided a resolution for every other member (trivially true for a one-person team)
 
 Other members are verified because joining requires it.
 
@@ -240,7 +239,8 @@ After a game has ended:
 - Non-leaders cannot create, start, end or delete a game.
 - Unverified users cannot create or start a game.
 - Each game has its own goal, member-provided resolutions, cards and leaderboard.
-- Bingo cannot start until the team goal and all required resolutions exist.
+- Bingo cannot start until the team goal exists.
+- Bingo can start while member-provided resolutions are missing.
 - A leader can set, change or remove the deadline of a forming game, and only of a forming game.
 - A game with no deadline only ends manually.
 - A started game is ended automatically once its deadline is over, the same way as a manual end.

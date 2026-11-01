@@ -212,8 +212,9 @@ export async function deleteGame(gameId: string): Promise<void> {
 }
 
 /**
- * Check if all required resolutions are provided
- * Spec: 16-games.md - Start Conditions
+ * Check which member-provided resolutions exist. Missing ones do not block the start: they
+ * are replaced by prepared resolutions.
+ * Spec: 16-games.md - Member-Provided Resolutions
  */
 export async function checkAllResolutionsProvided(game: Pick<Game, 'id' | 'teamId'>): Promise<{
   ready: boolean;
@@ -224,8 +225,8 @@ export async function checkAllResolutionsProvided(game: Pick<Game, 'id' | 'teamI
   const memberIds = members.map(m => m.userId);
 
   // If there are fewer than 2 members, there are no (from -> to) pairs required.
-  // Spec: 16-games.md - all members have provided a resolution for every other member.
-  // For a 1-person team, that condition is vacuously satisfied.
+  // Spec: 16-games.md - each member is expected to provide one for every other member.
+  // For a 1-person team, that is vacuously satisfied.
   if (memberIds.length < 2) {
     return { ready: true, missing: [] };
   }
@@ -294,15 +295,6 @@ export async function checkGameCanStart(
   const teamGoal = await getGameGoalResolution(gameId);
   if (!teamGoal) {
     return { success: false, error: 'Team resolution must be set before starting' };
-  }
-
-  // Check if all resolutions are provided
-  const { ready, missing } = await checkAllResolutionsProvided(game);
-  if (!ready) {
-    return {
-      success: false,
-      error: `Not all members have provided resolutions for all other members. Missing: ${missing.length} resolutions`,
-    };
   }
 
   return { success: true };
