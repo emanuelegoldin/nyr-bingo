@@ -4,12 +4,12 @@
     },
     "Dashboard": {
         "title": "Dashboard",
-        "cardTitle": "Deine Bingo-Karte für {teamName}",
+        "cardTitle": "Deine Bingo-Karte für {gameName}",
         "headerContent": "Willkommen bei Resolution Bingo!",
         "headerDescription": "Probierst du deine Vorsätze zu erfüllen, um ein BINGO zu bekommen! Klicken Sie auf eine Zelle, um sie als abgeschlossen zu markieren.",
         "headerDescriptionNoTeam": "Treten Sie einem Team bei oder erstellen Sie eines, um zu spielen.",
         "headerDescriptionNoGames": "Keines Ihrer Teams hat bereits ein Spiel gestartet.",
-        "cardContentNoneAvailable": "Keine Karte verfügbar für Ihren Benutzer in diesem gestarteten Team."
+        "cardContentNoneAvailable": "Keine Karte verfügbar für Ihren Benutzer in diesem gestarteten Spiel."
     },
     "LoginPage": {
         "title": "Schön, dass du wieder da bist!",
@@ -40,7 +40,25 @@
         "title": "Ihre persönlichen Auflösungen",
         "description": "Verwalten Sie Ihre persönlichen Auflösungen. Diese können verwendet werden, um Ihre Bingo-Karten zu füllen.",
         "headerTitle": "Auflösungen",
-        "viewHistoryAriaLabel": "Auflösungshistorie anzeigen"
+        "viewHistoryAriaLabel": "Auflösungshistorie anzeigen",
+        "browseIdeas": "Ideen entdecken"
+    },
+    "PreparedResolutionsDialog": {
+        "title": "Ideen für Auflösungen",
+        "description": "Fügen Sie eine dieser vorbereiteten Auflösungen zu Ihrer persönlichen Liste hinzu. Ihre Kopie können Sie danach bearbeiten.",
+        "add": "Hinzufügen",
+        "added": "Hinzugefügt",
+        "loadError": "Die Ideen konnten nicht geladen werden. Schließen Sie dieses Fenster und versuchen Sie es erneut.",
+        "categories": {
+            "short": "Kurz",
+            "medium": "Mittel",
+            "long": "Lang"
+        },
+        "categoryHints": {
+            "short": "In wenigen Tagen erledigt, ohne Vorbereitung.",
+            "medium": "In wenigen Wochen erledigt, oder anspruchsvoller, aber in Tagen vorbei.",
+            "long": "Dauert Monate, bis zum ganzen Jahr."
+        }
     },
     "ResolutionHistoryDialog": {
         "title": "Auflösungshistorie",
@@ -55,5 +73,23 @@
         "progressLabel": "Progress",
         "loadError": "Failed to load resolution history",
         "addError": "Failed to add history entry"
+    },
+    "Notifications": {
+        "title": "Benachrichtigungen",
+        "open": "Benachrichtigungen öffnen",
+        "markAllRead": "Alle als gelesen markieren",
+        "empty": "Nichts Neues",
+        "someone": "Jemand",
+        "cardProgressOne": "{actor} hat einen Vorsatz erfüllt",
+        "cardProgressMany": "{actor} hat {count} Vorsätze erfüllt",
+        "memberJoined": "{actor} ist dem Team beigetreten",
+        "gameStarted": "{actor} hat das Spiel gestartet",
+        "gameEnded": "{actor} hat das Spiel beendet",
+        "gameEndedAtDeadline": "Die Frist des Spiels ist abgelaufen",
+        "bingoScored": "{actor} hat ein BINGO erzielt!",
+        "proofRequested": "{actor} möchte einen Nachweis für deinen Vorsatz",
+        "settingLabel": "Benachrichtigungen",
+        "settingDescription": "Zeigt Neuigkeiten aus deinen Teams an der Glocke. Solange dies ausgeschaltet ist, werden Neuigkeiten nicht aufbewahrt.",
+        "settingError": "Benachrichtigungen konnten nicht geändert werden"
     }
 }

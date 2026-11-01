@@ -86,10 +86,10 @@ interface ResolutionCellProps {
     cell: BingoCellWithThread,
     existingCells: BingoCellWithThread[],
     editMode: boolean,
-    teamId: string,
+    gameId: string,
     isOwner: boolean,
     currentUserId: string,
-    onUpdate?: (cellId: string, cellState: "pending" | "completed") => void,
+    onUpdate?: (cellId: string, cellState: "pending" | "completed" | "failed") => void,
     onRefresh?: () => void,
 }
 
@@ -97,7 +97,7 @@ export const ResolutionCell = ({
     cell,
     existingCells,
     editMode,
-    teamId,
+    gameId,
     isOwner,
     currentUserId,
     onUpdate,
@@ -144,9 +144,14 @@ export const ResolutionCell = ({
         setActiveDialog('complete');
     };
 
-    /** Owner wants to undo a completed base/team cell. */
+    /** Owner wants to undo a completed base/team cell or a failed cell. */
     const handleUndoFromDetail = () => {
         onUpdate?.(cell.id, CellState.PENDING);
+    };
+
+    /** Owner wants to mark a pending cell as failed. */
+    const handleFailFromDetail = () => {
+        onUpdate?.(cell.id, CellState.FAILED);
     };
 
     /** Non-owner wants to request proof for a completed cell. */
@@ -215,7 +220,7 @@ export const ResolutionCell = ({
                 <EditCellDialog
                     cellId={cell.id}
                     existingCells={existingCells}
-                    teamId={teamId ? teamId : ""}
+                    gameId={gameId ? gameId : ""}
                     currentUserId={currentUserId ? currentUserId : ""}
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}
@@ -250,6 +255,7 @@ export const ResolutionCell = ({
                     onRefresh={onRefresh}
                     onComplete={handleCompleteFromDetail}
                     onUndo={handleUndoFromDetail}
+                    onFail={handleFailFromDetail}
                     onRequestProof={handleRequestProofFromDetail}
                     onViewThread={handleViewThreadFromDetail}
                     onViewHistory={handleViewHistoryFromDetail}

@@ -30,14 +30,14 @@ This spec defines:
 - **Card owner**: the user whose `bingo_cards.user_id` matches the authenticated user.
 - **Member-provided resolution**: a row in `resolutions` where:
   - `scope = 'member_provided'`
-  - `team_id` equals the card's `bingo_cards.team_id`
+  - `game_id` equals the card's `bingo_cards.game_id`
   - `to_user_id` equals the card owner
 - **Personal resolution**: a row in `resolutions` where `scope = 'personal'` and `owner_user_id` is the card owner.
 
 ## Functional Requirements
 
 ### 1) Enter/Exit Edit Mode
-- Edit mode is available on the dashboard only, through the **Edit Card** button on each of the user's cards (spec 14). The team page has no edit mode.
+- Edit mode is available on the dashboard only, through the **Edit Card** button on each of the user's cards (spec 14). The game page has no edit mode.
 - While in edit mode the button reads **Done** and exits edit mode.
 
 ### 2) Selectable Cells in Edit Mode
@@ -47,7 +47,7 @@ This spec defines:
 
 ### 3) Replacement Options
 Selecting a cell opens a dialog listing replacement options:
-- All member-provided resolutions for the team, targeted to the current user: `GET /api/teams/[teamId]/resolutions?toUserId=<currentUserId>`
+- All member-provided resolutions for the game, targeted to the current user: `GET /api/games/[gameId]/resolutions?toUserId=<currentUserId>`
 - All personal resolutions of every type owned by the user: `GET /api/resolutions/all`
 
 The list:
@@ -68,6 +68,8 @@ When a replacement option is selected, the system updates the cell via `PUT /api
 - `bingo_cells.state`, reset to `pending`
 
 `is_empty` follows from these values because it is a generated column.
+
+A `prepared` cell (spec 05) can be replaced like any other, but not chosen as a replacement. The replaced copy is left unused until its game is deleted.
 
 ### 6) Permissions & Safety
 - Only the card owner can edit the content of cells on their card.
@@ -95,7 +97,8 @@ Validation:
 - The specified cell MUST NOT be a team goal cell
 - The specified cell MUST NOT be in `pending_review`
 - For `personal`, the resolution MUST be the caller's own personal resolution
-- For `member_provided`, the resolution MUST be proposed to the caller in the card's team
+- For `member_provided`, the resolution MUST be proposed to the caller in the card's game
+- The card's game MUST NOT have ended (spec 16)
 - The resolution MUST NOT already be on another cell of the card
 
 Validation failures return `400` with a message.
@@ -104,9 +107,9 @@ Effects:
 - Update the cell content fields and set state to `pending`
 - Refresh the card owner's leaderboard entry (spec 12)
 
-### `GET /api/teams/[teamId]/resolutions?toUserId=...`
+### `GET /api/games/[gameId]/resolutions?toUserId=...`
 - Auth required
-- The authenticated user MUST be a member of the team
+- The authenticated user MUST be a member of the game's team
 - Returns the list of member-provided resolutions targeted to `toUserId`
 
 ## Acceptance Criteria
@@ -114,7 +117,7 @@ Effects:
 - In edit mode, the owner can select any non-joker, non-team cell not under review (including empty).
 - On selection, the UI shows a list combining:
   - `GET /api/resolutions/all`
-  - `GET /api/teams/[teamId]/resolutions?toUserId=<currentUserId>`
+  - `GET /api/games/[gameId]/resolutions?toUserId=<currentUserId>`
 - Selecting an option updates the cell via `PUT /api/cells/[cellId]/edit`.
 - Dismissing the dialog returns to the card still in edit mode.
 - The joker cell cannot be modified (both UI and API enforce this).

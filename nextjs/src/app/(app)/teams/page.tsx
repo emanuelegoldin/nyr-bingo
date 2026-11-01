@@ -16,10 +16,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
 import { PageSpinner } from "@/components/page-spinner";
-import { TeamStatusBadge } from "@/components/team/team-status-badge";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
-import type { Team } from './[teamId]/types';
+import type { Team } from "@/components/team/types";
 
 export default function TeamsPage() {
   usePageTitle("Teams");
@@ -99,7 +98,7 @@ export default function TeamsPage() {
             <DialogHeader>
               <DialogTitle className="font-headline">Create New Team</DialogTitle>
               <DialogDescription>
-                Create a new bingo team and invite your friends to join.
+                Create a team and invite your friends. You can then start as many games as you like with them.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -141,9 +140,6 @@ export default function TeamsPage() {
                   <CardDescription>
                     Led by {leader?.user.displayName || leader?.user.username || 'Unknown'}
                   </CardDescription>
-                  <div className="mt-2">
-                    <TeamStatusBadge status={team.status} />
-                  </div>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <p className="text-sm font-medium mb-2">Team Members:</p>

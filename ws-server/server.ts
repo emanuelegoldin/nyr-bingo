@@ -145,7 +145,7 @@ function parseNotifications(body: string): RoomNotification[] | null {
     if (!Array.isArray(parsed)) return null;
     const isValid = parsed.every((item: Partial<RoomNotification> | null) =>
       typeof item?.id === 'string'
-      && (item.type === 'card' || item.type === 'thread' || item.type === 'resolution')
+      && (item.type === 'card' || item.type === 'thread' || item.type === 'resolution' || item.type === 'user')
     );
     return isValid ? parsed as RoomNotification[] : null;
   } catch {
@@ -162,10 +162,11 @@ function deliverNotification(room: RoomNotification) {
   if (type === 'card') broadcastToRoom(roomKey(room), { type: 'refresh-card' });
   if (type === 'thread') broadcastToRoom(roomKey(room), { type: 'refresh-thread', threadId: id });
   if (type === 'resolution') broadcastToRoom(roomKey(room), { type: 'refresh-resolution', resolutionId: id });
+  if (type === 'user') broadcastToRoom(roomKey(room), { type: 'refresh-notifications' });
 }
 
 /**
- * Build the key of a room. The prefix keeps the three kinds of room apart.
+ * Build the key of a room. The prefix keeps the kinds of room apart.
  * @param room - The room
  * @returns The key used in the rooms map
  */

@@ -10,10 +10,12 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
+  Archive,
   LayoutGrid,
   ListCheck,
   User,
   Users,
+  Swords,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,6 +26,11 @@ const menuItems = [
     href: "/dashboard",
     label: "Dashboard",
     icon: LayoutGrid,
+  },
+  {
+    href: "/games",
+    label: "Games",
+    icon: Swords,
   },
   {
     href: "/teams",
@@ -39,6 +46,11 @@ const menuItems = [
     href: "/resolutions",
     label: "Resolutions",
     icon: ListCheck,
+  },
+  {
+    href: "/archive",
+    label: "Archive",
+    icon: Archive,
   }
 ];
 

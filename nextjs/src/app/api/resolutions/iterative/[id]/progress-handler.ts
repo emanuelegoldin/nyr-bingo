@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { announceCellChanges } from '@/lib/notifications';
 import { notifyResolution } from '@/lib/team-signals';
 import {
   adjustIterativeProgress,
@@ -6,6 +7,7 @@ import {
   getIterativeResolutionById,
   autoTransitionCellState,
   isProgressComplete,
+  isResolutionFrozen,
   logResolutionHistoryEventSafe,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
@@ -44,6 +46,9 @@ export function createIterativeProgressHandler({
       if (!canModifyProgress(existing, currentUser.id)) {
         return errorResponse('You can only modify your own resolutions', 403);
       }
+      if (await isResolutionFrozen(existing)) {
+        return errorResponse('This game has ended', 400);
+      }
 
       const resolution = await adjustIterativeProgress(id, currentUser.id, delta);
       if (!resolution) {
@@ -68,6 +73,7 @@ export function createIterativeProgressHandler({
       );
 
       await notifyResolution(id);
+      await announceCellChanges(updatedCells, currentUser.id);
 
       return NextResponse.json({ resolution, updatedCells });
     });

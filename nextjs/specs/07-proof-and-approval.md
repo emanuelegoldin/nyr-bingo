@@ -146,14 +146,12 @@ The API responds with the vote and a `threadClosed` flag.
 
 ## Closure by Deadline
 
-The migration `V4_0_0` defines the `CloseThreads` procedure and the daily `CloseThreadsEvent` MariaDB event. MariaDB's `event_scheduler` is off by default; production enables it through a server configuration file outside this repository.
+`closeExpiredThreads` runs in the Next.js server once at startup and then every hour, started from `src/instrumentation.ts`. Ending a game (spec 16) closes that game's open threads under the same rule, whatever their age.
 
-- It closes every open thread whose cell still references a resolution, for which `CURDATE() > created_at + 2 days`.
-- The cell becomes `accomplished` when any of these holds, and `pending` otherwise:
-  - Accept votes ≥ `FLOOR(team members / 2)`
-  - No votes were cast
-  - Accept votes ≥ deny votes
-- On `accomplished` it updates the leaderboard directly (spec 12).
+- It closes every open thread for which `created_at` is at least 2 days ago.
+- The cell becomes `accomplished` when accept votes ≥ deny votes, which includes a thread with no votes, and `pending` otherwise.
+- It refreshes the leaderboard entry of the completing user (spec 12).
+- It signals the thread room and the team's card room (spec 11).
 
 ---
 
@@ -162,15 +160,15 @@ The migration `V4_0_0` defines the `CloseThreads` procedure and the daily `Close
 | | All votes in | Completing user closes | Undo completion | Deadline |
 | - | - | - | - | - |
 | Thread status | `closed` | `closed` | `closed` | `closed` |
-| `closed_at` set | Yes | Yes | Yes | No |
+| `closed_at` set | Yes | Yes | Yes | Yes |
 | Cell state | `accomplished` or `pending` | `pending` | `pending` | `accomplished` or `pending` |
 | Messages deleted | Yes | Yes | Yes | Yes |
 | File rows deleted | Yes | Yes | Yes | Yes |
-| Files deleted from disk | Yes | Yes | Yes | **No** |
+| Files deleted from disk | Yes | Yes | Yes | Yes |
 
 The thread row and its votes are kept in every case.
 
-If a file cannot be removed from disk during any closure except the deadline, the closure fails and the thread stays open.
+If a file cannot be removed from disk during any closure, the closure fails and the thread stays open. A deadline closure is tried again at the next run.
 
 ---
 
@@ -212,7 +210,5 @@ If a file cannot be removed from disk during any closure except the deadline, th
 
 ## Known Gaps
 
-- Deleting a resolution while its cell is under review leaves the cell without a reference, so the deadline procedure never picks up that thread.
-- Deadline closure leaves proof files on disk with no database record of them.
 - The deadline rule differs from the voting rule: a thread with no votes is accepted.
 - `/review-files/` is served by Nginx without authentication. Access control relies on the file name being unguessable.

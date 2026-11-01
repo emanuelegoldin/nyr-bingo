@@ -11,7 +11,7 @@ import { EditOptionRow } from "./edit-option-row";
 interface EditCellDialogProps {
   cellId: string,
   existingCells: BingoCellWithThread[],
-  teamId: string,
+  gameId: string,
   currentUserId: string,
   isOpen: boolean,
   setIsOpen: (isOpen: boolean) => void
@@ -21,7 +21,7 @@ interface EditCellDialogProps {
 export const EditCellDialog = ({
   cellId,
   existingCells,
-  teamId,
+  gameId,
   currentUserId,
   isOpen,
   setIsOpen,
@@ -34,7 +34,7 @@ export const EditCellDialog = ({
     usernames,
     isLoading: isEditOptionsLoading,
     reset: resetEditOptions
-  } = useEditCellOptions({ cellId, existingCells, teamId, currentUserId, isOpen });
+  } = useEditCellOptions({ cellId, existingCells, gameId, currentUserId, isOpen });
   const { toast } = useToast();
 
   const handleSelectReplacement = async (opt: EditOption) => {

@@ -12,6 +12,7 @@ This specification focuses on **card interaction and cell state changes**, not o
 
 - Mark a resolution as completed on my bingo card
 - Undo a mistakenly marked completion
+- Mark a resolution as failed, and still complete it later
 - Complete a checklist or repeatable resolution by making progress on it
 - View my own bingo card state
 - View other team members' bingo card states
@@ -45,6 +46,9 @@ State is stored per cell (`bingo_cells.state`). The same resolution can appear i
 - `accomplished`
   Proof has been accepted and the resolution is finalized.
 
+- `failed`
+  The owner marked the resolution as failed. It behaves as `pending` and can still be completed at any time.
+
 ---
 
 ## Card Display Rules
@@ -55,6 +59,7 @@ State is stored per cell (`bingo_cells.state`). The same resolution can appear i
 | `completed` | Green | Check |
 | `pending_review` | Amber | Hourglass |
 | `accomplished` | Green, text struck through | Thumbs up |
+| `failed` | Red | X |
 
 Every non-empty, non-joker cell shows its title. On `sm` screens and wider it also shows a source badge: "Team Goal", the provider's username, or "Personal".
 
@@ -69,8 +74,10 @@ Outside edit mode, clicking any non-empty, non-joker cell that still references 
 | Viewer | Condition | Action |
 | ------ | --------- | ------ |
 | Anyone | Always | **History** (spec 13) |
-| Card owner | `base`, `pending` | **Mark Complete** |
+| Card owner | `base`, `pending` or `failed` | **Mark Complete** |
+| Card owner | `pending`, any type | **Mark Failed** |
 | Card owner | `base`, `completed` | **Undo** |
+| Card owner | `failed`, any type | **Undo** |
 | Non-owner | `completed` | **Request Proof** (spec 07) |
 | Anyone | `pending_review` | **View Thread** (spec 07) |
 
@@ -85,17 +92,30 @@ The `base` row applies to the resolution's type, so a `base` team goal is comple
 `PUT /api/cells/[cellId]` with `{ state: 'completed' }`
 
 - Only the card owner can mark a cell as completed.
-- Marking completion transitions `pending` → `completed`.
+- Marking completion transitions `pending` or `failed` → `completed`.
 - No proof or review is triggered automatically.
+
+---
+
+### Mark Resolution as Failed
+
+`PUT /api/cells/[cellId]` with `{ state: 'failed' }`
+
+- Only the card owner can mark a cell as failed.
+- Marking failure transitions `pending` → `failed`, for every resolution type. No confirmation is asked.
+- A `completed` cell must be undone first.
+- A failed cell does not count as done for the leaderboard or bingo lines (spec 12).
+- A cell that was failed and then completed behaves as any `completed` cell. Undoing it, or a rejected review, returns it to `pending`, not to `failed`.
 
 ---
 
 ### Automatic Completion (compound and iterative)
 
-These types have no manual Mark Complete or Undo in the UI. After a subtask toggle or counter change (spec 03), every cell referencing the resolution, on any card, is updated:
+These types have no manual Mark Complete in the UI, and no manual Undo except from `failed`. After a subtask toggle or counter change (spec 03), every cell referencing the resolution, on any card of a game that has not ended (spec 16), is updated:
 
-- Resolution complete and cell `pending` → `completed`
+- Resolution complete and cell `pending` or `failed` → `completed`
 - Resolution incomplete and cell `completed` → `pending`
+- Resolution incomplete and cell `failed` is left unchanged
 - Cells in `pending_review` or `accomplished` are left unchanged
 
 ---
@@ -104,25 +124,25 @@ These types have no manual Mark Complete or Undo in the UI. After a subtask togg
 
 `POST /api/cells/[cellId]/undo-complete`
 
-- The API accepts `completed`, `pending_review` and `accomplished`, and rejects `pending`.
+- The API accepts `completed`, `pending_review`, `accomplished` and `failed`, and rejects `pending`.
 - Undoing:
   - Transitions the cell back to `pending`
   - Closes any open proof review thread
   - Deletes the thread's messages and file records (spec 07)
-- The UI offers Undo only for `base` cells in `completed`. A cell in `pending_review` is reverted by closing the thread (spec 07).
+- The UI offers Undo only for `base` cells in `completed` and for cells of any type in `failed`. A cell in `pending_review` is reverted by closing the thread (spec 07).
 
 ---
 
 ### Viewing Other Cards
 
-- Team members can view other users' bingo cards on the team page.
+- Team members can view other users' bingo cards on the game page.
 - Team members **cannot** directly set others' cell states. Another member's cell changes only through proof review (spec 07) and through the leader's progress on a typed team goal.
 
 ---
 
 ## Non-Checkable Cells
 
-- Empty filler cells cannot be marked completed and are not clickable outside edit mode.
+- Empty filler cells cannot be marked completed or failed and are not clickable outside edit mode.
 - The center Joker cell is informational only and not clickable.
 
 ---
@@ -131,7 +151,8 @@ These types have no manual Mark Complete or Undo in the UI. After a subtask togg
 
 - Only the card owner can manually:
   - Mark a cell completed
-  - Undo completion
+  - Mark a cell failed
+  - Undo completion or failure
 - Team members can:
   - View other cards
   - Initiate proof review flows (see spec 07)
@@ -143,7 +164,9 @@ These types have no manual Mark Complete or Undo in the UI. After a subtask togg
 - User can mark a `base` resolution completed.
 - User can undo a completed `base` resolution.
 - `compound` and `iterative` cells complete and revert automatically with progress.
-- Empty and joker cells are not checkable.
+- User can mark a `pending` cell of any type as failed, and undo it back to `pending`.
+- A failed `base` cell can be marked completed, and a failed `compound` or `iterative` cell completes automatically.
+- Empty and joker cells are not checkable and cannot be failed.
 - Cell states are accurately reflected on the bingo card.
 - Review-related states do not break card interaction.
 

@@ -2,6 +2,7 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAppContext } from "@/hooks/AppContext";
+import { NotificationBell } from "./notifications/notification-bell";
 import { UserAvatarButton } from "./user-avatar-button";
 
 export function AppHeader() {
@@ -16,7 +17,8 @@ export function AppHeader() {
           {headerTitle}
         </h1>
       </div>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        <NotificationBell />
         <UserAvatarButton />
       </div>
     </header>

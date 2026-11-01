@@ -4,12 +4,12 @@
     },
     "Dashboard": {
         "title": "Dashboard",
-        "cardTitle": "La tua carta del Bingo per {teamName}",
+        "cardTitle": "La tua carta del Bingo per {gameName}",
         "headerContent": "Benvenuto!",
         "headerDescription": "Completa i tuoi obiettivi per ottenere un BINGO! Clicca su una cella per segnarla come completata.",
         "headerDescriptionNoTeam": "Crea o unisciti a un team per iniziare a giocare.",
         "headerDescriptionNoGames": "Nessuno dei tuoi team ha ancora iniziato una partita.",
-        "cardContentNoneAvailable": "Non hai carte disponibili in questo team"
+        "cardContentNoneAvailable": "Non hai carte disponibili in questa partita"
     },
     "LoginPage": {
         "title": "Bentornato!",
@@ -40,7 +40,25 @@
         "title": "I tuoi Obiettivi",
         "description": "Gestisci i tuoi obiettivi personali. Questi possono essere utilizzati per riempire le tue carte del bingo.",
         "headerTitle": "Obiettivi",
-        "viewHistoryAriaLabel": "Visualizza la cronologia degli obiettivi"
+        "viewHistoryAriaLabel": "Visualizza la cronologia degli obiettivi",
+        "browseIdeas": "Sfoglia idee"
+    },
+    "PreparedResolutionsDialog": {
+        "title": "Idee per i tuoi obiettivi",
+        "description": "Aggiungi uno di questi obiettivi già pronti alla tua lista personale. Potrai poi modificare la tua copia.",
+        "add": "Aggiungi",
+        "added": "Aggiunto",
+        "loadError": "Impossibile caricare le idee. Chiudi questa finestra e riprova.",
+        "categories": {
+            "short": "Brevi",
+            "medium": "Medi",
+            "long": "Lunghi"
+        },
+        "categoryHints": {
+            "short": "Si completano in pochi giorni, senza preparazione.",
+            "medium": "Si completano in qualche settimana, oppure più impegnativi ma conclusi in pochi giorni.",
+            "long": "Richiedono mesi, fino a un anno intero."
+        }
     },
     "ResolutionHistoryDialog": {
         "title": "Cronologia degli Obiettivi",
@@ -55,5 +73,23 @@
         "progressLabel": "Progresso",
         "loadError": "Ops! Impossibile caricare la cronologia degli obiettivi",
         "addError": "Ops! Impossibile aggiungere la nuova nota alla cronologia"
+    },
+    "Notifications": {
+        "title": "Notifiche",
+        "open": "Apri le notifiche",
+        "markAllRead": "Segna tutte come lette",
+        "empty": "Nessuna novità",
+        "someone": "Qualcuno",
+        "cardProgressOne": "{actor} ha completato un proposito",
+        "cardProgressMany": "{actor} ha completato {count} propositi",
+        "memberJoined": "Nuovo membro nel team: {actor}",
+        "gameStarted": "{actor} ha avviato la partita",
+        "gameEnded": "{actor} ha terminato la partita",
+        "gameEndedAtDeadline": "La partita ha raggiunto la scadenza",
+        "bingoScored": "{actor} ha fatto BINGO!",
+        "proofRequested": "{actor} ha chiesto una prova del tuo proposito",
+        "settingLabel": "Notifiche",
+        "settingDescription": "Mostra gli aggiornamenti dei tuoi team nella campanella. Quando è disattivato, gli aggiornamenti non vengono conservati.",
+        "settingError": "Impossibile aggiornare le notifiche"
     }
 }

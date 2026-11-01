@@ -88,7 +88,11 @@ async function computeReadAccess(
     return true;
   }
 
-  if (resolution.scope === ResolutionScope.TEAM || resolution.scope === ResolutionScope.MEMBER_PROVIDED) {
+  if (
+    resolution.scope === ResolutionScope.TEAM ||
+    resolution.scope === ResolutionScope.MEMBER_PROVIDED ||
+    resolution.scope === ResolutionScope.PREPARED
+  ) {
     if (!resolution.teamId) return false;
     return isTeamMember(resolution.teamId, requestingUserId);
   }
@@ -117,7 +121,8 @@ export async function getResolutionHistoryAccess(
   // user is the owner of the card. If they are, then they can edit the resolution history.
 
   const canWrite = 
-    resolution.scope === ResolutionScope.PERSONAL && resolution.ownerUserId === requestingUserId || // Owner of the resolution
+    (resolution.scope === ResolutionScope.PERSONAL || resolution.scope === ResolutionScope.PREPARED)
+      && resolution.ownerUserId === requestingUserId || // Owner of the resolution
     resolution.scope === ResolutionScope.MEMBER_PROVIDED && resolution.toUserId === requestingUserId;  // Target user of a member-provided resolution
   const canView = await computeReadAccess(resolution, requestingUserId);
 

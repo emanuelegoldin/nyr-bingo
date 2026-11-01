@@ -27,17 +27,20 @@ All resolutions live in the `resolutions` table.
 | Scope | Meaning | Owner (`ownerUserId`) | Extra fields |
 | ----- | ------- | --------------------- | ------------ |
 | `personal` | The user's own resolution | The user | none |
-| `team` | The team goal; one per team (spec 04) | The team leader | `teamId` |
-| `member_provided` | Written by one member for another (spec 04) | The author | `teamId`, `toUserId` |
+| `team` | The team goal; one per game (spec 16) | The team leader | `teamId`, `gameId` |
+| `member_provided` | Written by one member for another, for one game (spec 16) | The author | `teamId`, `gameId`, `toUserId` |
+| `prepared` | A prepared resolution copied onto a card as a fallback (specs 05, 17) | The card owner | `teamId`, `gameId` |
 
 Every type is available in every scope.
+
+A `prepared` resolution is only created by card generation. It is not a personal resolution: it is not listed on `/resolutions` and cannot be used to fill or edit a card.
 
 ## Functional Requirements
 ### Create and Update
 `POST /api/resolutions/save`
 
 - Without `id` the request creates a resolution; with `id` it updates one.
-- Body: `type`, `title`, optional `text`, `subtasks` (compound), `numberOfRepetition` (iterative), `previousType` (when changing type), and `scope`, `teamId`, `toUserId` for non-personal scopes.
+- Body: `type`, `title`, optional `text`, `subtasks` (compound), `numberOfRepetition` (iterative), `previousType` (when changing type), and `scope`, `gameId`, `toUserId` for non-personal scopes. The team is taken from the game.
 - `scope` defaults to `personal`.
 
 Updating without changing type:
@@ -68,9 +71,10 @@ Changing type (a save whose `type` differs from the stored type):
 
 ## Permissions
 - Only the owner can update or delete a resolution.
-- Progress on a `personal` resolution can only be changed by its owner.
+- Progress on a `personal` or `prepared` resolution can only be changed by its owner.
 - Progress on a `member_provided` resolution can only be changed by its recipient (`toUserId`), not by its author.
 - Personal resolutions are available to unverified users.
+- The team goal, member-provided and prepared resolutions of an ended game cannot be saved, deleted or progressed (spec 16).
 
 ## Constraints
 - Title must be non-empty. It is trimmed and truncated to 255 characters.
@@ -85,5 +89,5 @@ Changing type (a save whose `type` differs from the stored type):
 - User cannot modify someone else's resolutions.
 
 ## Known Gaps
-- Deleting a resolution that is on a bingo card leaves a blank, non-empty cell that keeps its source and has no text. A `base` cell still opens an empty dialog. A `compound` or `iterative` cell is clickable but nothing opens. The team goal can be deleted this way through the API, although the UI offers no such action.
+- Deleting a resolution that is on a bingo card leaves a blank, non-empty cell that keeps its source and has no text. A `base` cell still opens an empty dialog. A `compound` or `iterative` cell is clickable but nothing opens. The team goal and `prepared` resolutions can be deleted this way through the API, although the UI offers no such action.
 - Saving a resolution with a changed type or target does not re-evaluate its cells, so a cell can stay `completed` after its goal was raised, or `pending` after it was lowered.

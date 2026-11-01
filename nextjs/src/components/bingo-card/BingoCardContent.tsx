@@ -13,7 +13,7 @@ export function BingoCardContent(
     initialCard,
     isOwner,
     editMode,
-    teamId,
+    gameId,
     currentUserId,
     fetchInput
   }
@@ -22,7 +22,7 @@ export function BingoCardContent(
       initialCard: BingoCardWithCells,
       isOwner: boolean,
       editMode: boolean,
-      teamId: string,
+      gameId: string,
       currentUserId: string,
       fetchInput?: string | URL | Request
     }
@@ -36,7 +36,7 @@ export function BingoCardContent(
   const { toast } = useToast();
   const [card, setCard] = useState<BingoCardWithCells>(initialCard);
   // Allow parent to pass a fetchInput to narrow down the cards to load (e.g., from dashboard page --> we are interested only in current user cards)
-  const fetchUrl = fetchInput ? fetchInput : `/api/teams/${teamId}/cards?userId=${currentUserId}`;
+  const fetchUrl = fetchInput ? fetchInput : `/api/games/${gameId}/cards?userId=${currentUserId}`;
 
   const reloadCard = useCallback(async () => {
     try {
@@ -60,10 +60,10 @@ export function BingoCardContent(
         variant: 'destructive',
       });
     }
-  }, [currentUserId, teamId, toast, fetchUrl]);
+  }, [currentUserId, gameId, toast, fetchUrl]);
 
   const handleCellUpdate = useCallback(
-    async (cellId: string, newState: 'pending' | 'completed') => {
+    async (cellId: string, newState: 'pending' | 'completed' | 'failed') => {
       const result =
         newState === 'pending'
           ? await apiFetch<unknown>(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
@@ -108,7 +108,7 @@ export function BingoCardContent(
               cell={cell}
               isOwner={isOwner}
               editMode={editMode}
-              teamId={teamId ? teamId : ""}
+              gameId={gameId ? gameId : ""}
               currentUserId={currentUserId ? currentUserId : ""}
               existingCells={card.cells}
               onUpdate={isOwner ? handleCellUpdate : undefined}

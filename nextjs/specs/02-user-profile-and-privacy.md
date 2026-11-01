@@ -53,6 +53,12 @@ All endpoints require authentication.
 
 ---
 
+### Notifications
+
+The profile page has a switch that turns notifications on or off (spec 19).
+
+---
+
 ### Privacy Settings
 
 - Display name, bio and avatar URL can each be marked public or private.
@@ -104,6 +110,7 @@ A dedicated page at `/profile/[userId]` displays a read-only view of another use
 - Users can edit their own profile.
 - Users can configure which fields are public.
 - Users can see their verification status.
+- Users can turn notifications on and off.
 - Unverified users can request a new verification email.
 - Other users only see public profile fields.
 

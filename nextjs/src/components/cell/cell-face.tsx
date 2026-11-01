@@ -1,4 +1,4 @@
-import { BingoCellWithThread } from "@/lib/db/types";
+import { BingoCell } from "@/lib/db/types";
 import { CellSourceType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -7,8 +7,11 @@ import { Cell } from "./cell";
 import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
 import { EmptyCell } from "./empty";
 
+/** The cell fields shown on the grid, shared by live and archived cells. */
+type CellFaceData = Pick<BingoCell, "state" | "resolutionTitle" | "resolutionText" | "isEmpty" | "sourceType" | "sourceUserId">;
+
 interface CellFaceProps {
-    cell: BingoCellWithThread,
+    cell: CellFaceData,
     editMode: boolean,
     isOwner: boolean,
     canInteract: boolean,
@@ -42,6 +45,7 @@ export const CellFace = ({
         completed: { icon: getCellStateIcon("completed", "h-4 w-4"), color: CELL_STATE_COLORS.completed.bg, text: CELL_STATE_COLORS.completed.text },
         pending_review: { icon: getCellStateIcon("pending_review", "h-4 w-4"), color: CELL_STATE_COLORS.pending_review.bg, text: CELL_STATE_COLORS.pending_review.text },
         accomplished: { icon: getCellStateIcon("accomplished", "h-4 w-4"), color: CELL_STATE_COLORS.accomplished.bg, text: `${CELL_STATE_COLORS.accomplished.text} line-through` },
+        failed: { icon: getCellStateIcon("failed", "h-4 w-4"), color: CELL_STATE_COLORS.failed.bg, text: CELL_STATE_COLORS.failed.text },
     };
     const config = stateConfig[cell.state];
     // Resolution title for cell display (truncated with CSS ellipsis)
@@ -72,16 +76,20 @@ export const CellFace = ({
             <div className="absolute top-1 right-1">
                 {cell.state !== 'pending' && config.icon}
             </div>
-            <Badge variant="outline" className="absolute bottom-1 right-1 text-xs hidden sm:inline-flex">
+            <Badge variant="outline" className="absolute bottom-1 right-1 max-w-[calc(100%-0.5rem)] text-xs hidden sm:inline-flex">
                 {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId ? (
                     <Link
                         href={`/profile/${cell.sourceUserId}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="hover:underline"
+                        className="truncate hover:underline"
                     >
                         {sourceLabel}
                     </Link>
-                ) : cell.sourceType !== CellSourceType.EMPTY && sourceLabel}
+                ) : (
+                    <span className="truncate">
+                        {cell.sourceType !== CellSourceType.EMPTY && sourceLabel}
+                    </span>
+                )}
             </Badge>
         </Cell>
     );

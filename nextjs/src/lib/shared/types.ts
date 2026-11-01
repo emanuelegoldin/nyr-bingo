@@ -1,8 +1,9 @@
-// Team status
-// Spec: 04-bingo-teams.md
-export enum TeamStatus {
+// Game status
+// Spec: 16-games.md
+export enum GameStatus {
   FORMING = 'forming',
-  STARTED = 'started'
+  STARTED = 'started',
+  ENDED = 'ended'
 }
 
 // Team membership role
@@ -27,7 +28,8 @@ export enum CellSourceType {
   TEAM = 'team',
   MEMBER_PROVIDED = 'member_provided',
   PERSONAL = 'personal',
-  EMPTY = 'empty'
+  EMPTY = 'empty',
+  PREPARED = 'prepared'
 }
 
 // Cell state
@@ -41,7 +43,8 @@ export enum CellState {
   PENDING = 'pending',
   COMPLETED = 'completed',
   PENDING_REVIEW = 'pending_review',
-  ACCOMPLISHED = 'accomplished'
+  ACCOMPLISHED = 'accomplished',
+  FAILED = 'failed'
 }
 
 // Review thread types
@@ -68,11 +71,13 @@ export enum ResolutionType {
 export type ResolutionTypeValue = `${ResolutionType}`;
 
 // Resolution scope (ownership context)
-// A resolution can be personal, a team-wide goal, or written by one member for another.
+// A resolution can be personal, a team-wide goal, written by one member for another, or a
+// prepared resolution copied onto a card as a fallback.
 export enum ResolutionScope {
   PERSONAL = 'personal',
   TEAM = 'team',
   MEMBER_PROVIDED = 'member_provided',
+  PREPARED = 'prepared',
 }
 
 /**
@@ -101,6 +106,28 @@ export interface UnifiedResolution {
   updatedAt: Date | string;
 }
 
+// How long a prepared resolution takes
+// Spec: 17-prepared-resolutions.md
+export enum PreparedResolutionCategory {
+  SHORT = 'short',
+  MEDIUM = 'medium',
+  LONG = 'long',
+}
+
+/**
+ * An entry of the shared prepared resolutions pool. It has no owner and no progress: users
+ * and cards always receive a copy of it.
+ */
+export interface PreparedResolution {
+  id: string;
+  category: PreparedResolutionCategory;
+  resolutionType: ResolutionType;
+  title: string;
+  description: string | null;
+  subtasks: Subtask[] | null;
+  numberOfRepetition: number | null;
+}
+
 /** Shape of a resolution passed to the create/edit dialog (matches the unified API response). */
 export interface ResolutionFormData {
   id?: string;
@@ -109,4 +136,56 @@ export interface ResolutionFormData {
   text: string;
   subtasks?: Subtask[];
   numberOfRepetition?: number;
+}
+
+// Archived games: read-only snapshots of finished games, stored as plain values
+// Spec: 18-game-archive.md
+
+/** One cell of an archived card. The field names match the live cell where they overlap. */
+export interface ArchivedCell {
+  position: number;
+  isJoker: boolean;
+  isEmpty: boolean;
+  resolutionTitle: string;
+  resolutionText: string;
+  resolutionType: ResolutionType;
+  state: CellState;
+  sourceType: CellSourceType;
+  sourceUserId: string | null;
+  sourceLabel: string;
+  subtasks: Subtask[] | null;
+  numberOfRepetition: number | null;
+  completedTimes: number | null;
+}
+
+/** One player's card in an archived game. */
+export interface ArchivedCard {
+  userId: string;
+  playerName: string;
+  cells: ArchivedCell[];
+}
+
+/** One line of an archived game's final leaderboard, in rank order. */
+export interface ArchivedLeaderboardEntry {
+  userId: string;
+  username: string;
+  displayName: string | null;
+  firstBingoAt: string | null;
+  completedTasks: number;
+}
+
+/** An archived game as listed on the archive page. */
+export interface ArchivedGameSummary {
+  id: string;
+  /** The leader who ran the game, who alone can delete it. */
+  leaderUserId: string | null;
+  name: string;
+  teamName: string;
+  endedAt: string;
+}
+
+/** An archived game with its leaderboard and cards. */
+export interface ArchivedGameDetail extends ArchivedGameSummary {
+  leaderboard: ArchivedLeaderboardEntry[];
+  cards: ArchivedCard[];
 }

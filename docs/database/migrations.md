@@ -149,3 +149,199 @@ Adds a dedicated timeline table for resolution history and progress updates.
 - History is stored once per resolution (not per cell), so all surfaces read
   from the same source of truth.
 - Entries are append-only and intended for auditability/progress sharing.
+
+## 4.1.0 - Drop Close Threads Event
+
+Drops the `CloseThreadsEvent` event and the `CloseThreads` procedure added in
+V4.0.0.
+
+Deadline closure of review threads now runs in the Next.js application, which
+can also remove the proof files from disk. The `event_scheduler` setting is no
+longer needed.
+
+## 5.0.0 - Separate Games from Teams
+
+Splits the bingo game out of the team. A team becomes a list of users with a
+leader, and a team can run several games at once (spec 16).
+
+### Schema changes
+
+- New table `games`: `id`, `team_id`, `name`, `status ENUM('forming','started','ended')`,
+  `created_at`, `updated_at`, `ended_at`. Deleting a team cascades to its games.
+- `bingo_cards`, `team_leaderboard`: add `game_id VARCHAR(36) NOT NULL`.
+- `resolutions`: adds `game_id VARCHAR(36) NULL`, set for `team` and
+  `member_provided` scopes and `NULL` for `personal`.
+- All three `game_id` columns reference `games(id)` with `ON DELETE CASCADE`.
+- Unique keys move from team to game:
+  - `bingo_cards`: `unique_card` → `unique_game_card (game_id, user_id)`
+  - `team_leaderboard`: `unique_user_team` → `unique_user_game (user_id, game_id)`
+  - `resolutions`: `unique_member_provided` →
+    `unique_member_provided_game (game_id, owner_user_id, to_user_id)`
+- `resolutions` gains the explicit index `idx_resolutions_team (team_id)`.
+- Drops `teams.status`. Its value now lives in `games.status`.
+
+### Data migration
+
+Each existing team receives one game that copies the team's `name`, `status`
+and `created_at`. Its cards, leaderboard rows, team goal and member-provided
+resolutions are linked to that game. Existing teams are never merged, because
+nothing records that two teams are the same group of people.
+
+### Design notes
+
+- `team_id` stays on the three tables. Membership checks, real-time room lookup
+  and team deletion read it, and a game never moves to another team.
+- New keys are added before old ones are dropped. A foreign key can rely on an
+  old unique key as its only index: `user_id` on `team_leaderboard` and `team_id`
+  on `resolutions`. Dropping those first would fail.
+- `teams.status` is dropped last because the game backfill reads it.
+
+### Idempotency
+
+MariaDB DDL cannot be rolled back, so a run that fails halfway leaves its earlier
+steps applied. Every step can run again, using `IF [NOT] EXISTS` clauses, the
+`Create_Column` and `Drop_Column` procedures, `information_schema` guards on the
+foreign keys, and backfills limited to rows still unset.
+
+## 5.1.0 - Game Deadline
+
+Adds an optional deadline to games (spec 16).
+
+### Schema changes
+
+- `games`: adds `deadline DATE NULL`, the last playable day of the game.
+
+### Data migration
+
+None. Existing games keep `deadline = NULL` and still end only manually.
+
+### Design notes
+
+- `DATE` rather than `DATETIME`: the picker selects a day, so there is no time or
+  time zone to convert. A game ends once `deadline < CURDATE()`.
+- No index: the hourly sweep is the only reader that filters on it.
+
+### Idempotency
+
+`Create_Column` skips a column that already exists, so the migration can run again.
+
+## 5.2.0 - Prepared Resolutions
+
+Adds a shared pool of ready-made resolutions (spec 17).
+
+### Schema changes
+
+- New table `prepared_resolutions`: `id`, `category` (`short`, `medium`, `long`),
+  `resolution_type`, `title`, `description`, `subtasks`, `number_of_repetition` and
+  `created_at`, with an index on `category`.
+- `resolutions.scope`: adds `prepared`.
+- `bingo_cells.source_type`: adds `prepared`.
+
+### Data migration
+
+None. Existing rows keep their scope and source type.
+
+### Design notes
+
+- The pool is a separate table because its rows have no owner and no progress. Everything
+  users receive from it is a copy in `resolutions`.
+- `prepared` is a scope of its own because a copy on a card belongs to one game and must not
+  appear in its owner's personal resolutions.
+- The pool has no foreign keys: nothing references it, so a copy survives if its entry is
+  removed.
+- `is_empty` is unaffected: it only compares `source_type` to `'empty'`.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips an existing table, and `MODIFY COLUMN` sets each column to
+the same definition on a second run, so the migration can run again.
+
+## 5.2.1 - Seed Prepared Resolutions
+
+Fills the pool created in 5.2.0 (spec 17).
+
+### Data migration
+
+Inserts 60 entries, 20 per category, mixing the `base`, `compound` and `iterative` types. The
+text is in English only.
+
+### Design notes
+
+- `long` and `medium` together hold more than the 23 cells a card could need from them, so a
+  card only gets `empty` cells when duplicates or a very short pool get in the way.
+- The pool has no admin interface. Later changes to it are new migrations.
+- Ids are readable slugs such as `prepared-short-01`, which fit the `VARCHAR(36)` column.
+
+### Idempotency
+
+Ids are fixed, and `INSERT IGNORE` skips ids already present, so the migration can run again.
+
+## 5.3.0 - Failed Cell State
+
+Adds the `failed` cell state (spec 06).
+
+### Schema changes
+
+`bingo_cells.state` gains the `failed` value. It goes last in the enum, so existing rows keep
+their state.
+
+### Idempotency
+
+`MODIFY COLUMN` sets the column to the same definition on a second run, so the migration can
+run again.
+
+## 5.4.0 - Game Archive
+
+Adds read-only snapshots of finished games (spec 18).
+
+### Schema changes
+
+Four new tables, each cascading from the one before it:
+
+- `archived_games`: one row per game, keyed by the id the game had.
+- `archived_game_players`: who can view the game, and each player's final leaderboard line.
+- `archived_cells`: the cells of each card, without the implicit Joker.
+- `archived_cell_subtasks`: the subtasks of `compound` cells.
+
+### Data migration
+
+None in SQL. The server's sweep archives every game in `ended` status at startup, then deletes
+it with its cards, cells, leaderboard rows, closed threads and game resolutions. Games with no
+`ended_at` use `updated_at` as their end date.
+
+### Design notes
+
+- The tables hold plain values and have no foreign key to `games`, `teams` or `resolutions`, so an
+  archived game outlives all of them.
+- `source_user_id` has no foreign key: it only links to a profile.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips a table that already exists, so the migration can run again.
+
+## 5.5.0 - Notifications
+
+Stores team events, their recipients and each user's notification setting (spec 19).
+
+### Schema changes
+
+Three new tables:
+
+- `notification_events`: one row per event. Pending while `published_at` is `NULL`.
+- `notification_recipients`: one row per notification received, with its read state.
+- `notification_settings`: one row per user who changed the setting. No row means on.
+
+### Data migration
+
+None. Existing users have notifications on.
+
+### Design notes
+
+- `team_id`, `game_id` and `cell_id` have no foreign key, and team and game names are plain values:
+  archiving deletes a game right after it ends, and a notification must outlive it.
+- A pending `card_progress` event has one row per cell, so cancelling is a plain delete.
+- Only the type is stored, never text, so the browser can translate it.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips a table that already exists, so the migration can run again.

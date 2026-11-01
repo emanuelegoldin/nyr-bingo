@@ -68,6 +68,7 @@ Who can write depends on the resolution's scope:
 | Scope | Allowed writer |
 | ----- | -------------- |
 | `personal` | The resolution owner |
+| `prepared` | The resolution owner, who is the card owner |
 | `member_provided` | The recipient (`toUserId`), not the author |
 | `team` | Nobody |
 
@@ -76,7 +77,7 @@ Manual entry content must be non-empty text.
 ### 3) History Visibility
 
 - Owner can always view the history of their own resolution.
-- For `scope = team` and `scope = member_provided` resolutions:
+- For `scope = team`, `scope = member_provided` and `scope = prepared` resolutions:
   - Team members of the associated team can view history.
 - For `scope = personal` resolutions:
   - A user can view history only if the resolution appears in at least one bingo card of a team they belong to.
@@ -109,7 +110,7 @@ A failure to log an event does not fail the action that produced it.
 ### 7) Real-Time Update Behavior
 
 - After a manual note, a subtask toggle or a counter change, the client sends `resolution-refresh` (spec 11) so other viewers reload the timeline.
-- This applies only inside a `TeamWsProvider`, meaning on the team page and the dashboard. On the personal resolutions page the WebSocket functions are no-ops.
+- This applies only inside a `TeamWsProvider`, meaning on the game page and the dashboard. On the personal resolutions page the WebSocket functions are no-ops.
 - Saving a resolution sends no refresh message.
 - The API remains the source of truth.
 
@@ -173,7 +174,7 @@ Entries are immutable.
 - [ ] Personal page and card detail dialog show the same timeline for the same resolution.
 - [ ] Automatic events are recorded for iterative and compound progress actions.
 - [ ] Resolution create and save operations produce history events.
-- [ ] Notes and progress updates propagate using resolution-refresh on the team page and dashboard.
+- [ ] Notes and progress updates propagate using resolution-refresh on the game page and dashboard.
 
 ---
 

@@ -10,7 +10,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '../shared/types';
 import { ResolutionScope, ResolutionType } from '../shared/types';
-import { query, withTransaction } from './connection';
+import { query, withTransaction, type Executor } from './connection';
 import type { Resolution } from './types';
 
 // ── Row type from database (snake_case) ──────────────────────────
@@ -23,6 +23,7 @@ interface ResolutionRow extends RowDataPacket {
   resolution_type: ResolutionType;
   scope: ResolutionScope;
   team_id: string | null;
+  game_id: string | null;
   to_user_id: string | null;
   subtasks: string | Subtask[] | null;
   number_of_repetition: number | null;
@@ -32,15 +33,19 @@ interface ResolutionRow extends RowDataPacket {
 }
 
 /**
+ * Read a subtasks column, which the driver may return as JSON text.
+ * @param value The column value
+ * @returns The subtasks, or null if there are none
+ */
+export function parseSubtasks(value: string | Subtask[] | null): Subtask[] | null {
+  return typeof value === 'string' ? JSON.parse(value) : value;
+}
+
+/**
  * Convert a database row into a Resolution entity.
  */
 function rowToResolution(row: ResolutionRow): Resolution {
-  let subtasks: Subtask[] | null = null;
-  if (row.subtasks != null) {
-    subtasks = typeof row.subtasks === 'string'
-      ? JSON.parse(row.subtasks)
-      : row.subtasks;
-  }
+  const subtasks = parseSubtasks(row.subtasks);
 
   return {
     id: row.id,
@@ -50,6 +55,7 @@ function rowToResolution(row: ResolutionRow): Resolution {
     resolutionType: row.resolution_type,
     scope: row.scope,
     teamId: row.team_id,
+    gameId: row.game_id,
     toUserId: row.to_user_id,
     subtasks,
     numberOfRepetition: row.number_of_repetition,
@@ -75,14 +81,32 @@ export async function getResolutionById(id: string): Promise<Resolution | null> 
 }
 
 /**
- * Delete a resolution. Only the owner may delete.
+ * Whether a resolution belongs to a game that has ended, which freezes it.
+ * Spec: 16-games.md - Ending a Game
+ * @param resolution The resolution to check
+ * @returns True for a team goal, member-provided or prepared resolution of an ended game
+ */
+export async function isResolutionFrozen(resolution: Resolution): Promise<boolean> {
+  if (!resolution.gameId) return false;
+
+  const rows = await query<RowDataPacket[]>(
+    `SELECT id FROM games WHERE id = ? AND status = 'ended'`,
+    [resolution.gameId]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Delete a resolution. Only the owner may delete, and not if its game has ended.
  */
 export async function deleteResolution(
   id: string,
   ownerUserId: string
 ): Promise<boolean> {
   await query(
-    `DELETE FROM resolutions WHERE id = ? AND owner_user_id = ?`,
+    `DELETE FROM resolutions
+     WHERE id = ? AND owner_user_id = ?
+       AND (game_id IS NULL OR game_id NOT IN (SELECT id FROM games WHERE status = 'ended'))`,
     [id, ownerUserId]
   );
   const rows = await query<ResolutionRow[]>(
@@ -168,21 +192,23 @@ function toColumnValues({ type, title, text, subtasks, numberOfRepetition }: Res
  * Create a resolution.
  * @param ownerUserId The user creating it
  * @param content The validated content
- * @param placement The scope, plus the team and recipient where the scope needs them
+ * @param placement The scope, plus the team, game and recipient where the scope needs them
+ * @param executor Where to run the insert; pass the transaction's connection to run inside it
  * @returns The new resolution's id
  */
 export async function createResolution(
   ownerUserId: string,
   content: ResolutionContent,
-  placement: { scope: ResolutionScope; teamId?: string; toUserId?: string }
+  placement: { scope: ResolutionScope; teamId?: string; gameId?: string; toUserId?: string },
+  executor?: Executor
 ): Promise<string> {
   const id = uuidv4();
   const { description, subtasks, numberOfRepetition } = toColumnValues(content);
 
   await query(
     `INSERT INTO resolutions
-       (id, owner_user_id, title, description, resolution_type, scope, team_id, to_user_id, subtasks, number_of_repetition, completed_times)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+       (id, owner_user_id, title, description, resolution_type, scope, team_id, game_id, to_user_id, subtasks, number_of_repetition, completed_times)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
     [
       id,
       ownerUserId,
@@ -191,10 +217,12 @@ export async function createResolution(
       content.type,
       placement.scope,
       placement.teamId || null,
+      placement.gameId || null,
       placement.toUserId || null,
       subtasks,
       numberOfRepetition,
-    ]
+    ],
+    executor
   );
 
   return id;
@@ -403,13 +431,13 @@ export async function adjustIterativeProgress(
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Get the team goal resolution for a team.
- * Returns the single resolution with scope='team' and matching team_id.
+ * Get the team goal resolution of a game.
+ * Returns the single resolution with scope='team' and matching game_id.
  */
-export async function getTeamGoalResolution(teamId: string): Promise<Resolution | null> {
+export async function getGameGoalResolution(gameId: string): Promise<Resolution | null> {
   const rows = await query<ResolutionRow[]>(
-    `SELECT * FROM resolutions WHERE team_id = ? AND scope = 'team' LIMIT 1`,
-    [teamId]
+    `SELECT * FROM resolutions WHERE game_id = ? AND scope = 'team' LIMIT 1`,
+    [gameId]
   );
   return rows.length > 0 ? rowToResolution(rows[0]) : null;
 }
@@ -419,31 +447,31 @@ export async function getTeamGoalResolution(teamId: string): Promise<Resolution 
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Get all member-provided resolutions targeted at a user within a team.
+ * Get all member-provided resolutions targeted at a user within a game.
  */
 export async function getMemberProvidedResolutionsForUser(
-  teamId: string,
+  gameId: string,
   toUserId: string
 ): Promise<Resolution[]> {
   const rows = await query<ResolutionRow[]>(
     `SELECT * FROM resolutions
-     WHERE scope = 'member_provided' AND team_id = ? AND to_user_id = ?`,
-    [teamId, toUserId]
+     WHERE scope = 'member_provided' AND game_id = ? AND to_user_id = ?`,
+    [gameId, toUserId]
   );
   return rows.map(rowToResolution);
 }
 
 /**
- * Get all member-provided resolutions written by a user within a team.
+ * Get all member-provided resolutions written by a user within a game.
  */
 export async function getMemberProvidedResolutionsByUser(
-  teamId: string,
+  gameId: string,
   fromUserId: string
 ): Promise<Resolution[]> {
   const rows = await query<ResolutionRow[]>(
     `SELECT * FROM resolutions
-     WHERE scope = 'member_provided' AND team_id = ? AND owner_user_id = ?`,
-    [teamId, fromUserId]
+     WHERE scope = 'member_provided' AND game_id = ? AND owner_user_id = ?`,
+    [gameId, fromUserId]
   );
   return rows.map(rowToResolution);
 }

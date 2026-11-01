@@ -4,12 +4,12 @@
     },
     "Dashboard": {
         "title": "Dashboard",
-        "cardTitle": "Your Bingo Card for {teamName}",
+        "cardTitle": "Your Bingo Card for {gameName}",
         "headerContent": "Welcome to Resolution Bingo!",
         "headerDescription": "Complete your resolutions to get a BINGO! Click on a cell to mark it as completed.",
         "headerDescriptionNoTeam": "Join or create a team to start playing.",
         "headerDescriptionNoGames": "None of your teams has started a game yet.",
-        "cardContentNoneAvailable": "No card available yet for your user in this started team."
+        "cardContentNoneAvailable": "No card available yet for your user in this started game."
     },
     "LoginPage": {
         "title": "Welcome Back!",
@@ -40,7 +40,25 @@
         "title": "Your Personal Resolutions",
         "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
         "headerTitle": "Resolutions",
-        "viewHistoryAriaLabel": "View resolution history"
+        "viewHistoryAriaLabel": "View resolution history",
+        "browseIdeas": "Browse ideas"
+    },
+    "PreparedResolutionsDialog": {
+        "title": "Resolution ideas",
+        "description": "Add any of these prepared resolutions to your personal list. You can edit your copy afterwards.",
+        "add": "Add",
+        "added": "Added",
+        "loadError": "Could not load the ideas. Close this window and try again.",
+        "categories": {
+            "short": "Short",
+            "medium": "Medium",
+            "long": "Long"
+        },
+        "categoryHints": {
+            "short": "Done in a few days, with no preparation.",
+            "medium": "Done in a few weeks, or more demanding but over in days.",
+            "long": "Takes months, up to the whole year."
+        }
     },
     "ResolutionHistoryDialog": {
         "title": "Resolution History",
@@ -55,5 +73,23 @@
         "progressLabel": "Progress",
         "loadError": "Failed to load resolution history",
         "addError": "Failed to add history entry"
+    },
+    "Notifications": {
+        "title": "Notifications",
+        "open": "Open notifications",
+        "markAllRead": "Mark all as read",
+        "empty": "Nothing new",
+        "someone": "Someone",
+        "cardProgressOne": "{actor} completed a resolution",
+        "cardProgressMany": "{actor} completed {count} resolutions",
+        "memberJoined": "{actor} joined the team",
+        "gameStarted": "{actor} started the game",
+        "gameEnded": "{actor} ended the game",
+        "gameEndedAtDeadline": "The game reached its deadline",
+        "bingoScored": "{actor} scored a BINGO!",
+        "proofRequested": "{actor} asked for proof of your resolution",
+        "settingLabel": "Notifications",
+        "settingDescription": "Show updates from your teams in the bell. While this is off, updates are not kept for later.",
+        "settingError": "Failed to update notifications"
     }
 }

@@ -1,7 +1,7 @@
 # 00 — System Overview
 
 ## Goal
-New Year Resolution Bingo is an application where users maintain resolutions, join teams, and play a team bingo game generated from a team goal, peer-provided resolutions and personal resolutions.
+New Year Resolution Bingo is an application where users maintain resolutions, join teams, and play bingo games with their team. Each game is generated from a team goal, peer-provided resolutions and personal resolutions, with prepared resolutions filling any gaps.
 
 ## How to Read These Specs
 - Each spec describes the behavior of the application as it is currently implemented.
@@ -21,34 +21,41 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 | 09 | Bingo card editing |
 | 10 | Voting mechanic (`VoteBar`) |
 | 11 | Real-time updates and conflict resolution |
-| 12 | Team tabs, members list and leaderboard |
+| 12 | Game tabs, members list and leaderboard |
 | 13 | Resolution history and progress |
 | 14 | Dashboard and navigation |
 | 15 | Internationalization |
+| 16 | Games |
+| 17 | Prepared resolutions |
+| 18 | Game archive |
+| 19 | Notifications |
 
 ## Scope
 In scope:
 - User accounts: register, login, logout, email verification
 - User profile: manage personal data and decide what is public
-- Resolutions: personal CRUD; `base`, `compound` and `iterative` types; history timeline
-- Bingo teams: create team, invite/join, define one team goal, members create resolutions for each other, leader starts the game
-- Bingo card generation (joker in the center, text de-duplication, personal fallback, empty filler cells)
+- Resolutions: personal CRUD; `base`, `compound` and `iterative` types; history timeline; a pool of prepared resolutions to copy from
+- Bingo teams: create team, invite/join
+- Bingo games: the leader creates any number of games for a team; each has one team goal, members create resolutions for each other, and the leader starts and ends it
+- Bingo card generation (joker in the center, text de-duplication, personal and prepared fallbacks, empty filler cells)
 - Gameplay marking (complete / undo), automatic completion for typed resolutions, viewing other members' cards
 - Card editing by the card owner
 - Proof review: requested by a teammate, discussed in a thread, decided by votes or by a deadline
-- Team leaderboard
+- Game leaderboard
+- Game archive: a read-only snapshot of every finished game, for the players who took part
 - WebSocket-based real-time signals
+- In-app notifications of team events, on login and while online
 - Language selection (English, German, Italian)
 
 Out of scope (not implemented):
-- Payments, achievements, analytics, notifications beyond email verification
+- Payments, achievements, analytics, email and push notifications beyond email verification
 - Social features beyond team invites and viewing
 - Admin console
 - Leaving a team, removing a member, transferring team leadership
 
 ## Key Roles
 - **User**: owns a profile, manages personal resolutions, participates in teams.
-- **Team leader**: the user who created the team; can invite users, set the team goal, start the game and delete the team.
+- **Team leader**: the user who created the team; can invite users, delete the team, create, start, end and delete its games, set their team goals, and delete the archived games they ran.
 - **Team member**: a user who joined through an invitation; can create resolutions for other members, request proof and vote on reviews. The leader is also a team member.
 
 ## Core Concepts / Data (logical)
@@ -63,26 +70,31 @@ Out of scope (not implemented):
   - id, ownerUserId, title, description
   - resolutionType: `base` | `compound` | `iterative`
   - scope: `personal` | `team` | `member_provided`
-  - teamId, toUserId (set according to scope)
+  - teamId, gameId, toUserId (set according to scope)
   - subtasks, numberOfRepetition, completedTimes (set according to type)
 - **Team**
-  - id, name, leaderUserId, status: `forming` | `started`
-  - The team goal is the resolution with `scope = team` for that team. `teamResolutionText` is derived from it on read and is not stored on the team.
+  - id, name, leaderUserId
+- **Game** (see spec 16)
+  - id, teamId, name, status: `forming` | `started` | `ended`, deadline (optional), endedAt
+  - The team goal is the resolution with `scope = team` for that game. `teamResolutionText` is derived from it on read and is not stored on the game.
+- **ArchivedGame** (see spec 18)
+  - id, leaderUserId, name, teamName, endedAt, with its players and their cards stored as plain values
 - **TeamMembership**
   - teamId, userId, role (`leader` or `member`), joinedAt
 - **TeamInvitation**
   - teamId, inviteCode, invitedEmail, invitedUserId, status, expiresAt
-- **BingoCard** (one per team per user)
-  - id, teamId, userId, gridSize (always 5)
+- **BingoCard** (one per game per user)
+  - id, gameId, teamId, userId, gridSize (always 5)
 - **BingoCell** (24 stored cells; the center Joker is not stored)
   - id, cardId, position (0–24)
   - resolutionId, resolutionType
   - sourceType: `team` | `member_provided` | `personal` | `empty`
   - sourceUserId, isEmpty (generated)
-  - state: `pending` | `completed` | `pending_review` | `accomplished`
+  - state: `pending` | `completed` | `pending_review` | `accomplished` | `failed`
 - **ReviewThread**, **ReviewMessage**, **ReviewFile**, **ReviewVote** (see spec 07)
 - **TeamLeaderboard** (see spec 12)
 - **ResolutionHistoryEntry** (see spec 13)
+- **NotificationEvent**, **NotificationRecipient**, **NotificationSetting** (see spec 19)
 
 The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in the schema but belong to removed flows. No code reads or writes them.
 
@@ -94,7 +106,7 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
   - their own bingo card (mark complete/undo, edit content, upload proof to threads about their cells)
 - Other members' actions can still change a cell's state: a proof request moves a cell to review, votes decide its outcome, and progress on a typed team goal moves that goal's cell on every card (spec 06).
 - Team leader can:
-  - invite, start the game, set the team goal, delete the team
+  - invite, delete the team, create, start, end and delete games, set their team goals
 - Any team member can:
   - view other team members' bingo cards
   - create and update resolutions for other members
@@ -104,10 +116,12 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
 1. Register → email verification → login
 2. Create/update profile + choose public fields
 3. Personal resolutions: add/update/delete, track progress, keep a history
-4. Team lifecycle: create team → invite/join members → set team goal → members provide resolutions for each other → leader starts bingo
+4. Team lifecycle: create team → invite/join members
+   Game lifecycle: leader creates a game → sets its team goal → members provide resolutions for each other → leader starts bingo → leader ends it, which archives it, and can create the next one with the same team
 5. Card gameplay: mark completed / undo, or complete automatically through typed progress
 6. Proof review: a teammate requests proof → the owner uploads proof → members discuss and vote → the cell becomes `accomplished` or returns to `pending`
 7. Visibility: view others' cards and the team leaderboard
+8. Notifications: an event is held briefly, then released to the team's bell
 
 ## Non-Functional Requirements
 - Data integrity: generated cards do not contain duplicate texts; the concurrent cell mutations listed in spec 11 are guarded.

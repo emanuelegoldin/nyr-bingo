@@ -10,6 +10,7 @@ import { BingoCard, BingoCell } from './types';
 // Row types from database
 export interface CardRow {
   id: string;
+  game_id: string;
   team_id: string;
   user_id: string;
   grid_size: number;
@@ -37,6 +38,7 @@ export interface CellRow {
 export function rowToCard(row: CardRow): BingoCard {
   return {
     id: row.id,
+    gameId: row.game_id,
     teamId: row.team_id,
     userId: row.user_id,
     gridSize: row.grid_size,

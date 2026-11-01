@@ -21,7 +21,7 @@ import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { Subtask } from "@/lib/shared/types";
 import { CellState, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
-import { Check, Eye, History, MessageSquare, Undo2 } from "lucide-react";
+import { Check, Eye, History, MessageSquare, Undo2, X } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { DialogFooter } from "../ui/dialog";
@@ -83,8 +83,10 @@ interface ResolutionDetailDialogProps {
   onRefresh?: () => void;
   /** Called when the owner wants to mark a base/team cell as complete */
   onComplete?: () => void;
-  /** Called when the owner wants to undo a completed base/team cell */
+  /** Called when the owner wants to undo a completed base/team cell or a failed cell */
   onUndo?: () => void;
+  /** Called when the owner wants to mark a pending cell as failed */
+  onFail?: () => void;
   /** Called when a non-owner wants to request proof */
   onRequestProof?: () => void;
   /** Called when someone wants to view the review thread */
@@ -97,7 +99,7 @@ interface ResolutionDetailDialogProps {
  * Visual state config mirroring the bingo cell grid styling.
  * Reuses the same colors and icons so the detail dialog feels consistent.
  */
-const STATE_CONFIG: Record<CellState, {
+export const STATE_CONFIG: Record<CellState, {
   label: string;
   icon: React.ReactNode;
   bg: string;
@@ -107,6 +109,7 @@ const STATE_CONFIG: Record<CellState, {
   [CellState.COMPLETED]:      { label: "Completed",     icon: getCellStateIcon("completed", "h-3.5 w-3.5"),      ...CELL_STATE_COLORS.completed },
   [CellState.PENDING_REVIEW]: { label: "Under Review",  icon: getCellStateIcon("pending_review", "h-3.5 w-3.5"), ...CELL_STATE_COLORS.pending_review },
   [CellState.ACCOMPLISHED]:   { label: "Accomplished",  icon: getCellStateIcon("accomplished", "h-3.5 w-3.5"),   ...CELL_STATE_COLORS.accomplished },
+  [CellState.FAILED]:         { label: "Failed",        icon: getCellStateIcon("failed", "h-3.5 w-3.5"),         ...CELL_STATE_COLORS.failed },
 };
 
 /**
@@ -124,6 +127,7 @@ export const ResolutionDetailDialog = ({
   onRefresh,
   onComplete,
   onUndo,
+  onFail,
   onRequestProof,
   onViewThread,
   onViewHistory,
@@ -192,15 +196,22 @@ export const ResolutionDetailDialog = ({
             </Button>
           )}
 
-          {/* Owner + pending + non-automatic → Mark Complete */}
-          {isOwner && cell.state === CellState.PENDING && !isAutomatic && onComplete && (
+          {/* Owner + pending → Mark Failed */}
+          {isOwner && cell.state === CellState.PENDING && onFail && (
+            <Button variant="outline" onClick={() => { setIsOpen(false); onFail(); }}>
+              <X className="h-4 w-4 mr-2" /> Mark Failed
+            </Button>
+          )}
+
+          {/* Owner + pending or failed + non-automatic → Mark Complete */}
+          {isOwner && (cell.state === CellState.PENDING || cell.state === CellState.FAILED) && !isAutomatic && onComplete && (
             <Button onClick={() => { setIsOpen(false); onComplete(); }}>
               <Check className="h-4 w-4 mr-2" /> Mark Complete
             </Button>
           )}
 
-          {/* Owner + completed + non-automatic → Undo */}
-          {isOwner && cell.state === CellState.COMPLETED && !isAutomatic && onUndo && (
+          {/* Owner + (completed + non-automatic, or failed) → Undo */}
+          {isOwner && ((cell.state === CellState.COMPLETED && !isAutomatic) || cell.state === CellState.FAILED) && onUndo && (
             <Button variant="outline" onClick={() => { setIsOpen(false); onUndo(); }}>
               <Undo2 className="h-4 w-4 mr-2" /> Undo
             </Button>
