@@ -9,7 +9,7 @@
         "headerDescription": "Complete your resolutions to get a BINGO! Click on a cell to mark it as completed.",
         "headerDescriptionNoTeam": "Join or create a team to start playing.",
         "headerDescriptionNoGames": "None of your teams has started a game yet.",
-        "cardContentNoneAvailable": "No card available yet for your user in this started team."
+        "cardContentNoneAvailable": "No card available yet for your user in this started game."
     },
     "LoginPage": {
         "title": "Welcome Back!",

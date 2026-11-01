@@ -143,7 +143,7 @@ In both cases the final state is `pending`, honouring the owner's intent.
 
 ### `TeamWsProvider` (team-ws-provider.tsx)
 
-- Wraps the game page tabs and each dashboard card, and opens **one** WebSocket per provider, so all tabs and cards on a game page share it.
+- Wraps the game page tabs, the team page and each dashboard card, and opens **one** WebSocket per provider, so all tabs and cards on a game page share it.
 - Joins `card:<teamId>` and every tracked room on open, which includes each reconnect with fresh tokens.
 - Reconnects when the socket closes, waiting 1 second and doubling up to 30 seconds. A successful open resets the wait.
 - Exposes `joinRoom`, `addMessageListener` and `gameName` through `useTeamWs()`. All rooms of a page share its one socket, through `useWsRoom`.
@@ -152,7 +152,7 @@ In both cases the final state is `pending`, honouring the owner's intent.
 
 ### `TeamRefreshListener` (team-refresh-listener.tsx)
 
-- Rendered above the game page tabs, so it stays mounted on every tab, and in each dashboard card.
+- Rendered above the game page tabs, so it stays mounted on every tab, on the team page, and in each dashboard card.
 - On `refresh-card` or `catch-up`, re-renders the page from the server, debounced by 500 ms. Cards, leaderboard, members, game status and goal all come from those server props.
 
 ### `BingoCardContent` (BingoCardContent.tsx)

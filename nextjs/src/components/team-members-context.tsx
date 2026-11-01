@@ -8,7 +8,7 @@
  * individual HTTP requests.
  *
  * The context is populated once at the team-page level from data
- * that is already fetched as part of the team detail payload.
+ * that is already fetched as part of the game page payload.
  */
 
 import { createContext, useContext } from "react";

@@ -32,7 +32,7 @@ export function useAppContext() {
 
 ```ts
 // For compoents defined under the context provider
-async function DashboardCardError({ teamName }: { teamName: string }) {
+async function DashboardCardError({ gameName }: { gameName: string }) {
   const { language } = useAppContext();
   // ...
 }
