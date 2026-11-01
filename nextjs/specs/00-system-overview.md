@@ -26,6 +26,7 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 | 14 | Dashboard and navigation |
 | 15 | Internationalization |
 | 16 | Games |
+| 17 | Prepared resolutions |
 
 ## Scope
 In scope:

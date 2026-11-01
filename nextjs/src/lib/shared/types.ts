@@ -102,6 +102,28 @@ export interface UnifiedResolution {
   updatedAt: Date | string;
 }
 
+// How long a prepared resolution takes
+// Spec: 17-prepared-resolutions.md
+export enum PreparedResolutionCategory {
+  SHORT = 'short',
+  MEDIUM = 'medium',
+  LONG = 'long',
+}
+
+/**
+ * An entry of the shared prepared resolutions pool. It has no owner and no progress: users
+ * and cards always receive a copy of it.
+ */
+export interface PreparedResolution {
+  id: string;
+  category: PreparedResolutionCategory;
+  resolutionType: ResolutionType;
+  title: string;
+  description: string | null;
+  subtasks: Subtask[] | null;
+  numberOfRepetition: number | null;
+}
+
 /** Shape of a resolution passed to the create/edit dialog (matches the unified API response). */
 export interface ResolutionFormData {
   id?: string;

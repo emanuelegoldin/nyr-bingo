@@ -33,15 +33,19 @@ interface ResolutionRow extends RowDataPacket {
 }
 
 /**
+ * Read a subtasks column, which the driver may return as JSON text.
+ * @param value The column value
+ * @returns The subtasks, or null if there are none
+ */
+export function parseSubtasks(value: string | Subtask[] | null): Subtask[] | null {
+  return typeof value === 'string' ? JSON.parse(value) : value;
+}
+
+/**
  * Convert a database row into a Resolution entity.
  */
 function rowToResolution(row: ResolutionRow): Resolution {
-  let subtasks: Subtask[] | null = null;
-  if (row.subtasks != null) {
-    subtasks = typeof row.subtasks === 'string'
-      ? JSON.parse(row.subtasks)
-      : row.subtasks;
-  }
+  const subtasks = parseSubtasks(row.subtasks);
 
   return {
     id: row.id,

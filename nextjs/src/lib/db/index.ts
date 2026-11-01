@@ -15,6 +15,7 @@ export * from './bingo-card-repository';
 export * from './bingo-cell-repository';
 export * from './game-repository';
 export * from './leaderboard-repository';
+export * from './prepared-resolution-repository';
 export * from './resolution-history-repository';
 export * from './resolution-repository';
 export { deleteThreadFile, getFileUploadError, uploadFile } from './review-file-repository';
