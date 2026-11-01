@@ -3,21 +3,22 @@
  * Spec Reference: 00-system-overview.md - Primary Flows
  *
  * Server-first implementation:
- * - Authentication and initial team/card reads are done on the server
- * - Each started-team card streams independently via Suspense
+ * - Authentication and initial game/card reads are done on the server
+ * - Each started-game card streams independently via Suspense
  */
 
 import DashboardPageShell from '@/components/dashboard/dashboard-page-shell';
-import DashboardTeamCardClient from '@/components/dashboard/dashboard-team-card-client';
+import DashboardGameCardClient from '@/components/dashboard/dashboard-game-card-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getDictionary } from '@/i18n/request';
 import { requireUser } from '@/lib/auth';
 import {
   getBingoCard,
-  getTeamWithMembers,
+  getGameWithMembers,
+  getRunningGamesForUser,
   getTeamsForUser,
-  type TeamWithMembers,
+  type GameWithMembers,
 } from '@/lib/db';
 import { Loader2, Plus, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -25,17 +26,17 @@ import { Suspense, type ReactNode } from 'react';
 
 /**
  * Shared frame for the dashboard card placeholders (loading, error, missing).
- * Renders the card with the localized team title and the given body.
+ * Renders the card with the localized game title and the given body.
  *
- * @param teamName - Name of the team shown in the card title.
+ * @param gameName - Name of the game shown in the card title.
  * @param children - Body content rendered inside the card.
  * @returns The placeholder card.
  */
 async function DashboardCardFrame({
-  teamName,
+  gameName,
   children,
 }: {
-  teamName: string;
+  gameName: string;
   children: ReactNode;
 }) {
   const t = (await getDictionary()).Dashboard;
@@ -44,7 +45,7 @@ async function DashboardCardFrame({
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">
-          {t.cardTitle.replace('{teamName}', teamName)}
+          {t.cardTitle.replace('{gameName}', gameName)}
         </CardTitle>
       </CardHeader>
       <CardContent>{children}</CardContent>
@@ -53,9 +54,9 @@ async function DashboardCardFrame({
 }
 
 // TODO: we could create the loading fallback through composition with a dummy empty cell
-function DashboardCardLoadingFallback({ teamName }: { teamName: string }) {
+function DashboardCardLoadingFallback({ gameName }: { gameName: string }) {
   return (
-    <DashboardCardFrame teamName={teamName}>
+    <DashboardCardFrame gameName={gameName}>
       <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span>Loading card...</span>
@@ -64,9 +65,9 @@ function DashboardCardLoadingFallback({ teamName }: { teamName: string }) {
   );
 }
 
-function DashboardCardError({ teamName }: { teamName: string }) {
+function DashboardCardError({ gameName }: { gameName: string }) {
   return (
-    <DashboardCardFrame teamName={teamName}>
+    <DashboardCardFrame gameName={gameName}>
       <p className="text-sm text-destructive">
         Failed to load this card. Other cards are still available.
       </p>
@@ -74,11 +75,11 @@ function DashboardCardError({ teamName }: { teamName: string }) {
   );
 }
 
-async function DashboardCardMissing({ teamName }: { teamName: string }) {
+async function DashboardCardMissing({ gameName }: { gameName: string }) {
   const t = (await getDictionary()).Dashboard;
 
   return (
-    <DashboardCardFrame teamName={teamName}>
+    <DashboardCardFrame gameName={gameName}>
       <p className="text-sm text-muted-foreground">
         {t.cardContentNoneAvailable}
       </p>
@@ -86,24 +87,24 @@ async function DashboardCardMissing({ teamName }: { teamName: string }) {
   );
 }
 
-async function DashboardTeamCardStream({
-  team,
+async function DashboardGameCardStream({
+  game,
   currentUserId,
 }: {
-  team: TeamWithMembers;
+  game: GameWithMembers;
   currentUserId: string;
 }) {
   const t = (await getDictionary()).Dashboard;  // Get dictionary here (ServerComponent) and pass strings to CLientComponents
   try {
-    // Each team card loads independently so one slow query does not block others.
-    const card = await getBingoCard(team.id, currentUserId);
+    // Each game card loads independently so one slow query does not block others.
+    const card = await getBingoCard(game.id, currentUserId);
     if (!card) {
-      return <DashboardCardMissing teamName={team.name} />;
+      return <DashboardCardMissing gameName={game.name} />;
     }
 
     return (
-      <DashboardTeamCardClient
-        team={team}
+      <DashboardGameCardClient
+        game={game}
         currentUserId={currentUserId}
         initialCard={card}
         // Pass translation strings to avoid issues with importing server funcitons into clients components!
@@ -115,29 +116,31 @@ async function DashboardTeamCardStream({
     );
   } catch {
     // Isolated error handling keeps the rest of the dashboard usable.
-    return <DashboardCardError teamName={team.name} />;
+    return <DashboardCardError gameName={game.name} />;
   }
 }
 
-async function getTeamsWithMembersForUser(userId: string): Promise<TeamWithMembers[]> {
-  const teams = await getTeamsForUser(userId);
-  const settledTeams = await Promise.allSettled(
-    teams.map((team) => getTeamWithMembers(team.id))
+async function getStartedGamesForUser(userId: string): Promise<GameWithMembers[]> {
+  const games = await getRunningGamesForUser(userId);
+  const settledGames = await Promise.allSettled(
+    games
+      .filter((game) => game.status === 'started')
+      .map((game) => getGameWithMembers(game.id))
   );
 
-  return settledTeams
+  return settledGames
     .filter(
-      (result): result is PromiseFulfilledResult<TeamWithMembers | null> =>
+      (result): result is PromiseFulfilledResult<GameWithMembers | null> =>
         result.status === 'fulfilled'
     )
     .map((result) => result.value)
-    .filter((team): team is TeamWithMembers => team !== null);
+    .filter((game): game is GameWithMembers => game !== null);
 }
 
 /**
  * Empty-state card shown when the user has no team or no started games.
  *
- * @param hasTeams - Whether the user is in a team that has not started yet.
+ * @param hasTeams - Whether the user is in a team.
  * @returns The empty-state card.
  */
 async function DashboardEmptyState({ hasTeams }: { hasTeams: boolean }) {
@@ -163,20 +166,27 @@ async function DashboardEmptyState({ hasTeams }: { hasTeams: boolean }) {
   )
 }
 
-DashboardPage.Content = ({ teams, currentUserId }: { teams: TeamWithMembers[]; currentUserId: string }) => {
-  const startedTeams = teams.filter((team) => team.status === 'started');
-  if (startedTeams.length === 0) {
-    return <DashboardEmptyState hasTeams={teams.length > 0} />;
+DashboardPage.Content = ({
+  games,
+  hasTeams,
+  currentUserId,
+}: {
+  games: GameWithMembers[];
+  hasTeams: boolean;
+  currentUserId: string;
+}) => {
+  if (games.length === 0) {
+    return <DashboardEmptyState hasTeams={hasTeams} />;
   }
 
   return (
     <div className="container mx-auto space-y-8">
-      {startedTeams.map((team) => (
+      {games.map((game) => (
         <Suspense
-          key={team.id}
-          fallback={<DashboardCardLoadingFallback teamName={team.name} />}
+          key={game.id}
+          fallback={<DashboardCardLoadingFallback gameName={game.name} />}
         >
-          <DashboardTeamCardStream team={team} currentUserId={currentUserId} />
+          <DashboardGameCardStream game={game} currentUserId={currentUserId} />
         </Suspense>
       ))}
     </div>
@@ -186,11 +196,14 @@ DashboardPage.Content = ({ teams, currentUserId }: { teams: TeamWithMembers[]; c
 export default async function DashboardPage() {
   const currentUser = await requireUser();
 
-  const teams = await getTeamsWithMembersForUser(currentUser.id);
+  const [games, teams] = await Promise.all([
+    getStartedGamesForUser(currentUser.id),
+    getTeamsForUser(currentUser.id),
+  ]);
 
   return (
     <DashboardPageShell>
-      <DashboardPage.Content teams={teams} currentUserId={currentUser.id} />
+      <DashboardPage.Content games={games} hasTeams={teams.length > 0} currentUserId={currentUser.id} />
     </DashboardPageShell>
   );
 }

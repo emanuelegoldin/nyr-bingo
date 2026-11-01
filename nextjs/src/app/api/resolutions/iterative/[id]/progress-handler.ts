@@ -6,6 +6,7 @@ import {
   getIterativeResolutionById,
   autoTransitionCellState,
   isProgressComplete,
+  isResolutionFrozen,
   logResolutionHistoryEventSafe,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';
@@ -43,6 +44,9 @@ export function createIterativeProgressHandler({
       }
       if (!canModifyProgress(existing, currentUser.id)) {
         return errorResponse('You can only modify your own resolutions', 403);
+      }
+      if (await isResolutionFrozen(existing)) {
+        return errorResponse('This game has ended', 400);
       }
 
       const resolution = await adjustIterativeProgress(id, currentUser.id, delta);

@@ -27,8 +27,8 @@ All resolutions live in the `resolutions` table.
 | Scope | Meaning | Owner (`ownerUserId`) | Extra fields |
 | ----- | ------- | --------------------- | ------------ |
 | `personal` | The user's own resolution | The user | none |
-| `team` | The team goal; one per team (spec 04) | The team leader | `teamId` |
-| `member_provided` | Written by one member for another (spec 04) | The author | `teamId`, `toUserId` |
+| `team` | The team goal; one per game (spec 16) | The team leader | `teamId`, `gameId` |
+| `member_provided` | Written by one member for another, for one game (spec 16) | The author | `teamId`, `gameId`, `toUserId` |
 
 Every type is available in every scope.
 
@@ -37,7 +37,7 @@ Every type is available in every scope.
 `POST /api/resolutions/save`
 
 - Without `id` the request creates a resolution; with `id` it updates one.
-- Body: `type`, `title`, optional `text`, `subtasks` (compound), `numberOfRepetition` (iterative), `previousType` (when changing type), and `scope`, `teamId`, `toUserId` for non-personal scopes.
+- Body: `type`, `title`, optional `text`, `subtasks` (compound), `numberOfRepetition` (iterative), `previousType` (when changing type), and `scope`, `gameId`, `toUserId` for non-personal scopes. The team is taken from the game.
 - `scope` defaults to `personal`.
 
 Updating without changing type:
@@ -71,6 +71,7 @@ Changing type (a save whose `type` differs from the stored type):
 - Progress on a `personal` resolution can only be changed by its owner.
 - Progress on a `member_provided` resolution can only be changed by its recipient (`toUserId`), not by its author.
 - Personal resolutions are available to unverified users.
+- The team goal and member-provided resolutions of an ended game cannot be saved, deleted or progressed (spec 16).
 
 ## Constraints
 - Title must be non-empty. It is trimmed and truncated to 255 characters.

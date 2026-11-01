@@ -15,7 +15,7 @@ It details the mechanism behind **08 — Visibility and Updates**.
 ## User Stories Covered
 
 - When a resolution's progress changes, users viewing it in an open dialog see the change in real time.
-- When a team changes, users viewing its page or dashboard card see the change in real time.
+- When a team or one of its games changes, users viewing a game page or dashboard card of that team see the change in real time.
 - When two users perform conflicting actions on the same cell concurrently, a deterministic winner is chosen to prevent inconsistent state.
 
 ---
@@ -51,7 +51,7 @@ Clients connect to `ws(s)://<current-host>/ws`.
 
 | Room | Key | Joined by |
 | ---- | --- | --------- |
-| Card room | `card:<teamId>` | `TeamWsProvider` on open |
+| Card room | `card:<teamId>`, shared by all games of the team | `TeamWsProvider` on open |
 | Resolution room | `resolution:<resolutionId>` | Compound checklist, iterative counter and history dialog, when opened; the socket stays in the room until it closes, but their listeners are removed with the dialog |
 | Thread room (spec 07) | `thread:<threadId>` | Review thread dialog, when opened, on the same terms |
 
@@ -84,7 +84,7 @@ Every mutating API route, and the deadline sweep (spec 07), signals the rooms it
 | Subtask or counter change, resolution saved | The resolution, and the card room of every team showing it |
 | Resolution deleted | The card room of every team that was showing it |
 | Manual history note | The resolution |
-| Join, game start, team deletion | The team's card room |
+| Join, game creation, start, end or deletion, team deletion | The team's card room |
 | Profile update | The card room of each of the user's teams |
 
 ## Catching Up
@@ -143,17 +143,17 @@ In both cases the final state is `pending`, honouring the owner's intent.
 
 ### `TeamWsProvider` (team-ws-provider.tsx)
 
-- Wraps the team page tabs and each dashboard card, and opens **one** WebSocket per provider, so all tabs and cards on a team page share it.
+- Wraps the game page tabs, the team page and each dashboard card, and opens **one** WebSocket per provider, so all tabs and cards on a game page share it.
 - Joins `card:<teamId>` and every tracked room on open, which includes each reconnect with fresh tokens.
 - Reconnects when the socket closes, waiting 1 second and doubling up to 30 seconds. A successful open resets the wait.
-- Exposes `joinRoom`, `addMessageListener` and `teamName` through `useTeamWs()`. All rooms of a page share its one socket, through `useWsRoom`.
+- Exposes `joinRoom`, `addMessageListener` and `gameName` through `useTeamWs()`. All rooms of a page share its one socket, through `useWsRoom`.
 - Dispatches every incoming message to registered listeners.
 - Closes the socket on unmount.
 
 ### `TeamRefreshListener` (team-refresh-listener.tsx)
 
-- Rendered above the team page tabs, so it stays mounted on every tab, and in each dashboard team card.
-- On `refresh-card` or `catch-up`, re-renders the page from the server, debounced by 500 ms. Cards, leaderboard, members, team status and goal all come from those server props.
+- Rendered above the game page tabs, so it stays mounted on every tab, on the team page, and in each dashboard card.
+- On `refresh-card` or `catch-up`, re-renders the page from the server, debounced by 500 ms. Cards, leaderboard, members, game status and goal all come from those server props.
 
 ### `BingoCardContent` (BingoCardContent.tsx)
 
@@ -168,7 +168,7 @@ In both cases the final state is `pending`, honouring the owner's intent.
 ## Acceptance Criteria
 
 - Users viewing a resolution in an open dialog see subtask and counter changes without reloading.
-- Users on the team page or dashboard see team changes without reloading.
+- Users on the game page or dashboard see team and game changes without reloading.
 - If two users perform conflicting operations, the system resolves the conflict deterministically (owner's action prevails).
 - Failed operations due to state conflicts return a descriptive error to the acting user.
 - No WebSocket connection is leaked on component unmount.

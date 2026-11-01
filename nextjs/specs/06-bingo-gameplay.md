@@ -92,7 +92,7 @@ The `base` row applies to the resolution's type, so a `base` team goal is comple
 
 ### Automatic Completion (compound and iterative)
 
-These types have no manual Mark Complete or Undo in the UI. After a subtask toggle or counter change (spec 03), every cell referencing the resolution, on any card, is updated:
+These types have no manual Mark Complete or Undo in the UI. After a subtask toggle or counter change (spec 03), every cell referencing the resolution, on any card of a game that has not ended (spec 16), is updated:
 
 - Resolution complete and cell `pending` → `completed`
 - Resolution incomplete and cell `completed` → `pending`
@@ -115,7 +115,7 @@ These types have no manual Mark Complete or Undo in the UI. After a subtask togg
 
 ### Viewing Other Cards
 
-- Team members can view other users' bingo cards on the team page.
+- Team members can view other users' bingo cards on the game page.
 - Team members **cannot** directly set others' cell states. Another member's cell changes only through proof review (spec 07) and through the leader's progress on a typed team goal.
 
 ---

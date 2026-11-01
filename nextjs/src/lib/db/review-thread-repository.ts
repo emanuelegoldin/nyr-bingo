@@ -4,7 +4,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import { VoteType } from '../shared/types';
+import { GameStatus, VoteType } from '../shared/types';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { removeThreadFiles } from './review-file-repository';
@@ -35,14 +35,26 @@ const SELECT_MESSAGE_WITH_AUTHOR = `
   JOIN users u ON msg.author_user_id = u.id
 `;
 
-interface ExpiredThreadRow {
+/** An open thread with its vote count, as the deadline rule needs it. */
+interface ThreadTallyRow {
   id: string;
   cell_id: string;
   completed_by_user_id: string;
-  team_id: string;
+  game_id: string;
   accept_votes: number;
   deny_votes: number;
 }
+
+const SELECT_THREAD_TALLY = `
+  SELECT rt.id, rt.cell_id, rt.completed_by_user_id, bc.game_id,
+         COUNT(CASE WHEN rv.vote = 'accept' THEN 1 END) AS accept_votes,
+         COUNT(CASE WHEN rv.vote = 'deny' THEN 1 END) AS deny_votes
+  FROM review_threads rt
+  JOIN bingo_cells c ON rt.cell_id = c.id
+  JOIN bingo_cards bc ON c.card_id = bc.id
+  LEFT JOIN review_votes rv ON rv.thread_id = rt.id
+`;
+const GROUP_THREAD_TALLY = `GROUP BY rt.id, rt.cell_id, rt.completed_by_user_id, bc.game_id`;
 
 /**
  * Decide how a thread's votes close it.
@@ -76,6 +88,11 @@ export async function requestProof(
   }
 
   const { cellInfo } = access;
+
+  // Spec: 16-games.md - Ending a Game
+  if (cellInfo.game_status === GameStatus.ENDED) {
+    return { success: false, error: 'This game has ended' };
+  }
 
   // Cannot request proof for own cell
   if (cellInfo.card_user_id === requestingUserId) {
@@ -124,7 +141,7 @@ export async function requestProof(
   }
 
   // Refresh leaderboard: completed → pending_review affects completed_tasks count
-  await refreshLeaderboardEntry(cellInfo.team_id, cellInfo.card_user_id);
+  await refreshLeaderboardEntry(cellInfo.game_id, cellInfo.card_user_id);
 
   const threadRows = await query<ThreadRow[]>(
     `SELECT * FROM review_threads WHERE id = ?`,
@@ -304,7 +321,7 @@ export async function submitVote(
 
   // Refresh persisted leaderboard data after vote-driven state change
   if (threadClosed) {
-    await refreshLeaderboardEntry(cellInfo.team_id, thread.completedByUserId);
+    await refreshLeaderboardEntry(cellInfo.game_id, thread.completedByUserId);
   }
 
   return { success: true, vote: savedVote, threadClosed };
@@ -341,7 +358,7 @@ export async function closeThread(
     return closeResult;
   }
 
-  await refreshLeaderboardEntry(cellInfo.team_id, thread.completedByUserId);
+  await refreshLeaderboardEntry(cellInfo.game_id, thread.completedByUserId);
 
   return { success: true };
 }
@@ -352,18 +369,38 @@ export async function closeThread(
  * @returns The ids of the threads closed, so the caller can signal them
  */
 export async function closeExpiredThreads(): Promise<string[]> {
-  const threads = await query<ExpiredThreadRow[]>(
-    `SELECT rt.id, rt.cell_id, rt.completed_by_user_id, bc.team_id,
-            COUNT(CASE WHEN rv.vote = 'accept' THEN 1 END) AS accept_votes,
-            COUNT(CASE WHEN rv.vote = 'deny' THEN 1 END) AS deny_votes
-     FROM review_threads rt
-     JOIN bingo_cells c ON rt.cell_id = c.id
-     JOIN bingo_cards bc ON c.card_id = bc.id
-     LEFT JOIN review_votes rv ON rv.thread_id = rt.id
+  const threads = await query<ThreadTallyRow[]>(
+    `${SELECT_THREAD_TALLY}
      WHERE rt.status = 'open' AND rt.created_at <= NOW() - INTERVAL 2 DAY
-     GROUP BY rt.id, rt.cell_id, rt.completed_by_user_id, bc.team_id`
+     ${GROUP_THREAD_TALLY}`
   );
+  return closeThreadsByTally(threads, 'expired');
+}
 
+/**
+ * Close every open thread of a game under the deadline rule, whatever its age. A thread
+ * that fails to close stays open for the deadline sweep.
+ * Spec: 16-games.md - Ending a Game
+ * @param gameId The game
+ * @returns The ids of the threads closed, so the caller can signal them
+ */
+export async function closeOpenGameThreads(gameId: string): Promise<string[]> {
+  const threads = await query<ThreadTallyRow[]>(
+    `${SELECT_THREAD_TALLY}
+     WHERE rt.status = 'open' AND bc.game_id = ?
+     ${GROUP_THREAD_TALLY}`,
+    [gameId]
+  );
+  return closeThreadsByTally(threads, 'game');
+}
+
+/**
+ * Close threads under the deadline rule: accept votes >= deny votes accomplishes the cell.
+ * @param threads The threads to close
+ * @param kind What is being closed, for the failure log
+ * @returns The ids of the threads closed
+ */
+async function closeThreadsByTally(threads: ThreadTallyRow[], kind: 'expired' | 'game'): Promise<string[]> {
   const closedThreadIds: string[] = [];
   for (const thread of threads) {
     try {
@@ -371,13 +408,13 @@ export async function closeExpiredThreads(): Promise<string[]> {
       const nextCellState = thread.accept_votes >= thread.deny_votes ? 'accomplished' : 'pending';
       const closeResult = await finalizeThreadClosure(thread.id, thread.cell_id, nextCellState);
       if (!closeResult.success) {
-        console.error('Failed to close expired thread:', thread.id, closeResult.error);
+        console.error(`Failed to close ${kind} thread:`, thread.id, closeResult.error);
         continue;
       }
-      await refreshLeaderboardEntry(thread.team_id, thread.completed_by_user_id);
+      await refreshLeaderboardEntry(thread.game_id, thread.completed_by_user_id);
       closedThreadIds.push(thread.id);
     } catch (error) {
-      console.error('Failed to close expired thread:', thread.id, error);
+      console.error(`Failed to close ${kind} thread:`, thread.id, error);
     }
   }
   return closedThreadIds;

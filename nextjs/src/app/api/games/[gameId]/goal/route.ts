@@ -1,25 +1,30 @@
 /**
  * Team Goal Resolution API
- * GET /api/teams/[teamId]/goal - Get the team goal resolution with full details
+ * GET /api/games/[gameId]/goal - Get the game's team goal resolution with full details
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isTeamMember, getTeamGoalResolution } from '@/lib/db';
+import { isTeamMember, getGameGoalResolution, getRunningGame } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
- * GET /api/teams/[teamId]/goal
+ * GET /api/games/[gameId]/goal
  * Returns the team goal resolution with full type details (subtasks, repetitions, etc.)
  */
-export const GET = withAuth(async (request: NextRequest, { params, currentUser }: AuthContext<{ teamId: string }>) => {
-  const { teamId } = await params;
+export const GET = withAuth(async (request: NextRequest, { params, currentUser }: AuthContext<{ gameId: string }>) => {
+  const { gameId } = await params;
 
-  const member = await isTeamMember(teamId, currentUser.id);
+  const game = await getRunningGame(gameId);
+  if (!game) {
+    return errorResponse('Game not found', 404);
+  }
+
+  const member = await isTeamMember(game.teamId, currentUser.id);
   if (!member) {
     return errorResponse('You must be a team member', 403);
   }
 
-  const goal = await getTeamGoalResolution(teamId);
+  const goal = await getGameGoalResolution(gameId);
   if (!goal) {
     return NextResponse.json({ goal: null });
   }

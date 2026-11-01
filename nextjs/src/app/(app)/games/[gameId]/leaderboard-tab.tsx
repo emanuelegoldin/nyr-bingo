@@ -1,5 +1,5 @@
 /**
- * Leaderboard Tab — Team Detail Page
+ * Leaderboard Tab — Game Page
  * Spec Reference: 12-team-tabs.md
  *
  * Displays a ranked table of team members ordered by the datetime they

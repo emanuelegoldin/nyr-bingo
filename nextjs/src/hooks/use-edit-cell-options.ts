@@ -25,7 +25,7 @@ interface PersonalResolutionItem {
   type?: string;
 }
 
-/** Item of `GET /api/teams/:id/resolutions` used to build team-provided options. */
+/** Item of `GET /api/games/:id/resolutions` used to build member-provided options. */
 interface TeamResolutionItem {
   id: string;
   title: string;
@@ -37,7 +37,7 @@ interface TeamResolutionItem {
 interface UseEditCellOptionsParams {
   cellId: string;
   existingCells: BingoCellWithThread[];
-  teamId: string;
+  gameId: string;
   currentUserId: string;
   /** Options are (re)loaded whenever the dialog's open state or any other parameter changes. */
   isOpen: boolean;
@@ -55,7 +55,7 @@ interface UseEditCellOptionsParams {
 export const useEditCellOptions = ({
   cellId,
   existingCells,
-  teamId,
+  gameId,
   currentUserId,
   isOpen
 }: UseEditCellOptionsParams) => {
@@ -82,8 +82,8 @@ export const useEditCellOptions = ({
       try {
         // Fetch ALL resolution types (base + compound + iterative) via the unified endpoint
         const personalReq = fetch('/api/resolutions/all');
-        const teamReq = teamId && currentUserId
-          ? fetch(`/api/teams/${teamId}/resolutions?toUserId=${encodeURIComponent(currentUserId)}`) // TODO: try to remove dependency to avoid passing teamid
+        const teamReq = gameId && currentUserId
+          ? fetch(`/api/games/${gameId}/resolutions?toUserId=${encodeURIComponent(currentUserId)}`)
           : null;
 
         const [personalRes, teamRes] = await Promise.all([
@@ -142,20 +142,24 @@ export const useEditCellOptions = ({
             // Prevent duplicates: do not allow selecting texts already used in other non-empty cells
             .filter((opt: EditOption) => !occupiedKeys.has(opt.key));
 
-          const teamMemberUsernamesRes = await fetch(`/api/teams/${teamId}/members`);
+          const gameRes = await fetch(`/api/games/${gameId}`);
 
-          const teamMemberUsernamesData: { members?: Record<string, string>; error?: string } =
-            await teamMemberUsernamesRes.json().catch(() => ({}));
+          const gameData: {
+            game?: { members: Array<{ user: { userId: string; username: string } }> };
+            error?: string;
+          } = await gameRes.json().catch(() => ({}));
 
-          if (!teamMemberUsernamesRes.ok) {
+          if (!gameRes.ok) {
             toast({
               title: 'Error',
-              description: teamMemberUsernamesData?.error || 'Failed to load team member usernames',
+              description: gameData?.error || 'Failed to load team member usernames',
               variant: 'destructive',
             });
             return;
           }
-          setUsernames(teamMemberUsernamesData.members ?? {});
+          setUsernames(Object.fromEntries(
+            (gameData.game?.members ?? []).map(({ user }) => [user.userId, user.username])
+          ));
         }
 
         setEditOptions([...teamOptions, ...personalOptions]);
@@ -173,7 +177,7 @@ export const useEditCellOptions = ({
     loadEditOptions();
     // usernames is intentionally not a dependency to avoid re-loading options on username updates
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, teamId, currentUserId, cellId, existingCells, toast]);
+  }, [isOpen, gameId, currentUserId, cellId, existingCells, toast]);
 
   /** Clears the loaded options, usernames and loading flag. */
   const reset = () => {

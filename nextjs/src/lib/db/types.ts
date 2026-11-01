@@ -3,10 +3,10 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { CellSourceType, CellState, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, TeamStatus, ThreadStatus, VoteType } from "../shared/types";
+import { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, ThreadStatus, VoteType } from "../shared/types";
 
 // Re-export shared enums/types so consumers can import from db/types
-export { CellSourceType, CellState, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, TeamStatus, ThreadStatus, VoteType };
+export { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, ThreadStatus, VoteType };
 export type { Subtask };
 
 // User entity
@@ -77,6 +77,8 @@ export interface Resolution {
   resolutionType: ResolutionType;
   scope: ResolutionScope;
   teamId: string | null;
+  /** The game of a team or member-provided resolution; null for personal ones. */
+  gameId: string | null;
   toUserId: string | null;
   subtasks: Subtask[] | null;
   numberOfRepetition: number | null;
@@ -111,11 +113,26 @@ export interface Team {
   id: string;
   name: string;
   leaderUserId: string;
-  /** Team goal resolution text, derived from the associated resolution entity. */
-  teamResolutionText: string | null;
-  status: TeamStatus;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Game entity
+// Spec: 16-games.md
+export interface Game {
+  id: string;
+  teamId: string;
+  /** Derived from the game's team. */
+  teamName: string;
+  /** Derived from the game's team: the team leader leads its games. */
+  leaderUserId: string;
+  name: string;
+  /** Team goal resolution text, derived from the associated resolution entity. */
+  teamResolutionText: string | null;
+  status: GameStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  endedAt: Date | null;
 }
 
 // Team membership
@@ -145,6 +162,7 @@ export interface TeamInvitation {
 // Spec: 05-bingo-card-generation.md
 export interface BingoCard {
   id: string;
+  gameId: string;
   teamId: string;
   userId: string;
   gridSize: number;
@@ -173,6 +191,10 @@ export interface BingoCell {
 // Extended types for API responses
 
 export interface TeamWithMembers extends Team {
+  members: TeamMemberWithProfile[];
+}
+
+export interface GameWithMembers extends Game {
   members: TeamMemberWithProfile[];
 }
 

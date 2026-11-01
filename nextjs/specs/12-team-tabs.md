@@ -1,15 +1,15 @@
-# 12 — Team Tabs, Members List & Leaderboard
+# 12 — Game Tabs, Members List & Leaderboard
 
 ## Purpose
 
-Organise the team detail page into distinct tabs for better navigation and
+Organise the game page (spec 16) into distinct tabs for better navigation and
 separation of concerns: **Cards**, **Members**, and **Leaderboard**.
 
 ---
 
 ## User Stories Covered
 
-- View all team bingo cards in a dedicated "Cards" tab.
+- View all bingo cards of a game in a dedicated "Cards" tab.
 - View a simple list of team members in a "Members" tab.
 - View a leaderboard of bingo results in a "Leaderboard" tab.
 - Click on any member's avatar to view their profile.
@@ -20,7 +20,7 @@ separation of concerns: **Cards**, **Members**, and **Leaderboard**.
 
 ## In Scope
 
-- Team detail page tab structure
+- Game page tab structure
 - Members list UI
 - Leaderboard table backed by the `team_leaderboard` DB table
 - Clickable user avatars linking to profile pages
@@ -31,10 +31,9 @@ separation of concerns: **Cards**, **Members**, and **Leaderboard**.
 
 ## Tab Structure
 
-The team detail page header (team name, leader, status, team goal, actions and
-dialogs) remains above the tabs. Below it, three tabs are rendered. **Cards** is
-selected by default. The page is available to team members only; others get a
-not-found page.
+The game page header (spec 16) remains above the tabs. Below it, three tabs are
+rendered. **Cards** is selected by default. The page is available to team
+members only; others get a not-found page.
 
 ### 1. Cards Tab
 
@@ -85,9 +84,9 @@ not-found page.
      descending (more completed resolutions = higher rank).
   4. Final tiebreaker: alphabetical by username ascending.
 - **Data source:** All values are read from the persisted `team_leaderboard`
-  table (see _Database Impact_ below), not computed on the fly. The team page
+  table (see _Database Impact_ below), not computed on the fly. The game page
   loads them on the server when it renders; there is no leaderboard API.
-- **Updates:** The team page re-renders from the server, keeping the selected
+- **Updates:** The game page re-renders from the server, keeping the selected
   tab, when it receives `refresh-card` or catches up (spec 11). This applies on
   every tab of the page.
 
@@ -95,8 +94,8 @@ not-found page.
 
 ## Clickable Avatars & Public Profile
 
-- Clicking a member's avatar anywhere in the team page (Cards, Members,
-  Leaderboard tabs) navigates to `/profile/[userId]`.
+- Clicking a member's avatar anywhere in the game page (Cards, Members,
+  Leaderboard tabs) or the team page navigates to `/profile/[userId]`.
 - Clicking the source-user badge on a bingo card cell (for `member_provided`
   resolutions) also navigates to `/profile/[userId]`.
 - The public profile page is defined in spec 02.
@@ -107,22 +106,23 @@ not-found page.
 
 ### `team_leaderboard` table
 
-Persists per-user, per-team leaderboard data for efficient retrieval.
+Persists per-user, per-game leaderboard data for efficient retrieval.
 
 | Column           | Type         | Notes                                    |
 | ---------------- | ------------ | ---------------------------------------- |
 | `user_id`        | VARCHAR(36)  | FK → `users.id` ON DELETE CASCADE        |
 | `team_id`        | VARCHAR(36)  | FK → `teams.id` ON DELETE CASCADE        |
+| `game_id`        | VARCHAR(36)  | FK → `games.id` ON DELETE CASCADE        |
 | `first_bingo_at` | DATETIME     | NULL until the user scores a bingo       |
 | `completed_tasks`| INT          | Count of cells in state `completed` or `accomplished` |
 | `updated_at`     | DATETIME     | Auto-updated on change                   |
 
-- **Unique key:** `(user_id, team_id)`
-- **Migration:** `V2_0_3__team_leaderboard_table.sql`
+- **Unique key:** `(user_id, game_id)`
+- **Migrations:** `V2_0_3__team_leaderboard_table.sql`, `V5_0_0__separate_games_from_teams.sql`
 
 #### When rows are written
 
-- **Game start** (`POST /api/teams/[teamId]/start`): bulk-inserts a row for
+- **Game start** (`POST /api/games/[gameId]/start`): bulk-inserts a row for
   every team member with `completed_tasks = 0` and `first_bingo_at = NULL`.
 - **Late join** (`ensureBingoCardForUser`): adds a row for the new member when
   their card is generated.
@@ -135,6 +135,7 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
   - **Vote resolution** (`submitVote` — thread closes).
   - **Thread closed by the completing user** (`closeThread`).
   - **Deadline closure** (`closeExpiredThreads`, spec 07).
+  - **Game end** (spec 16), for each thread it closes.
 
 #### Bingo detection logic
 
@@ -151,7 +152,7 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 
 ## Acceptance Criteria
 
-- [ ] Team detail page renders three tabs: Cards, Members, Leaderboard.
+- [ ] Game page renders three tabs: Cards, Members, Leaderboard.
 - [ ] Cards tab contains the bingo-card layout.
 - [ ] Members tab lists all team members with avatar and name.
 - [ ] Leaderboard tab shows a ranked table with first-bingo datetime.
@@ -164,7 +165,7 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 - [ ] The leaderboard updates without a page reload, for the acting player and
       for teammates, when a card change is signalled.
 - [ ] Positions 1 / 2 / 3 are coloured gold / silver / bronze.
-- [ ] Clicking any avatar on the team page navigates to the member's profile.
+- [ ] Clicking any avatar on the game page navigates to the member's profile.
 - [ ] Clicking a source-user badge in a bingo cell navigates to the profile.
 - [ ] Confetti animation plays when a card gains a bingo line, using the same
       lines as the leaderboard.

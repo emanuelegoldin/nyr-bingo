@@ -3,7 +3,7 @@
  * Spec Reference: 06-bingo-gameplay.md, 09-bingo-card-editing.md
  */
 
-import { CellSourceType, CellState, ResolutionType } from '../shared/types';
+import { CellSourceType, CellState, GameStatus, ResolutionType } from '../shared/types';
 import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
@@ -18,7 +18,8 @@ interface OwnedCellRow {
   source_type: CellSourceType;
   state: CellState;
   card_user_id: string;
-  team_id: string;
+  game_id: string;
+  game_status: GameStatus;
 }
 
 /**
@@ -35,26 +36,26 @@ const VALID_FROM_STATES: Record<CellState.PENDING | CellState.COMPLETED, CellSta
 };
 
 /**
- * Check that a user may place a resolution on a cell of a team's card.
+ * Check that a user may place a resolution on a cell of a game's card.
  * Spec: 09-bingo-card-editing.md - Backend Rules
  * @param resolution The replacement resolution
  * @param sourceType The source the client selected
  * @param userId The card owner
- * @param teamId The team of the card
- * @returns True for the owner's personal resolutions and for resolutions proposed to them in this team
+ * @param gameId The game of the card
+ * @returns True for the owner's personal resolutions and for resolutions proposed to them in this game
  */
 function canPlaceResolution(
   resolution: Resolution,
   sourceType: CellSourceType,
   userId: string,
-  teamId: string
+  gameId: string
 ): boolean {
   if (sourceType === CellSourceType.PERSONAL) {
     return resolution.scope === 'personal' && resolution.ownerUserId === userId;
   }
   return resolution.scope === 'member_provided'
     && resolution.toUserId === userId
-    && resolution.teamId === teamId;
+    && resolution.gameId === gameId;
 }
 
 /**
@@ -70,9 +71,10 @@ async function loadOwnedCell(
   notOwnerError: string
 ): Promise<{ cell: OwnedCellRow } | { error: string }> {
   const rows = await query<OwnedCellRow[]>(
-    `SELECT c.card_id, c.is_empty, c.resolution_type, c.source_type, c.state, bc.user_id as card_user_id, bc.team_id
+    `SELECT c.card_id, c.is_empty, c.resolution_type, c.source_type, c.state, bc.user_id as card_user_id, bc.game_id, g.status as game_status
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
+     JOIN games g ON bc.game_id = g.id
      WHERE c.id = ?`,
     [cellId]
   );
@@ -83,6 +85,11 @@ async function loadOwnedCell(
 
   if (rows[0].card_user_id !== userId) {
     return { error: notOwnerError };
+  }
+
+  // Spec: 16-games.md - Ending a Game
+  if (rows[0].game_status === GameStatus.ENDED) {
+    return { error: 'This game has ended' };
   }
 
   return { cell: rows[0] };
@@ -136,7 +143,7 @@ export async function updateCellState(
   }
 
   // Refresh persisted leaderboard data after state change
-  await refreshLeaderboardEntry(cell.team_id, userId);
+  await refreshLeaderboardEntry(cell.game_id, userId);
 
   const updatedRow = await getResolvedCellRowById(cellId);
   if (!updatedRow) {
@@ -194,7 +201,7 @@ export async function updateCellContent(
 
   if (referencesResolution) {
     const resolution = await getResolutionById(update.resolutionId as string);
-    if (!resolution || !canPlaceResolution(resolution, update.sourceType, userId, owned.cell.team_id)) {
+    if (!resolution || !canPlaceResolution(resolution, update.sourceType, userId, owned.cell.game_id)) {
       return { success: false, error: 'This resolution cannot be placed on this card' };
     }
 
@@ -228,7 +235,7 @@ export async function updateCellContent(
   }
 
   // The edit resets the state to pending, which can undo a completion or a bingo
-  await refreshLeaderboardEntry(owned.cell.team_id, userId);
+  await refreshLeaderboardEntry(owned.cell.game_id, userId);
 
   const updatedRow = await getResolvedCellRowById(cellId);
   if (!updatedRow) {
@@ -315,7 +322,7 @@ export async function undoCompletion(
   }
 
   // Refresh persisted leaderboard data after undo
-  await refreshLeaderboardEntry(cell.team_id, userId);
+  await refreshLeaderboardEntry(cell.game_id, userId);
 
   const updatedRow = await getResolvedCellRowById(cellId);
   if (!updatedRow) {
@@ -343,12 +350,13 @@ export async function autoTransitionCellState(
   resolutionType: ResolutionType,
   isComplete: boolean
 ): Promise<BingoCell[]> {
-  // Find all bingo cells linked to this resolution
-  const cellRows = await query<Array<{ id: string; state: CellState; team_id: string; user_id: string }>>(
-    `SELECT c.id, c.state, bc.team_id, bc.user_id
+  // Find all bingo cells linked to this resolution. Ended games keep their final state.
+  const cellRows = await query<Array<{ id: string; state: CellState; game_id: string; user_id: string }>>(
+    `SELECT c.id, c.state, bc.game_id, bc.user_id
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
-     WHERE c.resolution_id = ? AND c.resolution_type = ?`,
+     JOIN games g ON bc.game_id = g.id
+     WHERE c.resolution_id = ? AND c.resolution_type = ? AND g.status <> 'ended'`,
     [resolutionId, resolutionType]
   );
 
@@ -375,8 +383,8 @@ export async function autoTransitionCellState(
         [newState, cellRow.id, cellRow.state]
       );
 
-      // Refresh leaderboard for this user/team
-      await refreshLeaderboardEntry(cellRow.team_id, cellRow.user_id);
+      // Refresh leaderboard for this user/game
+      await refreshLeaderboardEntry(cellRow.game_id, cellRow.user_id);
 
       const updatedRow = await getResolvedCellRowById(cellRow.id);
       if (updatedRow) {

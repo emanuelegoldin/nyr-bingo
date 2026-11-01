@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Team Detail Page
- * Spec Reference: 04-bingo-teams.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md
+ * Game Page
+ * Spec Reference: 16-games.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md
  *
  * The page is organised into three tabs:
  *   1. Cards   — bingo cards for every member (existing functionality)
@@ -11,32 +11,31 @@
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
+import { GameStatusBadge } from "@/components/team/game-status-badge";
+import { MembersTab } from "@/components/team/members-tab";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
-import { Crown, Loader2, Settings, Swords } from "lucide-react";
+import { Crown, Flag, Loader2, Settings, Swords, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useState } from 'react';
 
 import { BingoCardWithCells } from "@/lib/db/types";
-import { TeamStatusBadge } from "@/components/team/team-status-badge";
 import type { ResolutionFormData } from "@/lib/shared/types";
-import { DeleteTeamDialog } from "./_components/DeleteTeamDialog";
-import { InviteDialog } from "./_components/InviteDialog";
+import { GameActionDialog } from "./_components/GameActionDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
 import { useLastLoaded } from "./_components/use-last-loaded";
-import { useTeamActions } from "./_components/use-team-actions";
+import { useGameActions } from "./_components/use-game-actions";
 import { CardsTab } from "./cards-tab";
 import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
-import { MembersTab } from "./members-tab";
-import type { Team, TeamProvidedResolution } from "./types";
+import type { Game, TeamProvidedResolution } from "./types";
 
-interface TeamDetailPageClientProps {
-  teamId: string;
-  initialTeam: Team;
+interface GameDetailPageClientProps {
+  initialGame: Game;
   /** Undefined when the server failed to read them, as for the other optional props. */
   initialCards?: BingoCardWithCells[];
   initialCurrentUserId: string;
@@ -45,44 +44,43 @@ interface TeamDetailPageClientProps {
   initialLeaderboardEntries?: LeaderboardEntry[];
 }
 
-export default function TeamDetailPageClient({
-  teamId,
-  initialTeam,
+export default function GameDetailPageClient({
+  initialGame,
   initialCards,
   initialCurrentUserId,
   initialTeamGoal,
   initialExistingResolutions,
   initialLeaderboardEntries,
-}: TeamDetailPageClientProps) {
-  usePageTitle("Team");
+}: GameDetailPageClientProps) {
+  usePageTitle("Game");
 
   const cards = useLastLoaded<BingoCardWithCells[]>(initialCards, []);
   const leaderboardEntries = useLastLoaded<LeaderboardEntry[]>(initialLeaderboardEntries, []);
 
   const {
-    team,
+    game,
     teamGoal,
     existingResolutions,
-    loadTeam,
+    loadGame,
     isStarting,
     handleStartBingo,
-    deleteDialogOpen,
-    setDeleteDialogOpen,
+    isEnding,
+    handleEndGame,
     isDeleting,
-    handleDeleteTeam,
-  } = useTeamActions({ teamId, initialTeam, initialTeamGoal, initialExistingResolutions });
+    handleDeleteGame,
+  } = useGameActions({ gameId: initialGame.id, initialGame, initialTeamGoal, initialExistingResolutions });
   const [currentUserId] = useState<string>(initialCurrentUserId);
 
   // Team goal resolution dialog
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
 
-  const isLeader = team.leaderUserId === currentUserId;
-  const leader = team.members.find(m => m.membership.role === 'leader');
+  const isLeader = game.leaderUserId === currentUserId;
+  const leader = game.members.find(m => m.membership.role === 'leader');
 
   /** Called when team goal is saved via the resolution dialog. */
   const handleGoalSaved = () => {
     setGoalDialogOpen(false);
-    loadTeam();
+    loadGame();
   };
 
   return (
@@ -90,48 +88,63 @@ export default function TeamDetailPageClient({
       <Card>
         <CardHeader className="flex flex-row items-start justify-between flex-wrap gap-4">
           <div>
-            <CardTitle className="font-headline text-3xl">{team.name}</CardTitle>
+            <CardTitle className="font-headline text-3xl">{game.name}</CardTitle>
+            <CardDescription className="mt-2">
+              <Link href={`/teams/${game.teamId}`} className="hover:underline">{game.teamName}</Link>
+            </CardDescription>
             <CardDescription className="flex items-center gap-2 mt-2">
               <Crown className="h-4 w-4 text-amber-500" />
               Team Leader: {leader?.user.displayName || leader?.user.username || 'Unknown'}
             </CardDescription>
             <div className="mt-2">
-              <TeamStatusBadge status={team.status} />
+              <GameStatusBadge status={game.status} />
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             {isLeader && (
               <>
-                <InviteDialog teamId={teamId} />
-
                 <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
                   <Settings className="h-4 w-4 mr-2" /> Set Goal
                 </Button>
 
-                {team.status !== 'started' && (
+                {game.status !== 'started' && (
                   <Button onClick={handleStartBingo} disabled={isStarting}>
                     {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <Swords className="h-4 w-4 mr-2" /> Start Bingo
                   </Button>
                 )}
+
+                {game.status === 'started' && (
+                  <GameActionDialog
+                    triggerLabel="End Game"
+                    triggerIcon={Flag}
+                    triggerVariant="outline"
+                    title="End this game?"
+                    description="The game finishes for everyone and leaves your lists. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
+                    confirmLabel="End Game"
+                    onConfirm={handleEndGame}
+                    isPending={isEnding}
+                  />
+                )}
+
+                <GameActionDialog
+                  triggerLabel="Delete Game"
+                  triggerIcon={Trash2}
+                  triggerVariant="destructive"
+                  title="Delete this game?"
+                  description="This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone."
+                  confirmLabel="Delete"
+                  onConfirm={handleDeleteGame}
+                  isPending={isDeleting}
+                />
               </>
             )}
 
-            {isLeader && (
-              <DeleteTeamDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-                onConfirm={handleDeleteTeam}
-                isDeleting={isDeleting}
-              />
-            )}
-
             <ProposeResolutionsDialog
-              teamId={teamId}
-              team={team}
+              game={game}
               currentUserId={currentUserId}
               existingResolutions={existingResolutions}
-              onReload={loadTeam}
+              onReload={loadGame}
             />
           </div>
         </CardHeader>
@@ -154,11 +167,11 @@ export default function TeamDetailPageClient({
         setIsOpen={setGoalDialogOpen}
         onSaved={handleGoalSaved}
         scope="team"
-        teamId={teamId}
+        gameId={game.id}
       />
 
       {/* ── Tab navigation ────────────────────────────────────── */}
-      <TeamWsProvider teamId={teamId} teamName={team.name}>
+      <TeamWsProvider teamId={game.teamId} gameName={game.name}>
         <TeamRefreshListener />
         <Tabs defaultValue="cards">
           <TabsList>
@@ -169,14 +182,14 @@ export default function TeamDetailPageClient({
 
           <TabsContent value="cards" className="mt-6">
             <CardsTab
-              team={team}
+              game={game}
               initialCards={cards}
               currentUserId={currentUserId}
             />
           </TabsContent>
 
           <TabsContent value="members" className="mt-6">
-            <MembersTab team={team} currentUserId={currentUserId} />
+            <MembersTab members={game.members} currentUserId={currentUserId} />
           </TabsContent>
 
           <TabsContent value="leaderboard" className="mt-6">

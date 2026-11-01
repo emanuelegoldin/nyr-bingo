@@ -158,3 +158,47 @@ V4.0.0.
 Deadline closure of review threads now runs in the Next.js application, which
 can also remove the proof files from disk. The `event_scheduler` setting is no
 longer needed.
+
+## 5.0.0 - Separate Games from Teams
+
+Splits the bingo game out of the team. A team becomes a list of users with a
+leader, and a team can run several games at once (spec 16).
+
+### Schema changes
+
+- New table `games`: `id`, `team_id`, `name`, `status ENUM('forming','started','ended')`,
+  `created_at`, `updated_at`, `ended_at`. Deleting a team cascades to its games.
+- `bingo_cards`, `team_leaderboard`: add `game_id VARCHAR(36) NOT NULL`.
+- `resolutions`: adds `game_id VARCHAR(36) NULL`, set for `team` and
+  `member_provided` scopes and `NULL` for `personal`.
+- All three `game_id` columns reference `games(id)` with `ON DELETE CASCADE`.
+- Unique keys move from team to game:
+  - `bingo_cards`: `unique_card` → `unique_game_card (game_id, user_id)`
+  - `team_leaderboard`: `unique_user_team` → `unique_user_game (user_id, game_id)`
+  - `resolutions`: `unique_member_provided` →
+    `unique_member_provided_game (game_id, owner_user_id, to_user_id)`
+- `resolutions` gains the explicit index `idx_resolutions_team (team_id)`.
+- Drops `teams.status`. Its value now lives in `games.status`.
+
+### Data migration
+
+Each existing team receives one game that copies the team's `name`, `status`
+and `created_at`. Its cards, leaderboard rows, team goal and member-provided
+resolutions are linked to that game. Existing teams are never merged, because
+nothing records that two teams are the same group of people.
+
+### Design notes
+
+- `team_id` stays on the three tables. Membership checks, real-time room lookup
+  and team deletion read it, and a game never moves to another team.
+- New keys are added before old ones are dropped. A foreign key can rely on an
+  old unique key as its only index: `user_id` on `team_leaderboard` and `team_id`
+  on `resolutions`. Dropping those first would fail.
+- `teams.status` is dropped last because the game backfill reads it.
+
+### Idempotency
+
+MariaDB DDL cannot be rolled back, so a run that fails halfway leaves its earlier
+steps applied. Every step can run again, using `IF [NOT] EXISTS` clauses, the
+`Create_Column` and `Drop_Column` procedures, `information_schema` guards on the
+foreign keys, and backfills limited to rows still unset.

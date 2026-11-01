@@ -146,7 +146,7 @@ The API responds with the vote and a `threadClosed` flag.
 
 ## Closure by Deadline
 
-`closeExpiredThreads` runs in the Next.js server once at startup and then every hour, started from `src/instrumentation.ts`.
+`closeExpiredThreads` runs in the Next.js server once at startup and then every hour, started from `src/instrumentation.ts`. Ending a game (spec 16) closes that game's open threads under the same rule, whatever their age.
 
 - It closes every open thread for which `created_at` is at least 2 days ago.
 - The cell becomes `accomplished` when accept votes ≥ deny votes, which includes a thread with no votes, and `pending` otherwise.

@@ -1,8 +1,9 @@
-// Team status
-// Spec: 04-bingo-teams.md
-export enum TeamStatus {
+// Game status
+// Spec: 16-games.md
+export enum GameStatus {
   FORMING = 'forming',
-  STARTED = 'started'
+  STARTED = 'started',
+  ENDED = 'ended'
 }
 
 // Team membership role

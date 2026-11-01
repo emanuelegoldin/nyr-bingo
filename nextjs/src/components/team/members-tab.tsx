@@ -1,5 +1,5 @@
 /**
- * Members Tab — Team Detail Page
+ * Members list, shown as a tab of the game page and on the team page.
  * Spec Reference: 12-team-tabs.md
  *
  * Displays a simple list of all team members. Each row shows the
@@ -11,14 +11,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown } from "lucide-react";
 import Link from "next/link";
-import type { Team } from "./types";
+import type { TeamMember } from "./types";
 
 interface MembersTabProps {
-  team: Team;
+  members: TeamMember[];
   currentUserId: string;
 }
 
-export function MembersTab({ team, currentUserId }: MembersTabProps) {
+export function MembersTab({ members, currentUserId }: MembersTabProps) {
   return (
     <Card>
       <CardHeader>
@@ -26,7 +26,7 @@ export function MembersTab({ team, currentUserId }: MembersTabProps) {
       </CardHeader>
       <CardContent>
         <ul className="divide-y">
-          {team.members.map((member) => {
+          {members.map((member) => {
             const isLeader = member.membership.role === "leader";
             const isCurrentUser = member.user.userId === currentUserId;
 
