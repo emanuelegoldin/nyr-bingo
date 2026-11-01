@@ -51,6 +51,7 @@ Let users choose the language of the application.
 | `ResolutionsPage` | Resolutions page title, description, history button label and browse button |
 | `PreparedResolutionsDialog` | Prepared resolutions dialog text (spec 17) |
 | `ResolutionHistoryDialog` | History dialog text |
+| `Notifications` | Notification bell, list and text, and the profile switch (spec 19) |
 
 Everything else is English only, including:
 - The team, game and archive pages, the profile pages, the card cells and dialogs, and the resolution form

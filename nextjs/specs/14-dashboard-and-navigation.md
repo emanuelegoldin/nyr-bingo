@@ -38,7 +38,7 @@ Define the public landing page, the authenticated application shell, and the das
 
 Pages under `/dashboard`, `/games`, `/teams`, `/profile`, `/resolutions` and `/archive` share a shell:
 - **Sidebar**: links to Dashboard, Games, Teams, Profile, Resolutions and Archive, plus the language selector.
-- **Header**: the current page title and a user menu.
+- **Header**: the current page title, the notification bell (spec 19) and a user menu.
 - **User menu**: username, email, links to Profile and Teams, and Logout. When no user is loaded it shows a Login button instead.
 
 ### Access to Pages
