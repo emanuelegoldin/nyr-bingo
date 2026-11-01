@@ -7,12 +7,21 @@ import { v4 as uuidv4 } from 'uuid';
 import { execute, query } from '../db/connection';
 import type { NotificationEvent, NotificationPublisher } from './types';
 
-/** The names an event keeps, so it outlives its team and game. */
+/** The names an event keeps, so it outlives its team and game, and the owner of its cell. */
 interface EventContext {
   teamId: string;
   teamName: string;
   gameId: string | null;
   gameName: string | null;
+  cardOwnerUserId: string | null;
+}
+
+interface GameContextRow {
+  game_id: string;
+  team_id: string;
+  team_name: string;
+  game_name: string;
+  card_owner_user_id: string | null;
 }
 
 /**
@@ -38,19 +47,34 @@ async function loadContext(event: NotificationEvent): Promise<EventContext | nul
   if ('teamId' in event) {
     const teams = await query<Array<{ name: string }>>(`SELECT name FROM teams WHERE id = ?`, [event.teamId]);
     return teams[0]
-      ? { teamId: event.teamId, teamName: teams[0].name, gameId: null, gameName: null }
+      ? { teamId: event.teamId, teamName: teams[0].name, gameId: null, gameName: null, cardOwnerUserId: null }
       : null;
   }
 
-  const games = await query<Array<{ team_id: string; team_name: string; game_name: string }>>(
-    `SELECT g.team_id, t.name AS team_name, g.name AS game_name
-     FROM games g JOIN teams t ON g.team_id = t.id
-     WHERE g.id = ?`,
-    [event.gameId]
+  const games = await query<GameContextRow[]>(
+    'cellId' in event
+      ? `SELECT g.id AS game_id, g.team_id, t.name AS team_name, g.name AS game_name,
+                bc.user_id AS card_owner_user_id
+         FROM bingo_cells c
+         JOIN bingo_cards bc ON c.card_id = bc.id
+         JOIN games g ON bc.game_id = g.id
+         JOIN teams t ON g.team_id = t.id
+         WHERE c.id = ?`
+      : `SELECT g.id AS game_id, g.team_id, t.name AS team_name, g.name AS game_name,
+                NULL AS card_owner_user_id
+         FROM games g JOIN teams t ON g.team_id = t.id
+         WHERE g.id = ?`,
+    ['cellId' in event ? event.cellId : event.gameId]
   );
   const game = games[0];
   return game
-    ? { teamId: game.team_id, teamName: game.team_name, gameId: event.gameId, gameName: game.game_name }
+    ? {
+        teamId: game.team_id,
+        teamName: game.team_name,
+        gameId: game.game_id,
+        gameName: game.game_name,
+        cardOwnerUserId: game.card_owner_user_id,
+      }
     : null;
 }
 
@@ -90,7 +114,7 @@ export const dbPublisher: NotificationPublisher = {
         context.gameId,
         context.gameName,
         event.actorUserId,
-        'targetUserId' in event ? event.targetUserId : null,
+        event.type === 'proof_requested' ? context.cardOwnerUserId : null,
         'cellId' in event ? event.cellId : null,
       ]
     );

@@ -10,8 +10,9 @@ export type NotificationEvent =
   /** The actor is null when the game ended at its deadline. */
   | { type: 'game_ended'; gameId: string; actorUserId: string | null }
   | { type: 'bingo_scored'; gameId: string; actorUserId: string }
-  | { type: 'card_progress'; gameId: string; actorUserId: string; cellId: string }
-  | { type: 'proof_requested'; gameId: string; actorUserId: string; cellId: string; targetUserId: string };
+  | { type: 'card_progress'; actorUserId: string; cellId: string }
+  /** The target is the owner of the cell's card. */
+  | { type: 'proof_requested'; actorUserId: string; cellId: string };
 
 export type NotificationType = NotificationEvent['type'];
 

@@ -27,7 +27,7 @@ export const POST = withAuth(async (
     return errorResponse('Only the team leader can end the game', 403);
   }
 
-  const ended = await finishGame(game);
+  const ended = await finishGame(game, currentUser.id);
   if (!ended) {
     return errorResponse('Only a started game can be ended', 400);
   }
