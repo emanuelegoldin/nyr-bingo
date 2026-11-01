@@ -42,7 +42,7 @@ export function DeleteTeamDialog({ open, onOpenChange, onConfirm, isDeleting }: 
           <AlertDialogTitle>Delete this team?</AlertDialogTitle>
           <AlertDialogDescription>
             This will permanently delete the team, its memberships, invitations and all of its games,
-            with their resolutions, bingo cards and related gameplay data. This action cannot be undone.
+            with their resolutions, bingo cards and related gameplay data. Archived games are kept. This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

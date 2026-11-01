@@ -36,16 +36,16 @@ Define the public landing page, the authenticated application shell, and the das
 
 ### Application Shell
 
-Pages under `/dashboard`, `/games`, `/teams`, `/profile` and `/resolutions` share a shell:
-- **Sidebar**: links to Dashboard, Games, Teams, Profile and Resolutions, plus the language selector.
+Pages under `/dashboard`, `/games`, `/teams`, `/profile`, `/resolutions` and `/archive` share a shell:
+- **Sidebar**: links to Dashboard, Games, Teams, Profile, Resolutions and Archive, plus the language selector.
 - **Header**: the current page title and a user menu.
 - **User menu**: username, email, links to Profile and Teams, and Logout. When no user is loaded it shows a Login button instead.
 
 ### Access to Pages
 
 There is no route middleware.
-- The dashboard, profile and resolutions pages, the game page and the team page check the session on the server and redirect to `/login`.
-- `/games` and `/teams` are client pages, and `/join/[inviteCode]` runs outside the shell. They rely on API responses.
+- The dashboard, profile and resolutions pages, the game page, the team page and the archived game page check the session on the server and redirect to `/login`.
+- `/games`, `/teams` and `/archive` are client pages, and `/join/[inviteCode]` runs outside the shell. They rely on API responses.
 
 ### Dashboard
 
@@ -65,7 +65,7 @@ Empty states, with a **Get Started** button:
 ## Acceptance Criteria
 
 - Logged-out visitors can reach login and registration from `/`.
-- Authenticated users can navigate between Dashboard, Games, Teams, Profile and Resolutions.
+- Authenticated users can navigate between Dashboard, Games, Teams, Profile, Resolutions and Archive.
 - The dashboard shows one card per started game.
 - A failed card does not prevent the other cards from rendering.
 - Users can log out from the user menu.

@@ -137,3 +137,55 @@ export interface ResolutionFormData {
   subtasks?: Subtask[];
   numberOfRepetition?: number;
 }
+
+// Archived games: read-only snapshots of finished games, stored as plain values
+// Spec: 18-game-archive.md
+
+/** One cell of an archived card. The field names match the live cell where they overlap. */
+export interface ArchivedCell {
+  position: number;
+  isJoker: boolean;
+  isEmpty: boolean;
+  resolutionTitle: string;
+  resolutionText: string;
+  resolutionType: ResolutionType;
+  state: CellState;
+  sourceType: CellSourceType;
+  sourceUserId: string | null;
+  sourceLabel: string;
+  subtasks: Subtask[] | null;
+  numberOfRepetition: number | null;
+  completedTimes: number | null;
+}
+
+/** One player's card in an archived game. */
+export interface ArchivedCard {
+  userId: string;
+  playerName: string;
+  cells: ArchivedCell[];
+}
+
+/** One line of an archived game's final leaderboard, in rank order. */
+export interface ArchivedLeaderboardEntry {
+  userId: string;
+  username: string;
+  displayName: string | null;
+  firstBingoAt: string | null;
+  completedTasks: number;
+}
+
+/** An archived game as listed on the archive page. */
+export interface ArchivedGameSummary {
+  id: string;
+  /** The leader who ran the game, who alone can delete it. */
+  leaderUserId: string | null;
+  name: string;
+  teamName: string;
+  endedAt: string;
+}
+
+/** An archived game with its leaderboard and cards. */
+export interface ArchivedGameDetail extends ArchivedGameSummary {
+  leaderboard: ArchivedLeaderboardEntry[];
+  cards: ArchivedCard[];
+}

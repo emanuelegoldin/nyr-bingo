@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
+  Archive,
   LayoutGrid,
   ListCheck,
   User,
@@ -45,6 +46,11 @@ const menuItems = [
     href: "/resolutions",
     label: "Resolutions",
     icon: ListCheck,
+  },
+  {
+    href: "/archive",
+    label: "Archive",
+    icon: Archive,
   }
 ];
 

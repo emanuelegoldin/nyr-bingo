@@ -74,7 +74,8 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 - Due to database `ON DELETE CASCADE` constraints, deleting a team also deletes associated data, including:
   - Team memberships
   - Team invitations
-  - All its games, running or ended, with their goals, member-provided resolutions, leaderboard rows, bingo cards and all dependent gameplay/review records
+  - All its games, with their goals, member-provided resolutions, leaderboard rows, bingo cards and all dependent gameplay/review records
+- Archived games are kept (spec 18).
 
 ---
 

@@ -289,3 +289,32 @@ their state.
 
 `MODIFY COLUMN` sets the column to the same definition on a second run, so the migration can
 run again.
+
+## 5.4.0 - Game Archive
+
+Adds read-only snapshots of finished games (spec 18).
+
+### Schema changes
+
+Four new tables, each cascading from the one before it:
+
+- `archived_games`: one row per game, keyed by the id the game had.
+- `archived_game_players`: who can view the game, and each player's final leaderboard line.
+- `archived_cells`: the cells of each card, without the implicit Joker.
+- `archived_cell_subtasks`: the subtasks of `compound` cells.
+
+### Data migration
+
+None in SQL. The server's sweep archives every game in `ended` status at startup, then deletes
+it with its cards, cells, leaderboard rows, closed threads and game resolutions. Games with no
+`ended_at` use `updated_at` as their end date.
+
+### Design notes
+
+- The tables hold plain values and have no foreign key to `games`, `teams` or `resolutions`, so an
+  archived game outlives all of them.
+- `source_user_id` has no foreign key: it only links to a profile.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips a table that already exists, so the migration can run again.

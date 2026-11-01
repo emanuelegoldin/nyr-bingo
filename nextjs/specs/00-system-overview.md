@@ -27,6 +27,7 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 | 15 | Internationalization |
 | 16 | Games |
 | 17 | Prepared resolutions |
+| 18 | Game archive |
 
 ## Scope
 In scope:
@@ -40,6 +41,7 @@ In scope:
 - Card editing by the card owner
 - Proof review: requested by a teammate, discussed in a thread, decided by votes or by a deadline
 - Game leaderboard
+- Game archive: a read-only snapshot of every finished game, for the players who took part
 - WebSocket-based real-time signals
 - Language selection (English, German, Italian)
 
@@ -48,11 +50,10 @@ Out of scope (not implemented):
 - Social features beyond team invites and viewing
 - Admin console
 - Leaving a team, removing a member, transferring team leadership
-- Viewing ended games
 
 ## Key Roles
 - **User**: owns a profile, manages personal resolutions, participates in teams.
-- **Team leader**: the user who created the team; can invite users, delete the team, create, start, end and delete its games, and set their team goals.
+- **Team leader**: the user who created the team; can invite users, delete the team, create, start, end and delete its games, set their team goals, and delete the archived games they ran.
 - **Team member**: a user who joined through an invitation; can create resolutions for other members, request proof and vote on reviews. The leader is also a team member.
 
 ## Core Concepts / Data (logical)
@@ -74,6 +75,8 @@ Out of scope (not implemented):
 - **Game** (see spec 16)
   - id, teamId, name, status: `forming` | `started` | `ended`, deadline (optional), endedAt
   - The team goal is the resolution with `scope = team` for that game. `teamResolutionText` is derived from it on read and is not stored on the game.
+- **ArchivedGame** (see spec 18)
+  - id, leaderUserId, name, teamName, endedAt, with its players and their cards stored as plain values
 - **TeamMembership**
   - teamId, userId, role (`leader` or `member`), joinedAt
 - **TeamInvitation**
@@ -111,7 +114,7 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
 2. Create/update profile + choose public fields
 3. Personal resolutions: add/update/delete, track progress, keep a history
 4. Team lifecycle: create team → invite/join members
-   Game lifecycle: leader creates a game → sets its team goal → members provide resolutions for each other → leader starts bingo → leader ends it, and can create the next one with the same team
+   Game lifecycle: leader creates a game → sets its team goal → members provide resolutions for each other → leader starts bingo → leader ends it, which archives it, and can create the next one with the same team
 5. Card gameplay: mark completed / undo, or complete automatically through typed progress
 6. Proof review: a teammate requests proof → the owner uploads proof → members discuss and vote → the cell becomes `accomplished` or returns to `pending`
 7. Visibility: view others' cards and the team leaderboard

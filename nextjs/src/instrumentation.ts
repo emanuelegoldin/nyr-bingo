@@ -11,13 +11,19 @@ export async function register(): Promise<void> {
 
   const { closeExpiredThreads } = await import('@/lib/db/review-thread-repository');
   const { notifyThreadClosed } = await import('@/lib/team-signals');
-  const { finishExpiredGames } = await import('@/lib/game-ending');
+  const { archiveEndedGames, finishExpiredGames } = await import('@/lib/game-ending');
 
   const sweep = async (): Promise<void> => {
     try {
       await finishExpiredGames();
     } catch (error) {
       console.error('Failed to sweep expired games:', error);
+    }
+
+    try {
+      await archiveEndedGames();
+    } catch (error) {
+      console.error('Failed to sweep ended games:', error);
     }
 
     try {

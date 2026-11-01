@@ -1,4 +1,4 @@
-import { BingoCellWithThread } from "@/lib/db/types";
+import { BingoCell } from "@/lib/db/types";
 import { CellSourceType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -7,8 +7,11 @@ import { Cell } from "./cell";
 import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
 import { EmptyCell } from "./empty";
 
+/** The cell fields shown on the grid, shared by live and archived cells. */
+type CellFaceData = Pick<BingoCell, "state" | "resolutionTitle" | "resolutionText" | "isEmpty" | "sourceType" | "sourceUserId">;
+
 interface CellFaceProps {
-    cell: BingoCellWithThread,
+    cell: CellFaceData,
     editMode: boolean,
     isOwner: boolean,
     canInteract: boolean,

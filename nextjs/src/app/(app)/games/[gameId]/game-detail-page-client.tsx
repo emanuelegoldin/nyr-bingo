@@ -131,7 +131,7 @@ export default function GameDetailPageClient({
                     triggerIcon={Flag}
                     triggerVariant="outline"
                     title="End this game?"
-                    description="The game finishes for everyone and leaves your lists. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
+                    description="The game finishes for everyone and moves to the archive. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
                     confirmLabel="End Game"
                     onConfirm={handleEndGame}
                     isPending={isEnding}

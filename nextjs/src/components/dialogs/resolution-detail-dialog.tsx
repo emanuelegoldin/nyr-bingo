@@ -99,7 +99,7 @@ interface ResolutionDetailDialogProps {
  * Visual state config mirroring the bingo cell grid styling.
  * Reuses the same colors and icons so the detail dialog feels consistent.
  */
-const STATE_CONFIG: Record<CellState, {
+export const STATE_CONFIG: Record<CellState, {
   label: string;
   icon: React.ReactNode;
   bg: string;

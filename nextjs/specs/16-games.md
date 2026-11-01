@@ -51,7 +51,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 | ------ | ------- | ------- |
 | `forming` | Being set up. The goal and resolutions are written here. | `started`, or deleted |
 | `started` | Being played. | `ended`, or deleted |
-| `ended` | Finished. Read-only and kept in the database. | Deleted only with its team |
+| `ended` | Finished and read-only, until it is archived. | Archived, which deletes it (spec 18) |
 
 A **running** game is one in `forming` or `started`.
 
@@ -182,13 +182,14 @@ Steps:
 
 - The status becomes `ended` first, so no further change can start while the game closes.
 - Every open review thread of the game is then closed under the deadline rule (spec 07): the cell becomes `accomplished` when accept votes ≥ deny votes, which includes a thread with no votes, and `pending` otherwise. Each closure refreshes the leaderboard entry of the completing user. A thread that fails to close is picked up by the deadline sweep.
-- An ended game leaves `/games`, the team page and the dashboard. There is no UI to view it. Its cards and leaderboard stay in the database.
+- The game is archived, which deletes it from the database (spec 18). A game that fails to archive stays `ended` and is picked up by the same sweep.
+- An ended game leaves `/games`, the team page and the dashboard. It is viewed from the archive (spec 18).
 
-After a game has ended:
+Until it is archived, after a game has ended:
 - Its cells cannot be completed, undone, edited or put under review.
 - Automatic completion (spec 06) no longer changes its cells.
 - Its team goal and member-provided resolutions cannot be saved, deleted or progressed.
-- Personal resolutions on its cards remain the user's to change. Their cards keep referencing them.
+- Personal resolutions on its cards remain the user's to change. This does not change the game's final cards.
 
 ---
 
@@ -248,7 +249,7 @@ After a game has ended:
 - Bingo cannot start after the deadline is over.
 - `/games` lists the caller's running games.
 - A member joining a team receives a card in each of its started games.
-- Ending a game closes its open review threads and removes it from every list.
+- Ending a game closes its open review threads, archives it and removes it from every list of running games.
 - An ended game cannot be changed and its routes return `404`.
 - Deleting a game leaves its team and sibling games intact.
 
@@ -258,4 +259,3 @@ After a game has ended:
 
 - A user who joins after a game has started gets a card built only from resolutions that exist at that moment, normally the team goal plus personal resolutions and empty cells.
 - Card rooms stay per team (spec 11), so activity in one game also refreshes pages of its sibling games.
-- Final standings of an ended game are stored but cannot be viewed.

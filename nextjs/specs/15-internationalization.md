@@ -53,7 +53,7 @@ Let users choose the language of the application.
 | `ResolutionHistoryDialog` | History dialog text |
 
 Everything else is English only, including:
-- The team and game pages, the profile pages, the card cells and dialogs, and the resolution form
+- The team, game and archive pages, the profile pages, the card cells and dialogs, and the resolution form
 - The login and registration form fields, buttons and messages
 - The dashboard's **Get Started** button and loading and error text
 - The language selector's own labels and the landing page's version line

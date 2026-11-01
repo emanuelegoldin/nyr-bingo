@@ -197,6 +197,16 @@ export async function getExpiredGames(): Promise<Game[]> {
 }
 
 /**
+ * List the ended games that have not been archived yet.
+ * Spec: 18-game-archive.md - Archiving a Game
+ * @returns The games to archive
+ */
+export async function getEndedGames(): Promise<Game[]> {
+  const rows = await query<GameRow[]>(`${SELECT_GAME} WHERE g.status = 'ended'`);
+  return rows.map(rowToGame);
+}
+
+/**
  * Delete a game. This is a hard delete: ON DELETE CASCADE foreign keys remove its
  * resolutions, leaderboard rows and bingo cards (and their cells, reviews, etc.).
  * Spec: 16-games.md - Deleting a Game
