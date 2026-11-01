@@ -10,7 +10,7 @@ import { errorResponse, withAuth, AuthContext } from '../../utils';
 
 /**
  * PUT /api/cells/[cellId] - Update cell state
- * Spec: 06-bingo-gameplay.md - Toggle between pending and completed
+ * Spec: 06-bingo-gameplay.md - Toggle between pending and completed, or mark as failed
  */
 export const PUT = withAuth(async (
   request: NextRequest,
@@ -20,10 +20,10 @@ export const PUT = withAuth(async (
   const body = await request.json();
   const { state } = body;
 
-  // Validate state - only pending and completed are allowed for direct updates
-  const validStates = ['pending', 'completed'];
+  // Validate state - only pending, completed and failed are allowed for direct updates
+  const validStates = ['pending', 'completed', 'failed'];
   if (!state || !validStates.includes(state)) {
-    return errorResponse('Invalid state. Must be "pending" or "completed"', 400);
+    return errorResponse('Invalid state. Must be "pending", "completed" or "failed"', 400);
   }
 
   // Update cell state

@@ -275,3 +275,17 @@ text is in English only.
 ### Idempotency
 
 Ids are fixed, and `INSERT IGNORE` skips ids already present, so the migration can run again.
+
+## 5.3.0 - Failed Cell State
+
+Adds the `failed` cell state (spec 06).
+
+### Schema changes
+
+`bingo_cells.state` gains the `failed` value. It goes last in the enum, so existing rows keep
+their state.
+
+### Idempotency
+
+`MODIFY COLUMN` sets the column to the same definition on a second run, so the migration can
+run again.

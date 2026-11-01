@@ -112,9 +112,10 @@ The mutations of `bingo_cells.state` in this table include a `WHERE state ...` g
 
 | Operation                    | Expected state(s)                             | Target state     |
 |------------------------------|-----------------------------------------------|------------------|
-| Mark completed               | `pending`                                     | `completed`      |
+| Mark completed               | `pending`, `failed`                           | `completed`      |
+| Mark failed                  | `pending`                                     | `failed`         |
 | `PUT` to `pending`           | `completed`                                   | `pending`        |
-| Undo completion              | `completed`, `pending_review`, `accomplished` | `pending`        |
+| Undo completion              | `completed`, `pending_review`, `accomplished`, `failed` | `pending` |
 | Request proof                | `completed`                                   | `pending_review` |
 | Automatic completion/revert  | The state read just before                    | `completed` or `pending` |
 
@@ -128,7 +129,7 @@ Other mutations are not guarded on cell state:
 
 When the owner undoes completion and a team member requests proof concurrently:
 
-- **Owner's undo** runs inside a transaction that first closes any open review thread, then sets state to `pending` with `WHERE state IN ('completed', 'pending_review', 'accomplished')`.
+- **Owner's undo** runs inside a transaction that first closes any open review thread, then sets state to `pending` with `WHERE state IN ('completed', 'pending_review', 'accomplished', 'failed')`.
 - **Team member's proof request** guards the state transition with `WHERE state = 'completed'` and rolls back when no row matched.
 
 Because the undo accepts a wider set of source states and closes the thread in the same transaction, the owner's action succeeds regardless of ordering. The proof request either:

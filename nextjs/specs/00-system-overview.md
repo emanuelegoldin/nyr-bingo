@@ -85,7 +85,7 @@ Out of scope (not implemented):
   - resolutionId, resolutionType
   - sourceType: `team` | `member_provided` | `personal` | `empty`
   - sourceUserId, isEmpty (generated)
-  - state: `pending` | `completed` | `pending_review` | `accomplished`
+  - state: `pending` | `completed` | `pending_review` | `accomplished` | `failed`
 - **ReviewThread**, **ReviewMessage**, **ReviewFile**, **ReviewVote** (see spec 07)
 - **TeamLeaderboard** (see spec 12)
 - **ResolutionHistoryEntry** (see spec 13)

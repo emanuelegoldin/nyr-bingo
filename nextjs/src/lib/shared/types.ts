@@ -43,7 +43,8 @@ export enum CellState {
   PENDING = 'pending',
   COMPLETED = 'completed',
   PENDING_REVIEW = 'pending_review',
-  ACCOMPLISHED = 'accomplished'
+  ACCOMPLISHED = 'accomplished',
+  FAILED = 'failed'
 }
 
 // Review thread types

@@ -25,14 +25,16 @@ interface OwnedCellRow {
 /**
  * Source states each direct update accepts. The WHERE guard built from these prevents
  * races with concurrent proof requests.
- *   pending -> completed (user marks as done)
+ *   pending or failed -> completed (user marks as done)
  *   completed -> pending (user undoes)
+ *   pending -> failed (user marks as failed)
  * pending_review and accomplished are never set directly: they come from requesting
  * proof and from closing the review thread.
  */
-const VALID_FROM_STATES: Record<CellState.PENDING | CellState.COMPLETED, CellState[]> = {
-  [CellState.COMPLETED]: [CellState.PENDING],
+const VALID_FROM_STATES: Record<CellState.PENDING | CellState.COMPLETED | CellState.FAILED, CellState[]> = {
+  [CellState.COMPLETED]: [CellState.PENDING, CellState.FAILED],
   [CellState.PENDING]: [CellState.COMPLETED],
+  [CellState.FAILED]: [CellState.PENDING],
 };
 
 /**
@@ -122,12 +124,17 @@ export async function updateCellState(
     return { success: false, error: 'Empty cells cannot be marked as completed' };
   }
 
-  if (newState !== CellState.PENDING && newState !== CellState.COMPLETED) {
-    return { success: false, error: 'Only pending and completed can be set directly' };
+  // Spec: 06-bingo-gameplay.md - Only cells with a resolution can be failed
+  if (cell.is_empty && newState === CellState.FAILED) {
+    return { success: false, error: 'Empty cells cannot be marked as failed' };
   }
 
-  // Spec: 06-bingo-gameplay.md - compound and iterative cells follow their progress
-  if (cell.resolution_type !== ResolutionType.BASE) {
+  if (newState !== CellState.PENDING && newState !== CellState.COMPLETED && newState !== CellState.FAILED) {
+    return { success: false, error: 'Only pending, completed and failed can be set directly' };
+  }
+
+  // Spec: 06-bingo-gameplay.md - compound and iterative cells follow their progress, but any type can be failed
+  if (cell.resolution_type !== ResolutionType.BASE && newState !== CellState.FAILED) {
     return { success: false, error: 'Compound and iterative cells complete automatically' };
   }
 
@@ -246,7 +253,7 @@ export async function updateCellContent(
 }
 
 /**
- * Undo completion - revert cell to pending and close any open thread
+ * Undo completion or failure - revert cell to pending and close any open thread
  * Spec: Resolution Review & Proof Workflow - Undo Completion
  */
 export async function undoCompletion(
@@ -261,8 +268,8 @@ export async function undoCompletion(
 
   const { cell } = owned;
 
-  // Must be in completed, pending_review, or accomplished state
-  if (!['completed', 'pending_review', 'accomplished'].includes(cell.state)) {
+  // Must be in completed, pending_review, accomplished or failed state
+  if (!['completed', 'pending_review', 'accomplished', 'failed'].includes(cell.state)) {
     return { success: false, error: 'Cell is not completed' };
   }
 
@@ -310,7 +317,7 @@ export async function undoCompletion(
     // pending_review in the meantime, we still honour the owner's undo
     // because the thread closure above already handled that thread.
     const undoResult = await execute(
-      `UPDATE bingo_cells SET state = 'pending' WHERE id = ? AND state IN ('completed', 'pending_review', 'accomplished')`,
+      `UPDATE bingo_cells SET state = 'pending' WHERE id = ? AND state IN ('completed', 'pending_review', 'accomplished', 'failed')`,
       [cellId],
       connection
     );
@@ -335,7 +342,7 @@ export async function undoCompletion(
 /**
  * Auto-transition bingo cell state for compound/iterative resolutions.
  * When the resolution is fully completed (all subtasks done or counter reached),
- * the cell transitions from pending → completed.
+ * the cell transitions from pending or failed → completed.
  * When the resolution becomes incomplete again, the cell transitions from completed → pending.
  *
  * This skips cells in pending_review or accomplished states (controlled by voting system).
@@ -369,8 +376,8 @@ export async function autoTransitionCellState(
   for (const cellRow of cellRows) {
     let newState: CellState | null = null;
 
-    if (isComplete && cellRow.state === CellState.PENDING) {
-      // Auto-complete: pending → completed
+    if (isComplete && (cellRow.state === CellState.PENDING || cellRow.state === CellState.FAILED)) {
+      // Auto-complete: pending or failed → completed
       newState = CellState.COMPLETED;
     } else if (!isComplete && cellRow.state === CellState.COMPLETED) {
       // Auto-revert: completed → pending

@@ -42,6 +42,7 @@ export const CellFace = ({
         completed: { icon: getCellStateIcon("completed", "h-4 w-4"), color: CELL_STATE_COLORS.completed.bg, text: CELL_STATE_COLORS.completed.text },
         pending_review: { icon: getCellStateIcon("pending_review", "h-4 w-4"), color: CELL_STATE_COLORS.pending_review.bg, text: CELL_STATE_COLORS.pending_review.text },
         accomplished: { icon: getCellStateIcon("accomplished", "h-4 w-4"), color: CELL_STATE_COLORS.accomplished.bg, text: `${CELL_STATE_COLORS.accomplished.text} line-through` },
+        failed: { icon: getCellStateIcon("failed", "h-4 w-4"), color: CELL_STATE_COLORS.failed.bg, text: CELL_STATE_COLORS.failed.text },
     };
     const config = stateConfig[cell.state];
     // Resolution title for cell display (truncated with CSS ellipsis)

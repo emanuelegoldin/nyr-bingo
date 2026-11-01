@@ -63,7 +63,7 @@ export function BingoCardContent(
   }, [currentUserId, gameId, toast, fetchUrl]);
 
   const handleCellUpdate = useCallback(
-    async (cellId: string, newState: 'pending' | 'completed') => {
+    async (cellId: string, newState: 'pending' | 'completed' | 'failed') => {
       const result =
         newState === 'pending'
           ? await apiFetch<unknown>(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
