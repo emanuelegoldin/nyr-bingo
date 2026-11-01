@@ -74,20 +74,18 @@ Clients connect to `ws(s)://<current-host>/ws`.
 
 ## Server Signals
 
-Every mutating API route signals the rooms it affected, through `notifyRooms` (`lib/ws-notify.ts`) after its database work. Rooms are resolved in `lib/team-signals.ts`. A failed signal is logged and never fails the mutation.
+Every mutating API route, and the deadline sweep (spec 07), signals the rooms it affected, through `notifyRooms` (`lib/ws-notify.ts`) after its database work. Rooms are resolved in `lib/team-signals.ts`. A failed signal is logged and never fails the mutation.
 
 | Change | Rooms signalled |
 |--------|-----------------|
 | Cell state, undo, edit, proof request | The team's card room, and the cell's threads |
 | Thread message, file, vote that keeps it open | The thread |
-| Thread closed by vote or by the completing user | The thread and the team's card room |
+| Thread closed by vote, by the completing user or by the deadline | The thread and the team's card room |
 | Subtask or counter change, resolution saved | The resolution, and the card room of every team showing it |
 | Resolution deleted | The card room of every team that was showing it |
 | Manual history note | The resolution |
 | Join, game start, team deletion | The team's card room |
 | Profile update | The card room of each of the user's teams |
-
-The deadline procedure runs in the database and cannot send a signal.
 
 ## Catching Up
 
@@ -95,8 +93,6 @@ Listeners get a local `catch-up` event, and refetch as if their room had been si
 
 - The socket reconnects.
 - The tab regains focus or becomes visible, at most once every 30 seconds.
-
-This is how a deadline closure reaches an open page. A page that stays in front keeps showing it as open until its next catch-up, and a refused vote also refetches the thread.
 
 ## Conflict Resolution
 
@@ -125,8 +121,8 @@ The mutations of `bingo_cells.state` in this table include a `WHERE state ...` g
 If `affectedRows === 0`, the cell was already transitioned by another operation and the API returns `400` with a message, for example "Cell state has changed — please refresh and try again". Automatic completion does not report this; it simply leaves the cell alone.
 
 Other mutations are not guarded on cell state:
-- Thread closure (votes or the completing user) is guarded on the thread instead: `WHERE status = 'open'`. If the thread was already closed, the transaction rolls back messages and cell state; proof files removed before the transaction stay removed.
-- Cell edits (spec 09) are guarded against `pending_review`. The deadline procedure (spec 07) writes the state without any guard.
+- Thread closure (votes, the completing user or the deadline) is guarded on the thread instead: `WHERE status = 'open'`. If the thread was already closed, the transaction rolls back messages and cell state; proof files removed before the transaction stay removed.
+- Cell edits (spec 09) are guarded against `pending_review`.
 
 ### Owner-Prevails Rule
 

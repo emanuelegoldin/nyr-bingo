@@ -134,10 +134,7 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
     `pending_review` does not count toward `completed_tasks`.
   - **Vote resolution** (`submitVote` — thread closes).
   - **Thread closed by the completing user** (`closeThread`).
-- **Deadline closure** (`CloseThreads`, spec 07): on `accomplished`, increments
-  `completed_tasks`, and sets `first_bingo_at` if it is `NULL` and the closed
-  cell's row or column, or either diagonal, is complete. This procedure counts
-  position 12 as a free cell.
+  - **Deadline closure** (`closeExpiredThreads`, spec 07).
 
 #### Bingo detection logic
 
@@ -171,10 +168,3 @@ Persists per-user, per-team leaderboard data for efficient retrieval.
 - [ ] Clicking a source-user badge in a bingo cell navigates to the profile.
 - [ ] Confetti animation plays when a card gains a bingo line, using the same
       lines as the leaderboard.
-
----
-
-## Known Gaps
-
-- Deadline closures (`CloseThreads`) send no WebSocket signal, so the
-  leaderboard shows them only when the page next catches up (spec 11).

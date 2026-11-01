@@ -149,3 +149,12 @@ Adds a dedicated timeline table for resolution history and progress updates.
 - History is stored once per resolution (not per cell), so all surfaces read
   from the same source of truth.
 - Entries are append-only and intended for auditability/progress sharing.
+
+## 4.1.0 - Drop Close Threads Event
+
+Drops the `CloseThreadsEvent` event and the `CloseThreads` procedure added in
+V4.0.0.
+
+Deadline closure of review threads now runs in the Next.js application, which
+can also remove the proof files from disk. The `event_scheduler` setting is no
+longer needed.
