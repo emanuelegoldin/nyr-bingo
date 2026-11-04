@@ -120,7 +120,7 @@ Thread changes are signaled in real time to other users viewing the same review 
 
 ### Voting Rules
 
-- The thread closes automatically once every eligible voter has voted.
+- The thread closes automatically once every eligible voter has voted. The outcome counts every vote cast on the thread, including those of players who have since left.
 
 #### Outcome
 

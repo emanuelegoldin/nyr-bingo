@@ -11,7 +11,7 @@ import {
   getRunningGame,
   isDeadlinePast,
   isTeamLeader,
-  isTeamMember,
+  isGamePlayer,
   setGameDeadline,
 } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
@@ -42,9 +42,9 @@ export const GET = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  const isMember = await isTeamMember(game.teamId, currentUser.id);
+  const isMember = await isGamePlayer(game.id, currentUser.id);
   if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
+    return errorResponse('You are not a player of this game', 403);
   }
 
   return NextResponse.json({ game });

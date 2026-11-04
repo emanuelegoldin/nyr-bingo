@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  isTeamMember,
+  isGamePlayer,
   getGameBingoCards,
   getBingoCard,
   getRunningGame,
@@ -28,9 +28,9 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
 
   // Check if user is a member
   // Spec: 08-visibility-and-updates.md - Only team members can view the game's cards
-  const isMember = await isTeamMember(game.teamId, currentUser.id);
+  const isMember = await isGamePlayer(game.id, currentUser.id);
   if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
+    return errorResponse('You are not a player of this game', 403);
   }
 
   if (userId) {

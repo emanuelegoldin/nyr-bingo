@@ -63,9 +63,11 @@ const GROUP_THREAD_TALLY = `GROUP BY rt.id, rt.cell_id, rt.completed_by_user_id,
  * @param eligibleVoters How many team members may vote
  * @returns The cell's next state, or null while votes are missing or nobody can vote
  */
-function decideOutcome(votes: VoteRow[], eligibleVoters: number): 'accomplished' | 'pending' | null {
-  // Note: Handle edge case where there are no eligible voters (single-member team)
-  if (eligibleVoters === 0 || votes.length < eligibleVoters) {
+function decideOutcome(votes: VoteRow[], eligibleVoterIds: Set<string>): 'accomplished' | 'pending' | null {
+  // Note: Handle edge case where there are no eligible voters (single-player game)
+  // Spec: 07-proof-and-approval.md - votes of players who left count, but are not waited for
+  const eligibleVotes = votes.filter((v) => eligibleVoterIds.has(v.voter_user_id)).length;
+  if (eligibleVoterIds.size === 0 || eligibleVotes < eligibleVoterIds.size) {
     return null;
   }
 
@@ -290,10 +292,10 @@ export async function submitVote(
     );
 
     // Check if all eligible voters have voted
-    // Get all team members except the completing user
-    const teamMemberRows = await query<Array<{ user_id: string }>>(
-      `SELECT user_id FROM team_memberships WHERE team_id = ? AND user_id != ?`,
-      [cellInfo.team_id, thread.completedByUserId],
+    // Get all players of the game except the completing user
+    const eligibleVoterRows = await query<Array<{ user_id: string }>>(
+      `SELECT user_id FROM game_players WHERE game_id = ? AND user_id != ?`,
+      [cellInfo.game_id, thread.completedByUserId],
       connection
     );
 
@@ -305,7 +307,7 @@ export async function submitVote(
 
     return {
       savedVote: rowToVote(voteRows[0]),
-      nextCellState: decideOutcome(allVoteRows, teamMemberRows.length),
+      nextCellState: decideOutcome(allVoteRows, new Set(eligibleVoterRows.map((row) => row.user_id))),
     };
   });
 

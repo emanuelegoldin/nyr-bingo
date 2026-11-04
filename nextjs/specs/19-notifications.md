@@ -82,7 +82,7 @@ Let users see what happened in their teams since they last looked: after logging
 
 A notification links to the first of these that applies when it is listed:
 
-1. The game page, if the game still exists
+1. The game page, if the game still exists and the user plays it
 2. The archived game, if the user played it (spec 18)
 3. The team page, if the team still exists and the user is a member
 4. Nothing: the item can still be marked as read

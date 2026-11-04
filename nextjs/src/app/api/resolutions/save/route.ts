@@ -24,7 +24,7 @@ import {
   getRunningGame,
   isTeamLeader,
   isResolutionFrozen,
-  isTeamMember,
+  isGamePlayer,
   logResolutionHistoryEventSafe,
   updateResolutionContent,
 } from '@/lib/db';
@@ -155,13 +155,13 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     if (toUserId === currentUser.id) {
       return errorResponse('You cannot create a resolution for yourself', 400);
     }
-    const member = await isTeamMember(game!.teamId, currentUser.id);
+    const member = await isGamePlayer(game!.id, currentUser.id);
     if (!member) {
-      return errorResponse('You must be a team member', 403);
+      return errorResponse('You must be a player of this game', 403);
     }
-    const targetMember = await isTeamMember(game!.teamId, toUserId);
+    const targetMember = await isGamePlayer(game!.id, toUserId);
     if (!targetMember) {
-      return errorResponse('Target user is not a team member', 400);
+      return errorResponse('Target user is not a player of this game', 400);
     }
   }
 

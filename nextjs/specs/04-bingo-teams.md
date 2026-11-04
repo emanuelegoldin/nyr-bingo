@@ -119,7 +119,7 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 - Leaving a team leaves each of its running games the user plays, with the effects of spec 16 (Leaving a Game), then removes the membership.
 - Resolutions the user wrote for other players stay on their cards, tagged "Former Teammates" (spec 05).
 - The UI asks for confirmation and then returns the user to `/teams`.
-- A user who left can join again through a new invitation. They do not return to the games they left.
+- A user who left can join again through a new invitation, as a new member (spec 16).
 
 ---
 

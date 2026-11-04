@@ -225,7 +225,7 @@ Until it is archived, after a game has ended:
   - Deletes the member-provided resolutions written **for** them in this game
 - Resolutions they wrote **for** other players stay, on those players' cards and in the Propose Resolutions lists. Their badge reads "Former Teammates" (spec 05). The leaver can no longer edit them.
 - Votes they cast on other players' threads stay.
-- A user who left a game cannot return to it, even by leaving and joining the team again.
+- A user who left a game cannot return to it while they stay in the team. A user who leaves the team and joins it again is a new member (Joining After Start), with a new card.
 - Leaving a team (spec 04) leaves each of its running games the user plays.
 
 ---

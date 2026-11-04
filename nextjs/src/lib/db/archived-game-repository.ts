@@ -18,6 +18,7 @@ import {
 } from '../shared/types';
 import { getBingoCard } from './bingo-card-repository';
 import { execute, query, withTransaction } from './connection';
+import { getGamePlayerIds } from './game-repository';
 import { getGameLeaderboard } from './leaderboard-repository';
 import { parseSubtasks } from './resolution-repository';
 import { getTeamWithMembers } from './team-repository';
@@ -170,7 +171,8 @@ function snapshotCell(
 }
 
 /**
- * Read an ended game into plain values. Its players are the members with a card.
+ * Read an ended game into plain values. Its players are the roster members with a card. A
+ * member-provided cell whose author is no longer a player is labelled "Former Teammates".
  * @param game The ended game
  * @returns One snapshot per player
  */
@@ -180,11 +182,13 @@ async function buildPlayerSnapshots(game: Game): Promise<PlayerSnapshot[]> {
     throw new Error(`Team not found for game ${game.id}`);
   }
 
-  const usernames = Object.fromEntries(team.members.map((m) => [m.user.userId, m.user.username]));
+  const rosterIds = new Set(await getGamePlayerIds(game.id));
+  const roster = team.members.filter((member) => rosterIds.has(member.user.userId));
+  const usernames = Object.fromEntries(roster.map((m) => [m.user.userId, m.user.username]));
   const progress = await getResolutionProgress(game.id);
 
   const cards = await Promise.all(
-    team.members.map(async (member) => ({
+    roster.map(async (member) => ({
       member,
       card: await getBingoCard(game.id, member.user.userId),
     }))

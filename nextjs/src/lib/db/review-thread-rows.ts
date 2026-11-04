@@ -5,7 +5,7 @@
 
 import { GameStatus, ThreadStatus, VoteType } from '../shared/types';
 import { query } from './connection';
-import { isTeamMember } from './team-repository';
+import { isGamePlayer } from './game-repository';
 import type {
   ReviewFile,
   ReviewMessageAndAuthor,
@@ -133,10 +133,10 @@ export async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
 }
 
 /**
- * Load a cell's information for an action reserved to its team's members.
+ * Load a cell's information for an action reserved to the players of its game.
  * @param cellId The cell to load
  * @param userId The user acting on it
- * @param notMemberError The error to report when the user is not in the team
+ * @param notMemberError The error to report when the user is not a player
  * @returns The cell information, or the error explaining why the action is refused
  */
 export async function getCellInfoForMember(
@@ -149,7 +149,7 @@ export async function getCellInfoForMember(
     return { error: 'Cell not found' };
   }
 
-  const isMember = await isTeamMember(cellInfo.team_id, userId);
+  const isMember = await isGamePlayer(cellInfo.game_id, userId);
   if (!isMember) {
     return { error: notMemberError };
   }

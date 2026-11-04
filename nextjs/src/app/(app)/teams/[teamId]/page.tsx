@@ -53,7 +53,7 @@ async function TeamContent({ teamId }: { teamId: string }) {
 
   const [team, games] = await Promise.all([
     getTeamWithMembers(teamId),
-    getRunningGamesForTeam(teamId),
+    getRunningGamesForTeam(teamId, currentUser.id),
   ]);
   if (!team) {
     notFound();

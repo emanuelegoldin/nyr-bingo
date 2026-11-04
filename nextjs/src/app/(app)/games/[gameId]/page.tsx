@@ -15,7 +15,7 @@ import {
   getGameLeaderboard,
   getGameWithMembers,
   getMemberProvidedResolutionsByUser,
-  isTeamMember,
+  isGamePlayer,
   type BingoCardWithCells,
   type GameWithMembers,
   type Resolution,
@@ -90,7 +90,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
     notFound();
   }
 
-  const member = await isTeamMember(game.teamId, currentUser.id);
+  const member = await isGamePlayer(game.id, currentUser.id);
   if (!member) {
     notFound();
   }

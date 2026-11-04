@@ -5,11 +5,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  isTeamMember,
+  isGamePlayer,
   getMemberProvidedResolutionsByUser,
   getMemberProvidedResolutionsForUser,
   checkAllResolutionsProvided,
   getRunningGame,
+  getGamePlayerIds,
   getTeamMembers,
 } from '@/lib/db';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
@@ -33,9 +34,9 @@ export const GET = withAuth(async (
   }
 
   // Check if user is a member
-  const isMember = await isTeamMember(game.teamId, currentUser.id);
+  const isMember = await isGamePlayer(game.id, currentUser.id);
   if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
+    return errorResponse('You are not a player of this game', 403);
   }
 
   if (toUserId) {
@@ -49,8 +50,9 @@ export const GET = withAuth(async (
   // Get resolutions created for the user
   const createdForUser = await getMemberProvidedResolutionsForUser(gameId, currentUser.id);
 
-  // Get all team members
-  const members = await getTeamMembers(game.teamId);
+  // Spec: 16-games.md - the members of a game are its players
+  const playerIds = new Set(await getGamePlayerIds(game.id));
+  const members = (await getTeamMembers(game.teamId)).filter((member) => playerIds.has(member.userId));
 
   // Check overall status
   const status = await checkAllResolutionsProvided(game);

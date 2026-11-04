@@ -6,8 +6,7 @@
 import { CellSourceType, CellState, JOKER_POSITION, ResolutionType } from '../shared/types';
 import { CardRow, CellRow, rowToCard, rowToCell, SELECT_CELL_WITH_RESOLVED_TEXT } from './bingo-card-rows';
 import { query } from './connection';
-import { getGameById } from './game-repository';
-import { isTeamMember } from './team-repository';
+import { getGameById, isGamePlayer } from './game-repository';
 import {
   BingoCardWithCells,
   BingoCellWithThread,
@@ -106,10 +105,9 @@ export async function getGameBingoCards(
   gameId: string,
   requestingUserId: string
 ): Promise<BingoCardWithCells[]> {
-  // Verify requesting user is a team member
-  // Spec: 08-visibility-and-updates.md - Only team members can view team cards
+  // Spec: 16-games.md - Only the game's players can view its cards
   const game = await getGameById(gameId);
-  if (!game || !(await isTeamMember(game.teamId, requestingUserId))) {
+  if (!game || !(await isGamePlayer(game.id, requestingUserId))) {
     return [];
   }
 

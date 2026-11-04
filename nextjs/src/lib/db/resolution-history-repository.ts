@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ResolutionScope } from '../shared/types';
 import { query } from './connection';
 import { getResolutionById } from './resolution-repository';
+import { isGamePlayer } from './game-repository';
 import { isTeamMember } from './team-repository';
 import type {
   Resolution,
@@ -71,8 +72,8 @@ async function canViewPersonalResolutionViaTeamCards(
     `SELECT 1 AS visible
      FROM bingo_cells c
      JOIN bingo_cards bc ON bc.id = c.card_id
-     JOIN team_memberships tm ON tm.team_id = bc.team_id
-     WHERE c.resolution_id = ? AND tm.user_id = ?
+     JOIN game_players gp ON gp.game_id = bc.game_id
+     WHERE c.resolution_id = ? AND gp.user_id = ?
      LIMIT 1`,
     [resolutionId, requestingUserId],
   );
@@ -93,6 +94,8 @@ async function computeReadAccess(
     resolution.scope === ResolutionScope.MEMBER_PROVIDED ||
     resolution.scope === ResolutionScope.PREPARED
   ) {
+    // Spec: 13 - a game's resolutions are visible to its players
+    if (resolution.gameId) return isGamePlayer(resolution.gameId, requestingUserId);
     if (!resolution.teamId) return false;
     return isTeamMember(resolution.teamId, requestingUserId);
   }

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isTeamMember, getGameGoalResolution, getRunningGame } from '@/lib/db';
+import { isGamePlayer, getGameGoalResolution, getRunningGame } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
@@ -19,7 +19,7 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
     return errorResponse('Game not found', 404);
   }
 
-  const member = await isTeamMember(game.teamId, currentUser.id);
+  const member = await isGamePlayer(game.id, currentUser.id);
   if (!member) {
     return errorResponse('You must be a team member', 403);
   }

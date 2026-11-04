@@ -97,7 +97,8 @@ export async function isResolutionFrozen(resolution: Resolution): Promise<boolea
 }
 
 /**
- * Delete a resolution. Only the owner may delete, and not if its game has ended.
+ * Delete a resolution. Only the owner may delete, not if its game has ended, and not once
+ * they have left its game (spec 16 - Leaving a Game).
  */
 export async function deleteResolution(
   id: string,
@@ -106,7 +107,10 @@ export async function deleteResolution(
   await query(
     `DELETE FROM resolutions
      WHERE id = ? AND owner_user_id = ?
-       AND (game_id IS NULL OR game_id NOT IN (SELECT id FROM games WHERE status = 'ended'))`,
+       AND (game_id IS NULL OR game_id NOT IN (SELECT id FROM games WHERE status = 'ended'))
+       AND (game_id IS NULL OR EXISTS (
+         SELECT 1 FROM game_players gp WHERE gp.game_id = resolutions.game_id AND gp.user_id = resolutions.owner_user_id
+       ))`,
     [id, ownerUserId]
   );
   const rows = await query<ResolutionRow[]>(
