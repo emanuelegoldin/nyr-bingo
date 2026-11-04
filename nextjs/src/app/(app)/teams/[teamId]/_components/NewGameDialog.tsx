@@ -3,8 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { TeamMember } from "@/components/team/types";
-import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,7 +26,6 @@ interface NewGameDialogProps {
  * @returns The button and dialog.
  */
 export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogProps) {
-  const { toast } = useToast();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -59,11 +57,7 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
     if (result.ok) {
       router.push(`/games/${result.data.game.id}`);
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to create game",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to create game");
       setIsCreating(false);
     }
   };

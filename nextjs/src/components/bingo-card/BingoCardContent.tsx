@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { BingoCardWithCells } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
@@ -77,11 +77,7 @@ export function BingoCardContent(
         return;
       }
 
-      toast({
-        title: 'Error',
-        description: result.status === 0 ? 'An error occurred' : result.error || 'Failed to update cell',
-        variant: 'destructive',
-      });
+      toastApiError(result, 'Failed to update cell');
       // The card may be stale, which is a common reason for the failure
       await reloadCard();
     },

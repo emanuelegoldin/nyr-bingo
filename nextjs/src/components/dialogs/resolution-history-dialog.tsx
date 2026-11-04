@@ -15,7 +15,7 @@ import { useAppContext } from "@/hooks/AppContext";
 import { useWsRoom } from "@/hooks/use-ws-room";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { History, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -65,11 +65,7 @@ export const ResolutionHistoryDialog = ({
       setEntries(Array.isArray(result.data.entries) ? (result.data.entries as HistoryEntry[]) : []);
       setCanWrite(Boolean(result.data.canWrite));
     } else {
-      toast({
-        title: "Error",
-        description: result.error || t.loadError,
-        variant: "destructive",
-      });
+      toastApiError(result, t.loadError);
     }
     setLoading(false);
   }, [resolutionId, toast]);
@@ -91,11 +87,7 @@ export const ResolutionHistoryDialog = ({
         json: { content: draft.trim() },
       });
       if (!result.ok) {
-        toast({
-          title: "Error",
-          description: result.error || t.addError,
-          variant: "destructive",
-        });
+        toastApiError(result, t.addError);
         return;
       }
 

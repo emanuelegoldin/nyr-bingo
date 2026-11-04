@@ -10,8 +10,7 @@ import { ArchivedCardView } from "@/components/archive/archived-card";
 import { DeleteArchivedGameDialog } from "@/components/archive/delete-archived-game-dialog";
 import { formatArchiveDate } from "@/components/archive/format-archive-date";
 import { usePageTitle } from "@/hooks/AppContext";
-import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import type { ArchivedGameDetail } from "@/lib/shared/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -26,7 +25,6 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
   usePageTitle("Archive");
 
   const router = useRouter();
-  const { toast } = useToast();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -37,11 +35,7 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
     setIsDeleting(false);
 
     if (!result.ok) {
-      toast({
-        title: "Error",
-        description: result.error || "Failed to delete the archived game",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to delete the archived game");
       return;
     }
 

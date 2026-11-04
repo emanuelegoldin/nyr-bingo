@@ -14,7 +14,7 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
@@ -169,11 +169,7 @@ export const ResolutionCreateEditDialog = ({
       });
 
       if (!result.ok) {
-        toast({
-          title: "Error",
-          description: result.status === 0 ? "An error occurred while saving" : result.error || "Failed to save resolution",
-          variant: "destructive",
-        });
+        toastApiError(result, "Failed to save resolution", "An error occurred while saving");
         return;
       }
 

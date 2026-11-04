@@ -1,7 +1,7 @@
 import { useToast } from "@/hooks/use-toast";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import type { ResolutionFormData } from "@/lib/shared/types";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Game, TeamProvidedResolution } from "../types";
@@ -105,11 +105,7 @@ export function useGameActions({
       });
       loadGame(); // Reload to show cards
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to start game",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to start game");
     }
     setIsStarting(false);
   };
@@ -135,11 +131,7 @@ export function useGameActions({
       router.push('/games');
       router.refresh();
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || failureMessage,
-        variant: "destructive",
-      });
+      toastApiError(result, failureMessage);
     }
   };
 

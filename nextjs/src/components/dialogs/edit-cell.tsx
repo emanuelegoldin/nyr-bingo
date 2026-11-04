@@ -1,6 +1,6 @@
 import { useEditCellOptions, type EditOption } from "@/hooks/use-edit-cell-options";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import type { BingoCellWithThread } from "@/lib/db/types";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -51,11 +51,7 @@ export const EditCellDialog = ({
       });
 
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to update cell',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to update cell');
         return;
       }
 

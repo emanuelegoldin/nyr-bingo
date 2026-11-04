@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { Check, Copy, Loader2, UserPlus } from "lucide-react";
 import { useState } from "react";
 
@@ -38,11 +38,7 @@ export function InviteDialog({ teamId }: InviteDialogProps) {
         description: "Invite link created",
       });
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to create invite",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to create invite");
     }
     setIsCreatingInvite(false);
   };

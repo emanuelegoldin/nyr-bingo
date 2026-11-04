@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -71,11 +71,7 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
       });
       router.push("/dashboard");
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred. Please try again." : result.error || "Failed to login",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to login", "An error occurred. Please try again.");
     }
     setIsLoading(false);
   }
@@ -151,11 +147,7 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
       });
       router.push("/login");
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred. Please try again." : result.error || "Failed to register",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to register", "An error occurred. Please try again.");
     }
     setIsLoading(false);
   }

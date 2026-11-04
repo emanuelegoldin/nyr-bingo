@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import {
   getResolutionTextKey,
   RESOLUTION_TYPE_BADGE_VARIANTS,
@@ -149,11 +149,7 @@ export const PreparedResolutionsDialog = ({
       await onAdded();
       toast({ title: "Success", description: "Resolution added" });
     } else {
-      toast({
-        title: "Error",
-        description: result.error || "Failed to add resolution",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to add resolution");
     }
     setAddingId(null);
   };

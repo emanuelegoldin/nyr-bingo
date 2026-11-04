@@ -24,7 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAppContext, usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
@@ -95,11 +95,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
       setResolutions((prev) => prev.filter((r) => r.id !== res.id));
       toast({ title: "Success", description: "Resolution deleted" });
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to delete resolution",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to delete resolution");
     }
     setDeletingId(null);
   };

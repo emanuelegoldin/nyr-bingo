@@ -2,7 +2,7 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { useWsRoom } from "@/hooks/use-ws-room";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { ReviewFile, ReviewThreadWithDetails } from "@/lib/db/types";
 import { useEffect, useState } from "react";
 
@@ -55,11 +55,7 @@ export const useReviewThread = (
     if (result.ok) {
       setThread(result.data.thread);
     } else {
-      toast({
-        title: 'Error',
-        description: result.error || (silent ? 'Failed to refresh review thread' : 'Failed to load review thread'),
-        variant: 'destructive',
-      });
+      toastApiError(result, silent ? 'Failed to refresh review thread' : 'Failed to load review thread');
     }
     if (!silent) setIsThreadLoading(false);
   };
@@ -115,11 +111,7 @@ export const useReviewThread = (
         body: form,
       });
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to upload file',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to upload file');
         return;
       }
       // If succesful, the response contains the uploaded file info.
@@ -161,11 +153,7 @@ export const useReviewThread = (
         json: { content },
       });
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to post message',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to post message');
         return;
       }
 
@@ -199,11 +187,7 @@ export const useReviewThread = (
         json: { fileId },
       });
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to delete file',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to delete file');
         return;
       }
 
@@ -238,11 +222,7 @@ export const useReviewThread = (
         method: 'DELETE',
       });
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to close thread',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to close thread');
         return;
       }
 
