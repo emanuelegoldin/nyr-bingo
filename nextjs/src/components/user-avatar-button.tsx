@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -46,20 +46,16 @@ export function UserAvatarButton() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      toast({
-        title: "Logged out",
-        description: "You have been logged out successfully.",
-      });
-      router.push('/');
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to log out",
-        variant: "destructive",
-      });
+    const result = await apiFetch<unknown>('/api/auth/logout', { method: 'POST' });
+    if (!result.ok) {
+      toastApiError(result, "Failed to log out", "Failed to log out");
+      return;
     }
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
+    router.push('/');
   };
 
   if (!user) {

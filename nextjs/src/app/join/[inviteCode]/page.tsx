@@ -8,6 +8,7 @@ import { AppLogo } from '@/components/icons';
 import { Loader2, Users, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { AuthContext } from '@/app/api/utils';
+import { apiErrorMessage, apiFetch } from '@/lib/api-client';
 
 /**
  * Join Team Page
@@ -28,30 +29,20 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
     
     setStatus('joining');
 
-    try {
-      const response = await fetch(`/api/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ inviteCode }),
-      });
+    const result = await apiFetch<{ team: { id: string } }>('/api/join', {
+      method: 'POST',
+      json: { inviteCode },
+    });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setStatus('success');
-        setMessage('Successfully joined the team!');
-        setTimeout(() => {
-          router.push(`/teams/${data.team.id}`);
-        }, 2000);
-      } else {
-        setStatus('error');
-        setMessage(data.error || 'Failed to join team');
-      }
-    } catch (error) {
+    if (result.ok) {
+      setStatus('success');
+      setMessage('Successfully joined the team!');
+      setTimeout(() => {
+        router.push(`/teams/${result.data.team.id}`);
+      }, 2000);
+    } else {
       setStatus('error');
-      setMessage('An error occurred. Please try again.');
+      setMessage(apiErrorMessage(result, 'Failed to join team', 'An error occurred. Please try again.'));
     }
   };
 

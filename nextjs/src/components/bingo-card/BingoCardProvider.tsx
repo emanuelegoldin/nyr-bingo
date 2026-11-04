@@ -14,7 +14,7 @@ type BaseBingoCardProviderProps = {
     isOwner: boolean,
     gameId: string,
     currentUserId: string,
-    cardFetchInput?: string | URL | Request
+    cardFetchInput?: string
     headerSlot?: React.ReactNode
     children?: React.ReactNode
 };

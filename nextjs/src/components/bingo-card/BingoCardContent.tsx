@@ -24,7 +24,7 @@ export function BingoCardContent(
       editMode: boolean,
       gameId: string,
       currentUserId: string,
-      fetchInput?: string | URL | Request
+      fetchInput?: string
     }
 ) {
   // Hooks
@@ -39,28 +39,18 @@ export function BingoCardContent(
   const fetchUrl = fetchInput ? fetchInput : `/api/games/${gameId}/cards?userId=${currentUserId}`;
 
   const reloadCard = useCallback(async () => {
-    try {
-      const response = await fetch(fetchUrl);
-      const data = await response.json();
-
-      if (!response.ok || !data.card) {
-        toast({
-          title: 'Error',
-          description: data.error || 'Failed to refresh cards',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      setCard(data.card);
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to refresh card',
-        variant: 'destructive',
-      });
+    const result = await apiFetch<{ card: BingoCardWithCells | null }>(fetchUrl);
+    if (!result.ok) {
+      toastApiError(result, 'Failed to refresh cards', 'Failed to refresh card');
+      return;
     }
-  }, [currentUserId, gameId, toast, fetchUrl]);
+    if (!result.data.card) {
+      // The player has no card in this game
+      toast({ title: 'Error', description: 'Failed to refresh cards', variant: 'destructive' });
+      return;
+    }
+    setCard(result.data.card);
+  }, [fetchUrl, toast]);
 
   const handleCellUpdate = useCallback(
     async (cellId: string, newState: 'pending' | 'completed' | 'failed') => {
@@ -81,7 +71,7 @@ export function BingoCardContent(
       // The card may be stale, which is a common reason for the failure
       await reloadCard();
     },
-    [reloadCard, toast]
+    [reloadCard]
   );
 
   // Effects
