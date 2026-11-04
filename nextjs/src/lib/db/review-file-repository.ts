@@ -177,6 +177,24 @@ export async function getGameReviewFiles(gameId: string): Promise<ThreadFilePath
 }
 
 /**
+ * List the proof files of one player's card in a game, to remove them once the card is deleted.
+ * @param gameId The game
+ * @param userId The card's owner
+ * @returns The file rows
+ */
+export async function getCardReviewFiles(gameId: string, userId: string): Promise<ThreadFilePathRow[]> {
+  return query<ThreadFilePathRow[]>(
+    `SELECT rf.id, rf.file_path
+     FROM review_files rf
+     JOIN review_threads rt ON rf.thread_id = rt.id
+     JOIN bingo_cells c ON rt.cell_id = c.id
+     JOIN bingo_cards bc ON c.card_id = bc.id
+     WHERE bc.game_id = ? AND bc.user_id = ?`,
+    [gameId, userId]
+  );
+}
+
+/**
  * Remove the stored files of rows that were already deleted. Failures are logged and
  * skipped, because the delete they follow has committed.
  * @param files The deleted file rows

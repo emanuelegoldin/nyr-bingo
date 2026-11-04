@@ -123,6 +123,7 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 - The team goal is a resolution with `scope = team`, of any type (spec 03). It belongs to one game.
 - Only the leader can create or edit it: `POST /api/resolutions/save` with `scope = 'team'` and `gameId`.
 - A game has one goal. Saving a new goal without an `id` when one already exists updates the existing goal, keeping its stored type (spec 03).
+- The goal belongs to the leader who set it: only they edit it and record its progress. When they leave the game, it passes to another leader of the game.
 - The goal can be edited at any time, including after the game has started. Cells reference it, so edits are reflected on every card of the game.
 - `GET /api/games/[gameId]/goal` returns it to team members.
 - The goal is shown on the game page and appears as a normal `team` cell on the cards (spec 05). It is **not** the Joker.
