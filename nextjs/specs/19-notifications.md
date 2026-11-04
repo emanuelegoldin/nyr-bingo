@@ -41,14 +41,14 @@ Let users see what happened in their teams since they last looked: after logging
 
 | Type | Happens when | Actor | Recipients |
 | ---- | ------------ | ----- | ---------- |
-| `card_progress` | A cell reaches `completed`, manually or by automatic completion (spec 06) | The card owner | The team |
+| `card_progress` | A cell reaches `completed`, manually or by automatic completion (spec 06) | The card owner | The game's players |
 | `member_joined` | A user joins the team (spec 04) | The new member | The team |
-| `game_started` | The leader starts a game (spec 16) | The leader | The team |
-| `bingo_scored` | A player's `first_bingo_at` (spec 12) goes from empty to set | The player | The team |
-| `game_ended` | A game ends (spec 16) | The leader, or nobody at the deadline | The team |
+| `game_started` | The leader starts a game (spec 16) | The leader | The game's players |
+| `bingo_scored` | A player's `first_bingo_at` (spec 12) goes from empty to set | The player | The game's players |
+| `game_ended` | A game ends (spec 16) | The leader, or nobody at the deadline | The game's players |
 | `proof_requested` | A member requests proof on a cell (spec 07) | The requester | The card owner |
 
-- The team means its members when the notification is released.
+- The team means its members when the notification is released. The game's players means its roster (spec 16) when the notification is released, or the players of its archive (spec 18) once the game has been archived.
 - An actor never receives their own event.
 - `failed` and `accomplished` cells are not progress. An `accomplished` cell was already announced when it was completed.
 - A `team` cell of a `compound` or `iterative` goal is not progress, because one change moves that cell on every card. A bingo it causes is still announced.

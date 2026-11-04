@@ -108,7 +108,8 @@ Thread changes are signaled in real time to other users viewing the same review 
 
 ### Eligible Voters
 
-- All team members **except** the completing user, as of the moment of the vote.
+- All players of the cell's game (spec 16) **except** the completing user, as of the moment of the vote.
+- A vote cast by a player who later leaves the game stays.
 - Each voter has one vote per thread.
 - Votes can be changed until thread closure.
 
@@ -211,4 +212,5 @@ If a file cannot be removed from disk during any closure, the closure fails and 
 ## Known Gaps
 
 - The deadline rule differs from the voting rule: a thread with no votes is accepted.
+- A thread is checked for closure only when a vote is cast. If the last player who had not voted leaves the game, the thread stays open until the next vote or its deadline.
 - `/review-files/` is served by Nginx without authentication. Access control relies on the file name being unguessable.

@@ -2,13 +2,15 @@
 
 ## Purpose
 
-Separate a bingo game from the group of people playing it. A **team** (spec 04) is a list of users with a leader. A **game** is one instance of bingo played by that team. A team can run several games at the same time, and playing again does not require a new team or new invitations.
+Separate a bingo game from the group of people playing it. A **team** (spec 04) is a list of users with one or more leaders. A **game** is one instance of bingo played by members of that team. A team can run several games at the same time, and playing again does not require a new team or new invitations.
 
 ---
 
 ## User Stories Covered
 
 - Start a new game with the same people, without inviting them again
+- Choose which team members play a new game
+- Leave a game
 - Run several games with one team at the same time
 - See the games I am playing in one list
 - Define a team goal for a game
@@ -23,6 +25,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 ## In Scope
 
 - Game creation, listing and deletion
+- Game roster and leaving a game
 - Game lifecycle
 - Game page
 - Game configuration
@@ -39,8 +42,9 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 - A game belongs to one team and has a non-empty name.
 - `status` is `forming`, `started` or `ended`.
 - `deadline` is optional. It is the last playable day of the game. A game without one only ends manually.
-- The players of a game are the current members of its team. There is no per-game roster.
-- The leader of a game is the leader of its team.
+- The players of a game are its **roster**, stored in `game_players`. Every player is a member of the game's team.
+- The leaders of a game are the team leaders (spec 04) who are players of the game. Everything this spec reserves to "the leader" is open to any of them.
+- A game always has at least one leader among its players: a leader cannot leave while they are the only one.
 - The team goal, member-provided resolutions, bingo cards and leaderboard rows belong to one game. Nothing carries over between games.
 
 ---
@@ -61,8 +65,10 @@ A **running** game is one in `forming` or `started`.
 
 `POST /api/teams/[teamId]/games`
 
-- Only the leader of the team can create a game (`403` otherwise), and the leader must be verified (`403` otherwise).
+- Only a leader of the team can create a game (`403` otherwise), and the leader must be verified (`403` otherwise).
 - The body has a non-empty `name` (`400` otherwise).
+- The body MAY have `playerIds`, the team members who play the game. Without it, every member plays. Each id must belong to a team member (`400` otherwise). The creator is always a player, whether or not they are listed.
+- The **New Game** dialog lists the team members with a checkbox each, all checked. The creator's box is checked and cannot be cleared.
 - The game starts in `forming` status with no goal and no resolutions.
 - A team can have any number of running games.
 
@@ -70,18 +76,19 @@ A **running** game is one in `forming` or `started`.
 
 ### Listing and Reading Games
 
-- `GET /api/teams/[teamId]/games` lists the team's running games, to members only (`403` otherwise).
+- `GET /api/teams/[teamId]/games` lists the team's running games that the caller plays, to members only (`403` otherwise).
 - `GET /api/games` lists the caller's running games across their teams, each with its team's name, newest first.
-- `GET /api/games/[gameId]` returns one game with its team's members, to members of its team only (`403` otherwise).
+- `GET /api/games/[gameId]` returns one game with its players, to its players only (`403` otherwise).
+- Every other route under `/api/games/[gameId]` is also limited to the game's players, and "member" in this spec means a player of the game.
 - `404` is returned for a game that does not exist, and for an ended game. This applies to every route under `/api/games/[gameId]`.
 
 ---
 
 ### Game Page
 
-`/games/[gameId]` shows a running game to the members of its team; others get a not-found page, as they do for an ended game.
+`/games/[gameId]` shows a running game to its players; others get a not-found page, as they do for an ended game.
 
-The header holds the game name, the team name linking to the team page, the leader, the deadline if one is set, the status, the team goal and the actions. The tabs below it are defined in spec 12.
+The header holds the game name, the team name linking to the team page, the leaders, the deadline if one is set, the status, the team goal and the actions. The tabs below it are defined in spec 12.
 
 | Action | Who | When |
 | ------ | --- | ---- |
@@ -91,6 +98,7 @@ The header holds the game name, the team name linking to the team page, the lead
 | **End Game** | Leader | `started`, after confirmation |
 | **Delete Game** | Leader | Always, after confirmation |
 | **Propose Resolutions** | Any member | Always |
+| **Leave Game** | Any player | Always, after confirmation |
 
 `/games` lists the caller's running games with their name, team, status and a link to the game page. New games are created from the team page (spec 04).
 
@@ -126,7 +134,7 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 - For each game, each member is expected to create one resolution for every **other** member. A missing resolution does not block the game: at start, the recipient gets a prepared resolution instead (spec 05).
 - `POST /api/resolutions/save` with `scope = 'member_provided'`, `gameId` and `toUserId`. Any type is allowed.
 - Rules:
-  - The author and the target must both be members of the game's team.
+  - The author and the target must both be players of the game.
   - Members cannot create a resolution for themselves.
 - The game page's **Propose Resolutions** dialog lists every other member with their resolution, if any.
 - `GET /api/games/[gameId]/resolutions` returns the caller's written and received resolutions, the members and the overall status. With `?toUserId=<id>` it returns the resolutions targeted to that member. Both are limited to team members.
@@ -156,14 +164,14 @@ The leader may start bingo only when:
 Other members are verified because joining requires it.
 
 On start:
-- The game's status becomes `started` and a bingo card is generated for every member (spec 05), in one transaction: if generation fails, the game stays `forming` with no cards
-- A leaderboard row is created for every member (spec 12)
+- The game's status becomes `started` and a bingo card is generated for every player (spec 05), in one transaction: if generation fails, the game stays `forming` with no cards
+- A leaderboard row is created for every player (spec 12)
 
 ---
 
 ### Joining After Start
 
-A user who joins a team (spec 04) receives a card in **every** `started` game of that team:
+A user who joins a team (spec 04) becomes a player of **every** running game of that team, and receives a card in every `started` one:
 - The game stays in `started` status.
 - The card is generated at join time under the rules of spec 05. This requires the team goal to still exist; a failure to generate a card is not reported to the user and does not affect the other games.
 - If the team goal is `compound` or `iterative`, the new member's goal cell is set to match the goal's progress.
@@ -200,19 +208,39 @@ Until it is archived, after a game has ended:
 - Only the leader can delete a game (`403` otherwise).
 - The UI asks for confirmation.
 - Deletion is a **hard delete**. Stored proof files of the game's threads are removed too, unless another thread uses the same file.
-- Due to database `ON DELETE CASCADE` constraints, deleting a game also deletes its team goal, member-provided resolutions, leaderboard rows, bingo cards and all dependent gameplay and review records.
+- Due to database `ON DELETE CASCADE` constraints, deleting a game also deletes its roster, team goal, member-provided resolutions, leaderboard rows, bingo cards and all dependent gameplay and review records.
+
+---
+
+### Leaving a Game
+
+`POST /api/games/[gameId]/leave`
+
+- Only a player can leave (`403` otherwise). The game must be running (`404` otherwise, as for every game route).
+- A leader cannot leave while no other player of the game is a team leader (`400` otherwise). They promote another player first (spec 04).
+- The UI asks for confirmation and then returns the user to `/games`.
+- In one transaction, leaving:
+  - Removes the user from the roster
+  - Deletes their bingo card, with its cells and their threads, and their leaderboard row. Stored proof files of those threads are removed too, unless another thread uses the same file.
+  - Deletes the member-provided resolutions written **for** them in this game
+- Resolutions they wrote **for** other players stay, on those players' cards and in the Propose Resolutions lists. Their badge reads "Former Teammates" (spec 05). The leaver can no longer edit them.
+- Votes they cast on other players' threads stay.
+- A user who left a game cannot return to it, even by leaving and joining the team again.
+- Leaving a team (spec 04) leaves each of its running games the user plays.
 
 ---
 
 ## Permissions
 
 - Only verified users can create or start games.
-- Only the team leader can:
-  - Create, configure, start, end and delete a game
+- Only a team leader can create a game.
+- Only a leader of the game (a team leader who plays it) can:
+  - Configure, start, end and delete a game
   - Define the team goal
-- Team members can:
-  - Provide resolutions for other members
-- Non-members receive `403` from the API.
+- Players can:
+  - Provide resolutions for other players
+  - Leave the game
+- Non-players receive `403` from the API.
 
 ---
 
@@ -228,9 +256,19 @@ Until it is archived, after a game has ended:
 | `ended_at` | DATETIME | NULL until the game ends |
 | `deadline` | DATE | Last playable day. NULL when the game only ends manually |
 
+### `game_players`
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| `game_id` | VARCHAR(36) | FK → `games.id` ON DELETE CASCADE |
+| `user_id` | VARCHAR(36) | FK → `users.id` ON DELETE CASCADE |
+| `joined_at` | DATETIME | |
+
+The primary key is `(game_id, user_id)`.
+
 `bingo_cards`, `team_leaderboard` and `resolutions` carry both `game_id` and `team_id`. `resolutions.game_id` is `NULL` for personal resolutions. Each of those tables is unique per game, not per team.
 
-**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games.
+**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games. `V5_6_0__game_players.sql` adds `game_players`, with every existing game's team members as its players.
 
 ---
 
@@ -252,10 +290,14 @@ Until it is archived, after a game has ended:
 - Ending a game closes its open review threads, archives it and removes it from every list of running games.
 - An ended game cannot be changed and its routes return `404`.
 - Deleting a game leaves its team and sibling games intact.
+- A leader can choose which team members play a new game; all are selected by default.
+- Only players can see and play a game.
+- A player can leave a game after confirming. Their card, leaderboard row and the resolutions written for them are removed; resolutions they wrote for others stay, tagged "Former Teammates".
+- The only leader of a game cannot leave it until another player is promoted.
 
 ---
 
 ## Known Gaps
 
 - A user who joins after a game has started gets a card built only from resolutions that exist at that moment, normally the team goal plus personal resolutions and empty cells.
-- Card rooms stay per team (spec 11), so activity in one game also refreshes pages of its sibling games.
+- Card rooms stay per team (spec 11), so activity in one game also refreshes pages of its sibling games, and team members who do not play a game can receive its refresh signals (never its data).

@@ -11,7 +11,7 @@ Keep a read-only record of every finished game. An archived game is a snapshot o
 - Browse the finished games I took part in
 - See the final standings of a game
 - Look at each player's final card and open the details of a cell
-- Delete a game from the archive, as the leader who ran it
+- Delete a game from the archive, as a leader who ran it
 
 ---
 
@@ -30,10 +30,11 @@ Keep a read-only record of every finished game. An archived game is a snapshot o
 Every game that ends is archived, whether it ended manually or at its deadline (spec 16).
 
 - The archive holds, as they were when the game ended:
-  - The game name, the team name, the end date and the leader who ran the game
+  - The game name, the team name, the end date and the leaders who ran the game: its players who were team leaders when it was archived
   - The leaderboard
   - The card of every player
-- The **players** of an archived game are the team members who had a card in it. A member without a card has no access.
+- The **players** of an archived game are the game's players (spec 16) who had a card in it. A member without a card has no access.
+- A member-provided cell whose provider was no longer a player is labelled "Former Teammates".
 - A cell keeps its position, title, description, type, state, source and source label. A `compound` cell also keeps its subtasks and an `iterative` cell its counters. A cell whose resolution was deleted before the game ended is archived blank (spec 03).
 - A game is archived only once it has no open review thread, so every cell is final.
 - Saving the archive and deleting the game happen in one transaction. The game's cards, cells, leaderboard rows, closed threads, team goal and member-provided and prepared resolutions are deleted with it.
@@ -63,7 +64,7 @@ An archived game has no reference to `games`, `teams` or `resolutions`.
 
 From top to bottom:
 
-- The game name, team name and end date, and a **Delete** button for the leader who ran the game
+- The game name, team name and end date, and a **Delete** button for the leaders who ran the game
 - The final leaderboard, with the columns and order of spec 12
 - The card of every player, in leaderboard order
 
@@ -73,7 +74,7 @@ Cards are read-only. They have no edit mode, real-time updates, confetti, proof 
 
 `DELETE /api/archived-games/[archivedGameId]`
 
-- Only the leader who ran the game can delete it (`403` otherwise; `404` when it does not exist).
+- Only a leader who ran the game can delete it (`403` otherwise; `404` when it does not exist).
 - The UI asks for confirmation.
 - Deletion is a **hard delete** and removes the game from the archive of every player.
 
@@ -82,7 +83,7 @@ Cards are read-only. They have no edit mode, real-time updates, confetti, proof 
 ## Permissions
 
 - Only the players of an archived game can view it.
-- Only the leader who ran the game can delete it.
+- Only a leader who ran the game can delete it.
 - Archived games cannot be edited by anyone.
 
 ---
@@ -91,14 +92,14 @@ Cards are read-only. They have no edit mode, real-time updates, confetti, proof 
 
 | Table | Primary key | Holds |
 | ----- | ----------- | ----- |
-| `archived_games` | `id`, the game's former id | `leader_user_id` (FK → `users.id` ON DELETE SET NULL), `name`, `team_name`, `ended_at` |
-| `archived_game_players` | `archived_game_id`, `user_id` | `player_name`, `leaderboard_rank`, `completed_tasks`, `first_bingo_at` |
+| `archived_games` | `id`, the game's former id | `name`, `team_name`, `ended_at` |
+| `archived_game_players` | `archived_game_id`, `user_id` | `player_name`, `is_leader`, `leaderboard_rank`, `completed_tasks`, `first_bingo_at` |
 | `archived_cells` | `archived_game_id`, `user_id`, `position` | `title`, `description`, `resolution_type`, `state`, `source_type`, `source_user_id`, `source_label`, `is_empty`, `number_of_repetition`, `completed_times` |
 | `archived_cell_subtasks` | `archived_game_id`, `user_id`, `position`, `subtask_index` | `title`, `description`, `completed` |
 
 Each table cascades from the one above it. `archived_game_players.user_id` references `users.id` ON DELETE CASCADE. `leaderboard_rank` is `NULL` for a player who had no leaderboard row, who is left out of the leaderboard. The Joker is implicit, as on a live card (spec 05).
 
-**Migration:** `V5_4_0__game_archive.sql`.
+**Migration:** `V5_4_0__game_archive.sql`. `V5_7_0__multiple_team_leaders.sql` replaces `archived_games.leader_user_id` with `archived_game_players.is_leader`.
 
 ---
 
@@ -114,4 +115,4 @@ Each table cascades from the one above it. `archived_game_players.user_id` refer
 - Cells cannot be changed, and selecting one shows its details as plain text.
 - Editing or deleting a resolution, or deleting the team, does not change an archived game.
 - Non-players cannot view an archived game.
-- Only the leader who ran the game can delete it, and deletion removes it for every player.
+- Only a leader who ran the game can delete it, and deletion removes it for every player.

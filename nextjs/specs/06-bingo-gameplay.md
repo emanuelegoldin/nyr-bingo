@@ -61,7 +61,7 @@ State is stored per cell (`bingo_cells.state`). The same resolution can appear i
 | `accomplished` | Green, text struck through | Thumbs up |
 | `failed` | Red | X |
 
-Every non-empty, non-joker cell shows its title. On `sm` screens and wider it also shows a source badge: "Team Goal", the provider's username, or "Personal".
+Every non-empty, non-joker cell shows its title. On `sm` screens and wider it also shows a source badge: "Team Goal", the provider's username, or "Personal". A member-provided cell whose provider is no longer a player of the game (spec 16, Leaving a Game) shows "Former Teammates", without a profile link.
 
 ---
 
