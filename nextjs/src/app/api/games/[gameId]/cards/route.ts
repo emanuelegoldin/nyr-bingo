@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requirePermission } from '@/lib/authz';
 import {
-  isTeamMember,
   getGameBingoCards,
   getBingoCard,
   getRunningGame,
@@ -26,12 +26,9 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
     return errorResponse('Game not found', 404);
   }
 
-  // Check if user is a member
-  // Spec: 08-visibility-and-updates.md - Only team members can view the game's cards
-  const isMember = await isTeamMember(game.teamId, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
-  }
+  // Spec: 08-visibility-and-updates.md - Only the game's players can view its cards
+  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
+  if (denied) return denied;
 
   if (userId) {
     // Get specific user's card
@@ -40,7 +37,7 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
   }
 
   // Get all cards of the game
-  const cards = await getGameBingoCards(gameId, currentUser.id);
+  const cards = await getGameBingoCards(gameId);
 
   return NextResponse.json({ cards });
 });

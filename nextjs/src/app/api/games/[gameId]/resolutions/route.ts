@@ -4,12 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requirePermission } from '@/lib/authz';
 import {
-  isTeamMember,
   getMemberProvidedResolutionsByUser,
   getMemberProvidedResolutionsForUser,
   checkAllResolutionsProvided,
   getRunningGame,
+  getGamePlayerIds,
   getTeamMembers,
 } from '@/lib/db';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
@@ -32,11 +33,8 @@ export const GET = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  // Check if user is a member
-  const isMember = await isTeamMember(game.teamId, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
-  }
+  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
+  if (denied) return denied;
 
   if (toUserId) {
     const resolutions = await getMemberProvidedResolutionsForUser(gameId, toUserId);
@@ -49,8 +47,9 @@ export const GET = withAuth(async (
   // Get resolutions created for the user
   const createdForUser = await getMemberProvidedResolutionsForUser(gameId, currentUser.id);
 
-  // Get all team members
-  const members = await getTeamMembers(game.teamId);
+  // Spec: 16-games.md - the members of a game are its players
+  const playerIds = new Set(await getGamePlayerIds(game.id));
+  const members = (await getTeamMembers(game.teamId)).filter((member) => playerIds.has(member.userId));
 
   // Check overall status
   const status = await checkAllResolutionsProvided(game);

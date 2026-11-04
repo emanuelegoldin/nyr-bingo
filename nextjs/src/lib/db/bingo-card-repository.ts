@@ -6,8 +6,6 @@
 import { CellSourceType, CellState, JOKER_POSITION, ResolutionType } from '../shared/types';
 import { CardRow, CellRow, rowToCard, rowToCell, SELECT_CELL_WITH_RESOLVED_TEXT } from './bingo-card-rows';
 import { query } from './connection';
-import { getGameById } from './game-repository';
-import { isTeamMember } from './team-repository';
 import {
   BingoCardWithCells,
   BingoCellWithThread,
@@ -100,19 +98,12 @@ async function getCellsWithThreads(cardId: string): Promise<BingoCellWithThread[
 
 /**
  * Get all bingo cards of a game (for visibility)
+ * @param gameId The game
+ * @returns Its cards with their cells
  * Spec: 08-visibility-and-updates.md
  */
-export async function getGameBingoCards(
-  gameId: string,
-  requestingUserId: string
-): Promise<BingoCardWithCells[]> {
-  // Verify requesting user is a team member
-  // Spec: 08-visibility-and-updates.md - Only team members can view team cards
-  const game = await getGameById(gameId);
-  if (!game || !(await isTeamMember(game.teamId, requestingUserId))) {
-    return [];
-  }
-
+export async function getGameBingoCards(gameId: string): Promise<BingoCardWithCells[]> {
+  // The caller checks that the user may view the game (spec 21: game.view)
   const cardRows = await query<CardRow[]>(
     `SELECT * FROM bingo_cards WHERE game_id = ?`,
     [gameId]

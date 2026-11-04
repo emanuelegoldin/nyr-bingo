@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isUserVerified } from '@/lib/auth';
+import { requirePermission } from '@/lib/authz';
 import { createTeam, getTeamsForUser, getTeamWithMembers } from '@/lib/db';
 import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 
@@ -30,11 +30,9 @@ export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthCo
  * Requires email verification
  */
 export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-  // Check if user has verified their email
-  // Unverified users can only write resolutions and update their profiles
-  if (!isUserVerified(currentUser)) {
-    return errorResponse('Email verification required. Please verify your email before creating a team.', 403);
-  }
+  // Spec: 21-authorization.md - team.create requires a verified email
+  const denied = await requirePermission(currentUser, 'team.create', { scope: 'none' });
+  if (denied) return denied;
 
   const body = await request.json();
   const { name } = body;

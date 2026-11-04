@@ -49,8 +49,10 @@ async function collapseProgressBatch(event: PendingEvent, connection: PoolConnec
 }
 
 /**
- * Write the recipients of an event: its target or its team, without the actor and without users
- * who turned notifications off.
+ * Write the recipients of an event: its target, the players of its game (or of the game's archive
+ * once it has been archived), or its team, without the actor and without users who turned
+ * notifications off.
+ * Spec: 19-notifications.md - Events
  *
  * @param event - The event.
  * @param connection - The transaction.
@@ -58,8 +60,14 @@ async function collapseProgressBatch(event: PendingEvent, connection: PoolConnec
  */
 async function insertRecipients(event: PendingEvent, connection: PoolConnection): Promise<string[]> {
   const audience = event.target_user_id
-    ? { sql: `SELECT id AS user_id FROM users WHERE id = ?`, param: event.target_user_id }
-    : { sql: `SELECT user_id FROM team_memberships WHERE team_id = ?`, param: event.team_id };
+    ? { sql: `SELECT id AS user_id FROM users WHERE id = ?`, params: [event.target_user_id] }
+    : event.game_id
+      ? {
+        sql: `SELECT user_id FROM game_players WHERE game_id = ?
+              UNION SELECT user_id FROM archived_game_players WHERE archived_game_id = ?`,
+        params: [event.game_id, event.game_id],
+      }
+      : { sql: `SELECT user_id FROM team_memberships WHERE team_id = ?`, params: [event.team_id] };
 
   await execute(
     `INSERT INTO notification_recipients (event_id, user_id)
@@ -67,7 +75,7 @@ async function insertRecipients(event: PendingEvent, connection: PoolConnection)
      FROM (${audience.sql}) audience
      LEFT JOIN notification_settings s ON s.user_id = audience.user_id
      WHERE audience.user_id <> COALESCE(?, '') AND (s.enabled IS NULL OR s.enabled)`,
-    [event.id, audience.param, event.actor_user_id],
+    [event.id, ...audience.params, event.actor_user_id],
     connection
   );
 

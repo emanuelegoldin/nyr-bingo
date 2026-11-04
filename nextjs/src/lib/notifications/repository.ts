@@ -46,12 +46,12 @@ export async function getUserNotifications(
 ): Promise<{ notifications: UserNotification[]; unreadCount: number }> {
   const rows = await query<NotificationRow[]>(
     `SELECT e.id, e.type, u.username AS actor_username, e.team_name, e.game_name, e.item_count,
-            e.created_at, r.read_at, g.id AS live_game_id,
+            e.created_at, r.read_at, gp.game_id AS live_game_id,
             agp.archived_game_id, tm.team_id AS member_team_id
      FROM notification_recipients r
      JOIN notification_events e ON r.event_id = e.id
      LEFT JOIN users u ON e.actor_user_id = u.id
-     LEFT JOIN games g ON e.game_id = g.id
+     LEFT JOIN game_players gp ON gp.game_id = e.game_id AND gp.user_id = r.user_id
      LEFT JOIN archived_game_players agp ON agp.archived_game_id = e.game_id AND agp.user_id = r.user_id
      LEFT JOIN team_memberships tm ON tm.team_id = e.team_id AND tm.user_id = r.user_id
      WHERE r.user_id = ?

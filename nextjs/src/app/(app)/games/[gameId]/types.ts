@@ -12,7 +12,6 @@ export interface Game {
   id: string;
   teamId: string;
   teamName: string;
-  leaderUserId: string;
   name: string;
   teamResolutionText: string | null;
   status: GameStatus;

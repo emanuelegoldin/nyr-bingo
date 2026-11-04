@@ -53,7 +53,7 @@ Selecting a cell opens a dialog listing replacement options:
 The list:
 - Excludes resolutions already on the card
 - Can be filtered by a text input
-- Shows a badge with the source (provider's username or "Personal"), and the type for compound and iterative resolutions
+- Shows a badge with the source (provider's username, "Former Teammates" for a provider who is no longer a player, or "Personal"), and the type for compound and iterative resolutions
 
 ### 4) Apply or Cancel
 - The user can either select a replacement option or dismiss the dialog.

@@ -7,11 +7,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getResolutionHistoryAccess } from '@/lib/authz';
 import { getResolutionTeamIds, notifyTeams } from '@/lib/team-signals';
 import {
   getCompoundResolutionsByUser,
   getCompoundResolutionById,
-  getResolutionHistoryAccess,
   deleteResolution,
 } from '@/lib/db';
 import { ResolutionType } from '@/lib/shared/types';

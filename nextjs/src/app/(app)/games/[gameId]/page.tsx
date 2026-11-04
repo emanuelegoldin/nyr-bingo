@@ -9,13 +9,13 @@
  */
 
 import { requireUser } from '@/lib/auth';
+import { getGameCapabilities, requirePagePermission } from '@/lib/authz';
 import {
   getGameBingoCards,
   getGameGoalResolution,
   getGameLeaderboard,
   getGameWithMembers,
   getMemberProvidedResolutionsByUser,
-  isTeamMember,
   type BingoCardWithCells,
   type GameWithMembers,
   type Resolution,
@@ -48,7 +48,6 @@ function mapGame(game: GameWithMembers): Game {
     id: game.id,
     teamId: game.teamId,
     teamName: game.teamName,
-    leaderUserId: game.leaderUserId,
     name: game.name,
     teamResolutionText: game.teamResolutionText,
     status: game.status,
@@ -90,15 +89,14 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
     notFound();
   }
 
-  const member = await isTeamMember(game.teamId, currentUser.id);
-  if (!member) {
-    notFound();
-  }
+  await requirePagePermission(currentUser, 'game.view', { scope: 'game', game });
 
   // Non-critical sections are settled independently so one failed query does not block the page.
   const cardPromise = game.status === 'started'
-    ? getGameBingoCards(gameId, currentUser.id)
+    ? getGameBingoCards(gameId)
     : Promise.resolve([] as BingoCardWithCells[]);
+
+  const capabilities = await getGameCapabilities(currentUser, game);
 
   const [cardsResult, goalResult, resolutionsResult, leaderboardResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
     cardPromise,
@@ -121,6 +119,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
       initialGame={mapGame(game)}
       initialCards={initialCards}
       initialCurrentUserId={currentUser.id}
+      capabilities={capabilities}
       initialTeamGoal={initialTeamGoal}
       initialExistingResolutions={initialExistingResolutions}
       initialLeaderboardEntries={initialLeaderboardEntries}

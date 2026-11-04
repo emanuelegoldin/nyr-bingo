@@ -3,10 +3,10 @@
  * Spec Reference: Resolution Review & Proof Workflow - Review Thread
  */
 
-import { threadErrorStatus } from '@/app/api/threads/error-status';
+import { authorizeThreadAction, authorizeThreadCompleter } from '@/app/api/threads/thread-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyThreadClosed } from '@/lib/team-signals';
-import { closeThread, getThreadById } from '@/lib/db';
+import { closeThread, getThreadDetails } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
@@ -14,25 +14,31 @@ import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
  */
 export const GET = withAuth(async (request: NextRequest, { params, currentUser }: AuthContext<{ threadId: string }>) => {
   const { threadId } = await params;
-  const result = await getThreadById(threadId, currentUser.id);
-  if (!result.success) {
-    return errorResponse(result.error!, threadErrorStatus(result.error!));
+  const access = await authorizeThreadAction(currentUser, 'thread.view', threadId);
+  if ('response' in access) return access.response;
+
+  const thread = await getThreadDetails(access.thread);
+  if (!thread) {
+    return errorResponse('Cell not found', 404);
   }
-  return NextResponse.json({ thread: result.thread });
+  return NextResponse.json({ thread });
 });
 
 /**
  * DELETE /api/threads/[threadId] - Close a review thread
- * Only the resolution owner can close an open thread
+ * Only the completing user can close an open thread
  */
 export const DELETE = withAuth(async (
   _request: NextRequest,
   { params, currentUser }: AuthContext<{ threadId: string }>
 ) => {
   const { threadId } = await params;
-  const result = await closeThread(threadId, currentUser.id);
+  const access = await authorizeThreadCompleter(currentUser, threadId, 'Only the completing user can close the thread');
+  if ('response' in access) return access.response;
+
+  const result = await closeThread(threadId);
   if (!result.success) {
-    return errorResponse(result.error!, threadErrorStatus(result.error!));
+    return errorResponse(result.error, result.status);
   }
   await notifyThreadClosed(threadId);
   return NextResponse.json({ success: true });

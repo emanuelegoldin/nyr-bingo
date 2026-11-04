@@ -19,6 +19,7 @@ import { PageSpinner } from "@/components/page-spinner";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
 import type { Team } from "@/components/team/types";
+import { formatLeaderNames } from "@/components/team/leaders";
 
 export default function TeamsPage() {
   usePageTitle("Teams");
@@ -129,7 +130,6 @@ export default function TeamsPage() {
       {teams.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map(team => {
-            const leader = team.members.find(m => m.membership.role === 'leader');
             return (
               <Card key={team.id} className="flex flex-col">
                 <CardHeader>
@@ -138,7 +138,7 @@ export default function TeamsPage() {
                     {team.name}
                   </CardTitle>
                   <CardDescription>
-                    Led by {leader?.user.displayName || leader?.user.username || 'Unknown'}
+                    Led by {formatLeaderNames(team.members)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">

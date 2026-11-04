@@ -6,10 +6,10 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import { GameStatus } from '../shared/types';
-import { execute, query } from './connection';
+import { execute, query, withTransaction } from './connection';
 import { getGameGoalResolution } from './resolution-repository';
 import { getGameReviewFiles, removeOrphanedFiles } from './review-file-repository';
-import { getTeamMembers, getTeamWithMembers, isTeamLeader } from './team-repository';
+import { getTeamWithMembers } from './team-repository';
 import type { Game, GameWithMembers } from './types';
 
 interface GameRow extends RowDataPacket {
@@ -24,13 +24,12 @@ interface GameRow extends RowDataPacket {
   deadline_date: string | null;
   // Derived from the JOIN with teams
   team_name: string;
-  leader_user_id: string;
   // Derived from LEFT JOIN with resolutions (scope='team')
   team_resolution_text: string | null;
 }
 
 const SELECT_GAME = `
-  SELECT g.*, CAST(g.deadline AS CHAR) AS deadline_date, t.name AS team_name, t.leader_user_id,
+  SELECT g.*, CAST(g.deadline AS CHAR) AS deadline_date, t.name AS team_name,
          COALESCE(r.description, r.title) AS team_resolution_text
   FROM games g
   JOIN teams t ON g.team_id = t.id
@@ -42,7 +41,6 @@ function rowToGame(row: GameRow): Game {
     id: row.id,
     teamId: row.team_id,
     teamName: row.team_name,
-    leaderUserId: row.leader_user_id,
     name: row.name,
     teamResolutionText: row.team_resolution_text,
     status: row.status,
@@ -58,14 +56,25 @@ function rowToGame(row: GameRow): Game {
  * Spec: 16-games.md - Game Creation
  * @param teamId The team that will play it
  * @param name The game's name
+ * @param playerIds The team members who play it. The caller validates them.
  * @returns The new game
  */
-export async function createGame(teamId: string, name: string): Promise<Game> {
+export async function createGame(teamId: string, name: string, playerIds: string[]): Promise<Game> {
   const id = uuidv4();
-  await query(
-    `INSERT INTO games (id, team_id, name, status) VALUES (?, ?, ?, 'forming')`,
-    [id, teamId, name]
-  );
+  await withTransaction(async (connection) => {
+    await execute(
+      `INSERT INTO games (id, team_id, name, status) VALUES (?, ?, ?, 'forming')`,
+      [id, teamId, name],
+      connection
+    );
+    for (const playerId of new Set(playerIds)) {
+      await execute(
+        `INSERT INTO game_players (game_id, user_id) VALUES (?, ?)`,
+        [id, playerId],
+        connection
+      );
+    }
+  });
 
   const game = await getGameById(id);
   if (!game) {
@@ -96,28 +105,58 @@ export async function getRunningGame(id: string): Promise<Game | null> {
 }
 
 /**
- * Get a running game with the members of its team.
+ * List the players of a game, in the order they joined it.
+ * @param gameId The game
+ * @returns The ids of its players
+ */
+export async function getGamePlayerIds(gameId: string): Promise<string[]> {
+  const rows = await query<Array<RowDataPacket & { user_id: string }>>(
+    `SELECT user_id FROM game_players WHERE game_id = ? ORDER BY joined_at ASC, user_id ASC`,
+    [gameId]
+  );
+  return rows.map((row) => row.user_id);
+}
+
+/**
+ * Add a user to the roster of every running game of a team. Used when a user joins the team.
+ * Spec: 16-games.md - Joining After Start
+ * @param teamId The team
+ * @param userId The new member
+ */
+export async function addPlayerToRunningGames(teamId: string, userId: string): Promise<void> {
+  await query(
+    `INSERT IGNORE INTO game_players (game_id, user_id)
+     SELECT id, ? FROM games WHERE team_id = ? AND status <> 'ended'`,
+    [userId, teamId]
+  );
+}
+
+/**
+ * Get a running game with its players, as team members with their profiles.
  * @param id The game
- * @returns The game and its members, or null if it does not exist or has ended
+ * @returns The game and its players, or null if it does not exist or has ended
  */
 export async function getGameWithMembers(id: string): Promise<GameWithMembers | null> {
   const game = await getRunningGame(id);
   if (!game) return null;
 
   const team = await getTeamWithMembers(game.teamId);
-  return team ? { ...game, members: team.members } : null;
+  if (!team) return null;
+
+  const playerIds = new Set(await getGamePlayerIds(id));
+  return { ...game, members: team.members.filter((member) => playerIds.has(member.user.userId)) };
 }
 
 /**
- * List the running games of a user's teams, newest first.
+ * List the running games a user plays, newest first.
  * @param userId The user
  * @returns The games
  */
 export async function getRunningGamesForUser(userId: string): Promise<Game[]> {
   const rows = await query<GameRow[]>(
     `${SELECT_GAME}
-     JOIN team_memberships m ON m.team_id = g.team_id
-     WHERE m.user_id = ? AND g.status <> 'ended'
+     JOIN game_players p ON p.game_id = g.id
+     WHERE p.user_id = ? AND g.status <> 'ended'
      ORDER BY g.created_at DESC`,
     [userId]
   );
@@ -125,16 +164,18 @@ export async function getRunningGamesForUser(userId: string): Promise<Game[]> {
 }
 
 /**
- * List a team's running games, newest first.
+ * List the running games of a team that a user plays, newest first.
  * @param teamId The team
+ * @param userId The user
  * @returns The games
  */
-export async function getRunningGamesForTeam(teamId: string): Promise<Game[]> {
+export async function getRunningGamesForTeam(teamId: string, userId: string): Promise<Game[]> {
   const rows = await query<GameRow[]>(
     `${SELECT_GAME}
-     WHERE g.team_id = ? AND g.status <> 'ended'
+     JOIN game_players p ON p.game_id = g.id
+     WHERE g.team_id = ? AND p.user_id = ? AND g.status <> 'ended'
      ORDER BY g.created_at DESC`,
-    [teamId]
+    [teamId, userId]
   );
   return rows.map(rowToGame);
 }
@@ -226,17 +267,15 @@ export async function deleteGame(gameId: string): Promise<void> {
  * are replaced by prepared resolutions.
  * Spec: 16-games.md - Member-Provided Resolutions
  */
-export async function checkAllResolutionsProvided(game: Pick<Game, 'id' | 'teamId'>): Promise<{
+export async function checkAllResolutionsProvided(game: Pick<Game, 'id'>): Promise<{
   ready: boolean;
   missing: { fromUserId: string; toUserId: string }[];
 }> {
-  // Get all team members
-  const members = await getTeamMembers(game.teamId);
-  const memberIds = members.map(m => m.userId);
+  const memberIds = await getGamePlayerIds(game.id);
 
-  // If there are fewer than 2 members, there are no (from -> to) pairs required.
-  // Spec: 16-games.md - each member is expected to provide one for every other member.
-  // For a 1-person team, that is vacuously satisfied.
+  // If there are fewer than 2 players, there are no (from -> to) pairs required.
+  // Spec: 16-games.md - each player is expected to provide one for every other player.
+  // For a 1-player game, that is vacuously satisfied.
   if (memberIds.length < 2) {
     return { ready: true, missing: [] };
   }
@@ -274,21 +313,15 @@ export async function checkAllResolutionsProvided(game: Pick<Game, 'id' | 'teamI
 
 /**
  * Check whether the bingo game can start. startGameWithCards does the actual start.
+ * The caller checks that the user may start it (spec 21: game.start).
  * Spec: 16-games.md - Start Conditions
+ * @param gameId The game
+ * @returns Success, or the start condition that is not met
  */
-export async function checkGameCanStart(
-  gameId: string,
-  leaderUserId: string
-): Promise<{ success: boolean; error?: string }> {
+export async function checkGameCanStart(gameId: string): Promise<{ success: boolean; error?: string }> {
   const game = await getGameById(gameId);
   if (!game) {
     return { success: false, error: 'Game not found' };
-  }
-
-  // Only team leader can start
-  const isLeader = await isTeamLeader(game.teamId, leaderUserId);
-  if (!isLeader) {
-    return { success: false, error: 'Only the team leader can start the game' };
   }
 
   // Check if game is still in forming status

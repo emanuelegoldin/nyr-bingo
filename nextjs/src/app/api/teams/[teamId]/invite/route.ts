@@ -4,8 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createTeamInvitation, isTeamLeader } from '@/lib/db';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { requirePermission } from '@/lib/authz';
+import { createTeamInvitation } from '@/lib/db';
+import { AuthContext, withAuth } from '@/app/api/utils';
 
 /**
  * POST /api/teams/[teamId]/invite - Create team invitation
@@ -19,18 +20,11 @@ export const POST = withAuth(async (
   const body = await request.json();
   const { email } = body;
 
-  // Check if user is team leader
   // Spec: 04-bingo-teams.md - Only team leader can invite
-  const isLeader = await isTeamLeader(teamId, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only the team leader can invite users', 403);
-  }
+  const denied = await requirePermission(currentUser, 'team.invite', { scope: 'team', teamId });
+  if (denied) return denied;
 
-  const invitation = await createTeamInvitation(teamId, currentUser.id, email);
-
-  if (!invitation) {
-    return errorResponse('Failed to create invitation', 500);
-  }
+  const invitation = await createTeamInvitation(teamId, email);
 
   return NextResponse.json({
     invitation,

@@ -6,11 +6,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notifications } from '@/lib/notifications';
 import { notifyTeams } from '@/lib/team-signals';
-import { isUserVerified } from '@/lib/auth';
+import { requirePermission } from '@/lib/authz';
 import {
   checkGameCanStart,
   startGameWithCards,
-  isTeamLeader,
   getGameWithMembers,
   getRunningGame,
   initializeGameLeaderboard,
@@ -26,28 +25,15 @@ export const POST = withAuth(async (
   request: NextRequest,
   { params, currentUser }: AuthContext<{ gameId: string }>
 ) => {
-    // Check if user has verified their email
-  // Unverified users can only write resolutions and update their profiles
-  if (!isUserVerified(currentUser)) {
-    return errorResponse('Email verification required. Please verify your email before starting a game.', 403);
-  }
-
   const { gameId } = await params;
 
+  // Spec: 21-authorization.md - game.start: a verified leader of the game. A missing game gives 404.
   const runningGame = await getRunningGame(gameId);
-  if (!runningGame) {
-    return errorResponse('Game not found', 404);
-  }
-
-  // Check if user is team leader
-  // Spec: 16-games.md - Only team leader can start game
-  const isLeader = await isTeamLeader(runningGame.teamId, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only the team leader can start the game', 403);
-  }
+  const denied = await requirePermission(currentUser, 'game.start', { scope: 'game', game: runningGame });
+  if (denied || !runningGame) return denied ?? errorResponse('Game not found', 404);
 
   // Validate all start conditions
-  const check = await checkGameCanStart(gameId, currentUser.id);
+  const check = await checkGameCanStart(gameId);
 
   if (!check.success) {
     return errorResponse(check.error, 400);

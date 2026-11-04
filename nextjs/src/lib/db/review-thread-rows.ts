@@ -5,13 +5,15 @@
 
 import { GameStatus, ThreadStatus, VoteType } from '../shared/types';
 import { query } from './connection';
-import { isTeamMember } from './team-repository';
 import type {
   ReviewFile,
   ReviewMessageAndAuthor,
   ReviewThread,
   ReviewVote,
 } from './types';
+
+/** A refused review action, with the HTTP status to report. Spec: 21-authorization.md - Status Rules */
+export type ThreadFailure = { success: false; error: string; status: 400 | 403 | 404 };
 
 // Row types from database
 export interface ThreadRow {
@@ -133,31 +135,6 @@ export async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
 }
 
 /**
- * Load a cell's information for an action reserved to its team's members.
- * @param cellId The cell to load
- * @param userId The user acting on it
- * @param notMemberError The error to report when the user is not in the team
- * @returns The cell information, or the error explaining why the action is refused
- */
-export async function getCellInfoForMember(
-  cellId: string,
-  userId: string,
-  notMemberError: string
-): Promise<{ cellInfo: CellInfoRow } | { error: string }> {
-  const cellInfo = await getCellInfo(cellId);
-  if (!cellInfo) {
-    return { error: 'Cell not found' };
-  }
-
-  const isMember = await isTeamMember(cellInfo.team_id, userId);
-  if (!isMember) {
-    return { error: notMemberError };
-  }
-
-  return { cellInfo };
-}
-
-/**
  * Load a thread by ID.
  * @param threadId The thread to load
  * @returns The thread, or null if it does not exist
@@ -174,20 +151,20 @@ export async function loadThread(threadId: string): Promise<ReviewThread | null>
  * Load a thread for an action that requires it to be open.
  * @param threadId The thread to load
  * @param closedError The error to report when the thread is closed
- * @returns The thread, or the error explaining why the action is refused
+ * @returns The thread, or the error and HTTP status explaining why the action is refused
  */
 export async function loadOpenThread(
   threadId: string,
   closedError: string = 'Thread is closed'
-): Promise<{ thread: ReviewThread } | { error: string }> {
+): Promise<{ thread: ReviewThread } | { error: string; status: 400 | 404 }> {
   const thread = await loadThread(threadId);
 
   if (!thread) {
-    return { error: 'Thread not found' };
+    return { error: 'Thread not found', status: 404 };
   }
 
   if (thread.status !== 'open') {
-    return { error: closedError };
+    return { error: closedError, status: 400 };
   }
 
   return { thread };

@@ -5,19 +5,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notifications } from '@/lib/notifications';
 import { notifyTeams } from '@/lib/team-signals';
-import { isUserVerified } from '@/lib/auth';
-import { joinTeamByInviteCode, getRunningGamesForTeam, getTeamWithMembers, ensureBingoCardForUser, GameStatus } from '@/lib/db';
+import { requirePermission } from '@/lib/authz';
+import {
+  addPlayerToRunningGames,
+  ensureBingoCardForUser,
+  GameStatus,
+  getRunningGamesForTeam,
+  getTeamWithMembers,
+  joinTeamByInviteCode,
+} from '@/lib/db';
 import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
 
 /**
- * Give a new member a card in each started game of their team. A failure is logged and
- * does not affect the other games.
+ * Make a new member a player of each running game of their team, and give them a card in each
+ * started one. A card failure is logged and does not affect the other games.
  * Spec: 16-games.md - Joining After Start
  * @param teamId The team joined
  * @param userId The new member
  */
-async function generateCardsForNewMember(teamId: string, userId: string): Promise<void> {
-  const games = await getRunningGamesForTeam(teamId);
+async function addNewMemberToGames(teamId: string, userId: string): Promise<void> {
+  await addPlayerToRunningGames(teamId, userId);
+  const games = await getRunningGamesForTeam(teamId, userId);
 
   for (const game of games.filter((candidate) => candidate.status === GameStatus.STARTED)) {
     try {
@@ -38,12 +46,8 @@ async function generateCardsForNewMember(teamId: string, userId: string): Promis
 export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
   
   // Spec: 04-bingo-teams.md - Verification Requirement
-  if (!isUserVerified(currentUser)) {
-    return NextResponse.json(
-      { error: 'Email verification required. Please verify your email before joining a team.' },
-      { status: 403 }
-    );
-  }
+  const denied = await requirePermission(currentUser, 'team.join', { scope: 'none' });
+  if (denied) return denied;
 
   const body = await request.json();
   const { inviteCode } = body;
@@ -64,7 +68,7 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     : null;
 
   if (result.team) {
-    await generateCardsForNewMember(result.team.id, currentUser.id);
+    await addNewMemberToGames(result.team.id, currentUser.id);
     await notifyTeams([result.team.id]);
     await notifications.publish({ type: 'member_joined', teamId: result.team.id, actorUserId: currentUser.id });
   }
