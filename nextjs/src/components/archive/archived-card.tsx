@@ -30,8 +30,8 @@ export function ArchivedCardView({ card }: ArchivedCardViewProps) {
       <CardHeader>
         <CardTitle className="font-headline">{card.playerName}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-5 grid-rows-5 gap-2 md:gap-4">
+      <CardContent className="px-3 sm:px-6">
+        <div className="grid grid-cols-5 grid-rows-5 gap-1 sm:gap-2 md:gap-4">
           {card.cells.map((cell) => (
             cell.isJoker ? (
               <JokerCell key={cell.position} />
