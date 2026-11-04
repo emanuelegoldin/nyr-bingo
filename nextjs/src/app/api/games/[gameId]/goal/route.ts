@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/lib/authz';
 import { getGameGoalResolution, getRunningGame } from '@/lib/db';
+import { toUnifiedResolution } from '@/lib/shared/resolution-form';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
@@ -28,18 +29,5 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
     return NextResponse.json({ goal: null });
   }
 
-  return NextResponse.json({
-    goal: {
-      id: goal.id,
-      type: goal.resolutionType,
-      ownerUserId: goal.ownerUserId,
-      title: goal.title,
-      text: goal.description ?? '',
-      subtasks: goal.subtasks,
-      numberOfRepetition: goal.numberOfRepetition,
-      completedTimes: goal.completedTimes,
-      createdAt: goal.createdAt,
-      updatedAt: goal.updatedAt,
-    },
-  });
+  return NextResponse.json({ goal: toUnifiedResolution(goal) });
 });

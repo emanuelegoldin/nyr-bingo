@@ -29,6 +29,7 @@ import {
 } from '@/lib/db';
 import type { Game, Resolution, ResolutionContent } from '@/lib/db';
 import type { ResolutionScope, ResolutionType, Subtask } from '@/lib/shared/types';
+import { toUnifiedResolution } from '@/lib/shared/resolution-form';
 import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
@@ -266,7 +267,7 @@ async function handleCreate(
     },
   );
 
-  return NextResponse.json({ resolution: toUnifiedResponse(saved!, content.type) }, { status: 201 });
+  return NextResponse.json({ resolution: toUnifiedResolution(saved!) }, { status: 201 });
 }
 
 /**
@@ -288,7 +289,7 @@ async function handleSameTypeUpdate(id: string, userId: string, content: Resolut
     },
   );
 
-  return NextResponse.json({ resolution: toUnifiedResponse(saved!, content.type) });
+  return NextResponse.json({ resolution: toUnifiedResolution(saved!) });
 }
 
 /**
@@ -315,35 +316,5 @@ async function handleTypeChange(id: string, userId: string, oldType: string, con
     },
   );
 
-  return NextResponse.json({ resolution: toUnifiedResponse(saved, content.type) });
-}
-
-/**
- * Convert a resolution + the requested type into a unified response object
- * that the frontend can use regardless of type.
- */
-function toUnifiedResponse(resolution: Resolution, type: ResolutionType) {
-  const base = {
-    id: resolution.id,
-    type,
-    ownerUserId: resolution.ownerUserId,
-    title: resolution.title,
-    text: resolution.description ?? '',
-    createdAt: resolution.createdAt,
-    updatedAt: resolution.updatedAt,
-  };
-
-  if (type === 'compound') {
-    return { ...base, subtasks: resolution.subtasks };
-  }
-
-  if (type === 'iterative') {
-    return {
-      ...base,
-      numberOfRepetition: resolution.numberOfRepetition,
-      completedTimes: resolution.completedTimes,
-    };
-  }
-
-  return base;
+  return NextResponse.json({ resolution: toUnifiedResolution(saved) });
 }
