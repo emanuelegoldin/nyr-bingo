@@ -392,3 +392,20 @@ Lets a team have several leaders (specs 04 and 18).
 The steps that read a column to be dropped are skipped once it is gone, and `Create_Column` and
 `Drop_Column` do nothing when the column already exists or is already gone. The dropped columns are
 read before they are dropped, so the migration can run again after a partial failure.
+
+## 5.8.0 - Card Lock
+
+Lets a card owner shuffle their card until they lock it (spec 22).
+
+### Schema changes
+
+- `bingo_cards.locked_at` (`DATETIME`, nullable) is the time the card was locked. It is `NULL` while the
+  card can be shuffled.
+
+### Data migration
+
+None: every existing card starts unlocked.
+
+### Idempotency
+
+`Create_Column` does nothing when the column already exists, so the migration can run again.

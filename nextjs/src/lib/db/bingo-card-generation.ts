@@ -6,6 +6,7 @@
 import { randomUUID } from 'crypto';
 import type { PoolConnection } from 'mysql2/promise';
 import { getResolutionTextKey } from '../shared/resolution-type';
+import { shuffleArray } from '../shared/shuffle';
 import {
   BINGO_GRID_SIZE,
   CellSourceType,
@@ -324,17 +325,8 @@ async function generateCardForUser(
     userId,
     gridSize: BINGO_GRID_SIZE,
     createdAt: new Date(),
+    lockedAt: null,
   };
-}
-
-/**
- * Fisher-Yates shuffle
- */
-function shuffleArray<T>(array: T[]): void {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
 }
 
 /**

@@ -47,6 +47,13 @@ export enum CellState {
   FAILED = 'failed'
 }
 
+/** Spec: 22-card-shuffle.md - States of a done cell. A card with one cannot be shuffled. */
+export const DONE_CELL_STATES: readonly CellState[] = [
+  CellState.COMPLETED,
+  CellState.PENDING_REVIEW,
+  CellState.ACCOMPLISHED,
+];
+
 // Review thread types
 // Spec: Resolution Review & Proof Workflow
 export enum ThreadStatus {

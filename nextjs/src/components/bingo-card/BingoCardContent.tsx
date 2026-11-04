@@ -2,14 +2,15 @@ import { apiFetch, toastApiError } from "@/lib/api-client";
 import type { BingoCell, BingoCardWithCells } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { JokerCell } from "../cell/joker";
 import { ResolutionCell } from "../cell/resolution-cell";
 import { ConfettiLayer } from "./ConfettiLayer";
 
 export function BingoCardContent(
   {
-    initialCard,
+    card,
+    setCard,
     isOwner,
     editMode,
     gameId,
@@ -18,7 +19,8 @@ export function BingoCardContent(
   }
     :
     {
-      initialCard: BingoCardWithCells,
+      card: BingoCardWithCells,
+      setCard: Dispatch<SetStateAction<BingoCardWithCells>>,
       isOwner: boolean,
       editMode: boolean,
       gameId: string,
@@ -27,7 +29,6 @@ export function BingoCardContent(
     }
 ) {
   const { toast } = useToast();
-  const [card, setCard] = useState<BingoCardWithCells>(initialCard);
   const fetchUrl = `/api/games/${gameId}/cards?userId=${cardUserId}`;
 
   const reloadCard = useCallback(async () => {
@@ -42,7 +43,7 @@ export function BingoCardContent(
       return;
     }
     setCard(result.data.card);
-  }, [fetchUrl, toast]);
+  }, [fetchUrl, setCard, toast]);
 
   const handleCellUpdate = useCallback(
     async (cellId: string, newState: 'pending' | 'completed' | 'failed') => {
@@ -69,15 +70,8 @@ export function BingoCardContent(
       // The card may be stale, which is a common reason for the failure
       await reloadCard();
     },
-    [reloadCard]
+    [reloadCard, setCard]
   );
-
-  // Effects
-  // A server refresh brings new props; every mutation signals one, so the last refresh
-  // always carries the latest card.
-  useEffect(() => {
-    setCard(initialCard);
-  }, [initialCard]);
 
   return (
     <CardContent className="px-3 sm:px-6">
