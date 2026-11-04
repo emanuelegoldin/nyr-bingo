@@ -27,18 +27,9 @@ import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch } from "@/lib/api-client";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
-import type { ResolutionFormData, ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
+import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
 import { History, Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
-
-/* ─── Types ──────────────────────────────────────────────────────── */
-
-/** Type-specific DELETE endpoint per resolution type (base uses the generic route). */
-const DELETE_ENDPOINTS: Record<ResolutionTypeValue, string> = {
-  base: "/api/resolutions",
-  compound: "/api/resolutions/compound",
-  iterative: "/api/resolutions/iterative",
-};
 
 /* ─── Manager Component ──────────────────────────────────────────── */
 
@@ -92,12 +83,11 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
   };
 
   /**
-   * Delete a resolution using the appropriate type-specific endpoint.
-   * Base resolutions use /api/resolutions, compound/iterative use their own routes.
+   * Delete a resolution through the generic endpoint, which accepts every type.
    */
   const handleDelete = async (res: UnifiedResolution) => {
     setDeletingId(res.id);
-    const url = `${DELETE_ENDPOINTS[res.type] ?? DELETE_ENDPOINTS.base}?id=${res.id}`;
+    const url = `/api/resolutions?id=${res.id}`;
 
     const result = await apiFetch<unknown>(url, { method: "DELETE" });
 
