@@ -4,14 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requirePermission } from '@/lib/authz';
 import { notifyTeams } from '@/lib/team-signals';
 import {
   deleteGame,
   getGameWithMembers,
   getRunningGame,
   isDeadlinePast,
-  isGameLeader,
-  isGamePlayer,
   setGameDeadline,
 } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
@@ -42,10 +41,8 @@ export const GET = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  const isMember = await isGamePlayer(game.id, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a player of this game', 403);
-  }
+  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
+  if (denied) return denied;
 
   return NextResponse.json({ game });
 });
@@ -65,10 +62,8 @@ export const PATCH = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  const isLeader = await isGameLeader(game.id, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only a leader of the game can configure the game', 403);
-  }
+  const denied = await requirePermission(currentUser, 'game.configure', { scope: 'game', game });
+  if (denied) return denied;
 
   const { deadline } = await request.json();
   if (deadline !== null && !isCalendarDate(deadline)) {
@@ -104,10 +99,8 @@ export const DELETE = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  const isLeader = await isGameLeader(game.id, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only a leader of the game can delete the game', 403);
-  }
+  const denied = await requirePermission(currentUser, 'game.delete', { scope: 'game', game });
+  if (denied) return denied;
 
   await deleteGame(gameId);
 

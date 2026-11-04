@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getGameRole, isResolutionOwner, requirePermission } from '@/lib/authz';
 import { notifyResolution } from '@/lib/team-signals';
 import {
   changeResolutionType,
@@ -22,9 +23,7 @@ import {
   getMemberProvidedResolutionsByUser,
   getResolutionById,
   getRunningGame,
-  isGameLeader,
   isResolutionFrozen,
-  isGamePlayer,
   logResolutionHistoryEventSafe,
   updateResolutionContent,
 } from '@/lib/db';
@@ -142,10 +141,8 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   }
 
   if (scope === 'team') {
-    const leader = await isGameLeader(game!.id, currentUser.id);
-    if (!leader) {
-      return errorResponse('Only a leader of the game can set the team goal', 403);
-    }
+    const denied = await requirePermission(currentUser, 'game.goal.set', { scope: 'game', game });
+    if (denied) return denied;
   }
 
   if (scope === 'member_provided') {
@@ -155,12 +152,10 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     if (toUserId === currentUser.id) {
       return errorResponse('You cannot create a resolution for yourself', 400);
     }
-    const member = await isGamePlayer(game!.id, currentUser.id);
-    if (!member) {
-      return errorResponse('You must be a player of this game', 403);
-    }
-    const targetMember = await isGamePlayer(game!.id, toUserId);
-    if (!targetMember) {
+    const denied = await requirePermission(currentUser, 'game.propose', { scope: 'game', game });
+    if (denied) return denied;
+    // Spec: 16-games.md - the target must also be a player of the game
+    if (!(await getGameRole(game!.id, toUserId))) {
       return errorResponse('Target user is not a player of this game', 400);
     }
   }
@@ -218,13 +213,21 @@ async function updateExisting(existing: Resolution, userId: string, content: Res
   return handleTypeChange(existing.id, userId, existing.resolutionType, content);
 }
 
+/**
+ * Check that a resolution exists and belongs to the user saving it.
+ * Spec: 21-authorization.md - Resource Rules (Ownership)
+ *
+ * @param id - The resolution to update.
+ * @param userId - The user saving it.
+ * @returns The error response to return, or null when the user owns it.
+ */
 async function verifyOwnership(id: string, userId: string): Promise<NextResponse | null> {
   const existing = await getResolutionById(id);
 
   if (!existing) {
     return errorResponse('Resolution not found', 404);
   }
-  if (existing.ownerUserId !== userId) {
+  if (!isResolutionOwner(existing, userId)) {
     return errorResponse('You can only modify your own resolutions', 403);
   }
   return null;

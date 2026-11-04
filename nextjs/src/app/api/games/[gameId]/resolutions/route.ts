@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requirePermission } from '@/lib/authz';
 import {
-  isGamePlayer,
   getMemberProvidedResolutionsByUser,
   getMemberProvidedResolutionsForUser,
   checkAllResolutionsProvided,
@@ -33,11 +33,8 @@ export const GET = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  // Check if user is a member
-  const isMember = await isGamePlayer(game.id, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a player of this game', 403);
-  }
+  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
+  if (denied) return denied;
 
   if (toUserId) {
     const resolutions = await getMemberProvidedResolutionsForUser(gameId, toUserId);

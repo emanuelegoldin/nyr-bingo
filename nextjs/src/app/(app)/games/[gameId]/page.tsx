@@ -9,13 +9,13 @@
  */
 
 import { requireUser } from '@/lib/auth';
+import { requirePagePermission } from '@/lib/authz';
 import {
   getGameBingoCards,
   getGameGoalResolution,
   getGameLeaderboard,
   getGameWithMembers,
   getMemberProvidedResolutionsByUser,
-  isGamePlayer,
   type BingoCardWithCells,
   type GameWithMembers,
   type Resolution,
@@ -89,10 +89,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
     notFound();
   }
 
-  const member = await isGamePlayer(game.id, currentUser.id);
-  if (!member) {
-    notFound();
-  }
+  await requirePagePermission(currentUser, 'game.view', { scope: 'game', game });
 
   // Non-critical sections are settled independently so one failed query does not block the page.
   const cardPromise = game.status === 'started'

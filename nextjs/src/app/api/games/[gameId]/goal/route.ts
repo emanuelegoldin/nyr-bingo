@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isGamePlayer, getGameGoalResolution, getRunningGame } from '@/lib/db';
+import { requirePermission } from '@/lib/authz';
+import { getGameGoalResolution, getRunningGame } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
@@ -19,10 +20,8 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
     return errorResponse('Game not found', 404);
   }
 
-  const member = await isGamePlayer(game.id, currentUser.id);
-  if (!member) {
-    return errorResponse('You must be a team member', 403);
-  }
+  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
+  if (denied) return denied;
 
   const goal = await getGameGoalResolution(gameId);
   if (!goal) {
