@@ -4,7 +4,7 @@
  */
 
 import { CellSourceType, CellState, GameStatus, ResolutionType } from '../shared/types';
-import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
+import { CellRow, getResolvedCellRowById, rowToCell, SELECT_CELL_WITH_RESOLVED_TEXT } from './bingo-card-rows';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getResolutionById } from './resolution-repository';
@@ -382,34 +382,35 @@ export async function autoTransitionCellState(
     return [];
   }
 
-  const updatedCells: BingoCell[] = [];
-
-  for (const cellRow of cellRows) {
-    let newState: CellState | null = null;
-
-    if (isComplete && (cellRow.state === CellState.PENDING || cellRow.state === CellState.FAILED)) {
-      // Auto-complete: pending or failed → completed
-      newState = CellState.COMPLETED;
-    } else if (!isComplete && cellRow.state === CellState.COMPLETED) {
-      // Auto-revert: completed → pending
-      newState = CellState.PENDING;
-    }
-
-    if (newState) {
-      await query(
-        `UPDATE bingo_cells SET state = ? WHERE id = ? AND state = ?`,
-        [newState, cellRow.id, cellRow.state]
-      );
-
-      // Refresh leaderboard for this user/game
-      await refreshLeaderboardEntry(cellRow.game_id, cellRow.user_id);
-
-      const updatedRow = await getResolvedCellRowById(cellRow.id);
-      if (updatedRow) {
-        updatedCells.push(rowToCell(updatedRow));
-      }
-    }
+  // Auto-complete: pending or failed → completed. Auto-revert: completed → pending.
+  const [fromStates, newState] = isComplete
+    ? [[CellState.PENDING, CellState.FAILED], CellState.COMPLETED]
+    : [[CellState.COMPLETED], CellState.PENDING];
+  const changedRows = cellRows.filter((row) => fromStates.includes(row.state));
+  if (changedRows.length === 0) {
+    return [];
   }
 
-  return updatedCells;
+  const ids = changedRows.map((row) => row.id);
+  const idPlaceholders = ids.map(() => '?').join(', ');
+  await query(
+    `UPDATE bingo_cells SET state = ?
+     WHERE id IN (${idPlaceholders}) AND state IN (${fromStates.map(() => '?').join(', ')})`,
+    [newState, ...ids, ...fromStates]
+  );
+
+  // One leaderboard refresh per card owner, and one read of the changed cells
+  const owners = new Map(changedRows.map((row) => [`${row.game_id}:${row.user_id}`, row]));
+  const [updatedRows] = await Promise.all([
+    query<CellRow[]>(
+      `${SELECT_CELL_WITH_RESOLVED_TEXT}
+       WHERE c.id IN (${idPlaceholders})`,
+      ids
+    ),
+    ...[...owners.values()].map((row) => refreshLeaderboardEntry(row.game_id, row.user_id)),
+  ]);
+
+  // Keep the order in which the cells were found
+  const updatedById = new Map(updatedRows.map((row) => [row.id, rowToCell(row)]));
+  return ids.flatMap((id) => updatedById.get(id) ?? []);
 }
