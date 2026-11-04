@@ -8,7 +8,7 @@
  * dialogs, etc.).
  *
  * Usage:
- *   <TeamWsProvider teamId={teamId} gameName={gameName}>
+ *   <TeamWsProvider teamId={teamId}>
  *     <BingoCard ... />
  *     <BingoCard ... />
  *   </TeamWsProvider>
@@ -21,13 +21,9 @@
  * the room on this socket and reacts to its refresh events.
  */
 
-import { apiFetch } from "@/lib/api-client";
-import { getWsUrl, type WsIncomingMessage, type WsListenerMessage, type WsOutgoingMessage, type WsRoom } from "@/lib/shared/ws-messages";
+import { getWsUrl, type WsListenerMessage, type WsRoom } from "@/lib/shared/ws-messages";
+import { onTabReturn, openReconnectingSocket, sendJoinRoom, type ReconnectingSocket } from "@/lib/ws-client";
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
-
-const RECONNECT_BASE_DELAY_MS = 1000;
-const RECONNECT_MAX_DELAY_MS = 30 * 1000;
-const CATCH_UP_MIN_INTERVAL_MS = 30 * 1000;
 
 /** Callback signature for message listeners. */
 export type WsMessageHandler = (msg: WsListenerMessage) => void;
@@ -42,14 +38,11 @@ interface TeamWsContextValue {
    * Returns an unsubscribe function.
    */
   addMessageListener: (handler: WsMessageHandler) => () => void;
-  /** The game name (used by card components) */
-  gameName: string;
 }
 
 const TeamWsContext = createContext<TeamWsContextValue>({
   joinRoom: () => () => { },
   addMessageListener: () => () => { },
-  gameName: ""
 });
 
 /** Hook for child components to interact with the team WebSocket. */
@@ -62,13 +55,10 @@ export function useTeamWs(): TeamWsContextValue {
 interface TeamWsProviderProps {
   /** The team whose card-room we join. */
   teamId: string;
-  /** The game name (used by card components). Pages without a game leave it out. */
-  gameName?: string;
   children: React.ReactNode;
 }
 
-export function TeamWsProvider({ teamId, gameName = "", children }: TeamWsProviderProps) {
-  const wsRef = useRef<WebSocket | null>(null);
+export function TeamWsProvider({ teamId, children }: TeamWsProviderProps) {
   /** Rooms joined by descendants, joined again whenever the socket opens. */
   const roomsRef = useRef<Set<WsRoom>>(new Set());
 
@@ -91,22 +81,8 @@ export function TeamWsProvider({ teamId, gameName = "", children }: TeamWsProvid
     }
   }, []);
 
-  /**
-   * Ask the API for a room token and join with it. A refused token is ignored: the
-   * viewer simply gets no live updates for that room.
-   *
-   * @param room - The room to join.
-   * @param ws - The socket to join on.
-   */
-  const sendJoin = useCallback(async (room: WsRoom, ws: WebSocket) => {
-    if (ws.readyState !== WebSocket.OPEN) return;
-    const query = new URLSearchParams({ type: room.type, id: room.id });
-    const result = await apiFetch<{ token: string }>(`/api/ws-token?${query}`);
-    if (result.ok && ws.readyState === WebSocket.OPEN) {
-      const joinMessage: WsOutgoingMessage = { type: "join-room", token: result.data.token };
-      ws.send(JSON.stringify(joinMessage));
-    }
-  }, []);
+  /** The team's reconnecting socket, or null when none is running. */
+  const socketRef = useRef<ReconnectingSocket | null>(null);
 
   // ── Keep one WS open for the lifetime of this provider ───────
   useEffect(() => {
@@ -114,88 +90,37 @@ export function TeamWsProvider({ teamId, gameName = "", children }: TeamWsProvid
     const wsUrl = getWsUrl();
     if (!wsUrl) return;
 
-    let disposed = false;
-    let failedAttempts = 0;
-    let hasConnected = false;
-    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const connect = () => {
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        failedAttempts = 0;
-        sendJoin({ type: "card", id: teamId }, ws);
+    const socket = openReconnectingSocket({
+      url: wsUrl,
+      onOpen: (ws) => {
+        void sendJoinRoom(ws, { type: "card", id: teamId });
         for (const room of roomsRef.current) {
-          sendJoin(room, ws);
+          void sendJoinRoom(ws, room);
         }
-        // Anything that happened while disconnected was missed
-        if (hasConnected) dispatchToListeners({ type: "catch-up" });
-        hasConnected = true;
-      };
-
-      ws.onmessage = (event) => {
-        // Parse the incoming message
-        let parsed: WsIncomingMessage;
-        try {
-          parsed = JSON.parse(event.data as string) as WsIncomingMessage;
-        } catch {
-          return; /* ignore malformed messages */
-        }
-
-        // Dispatch to all registered listeners (resolution-level, etc.)
-        dispatchToListeners(parsed);
-      };
-
-      ws.onerror = (e) => {
-        console.error("[TeamWsProvider] WebSocket error:", e);
-      };
-
-      ws.onclose = () => {
-        if (wsRef.current === ws) wsRef.current = null;
-        if (disposed) return;
-        const delay = Math.min(RECONNECT_BASE_DELAY_MS * 2 ** failedAttempts, RECONNECT_MAX_DELAY_MS);
-        failedAttempts += 1;
-        reconnectTimer = setTimeout(connect, delay);
-      };
-    };
-
-    connect();
+      },
+      onMessage: dispatchToListeners,
+      onReconnect: () => dispatchToListeners({ type: "catch-up" }),
+    });
+    socketRef.current = socket;
 
     return () => {
-      disposed = true;
-      clearTimeout(reconnectTimer);
-      wsRef.current?.close();
-      wsRef.current = null;
+      socket.close();
+      socketRef.current = null;
     };
-  }, [teamId, dispatchToListeners, sendJoin]);
+  }, [teamId, dispatchToListeners]);
 
   // ── Catch up when the tab comes back ──────────────────────────
-  useEffect(() => {
-    let lastCatchUp = Date.now();
-    const catchUp = () => {
-      const now = Date.now();
-      if (document.visibilityState !== "visible" || now - lastCatchUp < CATCH_UP_MIN_INTERVAL_MS) return;
-      lastCatchUp = now;
-      dispatchToListeners({ type: "catch-up" });
-    };
-
-    window.addEventListener("focus", catchUp);
-    document.addEventListener("visibilitychange", catchUp);
-    return () => {
-      window.removeEventListener("focus", catchUp);
-      document.removeEventListener("visibilitychange", catchUp);
-    };
-  }, [dispatchToListeners]);
+  useEffect(() => onTabReturn(() => dispatchToListeners({ type: "catch-up" })), [dispatchToListeners]);
 
   // ── Join a room (stable identity) ─────────────────────────────
   const joinRoom = useCallback((room: WsRoom): (() => void) => {
     roomsRef.current.add(room);
-    if (wsRef.current) sendJoin(room, wsRef.current);
+    const ws = socketRef.current?.getSocket();
+    if (ws) void sendJoinRoom(ws, room);
     return () => {
       roomsRef.current.delete(room);
     };
-  }, [sendJoin]);
+  }, []);
 
   // ── Listener subscribe/unsubscribe (stable identity) ──────────
   const addMessageListener = useCallback((handler: WsMessageHandler): (() => void) => {
@@ -206,7 +131,7 @@ export function TeamWsProvider({ teamId, gameName = "", children }: TeamWsProvid
   }, []);
 
   return (
-    <TeamWsContext.Provider value={{ joinRoom, addMessageListener, gameName }}>
+    <TeamWsContext.Provider value={{ joinRoom, addMessageListener }}>
       {children}
     </TeamWsContext.Provider>
   );

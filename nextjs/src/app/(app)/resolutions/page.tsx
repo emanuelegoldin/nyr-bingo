@@ -8,30 +8,11 @@
  */
 
 import { requireUser } from "@/lib/auth";
-import { getResolutionsByUser, type Resolution } from "@/lib/db";
-import type { ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
+import { getResolutionsByUser } from "@/lib/db";
+import { toUnifiedResolution } from "@/lib/shared/resolution-form";
 import { PageSpinner } from "@/components/page-spinner";
 import { Suspense } from "react";
 import ResolutionsPageClient from "./resolutions-page-client";
-
-function toIsoDateString(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value;
-}
-
-function mapResolution(resolution: Resolution): UnifiedResolution {
-  return {
-    id: resolution.id,
-    type: resolution.resolutionType as ResolutionTypeValue,
-    ownerUserId: resolution.ownerUserId,
-    title: resolution.title,
-    text: resolution.description ?? "",
-    subtasks: resolution.subtasks ?? undefined,
-    numberOfRepetition: resolution.numberOfRepetition ?? undefined,
-    completedTimes: resolution.completedTimes,
-    createdAt: toIsoDateString(resolution.createdAt),
-    updatedAt: toIsoDateString(resolution.updatedAt),
-  };
-}
 
 function ResolutionsLoadingFallback() {
   return (
@@ -46,7 +27,7 @@ async function ResolutionsContent() {
   const resolutions = await getResolutionsByUser(currentUser.id);
 
   return (
-    <ResolutionsPageClient initialResolutions={resolutions.map(mapResolution)} />
+    <ResolutionsPageClient initialResolutions={resolutions.map(toUnifiedResolution)} />
   );
 }
 

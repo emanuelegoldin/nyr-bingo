@@ -7,7 +7,7 @@
  */
 
 import { CellDialog } from "@/components/dialogs/cell-dialog";
-import { STATE_CONFIG } from "@/components/dialogs/resolution-detail-dialog";
+import { STATE_CONFIG } from "@/components/cell/cell-state-style";
 import { Badge } from "@/components/ui/badge";
 import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ArchivedCell } from "@/lib/shared/types";

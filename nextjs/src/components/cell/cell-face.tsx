@@ -13,8 +13,6 @@ type CellFaceData = Pick<BingoCell, "state" | "resolutionTitle" | "resolutionTex
 
 interface CellFaceProps {
     cell: CellFaceData,
-    editMode: boolean,
-    isOwner: boolean,
     canInteract: boolean,
     sourceLabel: string,
     onClick: () => void,
@@ -26,8 +24,6 @@ interface CellFaceProps {
  * The visual state follows the cell state, overridden by the proof status.
  *
  * @param cell - The cell to display.
- * @param editMode - Whether the card is in edit mode (used by the empty slot).
- * @param isOwner - Whether the viewer owns the card (used by the empty slot).
  * @param canInteract - Whether the cell can be clicked.
  * @param sourceLabel - Label of the cell source, shown in the badge.
  * @param onClick - Click handler of the cell.
@@ -35,8 +31,6 @@ interface CellFaceProps {
  */
 export const CellFace = ({
     cell,
-    editMode,
-    isOwner,
     canInteract,
     sourceLabel,
     onClick
@@ -55,8 +49,7 @@ export const CellFace = ({
     if (cell.isEmpty) {
         return (
             <EmptyCell
-                editMode={editMode}
-                isOwner={isOwner}
+                canInteract={canInteract}
                 onClick={onClick} />
         );
     }

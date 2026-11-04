@@ -12,6 +12,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { apiErrorMessage, apiFetch } from '@/lib/api-client';
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -29,25 +30,21 @@ function VerifyContent() {
     }
 
     const verifyEmail = async () => {
-      try {
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
+      const result = await apiFetch<{ message?: string }>('/api/auth/verify', {
+        method: 'POST',
+        json: { token },
+      });
 
-        const data = await response.json();
-
-        if (response.ok) {
-          setStatus('success');
-          setMessage(data.message || 'Email verified successfully!');
-        } else {
-          setStatus('error');
-          setMessage(data.error || 'Failed to verify email. The link may have expired.');
-        }
-      } catch (error) {
+      if (result.ok) {
+        setStatus('success');
+        setMessage(result.data.message || 'Email verified successfully!');
+      } else {
         setStatus('error');
-        setMessage('An error occurred during verification. Please try again.');
+        setMessage(apiErrorMessage(
+          result,
+          'Failed to verify email. The link may have expired.',
+          'An error occurred during verification. Please try again.'
+        ));
       }
     };
 

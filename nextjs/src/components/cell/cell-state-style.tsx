@@ -1,5 +1,6 @@
 import { Check, Hourglass, ThumbsUp, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { CellState } from "@/lib/shared/types";
 
 /** Visual states (other than pending) that share colours between the grid cell and the detail dialog. */
 export type CellVisualState = "completed" | "pending_review" | "accomplished" | "failed";
@@ -31,3 +32,20 @@ export function getCellStateIcon(state: CellVisualState, sizeClassName: string):
       return <X className={`${sizeClassName} text-red-500`} />;
   }
 }
+
+/**
+ * Visual state config mirroring the bingo cell grid styling.
+ * Used by the live and archived cell detail dialogs.
+ */
+export const STATE_CONFIG: Record<CellState, {
+  label: string;
+  icon: React.ReactNode;
+  bg: string;
+  text: string;
+}> = {
+  [CellState.PENDING]:        { label: "Pending",       icon: null,                                                  bg: "bg-secondary",                           text: "text-secondary-foreground" },
+  [CellState.COMPLETED]:      { label: "Completed",     icon: getCellStateIcon("completed", "h-3.5 w-3.5"),      ...CELL_STATE_COLORS.completed },
+  [CellState.PENDING_REVIEW]: { label: "Under Review",  icon: getCellStateIcon("pending_review", "h-3.5 w-3.5"), ...CELL_STATE_COLORS.pending_review },
+  [CellState.ACCOMPLISHED]:   { label: "Accomplished",  icon: getCellStateIcon("accomplished", "h-3.5 w-3.5"),   ...CELL_STATE_COLORS.accomplished },
+  [CellState.FAILED]:         { label: "Failed",        icon: getCellStateIcon("failed", "h-3.5 w-3.5"),         ...CELL_STATE_COLORS.failed },
+};

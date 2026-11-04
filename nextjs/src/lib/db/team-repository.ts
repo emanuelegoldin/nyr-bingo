@@ -15,7 +15,7 @@ import type {
   TeamMemberWithProfile,
   TeamWithMembers,
 } from './types';
-import { getPublicUserProfile } from './user-repository';
+import { rowToPublicUserProfile, type PublicUserProfileRow } from './user-repository';
 
 // Row types from database (snake_case)
 interface TeamRow extends RowDataPacket {
@@ -121,33 +121,66 @@ export async function getTeamById(id: string): Promise<Team | null> {
   return rows.length > 0 ? rowToTeam(rows[0]) : null;
 }
 
+/** A membership joined with its user's public profile columns. */
+type MemberWithProfileRow = MembershipRow & PublicUserProfileRow;
+
+const SELECT_MEMBER_WITH_PROFILE = `
+  SELECT m.id, m.team_id, m.user_id, m.role, m.joined_at,
+         u.username, p.display_name, p.bio, p.avatar_url,
+         p.display_name_public, p.bio_public, p.avatar_public
+  FROM team_memberships m
+  JOIN users u ON u.id = m.user_id
+  JOIN user_profiles p ON p.user_id = m.user_id`;
+
 /**
- * Get team with members
+ * Map membership rows joined with profiles to team members.
+ * @param rows The rows, in display order
+ * @returns The members
+ */
+function rowsToMembers(rows: MemberWithProfileRow[]): TeamMemberWithProfile[] {
+  return rows.map((row) => ({
+    membership: rowToMembership(row),
+    user: rowToPublicUserProfile(row),
+  }));
+}
+
+/**
+ * Get team with members, in join order. Users without a profile are left out.
  */
 export async function getTeamWithMembers(teamId: string): Promise<TeamWithMembers | null> {
-  const team = await getTeamById(teamId);
+  const [team, memberRows] = await Promise.all([
+    getTeamById(teamId),
+    query<MemberWithProfileRow[]>(
+      `${SELECT_MEMBER_WITH_PROFILE}
+       WHERE m.team_id = ?
+       ORDER BY m.joined_at ASC, m.id ASC`,
+      [teamId]
+    ),
+  ]);
   if (!team) return null;
-
-  const memberRows = await query<MembershipRow[]>(
-    `SELECT * FROM team_memberships WHERE team_id = ? ORDER BY joined_at ASC`,
-    [teamId]
-  );
-
-  const members: TeamMemberWithProfile[] = [];
-  for (const row of memberRows) {
-    const profile = await getPublicUserProfile(row.user_id);
-    if (profile) {
-      members.push({
-        membership: rowToMembership(row),
-        user: profile,
-      });
-    }
-  }
 
   return {
     ...team,
-    members,
+    members: rowsToMembers(memberRows),
   };
+}
+
+/**
+ * Get the players of a game as members of its team, in join order.
+ * Users without a profile are left out.
+ * @param gameId The game
+ * @returns Its players with their memberships and public profiles
+ */
+export async function getGameMembersWithProfiles(gameId: string): Promise<TeamMemberWithProfile[]> {
+  const rows = await query<MemberWithProfileRow[]>(
+    `${SELECT_MEMBER_WITH_PROFILE}
+     JOIN games g ON g.team_id = m.team_id
+     JOIN game_players gp ON gp.game_id = g.id AND gp.user_id = m.user_id
+     WHERE g.id = ?
+     ORDER BY m.joined_at ASC, m.id ASC`,
+    [gameId]
+  );
+  return rowsToMembers(rows);
 }
 
 /**

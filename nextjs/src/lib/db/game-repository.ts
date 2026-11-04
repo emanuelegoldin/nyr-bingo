@@ -9,7 +9,7 @@ import { GameStatus } from '../shared/types';
 import { execute, query, withTransaction } from './connection';
 import { getGameGoalResolution } from './resolution-repository';
 import { getGameReviewFiles, removeOrphanedFiles } from './review-file-repository';
-import { getTeamWithMembers } from './team-repository';
+import { getGameMembersWithProfiles } from './team-repository';
 import type { Game, GameWithMembers } from './types';
 
 interface GameRow extends RowDataPacket {
@@ -137,14 +137,8 @@ export async function addPlayerToRunningGames(teamId: string, userId: string): P
  * @returns The game and its players, or null if it does not exist or has ended
  */
 export async function getGameWithMembers(id: string): Promise<GameWithMembers | null> {
-  const game = await getRunningGame(id);
-  if (!game) return null;
-
-  const team = await getTeamWithMembers(game.teamId);
-  if (!team) return null;
-
-  const playerIds = new Set(await getGamePlayerIds(id));
-  return { ...game, members: team.members.filter((member) => playerIds.has(member.user.userId)) };
+  const [game, members] = await Promise.all([getRunningGame(id), getGameMembersWithProfiles(id)]);
+  return game ? { ...game, members } : null;
 }
 
 /**

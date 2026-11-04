@@ -4,8 +4,8 @@
  */
 
 import type { TeamMember } from "@/components/team/types";
-import type { GameStatus, Subtask } from "@/lib/shared/types";
-import { ResolutionType } from "@/lib/shared/types";
+import type { Resolution } from "@/lib/db/types";
+import type { GameStatus } from "@/lib/shared/types";
 
 /** Game shape as returned by the game API. */
 export interface Game {
@@ -21,16 +21,17 @@ export interface Game {
 }
 
 /** Team-provided resolution shape (from unified Resolution entity). */
-export interface TeamProvidedResolution {
-  id: string;
-  ownerUserId: string;
-  teamId: string | null;
-  gameId: string | null;
-  toUserId: string | null;
-  title: string;
-  description: string | null;
-  resolutionType: ResolutionType;
-  subtasks: Subtask[] | null;
-  numberOfRepetition: number | null;
-  completedTimes: number;
-}
+export type TeamProvidedResolution = Pick<
+  Resolution,
+  | "id"
+  | "ownerUserId"
+  | "teamId"
+  | "gameId"
+  | "toUserId"
+  | "title"
+  | "description"
+  | "resolutionType"
+  | "subtasks"
+  | "numberOfRepetition"
+  | "completedTimes"
+>;

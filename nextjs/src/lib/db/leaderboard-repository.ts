@@ -12,7 +12,7 @@
 
 import { notifications } from '../notifications';
 import { BINGO_LINES } from '../shared/bingo-lines';
-import { CellState, JOKER_POSITION } from '../shared/types';
+import { CellState, JOKER_POSITION, type LeaderboardEntry } from '../shared/types';
 import { query } from './connection';
 import type { Game } from './types';
 
@@ -94,20 +94,11 @@ function computeFirstBingoAt(cells: Array<CellForBingo & { updated_at: Date | nu
 
 // ── Public API ───────────────────────────────────────────────────
 
-/** Leaderboard entry enriched with user profile info (for the API). */
-export interface LeaderboardEntryWithUser {
-  userId: string;
-  username: string;
-  displayName: string | null;
-  firstBingoAt: string | null;
-  completedTasks: number;
-}
-
 /**
  * Get the full leaderboard of a game, sorted by first-bingo-at.
  * Uses a JOIN on users for username retrieval. Private display names are omitted.
  */
-export async function getGameLeaderboard(gameId: string): Promise<LeaderboardEntryWithUser[]> {
+export async function getGameLeaderboard(gameId: string): Promise<LeaderboardEntry[]> {
   const rows = await query<LeaderboardRowWithUser[]>(
     `SELECT tl.user_id, tl.game_id, tl.first_bingo_at, tl.completed_tasks, tl.updated_at,
             u.username,

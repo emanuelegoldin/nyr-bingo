@@ -4,10 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/lib/authz';
 import { getRunningGame } from '@/lib/db';
 import { finishGame } from '@/lib/game-ending';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { authorizeGameAction } from '@/app/api/games/game-access';
 
 /**
  * POST /api/games/[gameId]/end - End a started game (leader only)
@@ -18,13 +18,9 @@ export const POST = withAuth(async (
 ) => {
   const { gameId } = await params;
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const denied = await requirePermission(currentUser, 'game.end', { scope: 'game', game });
-  if (denied) return denied;
+  const access = await authorizeGameAction(currentUser, 'game.end', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   const ended = await finishGame(game, currentUser.id);
   if (!ended) {

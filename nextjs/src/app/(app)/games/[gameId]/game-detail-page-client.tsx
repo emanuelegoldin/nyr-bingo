@@ -34,7 +34,8 @@ import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
 import { useLastLoaded } from "./_components/use-last-loaded";
 import { useGameActions } from "./_components/use-game-actions";
 import { CardsTab } from "./cards-tab";
-import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
+import { LeaderboardTab } from "./leaderboard-tab";
+import type { LeaderboardEntry } from "@/lib/shared/types";
 import type { Game, TeamProvidedResolution } from "./types";
 
 interface GameDetailPageClientProps {
@@ -67,7 +68,7 @@ export default function GameDetailPageClient({
     game,
     teamGoal,
     existingResolutions,
-    loadGame,
+    refreshGame,
     isStarting,
     handleStartBingo,
     isEnding,
@@ -77,7 +78,6 @@ export default function GameDetailPageClient({
     isLeaving,
     handleLeaveGame,
   } = useGameActions({ gameId: initialGame.id, initialGame, initialTeamGoal, initialExistingResolutions });
-  const [currentUserId] = useState<string>(initialCurrentUserId);
 
   // Team goal resolution dialog
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
@@ -87,7 +87,7 @@ export default function GameDetailPageClient({
   /** Called when team goal is saved via the resolution dialog. */
   const handleGoalSaved = () => {
     setGoalDialogOpen(false);
-    loadGame();
+    refreshGame();
   };
 
   return (
@@ -121,7 +121,7 @@ export default function GameDetailPageClient({
             )}
 
             {can('game.configure') && game.status === 'forming' && (
-              <GameConfigDialog gameId={game.id} deadline={game.deadline} onSaved={loadGame} />
+              <GameConfigDialog gameId={game.id} deadline={game.deadline} onSaved={refreshGame} />
             )}
 
             {can('game.start') && game.status !== 'started' && (
@@ -159,9 +159,9 @@ export default function GameDetailPageClient({
 
             <ProposeResolutionsDialog
               game={game}
-              currentUserId={currentUserId}
+              currentUserId={initialCurrentUserId}
               existingResolutions={existingResolutions}
-              onReload={loadGame}
+              onReload={refreshGame}
             />
 
             <ConfirmActionDialog
@@ -199,7 +199,7 @@ export default function GameDetailPageClient({
       />
 
       {/* ── Tab navigation ────────────────────────────────────── */}
-      <TeamWsProvider teamId={game.teamId} gameName={game.name}>
+      <TeamWsProvider teamId={game.teamId}>
         <TeamRefreshListener />
         <Tabs defaultValue="cards">
           <TabsList>
@@ -212,12 +212,12 @@ export default function GameDetailPageClient({
             <CardsTab
               game={game}
               initialCards={cards}
-              currentUserId={currentUserId}
+              currentUserId={initialCurrentUserId}
             />
           </TabsContent>
 
           <TabsContent value="members" className="mt-6">
-            <MembersTab members={game.members} currentUserId={currentUserId} />
+            <MembersTab members={game.members} currentUserId={initialCurrentUserId} />
           </TabsContent>
 
           <TabsContent value="leaderboard" className="mt-6">

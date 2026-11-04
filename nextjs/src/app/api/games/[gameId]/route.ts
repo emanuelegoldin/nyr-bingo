@@ -4,16 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/lib/authz';
 import { notifyTeams } from '@/lib/team-signals';
 import {
   deleteGame,
   getGameWithMembers,
-  getRunningGame,
   isDeadlinePast,
   setGameDeadline,
 } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
+import { authorizeGameAction } from '@/app/api/games/game-access';
 
 /**
  * Check that a value is a real calendar date written as YYYY-MM-DD.
@@ -36,13 +35,9 @@ export const GET = withAuth(async (
 ) => {
   const { gameId } = await params;
 
-  const game = await getGameWithMembers(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
-  if (denied) return denied;
+  const access = await authorizeGameAction(currentUser, 'game.view', gameId, getGameWithMembers);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   return NextResponse.json({ game });
 });
@@ -57,13 +52,9 @@ export const PATCH = withAuth(async (
 ) => {
   const { gameId } = await params;
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const denied = await requirePermission(currentUser, 'game.configure', { scope: 'game', game });
-  if (denied) return denied;
+  const access = await authorizeGameAction(currentUser, 'game.configure', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   const { deadline } = await request.json();
   if (deadline !== null && !isCalendarDate(deadline)) {
@@ -94,13 +85,9 @@ export const DELETE = withAuth(async (
 ) => {
   const { gameId } = await params;
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const denied = await requirePermission(currentUser, 'game.delete', { scope: 'game', game });
-  if (denied) return denied;
+  const access = await authorizeGameAction(currentUser, 'game.delete', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   await deleteGame(gameId);
 

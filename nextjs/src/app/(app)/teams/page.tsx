@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
 import { PageSpinner } from "@/components/page-spinner";
 import Link from "next/link";
@@ -68,11 +68,7 @@ export default function TeamsPage() {
         description: "Team created successfully",
       });
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to create team",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to create team");
     }
     setIsCreating(false);
   };

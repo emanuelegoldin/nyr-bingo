@@ -2,8 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { Loader2, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 
@@ -24,7 +23,6 @@ interface GameConfigDialogProps {
  * @returns The button and dialog.
  */
 export function GameConfigDialog({ gameId, deadline, onSaved }: GameConfigDialogProps) {
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   // An empty value means no deadline
   const [selectedDate, setSelectedDate] = useState(deadline ?? "");
@@ -50,11 +48,7 @@ export function GameConfigDialog({ gameId, deadline, onSaved }: GameConfigDialog
       setOpen(false);
       onSaved();
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to configure game",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to configure game");
     }
   };
 

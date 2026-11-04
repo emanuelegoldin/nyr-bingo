@@ -1,6 +1,7 @@
 "use client";
 
 import { useReviewThread } from "@/hooks/use-review-thread";
+import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { CellDialog } from "./cell-dialog";
@@ -15,6 +16,7 @@ interface CellThreadDialogProps {
     reviewThreadId: string
   }
   isOwner: boolean,
+  currentUserId: string,
   isOpen: boolean,
   setIsOpen: (isOpen: boolean) => void,
   onRefresh?: () => void
@@ -23,15 +25,16 @@ interface CellThreadDialogProps {
 export const CellThreadDialog = ({
   cell,
   isOwner,
+  currentUserId,
   isOpen,
   setIsOpen,
   onRefresh
 }: CellThreadDialogProps) => {
+  const currentUsername = useTeamMembers()[currentUserId];
   const {
     thread,
     isThreadLoading,
     isSubmitting,
-    currentUserId,
     messageDraft,
     setMessageDraft,
     selectedFile,
@@ -42,7 +45,7 @@ export const CellThreadDialog = ({
     closeThread,
     handleVoteSubmitted,
     refetchThread,
-  } = useReviewThread(cell.reviewThreadId, isOpen, { onRefresh, setIsOpen });
+  } = useReviewThread(cell.reviewThreadId, isOpen, { onRefresh, setIsOpen, currentUsername });
 
   return (
     <CellDialog

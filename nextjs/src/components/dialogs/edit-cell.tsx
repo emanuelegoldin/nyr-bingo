@@ -1,7 +1,8 @@
 import { useEditCellOptions, type EditOption } from "@/hooks/use-edit-cell-options";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import type { BingoCellWithThread } from "@/lib/db/types";
+import { useTeamMembers } from "../team-members-context";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "../ui/input";
@@ -31,10 +32,10 @@ export const EditCellDialog = ({
   const [editFilter, setEditFilter] = useState('');
   const {
     editOptions,
-    usernames,
     isLoading: isEditOptionsLoading,
     reset: resetEditOptions
-  } = useEditCellOptions({ cellId, existingCells, gameId, currentUserId, isOpen });
+  } = useEditCellOptions({ existingCells, gameId, currentUserId, isOpen });
+  const usernames = useTeamMembers();
   const { toast } = useToast();
 
   const handleSelectReplacement = async (opt: EditOption) => {
@@ -51,11 +52,7 @@ export const EditCellDialog = ({
       });
 
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to update cell',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to update cell');
         return;
       }
 

@@ -19,11 +19,10 @@ import { TeamWsProvider } from "@/components/team-ws-provider";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
-import { Crown, LogOut } from "lucide-react";
+import { apiFetch, toastApiError } from "@/lib/api-client";
+import { Crown, LogOut, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { DeleteTeamDialog } from "./_components/DeleteTeamDialog";
 import { InviteDialog } from "./_components/InviteDialog";
 import { NewGameDialog } from "./_components/NewGameDialog";
 
@@ -40,8 +39,6 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
 
   const { toast } = useToast();
   const router = useRouter();
-  // Open state lives here because a successful delete closes the dialog
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
@@ -54,7 +51,6 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
     const result = await apiFetch<unknown>(`/api/teams/${team.id}`, { method: "DELETE" });
 
     if (result.ok) {
-      setDeleteDialogOpen(false);
       toast({
         title: "Team deleted",
         description: "The team and its related data were removed.",
@@ -62,22 +58,9 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
       router.push("/teams");
       router.refresh();
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to delete team",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to delete team");
     }
     setIsDeleting(false);
-  };
-
-  /** Shows an error toast for a failed request. */
-  const showError = (status: number, error: string | null | undefined, fallback: string) => {
-    toast({
-      title: "Error",
-      description: status === 0 ? "An error occurred" : error || fallback,
-      variant: "destructive",
-    });
   };
 
   /** Leaves the team and its games; on success navigates back to the teams list. */
@@ -90,7 +73,7 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
       router.push("/teams");
       router.refresh();
     } else {
-      showError(result.status, result.error, "Failed to leave team");
+      toastApiError(result, "Failed to leave team");
     }
     setIsLeaving(false);
   };
@@ -104,7 +87,7 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
       toast({ title: "Member promoted to leader" });
       router.refresh();
     } else {
-      showError(result.status, result.error, "Failed to promote member");
+      toastApiError(result, "Failed to promote member");
     }
     setPromotingUserId(null);
   };
@@ -128,11 +111,15 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
               )}
               {capabilities.includes('team.invite') && <InviteDialog teamId={team.id} />}
               {capabilities.includes('team.delete') && (
-                <DeleteTeamDialog
-                  open={deleteDialogOpen}
-                  onOpenChange={setDeleteDialogOpen}
+                <ConfirmActionDialog
+                  triggerLabel="Delete Team"
+                  triggerIcon={Trash2}
+                  triggerVariant="destructive"
+                  title="Delete this team?"
+                  description="This will permanently delete the team, its memberships, invitations and all of its games, with their resolutions, bingo cards and related gameplay data. Archived games are kept. This action cannot be undone."
+                  confirmLabel="Delete"
                   onConfirm={handleDeleteTeam}
-                  isDeleting={isDeleting}
+                  isPending={isDeleting}
                 />
               )}
               <ConfirmActionDialog

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -46,7 +46,6 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
 function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -55,9 +54,9 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
       password: ""
     }
   });
+  const isLoading = form.formState.isSubmitting;
 
   async function onSubmit(data: LoginFormData) {
-    setIsLoading(true);
 
     const result = await apiFetch<unknown>('/api/auth/login', {
       method: 'POST',
@@ -71,13 +70,8 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
       });
       router.push("/dashboard");
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred. Please try again." : result.error || "Failed to login",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to login", "An error occurred. Please try again.");
     }
-    setIsLoading(false);
   }
 
   return (
@@ -125,7 +119,6 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
 function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -135,9 +128,9 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
       password: ""
     }
   });
+  const isLoading = form.formState.isSubmitting;
 
   async function onSubmit(data: RegisterFormData) {
-    setIsLoading(true);
 
     const result = await apiFetch<unknown>('/api/auth/register', {
       method: 'POST',
@@ -151,13 +144,8 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
       });
       router.push("/login");
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred. Please try again." : result.error || "Failed to register",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to register", "An error occurred. Please try again.");
     }
-    setIsLoading(false);
   }
 
   return (

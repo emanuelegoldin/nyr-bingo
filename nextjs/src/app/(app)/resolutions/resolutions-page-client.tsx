@@ -24,21 +24,12 @@ import { Separator } from "@/components/ui/separator";
 import { useAppContext, usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
-import type { ResolutionFormData, ResolutionTypeValue, UnifiedResolution } from "@/lib/shared/types";
+import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
 import { History, Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
-
-/* ─── Types ──────────────────────────────────────────────────────── */
-
-/** Type-specific DELETE endpoint per resolution type (base uses the generic route). */
-const DELETE_ENDPOINTS: Record<ResolutionTypeValue, string> = {
-  base: "/api/resolutions",
-  compound: "/api/resolutions/compound",
-  iterative: "/api/resolutions/iterative",
-};
 
 /* ─── Manager Component ──────────────────────────────────────────── */
 
@@ -55,7 +46,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingResolution, setEditingResolution] = useState<ResolutionFormData | undefined>(undefined);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [historyResolution, setHistoryResolution] = useState<{ id: string; title: string } | null>(null);
   const [browseOpen, setBrowseOpen] = useState(false);
 
@@ -88,16 +78,14 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
 
   const handleViewHistory = (res: UnifiedResolution) => {
     setHistoryResolution({ id: res.id, title: res.title });
-    setHistoryOpen(true);
   };
 
   /**
-   * Delete a resolution using the appropriate type-specific endpoint.
-   * Base resolutions use /api/resolutions, compound/iterative use their own routes.
+   * Delete a resolution through the generic endpoint, which accepts every type.
    */
   const handleDelete = async (res: UnifiedResolution) => {
     setDeletingId(res.id);
-    const url = `${DELETE_ENDPOINTS[res.type] ?? DELETE_ENDPOINTS.base}?id=${res.id}`;
+    const url = `/api/resolutions?id=${res.id}`;
 
     const result = await apiFetch<unknown>(url, { method: "DELETE" });
 
@@ -105,11 +93,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
       setResolutions((prev) => prev.filter((r) => r.id !== res.id));
       toast({ title: "Success", description: "Resolution deleted" });
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to delete resolution",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to delete resolution");
     }
     setDeletingId(null);
   };
@@ -245,8 +229,8 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
         <ResolutionHistoryDialog
           resolutionId={historyResolution.id}
           resolutionTitle={historyResolution.title}
-          isOpen={historyOpen}
-          setIsOpen={setHistoryOpen}
+          isOpen={true}
+          setIsOpen={(open) => { if (!open) setHistoryResolution(null); }}
         />
       )}
     </>
