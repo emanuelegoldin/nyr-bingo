@@ -3,11 +3,11 @@
  * Spec Reference: 16-games.md - Game Creation, Listing and Reading Games
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { notifyTeams } from '@/lib/team-signals';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import { requirePermission } from '@/lib/authz';
 import { createGame, getRunningGamesForTeam, getTeamMembers } from '@/lib/db';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { notifyTeams } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/teams/[teamId]/games - List the team's running games that the caller plays

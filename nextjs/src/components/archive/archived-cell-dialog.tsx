@@ -6,8 +6,8 @@
  * Spec Reference: 18-game-archive.md - Archived Game Page
  */
 
-import { CellDialog } from "@/components/dialogs/cell-dialog";
 import { STATE_CONFIG } from "@/components/cell/cell-state-style";
+import { CellDialog } from "@/components/dialogs/cell-dialog";
 import { Badge } from "@/components/ui/badge";
 import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ArchivedCell } from "@/lib/shared/types";

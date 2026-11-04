@@ -27,8 +27,8 @@ import {
   RESOLUTION_TYPE_BADGE_VARIANTS,
   RESOLUTION_TYPE_LABELS,
 } from "@/lib/shared/resolution-type";
-import { PreparedResolutionCategory } from "@/lib/shared/types";
 import type { PreparedResolution, UnifiedResolution } from "@/lib/shared/types";
+import { PreparedResolutionCategory } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 

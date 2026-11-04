@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto';
 import type { PoolConnection } from 'mysql2/promise';
 import { getResolutionTextKey } from '../shared/resolution-type';
 import { shuffleArray } from '../shared/shuffle';
+import type { PreparedResolution } from '../shared/types';
 import {
   BINGO_GRID_SIZE,
   CellSourceType,
@@ -15,12 +16,11 @@ import {
   ResolutionScope,
   ResolutionType,
 } from '../shared/types';
-import type { PreparedResolution } from '../shared/types';
 import { CardRow, rowToCard } from './bingo-card-rows';
 import { autoTransitionCellState } from './bingo-cell-repository';
 import { execute, query, withTransaction } from './connection';
-import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getGameById, getGamePlayerIds } from './game-repository';
+import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getRandomPreparedResolutions, preparedResolutionToContent } from './prepared-resolution-repository';
 import {
   createResolution,

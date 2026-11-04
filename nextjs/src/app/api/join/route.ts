@@ -2,9 +2,6 @@
  * Team Join API (via invite code)
  * Spec Reference: 04-bingo-teams.md - Invitations / Joining
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { notifications } from '@/lib/notifications';
-import { notifyTeams } from '@/lib/team-signals';
 import { requirePermission } from '@/lib/authz';
 import {
   addPlayerToRunningGames,
@@ -14,7 +11,10 @@ import {
   getTeamWithMembers,
   joinTeamByInviteCode,
 } from '@/lib/db';
-import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
+import { notifications } from '@/lib/notifications';
+import { notifyTeams } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
+import { AuthContextNoParams, errorResponse, withAuth } from '../utils';
 
 /**
  * Make a new member a player of each running game of their team, and give them a card in each
@@ -44,7 +44,7 @@ async function addNewMemberToGames(teamId: string, userId: string): Promise<void
  * Spec: 04-bingo-teams.md - Invited users can accept/join the team
  */
 export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-  
+
   // Spec: 04-bingo-teams.md - Verification Requirement
   const denied = await requirePermission(currentUser, 'team.join', { scope: 'none' });
   if (denied) return denied;

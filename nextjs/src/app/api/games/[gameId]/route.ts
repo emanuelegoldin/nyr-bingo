@@ -3,16 +3,16 @@
  * Spec Reference: 16-games.md
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { notifyTeams } from '@/lib/team-signals';
+import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import {
   deleteGame,
   getGameWithMembers,
   isDeadlinePast,
   setGameDeadline,
 } from '@/lib/db';
-import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
-import { authorizeGameAction } from '@/app/api/games/game-access';
+import { notifyTeams } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Check that a value is a real calendar date written as YYYY-MM-DD.

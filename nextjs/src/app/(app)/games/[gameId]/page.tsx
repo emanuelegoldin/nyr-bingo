@@ -8,6 +8,8 @@
  * - Client component only handles interactive mutations and local UI state
  */
 
+import { PageSpinner } from '@/components/page-spinner';
+import { toTeamMember } from '@/components/team/types';
 import { requireUser } from '@/lib/auth';
 import { getGameCapabilities, requirePagePermission } from '@/lib/authz';
 import {
@@ -22,8 +24,6 @@ import {
 } from '@/lib/db';
 import { resolutionToFormData } from '@/lib/shared/resolution-form';
 import type { LeaderboardEntry, ResolutionFormData } from '@/lib/shared/types';
-import { toTeamMember } from '@/components/team/types';
-import { PageSpinner } from '@/components/page-spinner';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import GameDetailPageClient from './game-detail-page-client';

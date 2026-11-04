@@ -3,16 +3,16 @@
  * Spec Reference: 16-games.md - Member-Provided Resolutions
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, withAuth } from '@/app/api/utils';
 import {
-  getMemberProvidedResolutionsByUser,
-  getMemberProvidedResolutionsForUser,
   checkAllResolutionsProvided,
   getGamePlayerIds,
+  getMemberProvidedResolutionsByUser,
+  getMemberProvidedResolutionsForUser,
   getTeamMembers,
 } from '@/lib/db';
-import { AuthContext, withAuth } from '@/app/api/utils';
-import { authorizeGameAction } from '@/app/api/games/game-access';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/games/[gameId]/resolutions - Get resolutions status

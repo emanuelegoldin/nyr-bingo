@@ -11,10 +11,10 @@
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
-import { GameStatusBadge } from "@/components/team/game-status-badge";
-import { MembersTab } from "@/components/team/members-tab";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
+import { GameStatusBadge } from "@/components/team/game-status-badge";
+import { MembersTab } from "@/components/team/members-tab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,19 +23,18 @@ import { CalendarClock, Crown, Flag, Loader2, LogOut, Settings, Swords, Trash2 }
 import Link from "next/link";
 import { useState } from 'react';
 
-import { BingoCardWithCells } from "@/lib/db/types";
-import type { ResolutionFormData } from "@/lib/shared/types";
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import { formatLeaderNames } from "@/components/team/leaders";
 import type { GamePermission } from "@/lib/authz/permissions";
+import { BingoCardWithCells } from "@/lib/db/types";
+import type { LeaderboardEntry, ResolutionFormData } from "@/lib/shared/types";
 import { GameConfigDialog } from "./_components/GameConfigDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
-import { useLastLoaded } from "./_components/use-last-loaded";
 import { useGameActions } from "./_components/use-game-actions";
+import { useLastLoaded } from "./_components/use-last-loaded";
 import { CardsTab } from "./cards-tab";
 import { LeaderboardTab } from "./leaderboard-tab";
-import type { LeaderboardEntry } from "@/lib/shared/types";
 import type { Game, TeamProvidedResolution } from "./types";
 
 interface GameDetailPageClientProps {

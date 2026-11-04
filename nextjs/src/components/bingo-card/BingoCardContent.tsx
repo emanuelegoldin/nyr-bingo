@@ -1,5 +1,5 @@
 import { apiFetch, toastApiError } from "@/lib/api-client";
-import type { BingoCell, BingoCardWithCells } from "@/lib/db/types";
+import type { BingoCardWithCells, BingoCell } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
 import { useCallback, type Dispatch, type SetStateAction } from "react";

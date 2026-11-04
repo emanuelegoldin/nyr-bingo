@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import { canModifyProgress } from '@/lib/authz';
-import { announceCellChanges } from '@/lib/notifications';
-import { notifyResolution } from '@/lib/team-signals';
 import {
   adjustIterativeProgress,
-  getIterativeResolutionById,
   autoTransitionCellState,
+  getIterativeResolutionById,
   isProgressComplete,
   isResolutionFrozen,
   logResolutionHistoryEventSafe,
 } from '@/lib/db';
+import { announceCellChanges } from '@/lib/notifications';
 import { ResolutionType } from '@/lib/shared/types';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { notifyResolution } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 interface IterativeProgressOptions {
   /** Counter step to apply. */

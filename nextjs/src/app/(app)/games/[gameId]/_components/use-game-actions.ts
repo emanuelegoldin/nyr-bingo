@@ -1,6 +1,6 @@
 import { useToast } from "@/hooks/use-toast";
-import type { ResolutionFormData } from "@/lib/shared/types";
 import { apiFetch, toastApiError } from "@/lib/api-client";
+import type { ResolutionFormData } from "@/lib/shared/types";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import type { Game, TeamProvidedResolution } from "../types";

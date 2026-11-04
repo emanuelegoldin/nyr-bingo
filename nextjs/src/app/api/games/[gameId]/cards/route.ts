@@ -3,13 +3,13 @@
  * Spec Reference: 05-bingo-card-generation.md, 06-bingo-gameplay.md, 08-visibility-and-updates.md
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import {
-  getGameBingoCards,
-  getBingoCard,
-} from '@/lib/db';
-import { withAuth, AuthContext } from '@/app/api/utils';
 import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, withAuth } from '@/app/api/utils';
+import {
+  getBingoCard,
+  getGameBingoCards,
+} from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/games/[gameId]/cards - Get all bingo cards of the game

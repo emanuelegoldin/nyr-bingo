@@ -3,14 +3,14 @@
  * Spec Reference: 18-game-archive.md
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import { requirePermission } from '@/lib/authz';
 import {
   deleteArchivedGame,
   getArchivedGame,
   getArchivedGameSummary,
 } from '@/lib/db';
-import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/archived-games/[archivedGameId] - Get an archived game (players only)

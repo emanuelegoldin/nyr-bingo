@@ -57,7 +57,7 @@ export const DONE_CELL_STATES: readonly CellState[] = [
 // Review thread types
 // Spec: Resolution Review & Proof Workflow
 export enum ThreadStatus {
-  OPEN = 'open', 
+  OPEN = 'open',
   CLOSED = 'closed'
 }
 

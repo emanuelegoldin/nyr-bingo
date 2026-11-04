@@ -3,11 +3,11 @@
  * GET /api/games/[gameId]/goal - Get the game's team goal resolution with full details
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, withAuth } from '@/app/api/utils';
 import { getGameGoalResolution } from '@/lib/db';
 import { toUnifiedResolution } from '@/lib/shared/resolution-form';
-import { withAuth, AuthContext } from '@/app/api/utils';
-import { authorizeGameAction } from '@/app/api/games/game-access';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/games/[gameId]/goal

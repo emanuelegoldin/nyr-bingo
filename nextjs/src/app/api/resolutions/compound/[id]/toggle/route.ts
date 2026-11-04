@@ -5,20 +5,20 @@
  * PATCH /api/resolutions/compound/[id]/toggle — toggle a subtask's completed state
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import { canModifyProgress } from '@/lib/authz';
-import { announceCellChanges } from '@/lib/notifications';
-import { notifyResolution } from '@/lib/team-signals';
 import {
-  toggleCompoundSubtask,
-  getCompoundResolutionById,
   autoTransitionCellState,
+  getCompoundResolutionById,
   isProgressComplete,
   isResolutionFrozen,
   logResolutionHistoryEventSafe,
+  toggleCompoundSubtask,
 } from '@/lib/db';
+import { announceCellChanges } from '@/lib/notifications';
 import { ResolutionType } from '@/lib/shared/types';
-import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
+import { notifyResolution } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * PATCH /api/resolutions/compound/[id]/toggle

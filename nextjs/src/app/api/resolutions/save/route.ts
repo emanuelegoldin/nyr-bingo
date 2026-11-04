@@ -13,9 +13,9 @@
  *   - numberOfRepetition?: number — required for iterative (>= 2)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 import { getGameRole, isResolutionOwner, requirePermission } from '@/lib/authz';
-import { notifyResolution } from '@/lib/team-signals';
+import type { Game, Resolution, ResolutionContent } from '@/lib/db';
 import {
   changeResolutionType,
   createResolution,
@@ -27,10 +27,10 @@ import {
   logResolutionHistoryEventSafe,
   updateResolutionContent,
 } from '@/lib/db';
-import type { Game, Resolution, ResolutionContent } from '@/lib/db';
-import type { ResolutionScope, ResolutionType, Subtask } from '@/lib/shared/types';
 import { toUnifiedResolution } from '@/lib/shared/resolution-form';
-import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
+import type { ResolutionScope, ResolutionType, Subtask } from '@/lib/shared/types';
+import { notifyResolution } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Validate common fields
@@ -75,7 +75,7 @@ function validateIterative(body: Record<string, unknown>): string | null {
  * Atomically creates/updates a resolution, supporting type changes.
  */
 export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const body = await request.json();
+  const body = await request.json();
   const {
     id,
     type,

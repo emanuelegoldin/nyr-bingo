@@ -1,8 +1,8 @@
+import type { TeamMember } from "@/components/team/types";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { TeamMember } from "@/components/team/types";
 import { apiFetch, toastApiError } from "@/lib/api-client";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";

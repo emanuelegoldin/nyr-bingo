@@ -8,18 +8,18 @@
  * user plays, its members and the leaders' actions.
  */
 
-import { GameList, type GameListItem } from "@/components/team/game-list";
-import { formatLeaderNames } from "@/components/team/leaders";
-import type { TeamPermission } from "@/lib/authz/permissions";
-import { MembersTab } from "@/components/team/members-tab";
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
-import type { Team } from "@/components/team/types";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
+import { GameList, type GameListItem } from "@/components/team/game-list";
+import { formatLeaderNames } from "@/components/team/leaders";
+import { MembersTab } from "@/components/team/members-tab";
+import type { Team } from "@/components/team/types";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, toastApiError } from "@/lib/api-client";
+import type { TeamPermission } from "@/lib/authz/permissions";
 import { Crown, LogOut, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

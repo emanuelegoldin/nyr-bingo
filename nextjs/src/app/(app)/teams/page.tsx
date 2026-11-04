@@ -5,6 +5,9 @@
  * Spec Reference: 04-bingo-teams.md
  */
 
+import { PageSpinner } from "@/components/page-spinner";
+import { formatLeaderNames } from "@/components/team/leaders";
+import type { Team } from "@/components/team/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,11 +18,8 @@ import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, toastApiError } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
-import { PageSpinner } from "@/components/page-spinner";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
-import type { Team } from "@/components/team/types";
-import { formatLeaderNames } from "@/components/team/leaders";
 
 export default function TeamsPage() {
   usePageTitle("Teams");

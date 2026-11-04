@@ -8,8 +8,8 @@
  * Creation and editing are handled via the ResolutionCreateEditDialog.
  */
 
-import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
 import { PreparedResolutionsDialog } from "@/components/dialogs/prepared-resolutions-dialog";
+import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
 import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

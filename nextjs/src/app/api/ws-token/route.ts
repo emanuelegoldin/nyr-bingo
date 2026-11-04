@@ -3,13 +3,13 @@
  * Spec Reference: 11-real-time-card-updates.md
  */
 
-import { NextRequest, NextResponse } from 'next/server';
 import { authorizeThreadAction } from '@/app/api/threads/thread-access';
 import { authorize, getResolutionHistoryAccess } from '@/lib/authz';
 import type { User } from '@/lib/db';
 import type { WsRoom } from '@/lib/shared/ws-messages';
 import { createRoomToken } from '@/lib/ws-token';
-import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
+import { NextRequest, NextResponse } from 'next/server';
+import { AuthContextNoParams, errorResponse, withAuth } from '../utils';
 
 /**
  * Whether a user may watch a room. A room shows the same data as the page behind it.

@@ -3,17 +3,17 @@
  * Spec Reference: 16-games.md - Start Conditions
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { notifications } from '@/lib/notifications';
-import { notifyTeams } from '@/lib/team-signals';
+import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import {
   checkGameCanStart,
-  startGameWithCards,
   getGameWithMembers,
   initializeGameLeaderboard,
+  startGameWithCards,
 } from '@/lib/db';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
-import { authorizeGameAction } from '@/app/api/games/game-access';
+import { notifications } from '@/lib/notifications';
+import { notifyTeams } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * POST /api/games/[gameId]/start - Start the bingo game

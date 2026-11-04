@@ -3,11 +3,10 @@
  * Spec Reference: 16-games.md - Ending a Game
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getRunningGame } from '@/lib/db';
-import { finishGame } from '@/lib/game-ending';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { finishGame } from '@/lib/game-ending';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * POST /api/games/[gameId]/end - End a started game (leader only)

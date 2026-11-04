@@ -98,6 +98,11 @@ async function loadCardCell(cellId: string): Promise<{ cell: CardCellRow } | { e
     return { error: 'This game has ended' };
   }
 
+  // Spec: 16-games.md - Ending a Game
+  if (rows[0].game_status === GameStatus.ENDED) {
+    return { error: 'This game has ended' };
+  }
+
   return { cell: rows[0] };
 }
 
