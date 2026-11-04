@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notifications } from '@/lib/notifications';
 import { notifyTeams } from '@/lib/team-signals';
-import { isUserVerified } from '@/lib/auth';
+import { requirePermission } from '@/lib/authz';
 import {
   addPlayerToRunningGames,
   ensureBingoCardForUser,
@@ -46,12 +46,8 @@ async function addNewMemberToGames(teamId: string, userId: string): Promise<void
 export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
   
   // Spec: 04-bingo-teams.md - Verification Requirement
-  if (!isUserVerified(currentUser)) {
-    return NextResponse.json(
-      { error: 'Email verification required. Please verify your email before joining a team.' },
-      { status: 403 }
-    );
-  }
+  const denied = await requirePermission(currentUser, 'team.join', { scope: 'none' });
+  if (denied) return denied;
 
   const body = await request.json();
   const { inviteCode } = body;

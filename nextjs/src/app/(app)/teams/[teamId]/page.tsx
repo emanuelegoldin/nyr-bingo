@@ -9,7 +9,8 @@ import { PageSpinner } from '@/components/page-spinner';
 import type { GameListItem } from '@/components/team/game-list';
 import type { Team } from '@/components/team/types';
 import { requireUser } from '@/lib/auth';
-import { getRunningGamesForTeam, getTeamWithMembers, isTeamMember, type TeamWithMembers } from '@/lib/db';
+import { requirePagePermission } from '@/lib/authz';
+import { getRunningGamesForTeam, getTeamWithMembers, type TeamWithMembers } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import TeamPageClient from './team-page-client';
@@ -45,10 +46,7 @@ function mapTeam(team: TeamWithMembers): Team {
 async function TeamContent({ teamId }: { teamId: string }) {
   const currentUser = await requireUser();
 
-  const member = await isTeamMember(teamId, currentUser.id);
-  if (!member) {
-    notFound();
-  }
+  await requirePagePermission(currentUser, 'team.view', { scope: 'team', teamId });
 
   const [team, games] = await Promise.all([
     getTeamWithMembers(teamId),

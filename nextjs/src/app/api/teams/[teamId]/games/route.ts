@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyTeams } from '@/lib/team-signals';
-import { isUserVerified } from '@/lib/auth';
-import { createGame, getRunningGamesForTeam, getTeamMembers, isTeamLeader, isTeamMember } from '@/lib/db';
+import { requirePermission } from '@/lib/authz';
+import { createGame, getRunningGamesForTeam, getTeamMembers } from '@/lib/db';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
@@ -18,10 +18,8 @@ export const GET = withAuth(async (
 ) => {
   const { teamId } = await params;
 
-  const isMember = await isTeamMember(teamId, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
-  }
+  const denied = await requirePermission(currentUser, 'team.view', { scope: 'team', teamId });
+  if (denied) return denied;
 
   const games = await getRunningGamesForTeam(teamId, currentUser.id);
 
@@ -36,16 +34,11 @@ export const POST = withAuth(async (
   request: NextRequest,
   { params, currentUser }: AuthContext<{ teamId: string }>
 ) => {
-  if (!isUserVerified(currentUser)) {
-    return errorResponse('Email verification required. Please verify your email before creating a game.', 403);
-  }
-
   const { teamId } = await params;
 
-  const isLeader = await isTeamLeader(teamId, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only the team leader can create a game', 403);
-  }
+  // Spec: 21-authorization.md - game.create: a verified team leader
+  const denied = await requirePermission(currentUser, 'game.create', { scope: 'team', teamId });
+  if (denied) return denied;
 
   const { name, playerIds } = await request.json();
   if (typeof name !== 'string' || name.trim().length === 0) {

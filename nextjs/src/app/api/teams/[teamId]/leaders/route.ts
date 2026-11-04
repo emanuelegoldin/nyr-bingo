@@ -5,7 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyTeams } from '@/lib/team-signals';
-import { getTeamById, isTeamLeader, promoteToLeader } from '@/lib/db';
+import { requirePermission } from '@/lib/authz';
+import { getTeamById, promoteToLeader } from '@/lib/db';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
 /**
@@ -23,9 +24,8 @@ export const POST = withAuth(async (
     return errorResponse('Team not found', 404);
   }
 
-  if (!(await isTeamLeader(teamId, currentUser.id))) {
-    return errorResponse('Only a team leader can promote members', 403);
-  }
+  const denied = await requirePermission(currentUser, 'team.promote', { scope: 'team', teamId });
+  if (denied) return denied;
 
   const { userId } = await request.json();
   if (typeof userId !== 'string' || userId.length === 0) {

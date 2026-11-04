@@ -5,7 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyTeams } from '@/lib/team-signals';
-import { getTeamWithMembers, isTeamMember, deleteTeam, getTeamById } from '@/lib/db';
+import { requirePermission } from '@/lib/authz';
+import { getTeamWithMembers, deleteTeam, getTeamById } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
@@ -17,11 +18,8 @@ export const GET = withAuth(async (
 ) => {
   const { teamId } = await params;
 
-  // Check if user is a member of the team
-  const isMember = await isTeamMember(teamId, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
-  }
+  const denied = await requirePermission(currentUser, 'team.view', { scope: 'team', teamId });
+  if (denied) return denied;
 
   const team = await getTeamWithMembers(teamId);
 
@@ -54,7 +52,9 @@ export const DELETE = withAuth(async (
     );
   }
 
-  // Attempt to delete (will check authorization internally)
+  const denied = await requirePermission(currentUser, 'team.delete', { scope: 'team', teamId });
+  if (denied) return denied;
+
   const deleted = await deleteTeam(teamId, currentUser.id);
 
   if (!deleted) {
