@@ -52,6 +52,7 @@ Make the application usable on phones. The authenticated pages, their dialogs an
 
 - No page in the shell scrolls horizontally at 360px. Content that is wider by nature, such as the leaderboard table, scrolls inside its own container.
 - When a page or card header has a title and action buttons, the actions wrap under the title when they don't fit beside it.
+- On mobile, the title of a list row with action buttons, such as a resolution on the Resolutions page, wraps onto more lines instead of being cut to a few characters.
 
 ### Dialogs
 
@@ -70,7 +71,7 @@ Make the application usable on phones. The authenticated pages, their dialogs an
 
 - At 360px, tapping a link in the drawer opens that page and the drawer is closed.
 - At 360px, no page in the shell (Dashboard, Games, Game, Teams, Team, Profile, public Profile, Resolutions, Archive, archived Game) scrolls horizontally.
-- At 360px, the title, description and actions of the Resolutions page are all fully visible.
+- At 360px, the title, description and actions of the Resolutions page are all fully visible, and each resolution title can be read in full.
 - At 360px, every dialog fits in the screen with a side margin, and its last button can be reached by scrolling inside it.
 - At 360px, the bingo card fits the screen and cell titles show up to three lines.
 - At 768px and wider, the layout is the same as before this spec.
