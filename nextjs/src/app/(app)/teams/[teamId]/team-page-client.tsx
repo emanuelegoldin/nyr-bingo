@@ -20,10 +20,9 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, toastApiError } from "@/lib/api-client";
-import { Crown, LogOut } from "lucide-react";
+import { Crown, LogOut, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { DeleteTeamDialog } from "./_components/DeleteTeamDialog";
 import { InviteDialog } from "./_components/InviteDialog";
 import { NewGameDialog } from "./_components/NewGameDialog";
 
@@ -40,8 +39,6 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
 
   const { toast } = useToast();
   const router = useRouter();
-  // Open state lives here because a successful delete closes the dialog
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
@@ -54,7 +51,6 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
     const result = await apiFetch<unknown>(`/api/teams/${team.id}`, { method: "DELETE" });
 
     if (result.ok) {
-      setDeleteDialogOpen(false);
       toast({
         title: "Team deleted",
         description: "The team and its related data were removed.",
@@ -115,11 +111,15 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
               )}
               {capabilities.includes('team.invite') && <InviteDialog teamId={team.id} />}
               {capabilities.includes('team.delete') && (
-                <DeleteTeamDialog
-                  open={deleteDialogOpen}
-                  onOpenChange={setDeleteDialogOpen}
+                <ConfirmActionDialog
+                  triggerLabel="Delete Team"
+                  triggerIcon={Trash2}
+                  triggerVariant="destructive"
+                  title="Delete this team?"
+                  description="This will permanently delete the team, its memberships, invitations and all of its games, with their resolutions, bingo cards and related gameplay data. Archived games are kept. This action cannot be undone."
+                  confirmLabel="Delete"
                   onConfirm={handleDeleteTeam}
-                  isDeleting={isDeleting}
+                  isPending={isDeleting}
                 />
               )}
               <ConfirmActionDialog

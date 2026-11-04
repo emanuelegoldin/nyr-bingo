@@ -26,8 +26,8 @@ interface ConfirmActionDialogProps {
 
 /**
  * Button plus confirmation dialog for an irreversible action (ending, deleting or leaving a game,
- * leaving a team, promoting a leader). The dialog cannot be dismissed while the action is in
- * progress.
+ * leaving or deleting a team, deleting an archived game, promoting a leader). The dialog cannot be
+ * dismissed while the action is in progress.
  *
  * @param props - The labels, the action and whether it is running.
  * @returns The button and dialog.

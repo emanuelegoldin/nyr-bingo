@@ -7,11 +7,12 @@
 
 import { LeaderboardTab } from "@/app/(app)/games/[gameId]/leaderboard-tab";
 import { ArchivedCardView } from "@/components/archive/archived-card";
-import { DeleteArchivedGameDialog } from "@/components/archive/delete-archived-game-dialog";
 import { formatArchiveDate } from "@/components/archive/format-archive-date";
+import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import { usePageTitle } from "@/hooks/AppContext";
 import { apiFetch, toastApiError } from "@/lib/api-client";
 import type { ArchivedGameDetail } from "@/lib/shared/types";
+import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -25,7 +26,6 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
   usePageTitle("Archive");
 
   const router = useRouter();
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   /** Delete the archived game and return to the archive. */
@@ -39,7 +39,6 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
       return;
     }
 
-    setIsDeleteOpen(false);
     router.push("/archive");
   };
 
@@ -54,11 +53,15 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
         </div>
         {canDelete && (
           <div className="shrink-0">
-            <DeleteArchivedGameDialog
-              open={isDeleteOpen}
-              onOpenChange={setIsDeleteOpen}
+            <ConfirmActionDialog
+              triggerLabel="Delete"
+              triggerIcon={Trash2}
+              triggerVariant="destructive"
+              title="Delete this archived game?"
+              description="This permanently deletes the game from the archive for every player. This action cannot be undone."
+              confirmLabel="Delete"
               onConfirm={handleDelete}
-              isDeleting={isDeleting}
+              isPending={isDeleting}
             />
           </div>
         )}
