@@ -16,19 +16,12 @@ import { useWsRoom } from "@/hooks/use-ws-room";
 import { useToast } from "@/hooks/use-toast";
 import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch, toastApiError } from "@/lib/api-client";
+import type { ResolutionHistoryEntry } from "@/lib/db/types";
 import { History, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-interface HistoryEntry {
-  id: string;
-  authorUserId: string;
-  authorUsername: string;
-  entryType: "manual_note" | "system_event";
-  eventKey: string | null;
-  content: string;
-  metadata: Record<string, unknown> | null;
-  createdAt: string;
-}
+/** History entry as received from the API, with its date serialized. */
+type HistoryEntry = Omit<ResolutionHistoryEntry, "createdAt"> & { createdAt: string };
 
 interface ResolutionHistoryDialogProps {
   resolutionId: string;

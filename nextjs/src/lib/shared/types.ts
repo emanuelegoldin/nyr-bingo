@@ -165,8 +165,8 @@ export interface ArchivedCard {
   cells: ArchivedCell[];
 }
 
-/** One line of an archived game's final leaderboard, in rank order. */
-export interface ArchivedLeaderboardEntry {
+/** One line of a game's leaderboard, live or archived. */
+export interface LeaderboardEntry {
   userId: string;
   username: string;
   displayName: string | null;
@@ -184,6 +184,6 @@ export interface ArchivedGameSummary {
 
 /** An archived game with its leaderboard and cards. */
 export interface ArchivedGameDetail extends ArchivedGameSummary {
-  leaderboard: ArchivedLeaderboardEntry[];
+  leaderboard: LeaderboardEntry[];
   cards: ArchivedCard[];
 }

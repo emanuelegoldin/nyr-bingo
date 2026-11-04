@@ -16,17 +16,10 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import type { LeaderboardEntry } from "@/lib/shared/types";
 
 // ── Types ─────────────────────────────────────────────────────────
 
-/** Matches the shape returned by getTeamLeaderboard */
-export interface LeaderboardEntry {
-  userId: string;
-  username: string;
-  displayName: string | null;
-  firstBingoAt: string | null;
-  completedTasks: number;
-}
 
 interface LeaderboardTabProps {
   initialEntries: LeaderboardEntry[];

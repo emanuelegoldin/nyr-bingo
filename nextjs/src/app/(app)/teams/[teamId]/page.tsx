@@ -7,7 +7,7 @@
 
 import { PageSpinner } from '@/components/page-spinner';
 import type { GameListItem } from '@/components/team/game-list';
-import type { Team } from '@/components/team/types';
+import { toTeamMember, type Team } from '@/components/team/types';
 import { requireUser } from '@/lib/auth';
 import { getTeamCapabilities, requirePagePermission } from '@/lib/authz';
 import { getRunningGamesForTeam, getTeamWithMembers, type TeamWithMembers } from '@/lib/db';
@@ -23,23 +23,7 @@ function mapTeam(team: TeamWithMembers): Team {
   return {
     id: team.id,
     name: team.name,
-    members: team.members.map((member) => ({
-      membership: {
-        id: member.membership.id,
-        teamId: member.membership.teamId,
-        userId: member.membership.userId,
-        role: member.membership.role,
-        joinedAt: new Date(member.membership.joinedAt).toISOString(),
-      },
-      user: {
-        id: member.user.id,
-        userId: member.user.userId,
-        username: member.user.username,
-        displayName: member.user.displayName,
-        bio: member.user.bio,
-        avatarUrl: member.user.avatarUrl,
-      },
-    })),
+    members: team.members.map(toTeamMember),
   };
 }
 

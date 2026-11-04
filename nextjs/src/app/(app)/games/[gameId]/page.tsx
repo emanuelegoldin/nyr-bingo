@@ -21,11 +21,11 @@ import {
   type Resolution,
 } from '@/lib/db';
 import { resolutionToFormData } from '@/lib/shared/resolution-form';
-import type { ResolutionFormData } from '@/lib/shared/types';
+import type { LeaderboardEntry, ResolutionFormData } from '@/lib/shared/types';
+import { toTeamMember } from '@/components/team/types';
 import { PageSpinner } from '@/components/page-spinner';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import type { LeaderboardEntry } from './leaderboard-tab';
 import GameDetailPageClient from './game-detail-page-client';
 import type { Game } from './types';
 
@@ -39,10 +39,6 @@ function GameDetailLoadingFallback() {
   );
 }
 
-function toIsoDateString(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value;
-}
-
 function mapGame(game: GameWithMembers): Game {
   return {
     id: game.id,
@@ -52,23 +48,7 @@ function mapGame(game: GameWithMembers): Game {
     teamResolutionText: game.teamResolutionText,
     status: game.status,
     deadline: game.deadline,
-    members: game.members.map((member) => ({
-      membership: {
-        id: member.membership.id,
-        teamId: member.membership.teamId,
-        userId: member.membership.userId,
-        role: member.membership.role,
-        joinedAt: toIsoDateString(member.membership.joinedAt),
-      },
-      user: {
-        id: member.user.id,
-        userId: member.user.userId,
-        username: member.user.username,
-        displayName: member.user.displayName,
-        bio: member.user.bio,
-        avatarUrl: member.user.avatarUrl,
-      },
-    })),
+    members: game.members.map(toTeamMember),
   };
 }
 

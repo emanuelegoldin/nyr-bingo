@@ -3,6 +3,7 @@
  * Pure functions with no server-only imports, usable from server and client code.
  */
 
+import { toIsoDateString } from "./dates";
 import type { ResolutionFormData, ResolutionType, ResolutionTypeValue, Subtask, UnifiedResolution } from "./types";
 
 /** Subset of a stored resolution (db `Resolution`) that the form needs. */
@@ -58,15 +59,6 @@ export interface UnifiedResolutionSource extends ResolutionFormSource {
   createdAt: Date | string;
   updatedAt: Date | string;
 }
-
-/**
- * Converts a date to the ISO string it becomes once serialized to JSON.
- *
- * @param value - Date, or an already serialized date string.
- * @returns The ISO date string.
- */
-const toIsoDateString = (value: Date | string): string =>
-  value instanceof Date ? value.toISOString() : value;
 
 /**
  * Builds the unified API shape from a stored resolution; null subtasks/repetitions become undefined.

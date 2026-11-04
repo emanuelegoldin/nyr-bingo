@@ -34,7 +34,8 @@ import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
 import { useLastLoaded } from "./_components/use-last-loaded";
 import { useGameActions } from "./_components/use-game-actions";
 import { CardsTab } from "./cards-tab";
-import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
+import { LeaderboardTab } from "./leaderboard-tab";
+import type { LeaderboardEntry } from "@/lib/shared/types";
 import type { Game, TeamProvidedResolution } from "./types";
 
 interface GameDetailPageClientProps {
