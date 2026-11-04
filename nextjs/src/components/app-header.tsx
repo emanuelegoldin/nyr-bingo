@@ -11,13 +11,13 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
-      <div className="flex items-center gap-2">
-        <SidebarTrigger className="md:hidden" />
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl font-headline">
+      <div className="flex min-w-0 items-center gap-2">
+        <SidebarTrigger className="shrink-0 md:hidden" />
+        <h1 className="truncate text-xl font-semibold tracking-tight md:text-2xl font-headline">
           {headerTitle}
         </h1>
       </div>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-2">
         <NotificationBell />
         <UserAvatarButton />
       </div>
