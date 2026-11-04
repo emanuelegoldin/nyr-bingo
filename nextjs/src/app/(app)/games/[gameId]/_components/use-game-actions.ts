@@ -17,7 +17,7 @@ interface UseGameActionsParams {
 
 /**
  * Owns the game page data (game, team goal, member-provided resolutions) together with
- * the actions that reload or mutate it: load, start bingo, end and delete.
+ * the actions that reload or mutate it: load, start bingo, end, delete and leave.
  *
  * @param params - The game id and the server-fetched initial payloads.
  * @returns The current data, the actions and their loading flags.
@@ -39,6 +39,7 @@ export function useGameActions({
   const [isStarting, setIsStarting] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   // A server refresh brings new props (team changes signalled over WebSocket)
   useEffect(() => setGame(initialGame), [initialGame]);
@@ -149,6 +150,13 @@ export function useGameActions({
     setIsEnding(false);
   };
 
+  /** Leaves the game: the user's card and the resolutions written for them are removed. */
+  const handleLeaveGame = async () => {
+    setIsLeaving(true);
+    await leaveGameAfter(`/api/games/${gameId}/leave`, 'POST', 'You left the game', 'Failed to leave game');
+    setIsLeaving(false);
+  };
+
   /** Deletes the game and everything in it. */
   const handleDeleteGame = async () => {
     setIsDeleting(true);
@@ -167,5 +175,7 @@ export function useGameActions({
     handleEndGame,
     isDeleting,
     handleDeleteGame,
+    isLeaving,
+    handleLeaveGame,
   };
 }

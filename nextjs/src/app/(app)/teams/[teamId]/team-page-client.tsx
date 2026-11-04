@@ -11,6 +11,7 @@
 import { GameList, type GameListItem } from "@/components/team/game-list";
 import { formatLeaderNames, isLeaderIn } from "@/components/team/leaders";
 import { MembersTab } from "@/components/team/members-tab";
+import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import type { Team } from "@/components/team/types";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
@@ -18,7 +19,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
-import { Crown } from "lucide-react";
+import { Crown, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteTeamDialog } from "./_components/DeleteTeamDialog";
@@ -39,6 +40,8 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
   // Open state lives here because a successful delete closes the dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
 
   const isLeader = isLeaderIn(team.members, currentUserId);
 
@@ -65,6 +68,44 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
     setIsDeleting(false);
   };
 
+  /** Shows an error toast for a failed request. */
+  const showError = (status: number, error: string | null | undefined, fallback: string) => {
+    toast({
+      title: "Error",
+      description: status === 0 ? "An error occurred" : error || fallback,
+      variant: "destructive",
+    });
+  };
+
+  /** Leaves the team and its games; on success navigates back to the teams list. */
+  const handleLeaveTeam = async () => {
+    setIsLeaving(true);
+    const result = await apiFetch<unknown>(`/api/teams/${team.id}/leave`, { method: "POST" });
+
+    if (result.ok) {
+      toast({ title: "You left the team" });
+      router.push("/teams");
+      router.refresh();
+    } else {
+      showError(result.status, result.error, "Failed to leave team");
+    }
+    setIsLeaving(false);
+  };
+
+  /** Makes a member a leader, then reloads the page data. */
+  const handlePromote = async (userId: string) => {
+    setPromotingUserId(userId);
+    const result = await apiFetch<unknown>(`/api/teams/${team.id}/leaders`, { method: "POST", json: { userId } });
+
+    if (result.ok) {
+      toast({ title: "Member promoted to leader" });
+      router.refresh();
+    } else {
+      showError(result.status, result.error, "Failed to promote member");
+    }
+    setPromotingUserId(null);
+  };
+
   return (
     <TeamWsProvider teamId={team.id}>
       <TeamRefreshListener />
@@ -78,18 +119,30 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
                 Team Leaders: {formatLeaderNames(team.members)}
               </CardDescription>
             </div>
-            {isLeader && (
-              <div className="flex gap-2 flex-wrap">
-                <NewGameDialog teamId={team.id} />
-                <InviteDialog teamId={team.id} />
-                <DeleteTeamDialog
-                  open={deleteDialogOpen}
-                  onOpenChange={setDeleteDialogOpen}
-                  onConfirm={handleDeleteTeam}
-                  isDeleting={isDeleting}
-                />
-              </div>
-            )}
+            <div className="flex gap-2 flex-wrap">
+              {isLeader && (
+                <>
+                  <NewGameDialog teamId={team.id} members={team.members} currentUserId={currentUserId} />
+                  <InviteDialog teamId={team.id} />
+                  <DeleteTeamDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                    onConfirm={handleDeleteTeam}
+                    isDeleting={isDeleting}
+                  />
+                </>
+              )}
+              <ConfirmActionDialog
+                triggerLabel="Leave Team"
+                triggerIcon={LogOut}
+                triggerVariant="outline"
+                title="Leave this team?"
+                description="You will also leave every running game of this team that you play: your bingo cards, leaderboard entries and the resolutions written for you are deleted. The resolutions you wrote for others stay on their cards. You can only come back with a new invitation. If you are the only leader, promote another member first."
+                confirmLabel="Leave Team"
+                onConfirm={handleLeaveTeam}
+                isPending={isLeaving}
+              />
+            </div>
           </CardHeader>
         </Card>
 
@@ -104,7 +157,12 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
           )}
         </section>
 
-        <MembersTab members={team.members} currentUserId={currentUserId} />
+        <MembersTab
+          members={team.members}
+          currentUserId={currentUserId}
+          onPromote={isLeader ? handlePromote : undefined}
+          promotingUserId={promotingUserId}
+        />
       </div>
     </TeamWsProvider>
   );

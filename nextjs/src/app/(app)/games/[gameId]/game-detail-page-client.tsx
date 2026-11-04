@@ -19,14 +19,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
-import { CalendarClock, Crown, Flag, Loader2, Settings, Swords, Trash2 } from "lucide-react";
+import { CalendarClock, Crown, Flag, Loader2, LogOut, Settings, Swords, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from 'react';
 
 import { BingoCardWithCells } from "@/lib/db/types";
 import type { ResolutionFormData } from "@/lib/shared/types";
+import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import { formatLeaderNames, isLeaderIn } from "@/components/team/leaders";
-import { GameActionDialog } from "./_components/GameActionDialog";
 import { GameConfigDialog } from "./_components/GameConfigDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
@@ -70,6 +70,8 @@ export default function GameDetailPageClient({
     handleEndGame,
     isDeleting,
     handleDeleteGame,
+    isLeaving,
+    handleLeaveGame,
   } = useGameActions({ gameId: initialGame.id, initialGame, initialTeamGoal, initialExistingResolutions });
   const [currentUserId] = useState<string>(initialCurrentUserId);
 
@@ -126,7 +128,7 @@ export default function GameDetailPageClient({
                 )}
 
                 {game.status === 'started' && (
-                  <GameActionDialog
+                  <ConfirmActionDialog
                     triggerLabel="End Game"
                     triggerIcon={Flag}
                     triggerVariant="outline"
@@ -138,7 +140,7 @@ export default function GameDetailPageClient({
                   />
                 )}
 
-                <GameActionDialog
+                <ConfirmActionDialog
                   triggerLabel="Delete Game"
                   triggerIcon={Trash2}
                   triggerVariant="destructive"
@@ -156,6 +158,17 @@ export default function GameDetailPageClient({
               currentUserId={currentUserId}
               existingResolutions={existingResolutions}
               onReload={loadGame}
+            />
+
+            <ConfirmActionDialog
+              triggerLabel="Leave Game"
+              triggerIcon={LogOut}
+              triggerVariant="outline"
+              title="Leave this game?"
+              description="Your bingo card, your leaderboard entry and the resolutions written for you in this game will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only leader, promote another player on the team page first."
+              confirmLabel="Leave Game"
+              onConfirm={handleLeaveGame}
+              isPending={isLeaving}
             />
           </div>
         </CardHeader>

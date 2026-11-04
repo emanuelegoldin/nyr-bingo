@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 
-interface GameActionDialogProps {
+interface ConfirmActionDialogProps {
   triggerLabel: string;
   triggerIcon: LucideIcon;
   triggerVariant: "outline" | "destructive";
@@ -25,13 +25,14 @@ interface GameActionDialogProps {
 }
 
 /**
- * Button plus confirmation dialog for an irreversible game action. The dialog cannot be
- * dismissed while the action is in progress.
+ * Button plus confirmation dialog for an irreversible action (ending, deleting or leaving a game,
+ * leaving a team, promoting a leader). The dialog cannot be dismissed while the action is in
+ * progress.
  *
  * @param props - The labels, the action and whether it is running.
  * @returns The button and dialog.
  */
-export function GameActionDialog({
+export function ConfirmActionDialog({
   triggerLabel,
   triggerIcon: TriggerIcon,
   triggerVariant,
@@ -40,7 +41,7 @@ export function GameActionDialog({
   confirmLabel,
   onConfirm,
   isPending,
-}: GameActionDialogProps) {
+}: ConfirmActionDialogProps) {
   const [open, setOpen] = useState(false);
 
   return (

@@ -2,11 +2,13 @@
  * Members list, shown as a tab of the game page and on the team page.
  * Spec Reference: 12-team-tabs.md
  *
- * Displays a simple list of all team members. Each row shows the
+ * Displays a simple list of team members (or a game's players). Each row shows the
  * member's avatar on the left (clickable → profile) and their
- * username in the center.
+ * username in the center. On the team page, leaders get a Make Leader action
+ * on every non-leader row (spec 04 - Leaders).
  */
 
+import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown } from "lucide-react";
@@ -16,9 +18,19 @@ import type { TeamMember } from "./types";
 interface MembersTabProps {
   members: TeamMember[];
   currentUserId: string;
+  /** Promotes a member to leader. When set, non-leader rows show Make Leader. */
+  onPromote?: (userId: string) => void;
+  /** The member being promoted, while the request runs. */
+  promotingUserId?: string | null;
 }
 
-export function MembersTab({ members, currentUserId }: MembersTabProps) {
+/**
+ * Lists members with their leader badge, and the Make Leader action when `onPromote` is set.
+ *
+ * @param props - The members, the current user and the optional promote action.
+ * @returns The members card.
+ */
+export function MembersTab({ members, currentUserId, onPromote, promotingUserId = null }: MembersTabProps) {
   return (
     <Card>
       <CardHeader>
@@ -53,6 +65,19 @@ export function MembersTab({ members, currentUserId }: MembersTabProps) {
                     )}
                   </p>
                 </div>
+
+                {!isLeader && onPromote && (
+                  <ConfirmActionDialog
+                    triggerLabel="Make Leader"
+                    triggerIcon={Crown}
+                    triggerVariant="outline"
+                    title={`Make ${member.user.displayName || member.user.username} a leader?`}
+                    description="Leaders can invite members, create, start, end and delete games, promote other members and delete the team. This cannot be undone."
+                    confirmLabel="Make Leader"
+                    onConfirm={() => onPromote(member.user.userId)}
+                    isPending={promotingUserId === member.user.userId}
+                  />
+                )}
 
                 {/* Leader badge */}
                 {isLeader && (
