@@ -5,14 +5,14 @@
 
 import type { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import { execute, query, withTransaction } from './connection';
-import { getRunningGame, getRunningGamesForTeam, isGameLeader, isGamePlayer } from './game-repository';
+import { getRunningGamesForTeam } from './game-repository';
 import { getCardReviewFiles, removeOrphanedFiles } from './review-file-repository';
-import { getTeamById, isTeamLeader, isTeamMember } from './team-repository';
+import type { Game } from './types';
 
 /** Outcome of a leave request; `status` is the HTTP status to report on failure. */
 export type LeaveResult =
   | { success: true }
-  | { success: false; status: 400 | 403 | 404; error: string };
+  | { success: false; status: 400; error: string };
 
 /**
  * Find another leader among a game's players.
@@ -39,14 +39,16 @@ async function findOtherGameLeader(gameId: string, userId: string): Promise<stri
  * @param gameId The game
  * @param gameName The game's name, for the error
  * @param userId The player
+ * @param isLeader Whether the player leads the game
  * @returns The id of the leader who takes over the team goal (null for a non-leader), or an error
  */
 async function checkCanLeaveGame(
   gameId: string,
   gameName: string,
-  userId: string
+  userId: string,
+  isLeader: boolean
 ): Promise<{ successor: string | null } | { error: string }> {
-  if (!(await isGameLeader(gameId, userId))) {
+  if (!isLeader) {
     return { successor: null };
   }
   const successor = await findOtherGameLeader(gameId, userId);
@@ -99,22 +101,16 @@ async function removePlayerFromGame(
 }
 
 /**
- * Leave a running game.
+ * Leave a running game. The route checks that the user may leave it (spec 21: game.leave).
  * Spec: 16-games.md - Leaving a Game
- * @param gameId The game
+ * @param game The running game
  * @param userId The player leaving
+ * @param isLeader Whether the player leads the game
  * @returns Success, or the error and its HTTP status
  */
-export async function leaveGame(gameId: string, userId: string): Promise<LeaveResult> {
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return { success: false, status: 404, error: 'Game not found' };
-  }
-  if (!(await isGamePlayer(gameId, userId))) {
-    return { success: false, status: 403, error: 'You are not a player of this game' };
-  }
-
-  const check = await checkCanLeaveGame(gameId, game.name, userId);
+export async function leaveGame(game: Pick<Game, 'id' | 'name'>, userId: string, isLeader: boolean): Promise<LeaveResult> {
+  const gameId = game.id;
+  const check = await checkCanLeaveGame(gameId, game.name, userId, isLeader);
   if ('error' in check) {
     return { success: false, status: 400, error: check.error };
   }
@@ -129,21 +125,15 @@ export async function leaveGame(gameId: string, userId: string): Promise<LeaveRe
 
 /**
  * Leave a team, and with it every running game of the team the user plays.
+ * The route checks that the user may leave it (spec 21: team.leave).
  * Spec: 04-bingo-teams.md - Leaving a Team
  * @param teamId The team
  * @param userId The member leaving
+ * @param isLeader Whether the member is a team leader, and so leads every game they play
  * @returns Success, or the error and its HTTP status
  */
-export async function leaveTeam(teamId: string, userId: string): Promise<LeaveResult> {
-  const team = await getTeamById(teamId);
-  if (!team) {
-    return { success: false, status: 404, error: 'Team not found' };
-  }
-  if (!(await isTeamMember(teamId, userId))) {
-    return { success: false, status: 403, error: 'You are not a member of this team' };
-  }
-
-  if (await isTeamLeader(teamId, userId)) {
+export async function leaveTeam(teamId: string, userId: string, isLeader: boolean): Promise<LeaveResult> {
+  if (isLeader) {
     const otherLeaders = await query<RowDataPacket[]>(
       `SELECT 1 FROM team_memberships WHERE team_id = ? AND user_id <> ? AND role = 'leader' LIMIT 1`,
       [teamId, userId]
@@ -156,7 +146,7 @@ export async function leaveTeam(teamId: string, userId: string): Promise<LeaveRe
   const games = await getRunningGamesForTeam(teamId, userId);
   const departures: Array<{ gameId: string; successor: string | null }> = [];
   for (const game of games) {
-    const check = await checkCanLeaveGame(game.id, game.name, userId);
+    const check = await checkCanLeaveGame(game.id, game.name, userId, isLeader);
     if ('error' in check) {
       return { success: false, status: 400, error: check.error };
     }

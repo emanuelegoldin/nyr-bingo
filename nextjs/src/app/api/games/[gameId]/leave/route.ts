@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/lib/authz';
+import { authorize } from '@/lib/authz';
 import { getRunningGame, leaveGame } from '@/lib/db';
 import { notifyTeams } from '@/lib/team-signals';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
@@ -23,10 +23,12 @@ export const POST = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  const denied = await requirePermission(currentUser, 'game.leave', { scope: 'game', game });
-  if (denied) return denied;
+  const decision = await authorize(currentUser, 'game.leave', { scope: 'game', game });
+  if (!decision.allowed) {
+    return errorResponse(decision.error, decision.status);
+  }
 
-  const result = await leaveGame(gameId, currentUser.id);
+  const result = await leaveGame(game, currentUser.id, decision.role === 'leader');
   if (!result.success) {
     return errorResponse(result.error, result.status);
   }

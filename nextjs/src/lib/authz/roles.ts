@@ -72,19 +72,3 @@ export async function getGameIdForCell(cellId: string): Promise<string | null> {
   return rows.length > 0 ? rows[0].game_id : null;
 }
 
-/**
- * Find the game a review thread belongs to, through its cell.
- * @param threadId The thread
- * @returns The id of the thread's game, or null when the thread or its cell does not exist
- */
-export async function getGameIdForThread(threadId: string): Promise<string | null> {
-  const rows = await query<Array<RowDataPacket & { game_id: string }>>(
-    `SELECT bc.game_id
-     FROM review_threads t
-     JOIN bingo_cells c ON c.id = t.cell_id
-     JOIN bingo_cards bc ON bc.id = c.card_id
-     WHERE t.id = ?`,
-    [threadId]
-  );
-  return rows.length > 0 ? rows[0].game_id : null;
-}

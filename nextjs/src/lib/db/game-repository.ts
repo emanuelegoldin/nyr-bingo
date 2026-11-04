@@ -105,40 +105,6 @@ export async function getRunningGame(id: string): Promise<Game | null> {
 }
 
 /**
- * Check whether a user is a player of a game.
- * Spec: 16-games.md - Game Model
- * @param gameId The game
- * @param userId The user
- * @returns True if the user is on the game's roster
- */
-export async function isGamePlayer(gameId: string, userId: string): Promise<boolean> {
-  const rows = await query<RowDataPacket[]>(
-    `SELECT 1 FROM game_players WHERE game_id = ? AND user_id = ?`,
-    [gameId, userId]
-  );
-  return rows.length > 0;
-}
-
-/**
- * Check whether a user leads a game: a team leader who is one of its players.
- * Spec: 16-games.md - Game Model
- * @param gameId The game
- * @param userId The user
- * @returns True if the user may take the leader's actions on the game
- */
-export async function isGameLeader(gameId: string, userId: string): Promise<boolean> {
-  const rows = await query<RowDataPacket[]>(
-    `SELECT 1
-     FROM game_players p
-     JOIN games g ON g.id = p.game_id
-     JOIN team_memberships m ON m.team_id = g.team_id AND m.user_id = p.user_id
-     WHERE p.game_id = ? AND p.user_id = ? AND m.role = 'leader'`,
-    [gameId, userId]
-  );
-  return rows.length > 0;
-}
-
-/**
  * List the players of a game, in the order they joined it.
  * @param gameId The game
  * @returns The ids of its players
@@ -347,21 +313,15 @@ export async function checkAllResolutionsProvided(game: Pick<Game, 'id'>): Promi
 
 /**
  * Check whether the bingo game can start. startGameWithCards does the actual start.
+ * The caller checks that the user may start it (spec 21: game.start).
  * Spec: 16-games.md - Start Conditions
+ * @param gameId The game
+ * @returns Success, or the start condition that is not met
  */
-export async function checkGameCanStart(
-  gameId: string,
-  leaderUserId: string
-): Promise<{ success: boolean; error?: string }> {
+export async function checkGameCanStart(gameId: string): Promise<{ success: boolean; error?: string }> {
   const game = await getGameById(gameId);
   if (!game) {
     return { success: false, error: 'Game not found' };
-  }
-
-  // Only a leader of the game can start it
-  const isLeader = await isGameLeader(game.id, leaderUserId);
-  if (!isLeader) {
-    return { success: false, error: 'Only a leader of the game can start it' };
   }
 
   // Check if game is still in forming status

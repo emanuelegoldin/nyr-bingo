@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/lib/authz';
 import { createTeamInvitation } from '@/lib/db';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { AuthContext, withAuth } from '@/app/api/utils';
 
 /**
  * POST /api/teams/[teamId]/invite - Create team invitation
@@ -24,11 +24,7 @@ export const POST = withAuth(async (
   const denied = await requirePermission(currentUser, 'team.invite', { scope: 'team', teamId });
   if (denied) return denied;
 
-  const invitation = await createTeamInvitation(teamId, currentUser.id, email);
-
-  if (!invitation) {
-    return errorResponse('Failed to create invitation', 500);
-  }
+  const invitation = await createTeamInvitation(teamId, email);
 
   return NextResponse.json({
     invitation,

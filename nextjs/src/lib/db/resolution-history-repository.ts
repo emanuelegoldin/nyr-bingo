@@ -7,14 +7,8 @@
 
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { ResolutionScope } from '../shared/types';
 import { query } from './connection';
-import { getResolutionById } from './resolution-repository';
-import { isGamePlayer } from './game-repository';
-import { isTeamMember } from './team-repository';
 import type {
-  Resolution,
-  ResolutionHistoryAccess,
   ResolutionHistoryEntry,
   ResolutionHistoryEntryType,
 } from './types';
@@ -64,9 +58,16 @@ function toSafeInteger(value: number, fallback: number): number {
   return Math.trunc(value);
 }
 
-async function canViewPersonalResolutionViaTeamCards(
+/**
+ * Whether a resolution is on a bingo card of a game the user plays.
+ * Spec: 13-resolution-history-and-progress.md - History Visibility
+ * @param resolutionId The resolution
+ * @param userId The user
+ * @returns True if any card of a game on the user's roster holds it
+ */
+export async function isOnCardOfGamePlayedBy(
   resolutionId: string,
-  requestingUserId: string,
+  userId: string,
 ): Promise<boolean> {
   const rows = await query<Array<{ visible: number }>>(
     `SELECT 1 AS visible
@@ -75,65 +76,10 @@ async function canViewPersonalResolutionViaTeamCards(
      JOIN game_players gp ON gp.game_id = bc.game_id
      WHERE c.resolution_id = ? AND gp.user_id = ?
      LIMIT 1`,
-    [resolutionId, requestingUserId],
+    [resolutionId, userId],
   );
 
   return rows.length > 0;
-}
-
-async function computeReadAccess(
-  resolution: Resolution,
-  requestingUserId: string,
-): Promise<boolean> {
-  if (resolution.ownerUserId === requestingUserId) {
-    return true;
-  }
-
-  if (
-    resolution.scope === ResolutionScope.TEAM ||
-    resolution.scope === ResolutionScope.MEMBER_PROVIDED ||
-    resolution.scope === ResolutionScope.PREPARED
-  ) {
-    // Spec: 13 - a game's resolutions are visible to its players
-    if (resolution.gameId) return isGamePlayer(resolution.gameId, requestingUserId);
-    if (!resolution.teamId) return false;
-    return isTeamMember(resolution.teamId, requestingUserId);
-  }
-
-  if (resolution.scope === ResolutionScope.PERSONAL) {
-    return canViewPersonalResolutionViaTeamCards(resolution.id, requestingUserId);
-  }
-
-  return false;
-}
-
-export async function getResolutionHistoryAccess(
-  resolutionId: string,
-  requestingUserId: string,
-): Promise<ResolutionHistoryAccess> {
-  const resolution = await getResolutionById(resolutionId);
-  if (!resolution) {
-    return {
-      resolution: null,
-      canView: false,
-      canWrite: false,
-    };
-  }
-
-  // TODO: for team goals, we need a way to tell from which card the resolution is coming from in order to verify if the
-  // user is the owner of the card. If they are, then they can edit the resolution history.
-
-  const canWrite = 
-    (resolution.scope === ResolutionScope.PERSONAL || resolution.scope === ResolutionScope.PREPARED)
-      && resolution.ownerUserId === requestingUserId || // Owner of the resolution
-    resolution.scope === ResolutionScope.MEMBER_PROVIDED && resolution.toUserId === requestingUserId;  // Target user of a member-provided resolution
-  const canView = await computeReadAccess(resolution, requestingUserId);
-
-  return {
-    resolution,
-    canView,
-    canWrite,
-  };
 }
 
 export async function getResolutionHistoryEntries(

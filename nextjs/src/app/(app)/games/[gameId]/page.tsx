@@ -93,7 +93,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
 
   // Non-critical sections are settled independently so one failed query does not block the page.
   const cardPromise = game.status === 'started'
-    ? getGameBingoCards(gameId, currentUser.id)
+    ? getGameBingoCards(gameId)
     : Promise.resolve([] as BingoCardWithCells[]);
 
   const [cardsResult, goalResult, resolutionsResult, leaderboardResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch

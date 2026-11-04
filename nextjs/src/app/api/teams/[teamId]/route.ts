@@ -55,14 +55,7 @@ export const DELETE = withAuth(async (
   const denied = await requirePermission(currentUser, 'team.delete', { scope: 'team', teamId });
   if (denied) return denied;
 
-  const deleted = await deleteTeam(teamId, currentUser.id);
-
-  if (!deleted) {
-    return NextResponse.json(
-      { error: 'Only a team leader can delete the team' },
-      { status: 403 }
-    );
-  }
+  await deleteTeam(teamId);
 
   await notifyTeams([teamId]);
 

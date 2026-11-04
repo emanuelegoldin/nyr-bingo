@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/lib/authz';
+import { authorize } from '@/lib/authz';
 import { getTeamById, leaveTeam } from '@/lib/db';
 import { notifyTeams } from '@/lib/team-signals';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
@@ -23,10 +23,12 @@ export const POST = withAuth(async (
     return errorResponse('Team not found', 404);
   }
 
-  const denied = await requirePermission(currentUser, 'team.leave', { scope: 'team', teamId });
-  if (denied) return denied;
+  const decision = await authorize(currentUser, 'team.leave', { scope: 'team', teamId });
+  if (!decision.allowed) {
+    return errorResponse(decision.error, decision.status);
+  }
 
-  const result = await leaveTeam(teamId, currentUser.id);
+  const result = await leaveTeam(teamId, currentUser.id, decision.role === 'leader');
   if (!result.success) {
     return errorResponse(result.error, result.status);
   }

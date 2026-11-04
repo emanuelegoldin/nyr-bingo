@@ -121,19 +121,6 @@ export async function deleteResolution(
 }
 
 /**
- * Whether a user may change a resolution's progress.
- * Personal resolutions belong to their owner and member-provided ones to their recipient.
- * Team goals are owned by the team leader, so only the leader's changes count.
- * @param resolution The resolution to change
- * @param userId The user making the change
- * @returns True if the change is allowed
- */
-export function canModifyProgress(resolution: Resolution, userId: string): boolean {
-  if (resolution.scope === 'member_provided') return resolution.toUserId === userId;
-  return resolution.ownerUserId === userId;
-}
-
-/**
  * Whether a compound or iterative resolution has reached its goal.
  * @param resolution The resolution to check
  * @returns True if all subtasks are done or the counter reached its target
@@ -364,7 +351,12 @@ export async function getCompoundResolutionById(id: string): Promise<Resolution 
 }
 
 /**
- * Toggle a subtask's completed state.
+ * Toggle a subtask's completed state. The route checks the progress rule (spec 21);
+ * the UPDATE only applies for the user who owns the progress.
+ * @param id The compound resolution
+ * @param ownerUserId The user making the change
+ * @param subtaskIndex The subtask to toggle
+ * @returns The resolution after the change, or null if it or the subtask does not exist
  */
 export async function toggleCompoundSubtask(
   id: string,
@@ -372,7 +364,7 @@ export async function toggleCompoundSubtask(
   subtaskIndex: number
 ): Promise<Resolution | null> {
   const existing = await getCompoundResolutionById(id);
-  if (!existing || !canModifyProgress(existing, ownerUserId) || !existing.subtasks) {
+  if (!existing || !existing.subtasks) {
     return null;
   }
 
@@ -411,7 +403,8 @@ export async function getIterativeResolutionById(id: string): Promise<Resolution
  * @param id The iterative resolution
  * @param ownerUserId The user making the change
  * @param delta 1 to increment, -1 to decrement
- * @returns The resolution after the change, or null if the user may not change it
+ * @returns The resolution after the change, or null if it does not exist.
+ *   The route checks the progress rule (spec 21); the UPDATE only applies for the user who owns the progress.
  */
 export async function adjustIterativeProgress(
   id: string,
@@ -419,7 +412,7 @@ export async function adjustIterativeProgress(
   delta: 1 | -1
 ): Promise<Resolution | null> {
   const existing = await getIterativeResolutionById(id);
-  if (!existing || !canModifyProgress(existing, ownerUserId)) {
+  if (!existing) {
     return null;
   }
   if (delta < 0 && existing.completedTimes <= 0) return existing;

@@ -178,18 +178,6 @@ export async function isTeamMember(teamId: string, userId: string): Promise<bool
 }
 
 /**
- * Check if user is team leader
- * Spec: 04-bingo-teams.md - Permissions
- */
-export async function isTeamLeader(teamId: string, userId: string): Promise<boolean> {
-  const rows = await query<MembershipRow[]>(
-    `SELECT * FROM team_memberships WHERE team_id = ? AND user_id = ? AND role = 'leader'`,
-    [teamId, userId]
-  );
-  return rows.length > 0;
-}
-
-/**
  * Make a team member a leader. The caller checks that the acting user is a leader.
  * Spec: 04-bingo-teams.md - Leaders
  * @param teamId The team
@@ -213,20 +201,16 @@ export async function promoteToLeader(
 }
 
 /**
- * Create team invitation
+ * Create a team invitation. The caller checks that the user may invite (spec 21: team.invite).
  * Spec: 04-bingo-teams.md - Invitations / Joining
+ * @param teamId The team
+ * @param invitedEmail An optional email stored on the invitation
+ * @returns The invitation
  */
 export async function createTeamInvitation(
   teamId: string,
-  leaderUserId: string,
   invitedEmail?: string
-): Promise<TeamInvitation | null> {
-  // Only team leader can invite
-  const isLeader = await isTeamLeader(teamId, leaderUserId);
-  if (!isLeader) {
-    return null;
-  }
-
+): Promise<TeamInvitation> {
   const id = uuidv4();
   const inviteCode = uuidv4();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -317,8 +301,8 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
 }
 
 /**
- * Delete a team
- * Spec: 04-bingo-teams.md - Only team leader can manage the team
+ * Delete a team. The caller checks that the user may delete it (spec 21: team.delete).
+ * Spec: 04-bingo-teams.md - Team Deletion
  * 
  * This is a hard delete. Due to ON DELETE CASCADE foreign keys, deleting the team
  * will automatically delete:
@@ -326,16 +310,7 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
  * - Team invitations
  * - Games, with their resolutions and bingo cards (and cells, proofs, reviews, etc.)
  */
-export async function deleteTeam(
-  teamId: string,
-  userId: string
-): Promise<boolean> {
-  // Only team leader can delete the team
-  const isLeader = await isTeamLeader(teamId, userId);
-  if (!isLeader) {
-    return false;
-  }
-
+export async function deleteTeam(teamId: string): Promise<void> {
   // Collected first: the cascade below removes the rows that name these files
   const reviewFiles = await getTeamReviewFiles(teamId);
 
@@ -346,6 +321,4 @@ export async function deleteTeam(
   );
 
   await removeOrphanedFiles(reviewFiles);
-
-  return true;
 }

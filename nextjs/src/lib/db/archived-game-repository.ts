@@ -433,35 +433,6 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
 }
 
 /**
- * Check whether a user took part in an archived game.
- * @param id The archived game
- * @param userId The user
- * @returns True if the user is one of its players
- */
-export async function isArchivedGamePlayer(id: string, userId: string): Promise<boolean> {
-  const rows = await query<RowDataPacket[]>(
-    `SELECT user_id FROM archived_game_players WHERE archived_game_id = ? AND user_id = ?`,
-    [id, userId]
-  );
-  return rows.length > 0;
-}
-
-/**
- * Check whether a user was one of the leaders who ran an archived game.
- * Spec: 18-game-archive.md - Deleting an Archived Game
- * @param id The archived game
- * @param userId The user
- * @returns True if the user is a player flagged as leader
- */
-export async function isArchivedGameLeader(id: string, userId: string): Promise<boolean> {
-  const rows = await query<RowDataPacket[]>(
-    `SELECT user_id FROM archived_game_players WHERE archived_game_id = ? AND user_id = ? AND is_leader`,
-    [id, userId]
-  );
-  return rows.length > 0;
-}
-
-/**
  * Delete an archived game. Its players, cells and subtasks cascade with it.
  * @param id The archived game
  */

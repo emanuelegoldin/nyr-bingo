@@ -33,7 +33,7 @@ export const POST = withAuth(async (
   if (denied || !runningGame) return denied ?? errorResponse('Game not found', 404);
 
   // Validate all start conditions
-  const check = await checkGameCanStart(gameId, currentUser.id);
+  const check = await checkGameCanStart(gameId);
 
   if (!check.success) {
     return errorResponse(check.error, 400);

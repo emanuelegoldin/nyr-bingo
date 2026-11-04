@@ -37,7 +37,7 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
   }
 
   // Get all cards of the game
-  const cards = await getGameBingoCards(gameId, currentUser.id);
+  const cards = await getGameBingoCards(gameId);
 
   return NextResponse.json({ cards });
 });
