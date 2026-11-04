@@ -2,10 +2,9 @@ import { apiFetch, toastApiError } from "@/lib/api-client";
 import { BingoCardWithCells } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { JokerCell } from "../cell/joker";
 import { ResolutionCell } from "../cell/resolution-cell";
-import { BingoCardContext } from "./BingoCardProvider";
 import { ConfettiLayer } from "./ConfettiLayer";
 
 export function BingoCardContent(
@@ -15,7 +14,7 @@ export function BingoCardContent(
     editMode,
     gameId,
     currentUserId,
-    fetchInput
+    cardUserId
   }
     :
     {
@@ -24,19 +23,12 @@ export function BingoCardContent(
       editMode: boolean,
       gameId: string,
       currentUserId: string,
-      fetchInput?: string
+      cardUserId: string
     }
 ) {
-  // Hooks
-  const context = useContext(BingoCardContext);
-  if (!context) {
-    throw new Error("BingoCardContent must be used within a BingoCardProvider");
-  }
-
   const { toast } = useToast();
   const [card, setCard] = useState<BingoCardWithCells>(initialCard);
-  // Allow parent to pass a fetchInput to narrow down the cards to load (e.g., from dashboard page --> we are interested only in current user cards)
-  const fetchUrl = fetchInput ? fetchInput : `/api/games/${gameId}/cards?userId=${currentUserId}`;
+  const fetchUrl = `/api/games/${gameId}/cards?userId=${cardUserId}`;
 
   const reloadCard = useCallback(async () => {
     const result = await apiFetch<{ card: BingoCardWithCells | null }>(fetchUrl);

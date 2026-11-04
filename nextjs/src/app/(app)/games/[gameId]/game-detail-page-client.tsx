@@ -198,7 +198,7 @@ export default function GameDetailPageClient({
       />
 
       {/* ── Tab navigation ────────────────────────────────────── */}
-      <TeamWsProvider teamId={game.teamId} gameName={game.name}>
+      <TeamWsProvider teamId={game.teamId}>
         <TeamRefreshListener />
         <Tabs defaultValue="cards">
           <TabsList>
