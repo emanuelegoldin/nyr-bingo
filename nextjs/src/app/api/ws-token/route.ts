@@ -5,7 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeThreadAction } from '@/app/api/threads/thread-access';
-import { getResolutionHistoryAccess, isTeamMember, type User } from '@/lib/db';
+import { authorize, getResolutionHistoryAccess } from '@/lib/authz';
+import type { User } from '@/lib/db';
 import type { WsRoom } from '@/lib/shared/ws-messages';
 import { createRoomToken } from '@/lib/ws-token';
 import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
@@ -19,7 +20,8 @@ import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
  */
 async function canJoinRoom(room: WsRoom, user: User): Promise<boolean> {
   if (room.type === 'user') return room.id === user.id;
-  if (room.type === 'card') return isTeamMember(room.id, user.id);
+  // Spec: 21-authorization.md - Known Gaps: card rooms are joined by team membership
+  if (room.type === 'card') return (await authorize(user, 'team.view', { scope: 'team', teamId: room.id })).allowed;
   if (room.type === 'thread') return !('response' in await authorizeThreadAction(user, 'thread.view', room.id));
   return (await getResolutionHistoryAccess(room.id, user.id)).canView;
 }

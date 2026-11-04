@@ -7,10 +7,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getResolutionHistoryAccess } from '@/lib/authz';
 import { getResolutionTeamIds, notifyTeams } from '@/lib/team-signals';
 import {
   getIterativeResolutionsByUser,
-  getResolutionHistoryAccess,
   getIterativeResolutionById,
   deleteResolution,
 } from '@/lib/db';

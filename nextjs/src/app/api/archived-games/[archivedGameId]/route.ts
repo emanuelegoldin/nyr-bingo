@@ -4,12 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requirePermission } from '@/lib/authz';
 import {
   deleteArchivedGame,
   getArchivedGame,
   getArchivedGameSummary,
-  isArchivedGameLeader,
-  isArchivedGamePlayer,
 } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
@@ -27,9 +26,8 @@ export const GET = withAuth(async (
     return errorResponse('Archived game not found', 404);
   }
 
-  if (!(await isArchivedGamePlayer(archivedGameId, currentUser.id))) {
-    return errorResponse('You did not take part in this game', 403);
-  }
+  const denied = await requirePermission(currentUser, 'archive.view', { scope: 'archive', archivedGameId });
+  if (denied) return denied;
 
   return NextResponse.json({ archivedGame });
 });
@@ -48,9 +46,8 @@ export const DELETE = withAuth(async (
     return errorResponse('Archived game not found', 404);
   }
 
-  if (!(await isArchivedGameLeader(archivedGameId, currentUser.id))) {
-    return errorResponse('Only a leader of the game can delete it', 403);
-  }
+  const denied = await requirePermission(currentUser, 'archive.delete', { scope: 'archive', archivedGameId });
+  if (denied) return denied;
 
   await deleteArchivedGame(archivedGameId);
 

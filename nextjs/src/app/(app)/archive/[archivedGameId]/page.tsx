@@ -4,7 +4,8 @@
  */
 
 import { requireUser } from '@/lib/auth';
-import { getArchivedGame, isArchivedGameLeader, isArchivedGamePlayer } from '@/lib/db';
+import { authorize, requirePagePermission } from '@/lib/authz';
+import { getArchivedGame } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import ArchivedGamePageClient from './archived-game-page-client';
 
@@ -17,14 +18,16 @@ export default async function ArchivedGamePage({ params }: ArchivedGamePageProps
   const { archivedGameId } = await params;
 
   const archivedGame = await getArchivedGame(archivedGameId);
-  if (!archivedGame || !(await isArchivedGamePlayer(archivedGameId, currentUser.id))) {
+  if (!archivedGame) {
     notFound();
   }
+  const target = { scope: 'archive', archivedGameId } as const;
+  await requirePagePermission(currentUser, 'archive.view', target);
 
   return (
     <ArchivedGamePageClient
       archivedGame={archivedGame}
-      canDelete={await isArchivedGameLeader(archivedGameId, currentUser.id)}
+      canDelete={(await authorize(currentUser, 'archive.delete', target)).allowed}
     />
   );
 }

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { canModifyProgress } from '@/lib/authz';
 import { announceCellChanges } from '@/lib/notifications';
 import { notifyResolution } from '@/lib/team-signals';
 import {
   adjustIterativeProgress,
-  canModifyProgress,
   getIterativeResolutionById,
   autoTransitionCellState,
   isProgressComplete,
