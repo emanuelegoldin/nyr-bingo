@@ -15,6 +15,7 @@ export interface CardRow {
   user_id: string;
   grid_size: number;
   created_at: Date;
+  locked_at: Date | null;
 }
 
 export interface CellRow {
@@ -43,6 +44,7 @@ export function rowToCard(row: CardRow): BingoCard {
     userId: row.user_id,
     gridSize: row.grid_size,
     createdAt: row.created_at,
+    lockedAt: row.locked_at,
   };
 }
 

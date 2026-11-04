@@ -166,6 +166,8 @@ export interface BingoCard {
   userId: string;
   gridSize: number;
   createdAt: Date;
+  /** Spec: 22-card-shuffle.md - null while the card can be shuffled */
+  lockedAt: Date | null;
 }
 
 // Bingo cell
