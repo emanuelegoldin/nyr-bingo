@@ -96,9 +96,9 @@ export function BingoCardContent(
   }, [initialCard]);
 
   return (
-    <CardContent>
+    <CardContent className="px-3 sm:px-6">
       <ConfettiLayer cells={card.cells} />
-      <div className="grid grid-cols-5 grid-rows-5 gap-2 md:gap-4">
+      <div className="grid grid-cols-5 grid-rows-5 gap-1 sm:gap-2 md:gap-4">
         {card.cells.map((cell) => (
           cell.isJoker ?
             <JokerCell key={cell.id} />

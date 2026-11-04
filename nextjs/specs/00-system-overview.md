@@ -29,6 +29,7 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 | 17 | Prepared resolutions |
 | 18 | Game archive |
 | 19 | Notifications |
+| 20 | Mobile layout |
 
 ## Scope
 In scope:
@@ -46,6 +47,7 @@ In scope:
 - WebSocket-based real-time signals
 - In-app notifications of team events, on login and while online
 - Language selection (English, German, Italian)
+- Layout that works on phones from 360px wide
 
 Out of scope (not implemented):
 - Payments, achievements, analytics, email and push notifications beyond email verification

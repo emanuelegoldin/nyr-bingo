@@ -17,7 +17,8 @@ export default async function AppLayout({
         <Sidebar>
           <AppSidebar />
         </Sidebar>
-        <SidebarInset>
+        {/* min-w-0 keeps wide content from stretching the page past the screen (spec 20) */}
+        <SidebarInset className="min-w-0">
           <AppHeader />
           <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
         </SidebarInset>
