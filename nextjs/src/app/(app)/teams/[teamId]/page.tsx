@@ -22,7 +22,6 @@ function mapTeam(team: TeamWithMembers): Team {
   return {
     id: team.id,
     name: team.name,
-    leaderUserId: team.leaderUserId,
     members: team.members.map((member) => ({
       membership: {
         id: member.membership.id,

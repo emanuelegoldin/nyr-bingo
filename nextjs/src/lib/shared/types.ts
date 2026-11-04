@@ -177,8 +177,6 @@ export interface ArchivedLeaderboardEntry {
 /** An archived game as listed on the archive page. */
 export interface ArchivedGameSummary {
   id: string;
-  /** The leader who ran the game, who alone can delete it. */
-  leaderUserId: string | null;
   name: string;
   teamName: string;
   endedAt: string;

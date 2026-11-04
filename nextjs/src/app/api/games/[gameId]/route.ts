@@ -10,7 +10,7 @@ import {
   getGameWithMembers,
   getRunningGame,
   isDeadlinePast,
-  isTeamLeader,
+  isGameLeader,
   isGamePlayer,
   setGameDeadline,
 } from '@/lib/db';
@@ -65,9 +65,9 @@ export const PATCH = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  const isLeader = await isTeamLeader(game.teamId, currentUser.id);
+  const isLeader = await isGameLeader(game.id, currentUser.id);
   if (!isLeader) {
-    return errorResponse('Only the team leader can configure the game', 403);
+    return errorResponse('Only a leader of the game can configure the game', 403);
   }
 
   const { deadline } = await request.json();
@@ -104,9 +104,9 @@ export const DELETE = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  const isLeader = await isTeamLeader(game.teamId, currentUser.id);
+  const isLeader = await isGameLeader(game.id, currentUser.id);
   if (!isLeader) {
-    return errorResponse('Only the team leader can delete the game', 403);
+    return errorResponse('Only a leader of the game can delete the game', 403);
   }
 
   await deleteGame(gameId);

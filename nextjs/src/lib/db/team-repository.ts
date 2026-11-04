@@ -6,7 +6,7 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import { InvitationStatus, TeamRole } from '../shared/types';
-import { query, withTransaction } from './connection';
+import { execute, query, withTransaction } from './connection';
 import { getTeamReviewFiles, removeOrphanedFiles } from './review-file-repository';
 import type {
   Team,
@@ -21,7 +21,6 @@ import { getPublicUserProfile } from './user-repository';
 interface TeamRow extends RowDataPacket {
   id: string;
   name: string;
-  leader_user_id: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -50,7 +49,6 @@ function rowToTeam(row: TeamRow): Team {
   return {
     id: row.id,
     name: row.name,
-    leaderUserId: row.leader_user_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -93,8 +91,8 @@ export async function createTeam(
   await withTransaction(async (connection) => {
     // Create team
     await connection.execute(
-      `INSERT INTO teams (id, name, leader_user_id) VALUES (?, ?, ?)`,
-      [teamId, name, leaderUserId]
+      `INSERT INTO teams (id, name) VALUES (?, ?)`,
+      [teamId, name]
     );
 
     // Add leader as member with 'leader' role
@@ -189,6 +187,29 @@ export async function isTeamLeader(teamId: string, userId: string): Promise<bool
     [teamId, userId]
   );
   return rows.length > 0;
+}
+
+/**
+ * Make a team member a leader. The caller checks that the acting user is a leader.
+ * Spec: 04-bingo-teams.md - Leaders
+ * @param teamId The team
+ * @param userId The member to promote
+ * @returns An error when the user is not a member or is already a leader
+ */
+export async function promoteToLeader(
+  teamId: string,
+  userId: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  const result = await execute(
+    `UPDATE team_memberships SET role = 'leader' WHERE team_id = ? AND user_id = ? AND role <> 'leader'`,
+    [teamId, userId]
+  );
+  if (result.affectedRows > 0) {
+    return { success: true };
+  }
+
+  const isMember = await isTeamMember(teamId, userId);
+  return { success: false, error: isMember ? 'User is already a leader' : 'User is not a member of this team' };
 }
 
 /**

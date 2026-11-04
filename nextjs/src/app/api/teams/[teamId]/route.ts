@@ -59,7 +59,7 @@ export const DELETE = withAuth(async (
 
   if (!deleted) {
     return NextResponse.json(
-      { error: 'Only the team leader can delete the team' },
+      { error: 'Only a team leader can delete the team' },
       { status: 403 }
     );
   }

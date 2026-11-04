@@ -25,6 +25,7 @@ import { useState } from 'react';
 
 import { BingoCardWithCells } from "@/lib/db/types";
 import type { ResolutionFormData } from "@/lib/shared/types";
+import { formatLeaderNames, isLeaderIn } from "@/components/team/leaders";
 import { GameActionDialog } from "./_components/GameActionDialog";
 import { GameConfigDialog } from "./_components/GameConfigDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
@@ -75,8 +76,7 @@ export default function GameDetailPageClient({
   // Team goal resolution dialog
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
 
-  const isLeader = game.leaderUserId === currentUserId;
-  const leader = game.members.find(m => m.membership.role === 'leader');
+  const isLeader = isLeaderIn(game.members, currentUserId);
 
   /** Called when team goal is saved via the resolution dialog. */
   const handleGoalSaved = () => {
@@ -95,7 +95,7 @@ export default function GameDetailPageClient({
             </CardDescription>
             <CardDescription className="flex items-center gap-2 mt-2">
               <Crown className="h-4 w-4 text-amber-500" />
-              Team Leader: {leader?.user.displayName || leader?.user.username || 'Unknown'}
+              Leaders: {formatLeaderNames(game.members)}
             </CardDescription>
             {game.deadline && (
               <CardDescription className="flex items-center gap-2 mt-2">

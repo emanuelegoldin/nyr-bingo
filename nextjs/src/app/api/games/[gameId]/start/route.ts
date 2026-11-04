@@ -10,7 +10,7 @@ import { isUserVerified } from '@/lib/auth';
 import {
   checkGameCanStart,
   startGameWithCards,
-  isTeamLeader,
+  isGameLeader,
   getGameWithMembers,
   getRunningGame,
   initializeGameLeaderboard,
@@ -40,10 +40,10 @@ export const POST = withAuth(async (
   }
 
   // Check if user is team leader
-  // Spec: 16-games.md - Only team leader can start game
-  const isLeader = await isTeamLeader(runningGame.teamId, currentUser.id);
+  // Spec: 16-games.md - Only a leader of the game can start it
+  const isLeader = await isGameLeader(runningGame.id, currentUser.id);
   if (!isLeader) {
-    return errorResponse('Only the team leader can start the game', 403);
+    return errorResponse('Only a leader of the game can start the game', 403);
   }
 
   // Validate all start conditions

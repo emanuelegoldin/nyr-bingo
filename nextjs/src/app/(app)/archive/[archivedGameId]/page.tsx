@@ -4,7 +4,7 @@
  */
 
 import { requireUser } from '@/lib/auth';
-import { getArchivedGame, isArchivedGamePlayer } from '@/lib/db';
+import { getArchivedGame, isArchivedGameLeader, isArchivedGamePlayer } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import ArchivedGamePageClient from './archived-game-page-client';
 
@@ -24,7 +24,7 @@ export default async function ArchivedGamePage({ params }: ArchivedGamePageProps
   return (
     <ArchivedGamePageClient
       archivedGame={archivedGame}
-      canDelete={archivedGame.leaderUserId === currentUser.id}
+      canDelete={await isArchivedGameLeader(archivedGameId, currentUser.id)}
     />
   );
 }

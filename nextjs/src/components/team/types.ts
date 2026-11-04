@@ -26,6 +26,5 @@ export interface TeamMember {
 export interface Team {
   id: string;
   name: string;
-  leaderUserId: string;
   members: TeamMember[];
 }

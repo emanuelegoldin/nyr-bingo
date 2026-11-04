@@ -112,7 +112,6 @@ export interface ResolutionHistoryAccess {
 export interface Team {
   id: string;
   name: string;
-  leaderUserId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -124,8 +123,6 @@ export interface Game {
   teamId: string;
   /** Derived from the game's team. */
   teamName: string;
-  /** Derived from the game's team: the team leader leads its games. */
-  leaderUserId: string;
   name: string;
   /** Team goal resolution text, derived from the associated resolution entity. */
   teamResolutionText: string | null;

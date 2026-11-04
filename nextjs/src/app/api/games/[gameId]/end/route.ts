@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getRunningGame, isTeamLeader } from '@/lib/db';
+import { getRunningGame, isGameLeader } from '@/lib/db';
 import { finishGame } from '@/lib/game-ending';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
@@ -22,9 +22,9 @@ export const POST = withAuth(async (
     return errorResponse('Game not found', 404);
   }
 
-  const isLeader = await isTeamLeader(game.teamId, currentUser.id);
+  const isLeader = await isGameLeader(game.id, currentUser.id);
   if (!isLeader) {
-    return errorResponse('Only the team leader can end the game', 403);
+    return errorResponse('Only a leader of the game can end the game', 403);
   }
 
   const ended = await finishGame(game, currentUser.id);

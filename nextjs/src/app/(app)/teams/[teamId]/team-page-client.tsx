@@ -4,11 +4,12 @@
  * Team Page
  * Spec Reference: 04-bingo-teams.md - Team Page
  *
- * A team is a list of users with a leader: the page shows its running games, its members
- * and the leader's actions.
+ * A team is a list of users with one or more leaders: the page shows the running games the
+ * user plays, its members and the leaders' actions.
  */
 
 import { GameList, type GameListItem } from "@/components/team/game-list";
+import { formatLeaderNames, isLeaderIn } from "@/components/team/leaders";
 import { MembersTab } from "@/components/team/members-tab";
 import type { Team } from "@/components/team/types";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
@@ -39,8 +40,7 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isLeader = team.leaderUserId === currentUserId;
-  const leader = team.members.find((member) => member.membership.role === "leader");
+  const isLeader = isLeaderIn(team.members, currentUserId);
 
   /** Deletes the team; on success navigates back to the teams list. */
   const handleDeleteTeam = async () => {
@@ -75,7 +75,7 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
               <CardTitle className="font-headline text-3xl">{team.name}</CardTitle>
               <CardDescription className="flex items-center gap-2 mt-2">
                 <Crown className="h-4 w-4 text-amber-500" />
-                Team Leader: {leader?.user.displayName || leader?.user.username || "Unknown"}
+                Team Leaders: {formatLeaderNames(team.members)}
               </CardDescription>
             </div>
             {isLeader && (

@@ -22,7 +22,7 @@ import {
   getMemberProvidedResolutionsByUser,
   getResolutionById,
   getRunningGame,
-  isTeamLeader,
+  isGameLeader,
   isResolutionFrozen,
   isGamePlayer,
   logResolutionHistoryEventSafe,
@@ -142,9 +142,9 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   }
 
   if (scope === 'team') {
-    const leader = await isTeamLeader(game!.teamId, currentUser.id);
+    const leader = await isGameLeader(game!.id, currentUser.id);
     if (!leader) {
-      return errorResponse('Only the team leader can set the team goal', 403);
+      return errorResponse('Only a leader of the game can set the team goal', 403);
     }
   }
 

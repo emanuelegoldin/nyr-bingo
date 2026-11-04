@@ -48,7 +48,6 @@ function mapGame(game: GameWithMembers): Game {
     id: game.id,
     teamId: game.teamId,
     teamName: game.teamName,
-    leaderUserId: game.leaderUserId,
     name: game.name,
     teamResolutionText: game.teamResolutionText,
     status: game.status,

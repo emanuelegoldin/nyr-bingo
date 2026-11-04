@@ -10,6 +10,7 @@ import {
   CellState,
   JOKER_POSITION,
   ResolutionType,
+  TeamRole,
   type ArchivedCard,
   type ArchivedCell,
   type ArchivedGameDetail,
@@ -26,7 +27,6 @@ import type { BingoCellWithThread, Game } from './types';
 
 interface ArchivedGameRow extends RowDataPacket {
   id: string;
-  leader_user_id: string | null;
   name: string;
   team_name: string;
   ended_at: Date;
@@ -74,6 +74,7 @@ interface ResolutionProgressRow extends RowDataPacket {
 interface PlayerSnapshot {
   userId: string;
   playerName: string;
+  isLeader: boolean;
   leaderboardRank: number | null;
   completedTasks: number;
   firstBingoAt: Date | null;
@@ -83,7 +84,6 @@ interface PlayerSnapshot {
 function rowToSummary(row: ArchivedGameRow): ArchivedGameSummary {
   return {
     id: row.id,
-    leaderUserId: row.leader_user_id,
     name: row.name,
     teamName: row.team_name,
     endedAt: row.ended_at.toISOString(),
@@ -206,6 +206,7 @@ async function buildPlayerSnapshots(game: Game): Promise<PlayerSnapshot[]> {
     return {
       userId,
       playerName: member.user.displayName || member.user.username,
+      isLeader: member.membership.role === TeamRole.LEADER,
       leaderboardRank: rankIndex >= 0 ? rankIndex + 1 : null,
       completedTasks: entry?.completedTasks ?? 0,
       firstBingoAt: entry?.firstBingoAt ? new Date(entry.firstBingoAt) : null,
@@ -236,18 +237,18 @@ export async function archiveGame(game: Game): Promise<boolean> {
 
   await withTransaction(async (connection) => {
     await execute(
-      `INSERT INTO archived_games (id, leader_user_id, name, team_name, ended_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [game.id, game.leaderUserId, game.name, game.teamName, game.endedAt ?? game.updatedAt],
+      `INSERT INTO archived_games (id, name, team_name, ended_at)
+       VALUES (?, ?, ?, ?)`,
+      [game.id, game.name, game.teamName, game.endedAt ?? game.updatedAt],
       connection
     );
 
     for (const player of players) {
       await execute(
         `INSERT INTO archived_game_players
-           (archived_game_id, user_id, player_name, leaderboard_rank, completed_tasks, first_bingo_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [game.id, player.userId, player.playerName, player.leaderboardRank, player.completedTasks, player.firstBingoAt],
+           (archived_game_id, user_id, player_name, is_leader, leaderboard_rank, completed_tasks, first_bingo_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [game.id, player.userId, player.playerName, player.isLeader, player.leaderboardRank, player.completedTasks, player.firstBingoAt],
         connection
       );
 
@@ -440,6 +441,21 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
 export async function isArchivedGamePlayer(id: string, userId: string): Promise<boolean> {
   const rows = await query<RowDataPacket[]>(
     `SELECT user_id FROM archived_game_players WHERE archived_game_id = ? AND user_id = ?`,
+    [id, userId]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Check whether a user was one of the leaders who ran an archived game.
+ * Spec: 18-game-archive.md - Deleting an Archived Game
+ * @param id The archived game
+ * @param userId The user
+ * @returns True if the user is a player flagged as leader
+ */
+export async function isArchivedGameLeader(id: string, userId: string): Promise<boolean> {
+  const rows = await query<RowDataPacket[]>(
+    `SELECT user_id FROM archived_game_players WHERE archived_game_id = ? AND user_id = ? AND is_leader`,
     [id, userId]
   );
   return rows.length > 0;

@@ -9,7 +9,7 @@ import { GameStatus } from '../shared/types';
 import { execute, query, withTransaction } from './connection';
 import { getGameGoalResolution } from './resolution-repository';
 import { getGameReviewFiles, removeOrphanedFiles } from './review-file-repository';
-import { getTeamWithMembers, isTeamLeader } from './team-repository';
+import { getTeamWithMembers } from './team-repository';
 import type { Game, GameWithMembers } from './types';
 
 interface GameRow extends RowDataPacket {
@@ -24,13 +24,12 @@ interface GameRow extends RowDataPacket {
   deadline_date: string | null;
   // Derived from the JOIN with teams
   team_name: string;
-  leader_user_id: string;
   // Derived from LEFT JOIN with resolutions (scope='team')
   team_resolution_text: string | null;
 }
 
 const SELECT_GAME = `
-  SELECT g.*, CAST(g.deadline AS CHAR) AS deadline_date, t.name AS team_name, t.leader_user_id,
+  SELECT g.*, CAST(g.deadline AS CHAR) AS deadline_date, t.name AS team_name,
          COALESCE(r.description, r.title) AS team_resolution_text
   FROM games g
   JOIN teams t ON g.team_id = t.id
@@ -42,7 +41,6 @@ function rowToGame(row: GameRow): Game {
     id: row.id,
     teamId: row.team_id,
     teamName: row.team_name,
-    leaderUserId: row.leader_user_id,
     name: row.name,
     teamResolutionText: row.team_resolution_text,
     status: row.status,
@@ -116,6 +114,25 @@ export async function getRunningGame(id: string): Promise<Game | null> {
 export async function isGamePlayer(gameId: string, userId: string): Promise<boolean> {
   const rows = await query<RowDataPacket[]>(
     `SELECT 1 FROM game_players WHERE game_id = ? AND user_id = ?`,
+    [gameId, userId]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Check whether a user leads a game: a team leader who is one of its players.
+ * Spec: 16-games.md - Game Model
+ * @param gameId The game
+ * @param userId The user
+ * @returns True if the user may take the leader's actions on the game
+ */
+export async function isGameLeader(gameId: string, userId: string): Promise<boolean> {
+  const rows = await query<RowDataPacket[]>(
+    `SELECT 1
+     FROM game_players p
+     JOIN games g ON g.id = p.game_id
+     JOIN team_memberships m ON m.team_id = g.team_id AND m.user_id = p.user_id
+     WHERE p.game_id = ? AND p.user_id = ? AND m.role = 'leader'`,
     [gameId, userId]
   );
   return rows.length > 0;
@@ -341,10 +358,10 @@ export async function checkGameCanStart(
     return { success: false, error: 'Game not found' };
   }
 
-  // Only team leader can start
-  const isLeader = await isTeamLeader(game.teamId, leaderUserId);
+  // Only a leader of the game can start it
+  const isLeader = await isGameLeader(game.id, leaderUserId);
   if (!isLeader) {
-    return { success: false, error: 'Only the team leader can start the game' };
+    return { success: false, error: 'Only a leader of the game can start it' };
   }
 
   // Check if game is still in forming status

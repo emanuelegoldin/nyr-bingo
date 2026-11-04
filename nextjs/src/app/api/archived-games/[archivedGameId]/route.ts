@@ -8,6 +8,7 @@ import {
   deleteArchivedGame,
   getArchivedGame,
   getArchivedGameSummary,
+  isArchivedGameLeader,
   isArchivedGamePlayer,
 } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
@@ -34,7 +35,7 @@ export const GET = withAuth(async (
 });
 
 /**
- * DELETE /api/archived-games/[archivedGameId] - Delete an archived game (its leader only)
+ * DELETE /api/archived-games/[archivedGameId] - Delete an archived game (its leaders only)
  */
 export const DELETE = withAuth(async (
   _request: NextRequest,
@@ -47,8 +48,8 @@ export const DELETE = withAuth(async (
     return errorResponse('Archived game not found', 404);
   }
 
-  if (archivedGame.leaderUserId !== currentUser.id) {
-    return errorResponse('Only the leader of the game can delete it', 403);
+  if (!(await isArchivedGameLeader(archivedGameId, currentUser.id))) {
+    return errorResponse('Only a leader of the game can delete it', 403);
   }
 
   await deleteArchivedGame(archivedGameId);
