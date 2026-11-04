@@ -1,4 +1,5 @@
 import { BingoCell } from "@/lib/db/types";
+import { FORMER_TEAMMATES_LABEL } from "@/lib/shared/cell-source";
 import { CellSourceType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -77,7 +78,7 @@ export const CellFace = ({
                 {cell.state !== 'pending' && config.icon}
             </div>
             <Badge variant="outline" className="absolute bottom-1 right-1 max-w-[calc(100%-0.5rem)] text-xs hidden sm:inline-flex">
-                {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId ? (
+                {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId && sourceLabel !== FORMER_TEAMMATES_LABEL ? (
                     <Link
                         href={`/profile/${cell.sourceUserId}`}
                         onClick={(e) => e.stopPropagation()}
