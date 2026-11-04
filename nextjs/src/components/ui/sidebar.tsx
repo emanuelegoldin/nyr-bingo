@@ -466,4 +466,5 @@ export {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 }

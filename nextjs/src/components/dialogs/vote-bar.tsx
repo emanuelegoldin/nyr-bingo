@@ -1,7 +1,6 @@
 "use client";
 
-import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { ReviewVote } from "@/lib/db/types";
 import { VoteType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
@@ -51,7 +50,6 @@ export function VoteBar({
   onVoteSubmitted,
   onVoteFailed,
 }: VoteBarProps) {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Derive current user's vote from the votes array.
@@ -75,11 +73,7 @@ export function VoteBar({
           json: { vote },
         });
         if (!result.ok) {
-          toast({
-            title: "Error",
-            description: result.error || "Failed to submit vote",
-            variant: "destructive",
-          });
+          toastApiError(result, "Failed to submit vote");
           onVoteFailed?.();
           return;
         }
@@ -88,7 +82,7 @@ export function VoteBar({
         setIsSubmitting(false);
       }
     },
-    [threadId, isSubmitting, threadOpen, toast, onVoteSubmitted, onVoteFailed],
+    [threadId, isSubmitting, threadOpen, onVoteSubmitted, onVoteFailed],
   );
 
   // ── Vote buttons ────────────────────────────────────────────────

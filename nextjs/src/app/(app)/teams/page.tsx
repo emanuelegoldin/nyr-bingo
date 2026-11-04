@@ -5,6 +5,9 @@
  * Spec Reference: 04-bingo-teams.md
  */
 
+import { PageSpinner } from "@/components/page-spinner";
+import { formatLeaderNames } from "@/components/team/leaders";
+import type { Team } from "@/components/team/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
-import { PageSpinner } from "@/components/page-spinner";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
-import type { Team } from "@/components/team/types";
 
 export default function TeamsPage() {
   usePageTitle("Teams");
@@ -67,11 +68,7 @@ export default function TeamsPage() {
         description: "Team created successfully",
       });
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to create team",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to create team");
     }
     setIsCreating(false);
   };
@@ -129,7 +126,6 @@ export default function TeamsPage() {
       {teams.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map(team => {
-            const leader = team.members.find(m => m.membership.role === 'leader');
             return (
               <Card key={team.id} className="flex flex-col">
                 <CardHeader>
@@ -138,7 +134,7 @@ export default function TeamsPage() {
                     {team.name}
                   </CardTitle>
                   <CardDescription>
-                    Led by {leader?.user.displayName || leader?.user.username || 'Unknown'}
+                    Led by {formatLeaderNames(team.members)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">

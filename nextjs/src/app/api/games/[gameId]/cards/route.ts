@@ -3,14 +3,13 @@
  * Spec Reference: 05-bingo-card-generation.md, 06-bingo-gameplay.md, 08-visibility-and-updates.md
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, withAuth } from '@/app/api/utils';
 import {
-  isTeamMember,
-  getGameBingoCards,
   getBingoCard,
-  getRunningGame,
+  getGameBingoCards,
 } from '@/lib/db';
-import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/games/[gameId]/cards - Get all bingo cards of the game
@@ -21,17 +20,10 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  // Check if user is a member
-  // Spec: 08-visibility-and-updates.md - Only team members can view the game's cards
-  const isMember = await isTeamMember(game.teamId, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
-  }
+  // Spec: 08-visibility-and-updates.md - Only the game's players can view its cards
+  const access = await authorizeGameAction(currentUser, 'game.view', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   if (userId) {
     // Get specific user's card
@@ -40,7 +32,7 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
   }
 
   // Get all cards of the game
-  const cards = await getGameBingoCards(gameId, currentUser.id);
+  const cards = await getGameBingoCards(gameId);
 
   return NextResponse.json({ cards });
 });

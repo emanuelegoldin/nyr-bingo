@@ -36,7 +36,7 @@ export default function DashboardGameCardClient({
   }, [game.members]);
 
   return (
-    <TeamWsProvider teamId={game.teamId} gameName={game.name}>
+    <TeamWsProvider teamId={game.teamId}>
       <TeamRefreshListener />
       <TeamMembersProvider members={membersMap}>
         <Card className="w-full max-w-4xl mx-auto">
@@ -46,7 +46,8 @@ export default function DashboardGameCardClient({
             isOwner={true}
             gameId={game.id}
             currentUserId={currentUserId}
-            cardFetchInput={`/api/games/${game.id}/cards?userId=${currentUserId}`}
+            cardUserId={currentUserId}
+            gameName={game.name}
             // Pass translation strings to avoid issues with importing server functions into client components
             dashboardText={dashboardText}
           />

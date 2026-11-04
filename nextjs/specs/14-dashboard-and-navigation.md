@@ -52,7 +52,7 @@ There is no route middleware.
 `/dashboard` is the destination after login. It shows the current user's card for **each started game**.
 
 - Each card loads independently, with its own loading state, so one slow or failed card does not affect the others.
-- A card shows the game name, an **Edit Card** button (spec 09) and the same interactive cells as the owner's card on the game page (spec 06).
+- A card shows the game name, an **Edit Card** button (spec 09), the **Shuffle** and **Lock** buttons while the card is unlocked (spec 22) and the same interactive cells as the owner's card on the game page (spec 06).
 - The card's title and description are translated (spec 15).
 - A game without a card for this user shows a "none available" message.
 

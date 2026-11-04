@@ -13,8 +13,9 @@
  *   - numberOfRepetition?: number — required for iterative (>= 2)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { notifyResolution } from '@/lib/team-signals';
+import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
+import { getGameRole, isResolutionOwner, requirePermission } from '@/lib/authz';
+import type { Game, Resolution, ResolutionContent } from '@/lib/db';
 import {
   changeResolutionType,
   createResolution,
@@ -22,15 +23,14 @@ import {
   getMemberProvidedResolutionsByUser,
   getResolutionById,
   getRunningGame,
-  isTeamLeader,
   isResolutionFrozen,
-  isTeamMember,
   logResolutionHistoryEventSafe,
   updateResolutionContent,
 } from '@/lib/db';
-import type { Game, Resolution, ResolutionContent } from '@/lib/db';
+import { toUnifiedResolution } from '@/lib/shared/resolution-form';
 import type { ResolutionScope, ResolutionType, Subtask } from '@/lib/shared/types';
-import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
+import { notifyResolution } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Validate common fields
@@ -75,7 +75,7 @@ function validateIterative(body: Record<string, unknown>): string | null {
  * Atomically creates/updates a resolution, supporting type changes.
  */
 export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
-    const body = await request.json();
+  const body = await request.json();
   const {
     id,
     type,
@@ -142,10 +142,8 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   }
 
   if (scope === 'team') {
-    const leader = await isTeamLeader(game!.teamId, currentUser.id);
-    if (!leader) {
-      return errorResponse('Only the team leader can set the team goal', 403);
-    }
+    const denied = await requirePermission(currentUser, 'game.goal.set', { scope: 'game', game });
+    if (denied) return denied;
   }
 
   if (scope === 'member_provided') {
@@ -155,13 +153,11 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     if (toUserId === currentUser.id) {
       return errorResponse('You cannot create a resolution for yourself', 400);
     }
-    const member = await isTeamMember(game!.teamId, currentUser.id);
-    if (!member) {
-      return errorResponse('You must be a team member', 403);
-    }
-    const targetMember = await isTeamMember(game!.teamId, toUserId);
-    if (!targetMember) {
-      return errorResponse('Target user is not a team member', 400);
+    const denied = await requirePermission(currentUser, 'game.propose', { scope: 'game', game });
+    if (denied) return denied;
+    // Spec: 16-games.md - the target must also be a player of the game
+    if (!(await getGameRole(game!.id, toUserId))) {
+      return errorResponse('Target user is not a player of this game', 400);
     }
   }
 
@@ -186,11 +182,10 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   }
 
   // ── UPDATE (with id) ───────────────────────────────────────
-  // Verify ownership of existing resolution
-  const ownerErr = await verifyOwnership(id, currentUser.id);
-  if (ownerErr) return ownerErr;
+  const owned = await loadOwnedResolution(id, currentUser.id);
+  if ('response' in owned) return owned.response;
 
-  const existing = (await getResolutionById(id))!;
+  const existing = owned.resolution;
   if (await isResolutionFrozen(existing)) {
     return errorResponse('This game has ended', 400);
   }
@@ -199,6 +194,13 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
 });
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
+
+/** History entry logged after a successful save. */
+interface SaveEvent {
+  key: string;
+  content: string;
+  metadata: Record<string, unknown>;
+}
 
 /**
  * Update a resolution, comparing the submitted type with the stored one.
@@ -211,23 +213,44 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
 async function updateExisting(existing: Resolution, userId: string, content: ResolutionContent) {
   // Same type → simple update
   if (existing.resolutionType === content.type) {
-    return handleSameTypeUpdate(existing.id, userId, content);
+    await updateResolutionContent(existing.id, userId, content);
+    return respondWithSaved(existing.id, userId, {
+      key: 'resolution.updated',
+      content: `Updated ${content.type} resolution`,
+      metadata: { type: content.type, title: content.title },
+    });
   }
 
   // Type changed → atomic update of the resolution and its cells
-  return handleTypeChange(existing.id, userId, existing.resolutionType, content);
+  await changeResolutionType(existing.id, userId, content);
+  return respondWithSaved(existing.id, userId, {
+    key: 'resolution.type_changed',
+    content: `Changed resolution type from ${existing.resolutionType} to ${content.type}`,
+    metadata: { oldType: existing.resolutionType, newType: content.type, title: content.title },
+  });
 }
 
-async function verifyOwnership(id: string, userId: string): Promise<NextResponse | null> {
-  const existing = await getResolutionById(id);
+/**
+ * Load a resolution and check that it belongs to the user saving it.
+ * Spec: 21-authorization.md - Resource Rules (Ownership)
+ *
+ * @param id - The resolution to update.
+ * @param userId - The user saving it.
+ * @returns The resolution, or the 404/403 response to return.
+ */
+async function loadOwnedResolution(
+  id: string,
+  userId: string
+): Promise<{ resolution: Resolution } | { response: NextResponse }> {
+  const resolution = await getResolutionById(id);
 
-  if (!existing) {
-    return errorResponse('Resolution not found', 404);
+  if (!resolution) {
+    return { response: errorResponse('Resolution not found', 404) };
   }
-  if (existing.ownerUserId !== userId) {
-    return errorResponse('You can only modify your own resolutions', 403);
+  if (!isResolutionOwner(resolution, userId)) {
+    return { response: errorResponse('You can only modify your own resolutions', 403) };
   }
-  return null;
+  return { resolution };
 }
 
 /**
@@ -246,53 +269,30 @@ async function handleCreate(
     gameId: game?.id,
     toUserId,
   });
-  const saved = await getResolutionById(id);
-  await notifyResolution(id);
 
-  await logResolutionHistoryEventSafe(
-    id,
-    userId,
-    'resolution.created',
-    `Created ${content.type} resolution`,
-    {
+  return respondWithSaved(id, userId, {
+    key: 'resolution.created',
+    content: `Created ${content.type} resolution`,
+    metadata: {
       type: content.type,
       scope,
       teamId: game?.teamId ?? null,
       gameId: game?.id ?? null,
       toUserId: toUserId || null,
     },
-  );
-
-  return NextResponse.json({ resolution: toUnifiedResponse(saved!, content.type) }, { status: 201 });
+  }, 201);
 }
 
 /**
- * Update a resolution without changing type.
+ * Signal a saved resolution, log its history entry and return it.
+ *
+ * @param id - The saved resolution.
+ * @param userId - The user who saved it.
+ * @param event - The history entry to log.
+ * @param status - HTTP status of the response.
+ * @returns The saved resolution in the unified shape, or 500 when it cannot be read back.
  */
-async function handleSameTypeUpdate(id: string, userId: string, content: ResolutionContent) {
-  await updateResolutionContent(id, userId, content);
-  const saved = await getResolutionById(id);
-  await notifyResolution(id);
-
-  await logResolutionHistoryEventSafe(
-    id,
-    userId,
-    'resolution.updated',
-    `Updated ${content.type} resolution`,
-    {
-      type: content.type,
-      title: content.title,
-    },
-  );
-
-  return NextResponse.json({ resolution: toUnifiedResponse(saved!, content.type) });
-}
-
-/**
- * Change resolution type: update the single resolutions row and any bingo_cells referencing it.
- */
-async function handleTypeChange(id: string, userId: string, oldType: string, content: ResolutionContent) {
-  await changeResolutionType(id, userId, content);
+async function respondWithSaved(id: string, userId: string, event: SaveEvent, status = 200) {
   const saved = await getResolutionById(id);
   await notifyResolution(id);
 
@@ -300,47 +300,7 @@ async function handleTypeChange(id: string, userId: string, oldType: string, con
     return errorResponse('Failed to save resolution', 500);
   }
 
-  await logResolutionHistoryEventSafe(
-    id,
-    userId,
-    'resolution.type_changed',
-    `Changed resolution type from ${oldType} to ${content.type}`,
-    {
-      oldType,
-      newType: content.type,
-      title: content.title,
-    },
-  );
+  await logResolutionHistoryEventSafe(id, userId, event.key, event.content, event.metadata);
 
-  return NextResponse.json({ resolution: toUnifiedResponse(saved, content.type) });
-}
-
-/**
- * Convert a resolution + the requested type into a unified response object
- * that the frontend can use regardless of type.
- */
-function toUnifiedResponse(resolution: Resolution, type: ResolutionType) {
-  const base = {
-    id: resolution.id,
-    type,
-    ownerUserId: resolution.ownerUserId,
-    title: resolution.title,
-    text: resolution.description ?? '',
-    createdAt: resolution.createdAt,
-    updatedAt: resolution.updatedAt,
-  };
-
-  if (type === 'compound') {
-    return { ...base, subtasks: resolution.subtasks };
-  }
-
-  if (type === 'iterative') {
-    return {
-      ...base,
-      numberOfRepetition: resolution.numberOfRepetition,
-      completedTimes: resolution.completedTimes,
-    };
-  }
-
-  return base;
+  return NextResponse.json({ resolution: toUnifiedResolution(saved) }, { status });
 }

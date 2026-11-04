@@ -1,104 +1,82 @@
-import { apiFetch } from "@/lib/api-client";
-import { BingoCardWithCells } from "@/lib/db/types";
+import { apiFetch, toastApiError } from "@/lib/api-client";
+import type { BingoCardWithCells, BingoCell } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { JokerCell } from "../cell/joker";
 import { ResolutionCell } from "../cell/resolution-cell";
-import { BingoCardContext } from "./BingoCardProvider";
 import { ConfettiLayer } from "./ConfettiLayer";
 
 export function BingoCardContent(
   {
-    initialCard,
+    card,
+    setCard,
     isOwner,
     editMode,
     gameId,
     currentUserId,
-    fetchInput
+    cardUserId
   }
     :
     {
-      initialCard: BingoCardWithCells,
+      card: BingoCardWithCells,
+      setCard: Dispatch<SetStateAction<BingoCardWithCells>>,
       isOwner: boolean,
       editMode: boolean,
       gameId: string,
       currentUserId: string,
-      fetchInput?: string | URL | Request
+      cardUserId: string
     }
 ) {
-  // Hooks
-  const context = useContext(BingoCardContext);
-  if (!context) {
-    throw new Error("BingoCardContent must be used within a BingoCardProvider");
-  }
-
   const { toast } = useToast();
-  const [card, setCard] = useState<BingoCardWithCells>(initialCard);
-  // Allow parent to pass a fetchInput to narrow down the cards to load (e.g., from dashboard page --> we are interested only in current user cards)
-  const fetchUrl = fetchInput ? fetchInput : `/api/games/${gameId}/cards?userId=${currentUserId}`;
+  const fetchUrl = `/api/games/${gameId}/cards?userId=${cardUserId}`;
 
   const reloadCard = useCallback(async () => {
-    try {
-      const response = await fetch(fetchUrl);
-      const data = await response.json();
-
-      if (!response.ok || !data.card) {
-        toast({
-          title: 'Error',
-          description: data.error || 'Failed to refresh cards',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      setCard(data.card);
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to refresh card',
-        variant: 'destructive',
-      });
+    const result = await apiFetch<{ card: BingoCardWithCells | null }>(fetchUrl);
+    if (!result.ok) {
+      toastApiError(result, 'Failed to refresh cards', 'Failed to refresh card');
+      return;
     }
-  }, [currentUserId, gameId, toast, fetchUrl]);
+    if (!result.data.card) {
+      // The player has no card in this game
+      toast({ title: 'Error', description: 'Failed to refresh cards', variant: 'destructive' });
+      return;
+    }
+    setCard(result.data.card);
+  }, [fetchUrl, setCard, toast]);
 
   const handleCellUpdate = useCallback(
     async (cellId: string, newState: 'pending' | 'completed' | 'failed') => {
       const result =
         newState === 'pending'
-          ? await apiFetch<unknown>(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
-          : await apiFetch<unknown>(`/api/cells/${cellId}`, {
+          ? await apiFetch<{ cell: BingoCell }>(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
+          : await apiFetch<{ cell: BingoCell }>(`/api/cells/${cellId}`, {
             method: 'PUT',
             json: { state: newState },
           });
 
       if (result.ok) {
-        await reloadCard();
+        // Patch the returned cell; the refresh signalled over WebSocket brings the rest.
+        // These actions never open or close a review thread, so it is kept.
+        const updated = result.data.cell;
+        setCard((current) => ({
+          ...current,
+          cells: current.cells.map((cell) => (cell.id === updated.id ? { ...cell, ...updated } : cell)),
+        }));
         return;
       }
 
-      toast({
-        title: 'Error',
-        description: result.status === 0 ? 'An error occurred' : result.error || 'Failed to update cell',
-        variant: 'destructive',
-      });
+      toastApiError(result, 'Failed to update cell');
       // The card may be stale, which is a common reason for the failure
       await reloadCard();
     },
-    [reloadCard, toast]
+    [reloadCard, setCard]
   );
 
-  // Effects
-  // A server refresh brings new props; every mutation signals one, so the last refresh
-  // always carries the latest card.
-  useEffect(() => {
-    setCard(initialCard);
-  }, [initialCard]);
-
   return (
-    <CardContent>
+    <CardContent className="px-3 sm:px-6">
       <ConfettiLayer cells={card.cells} />
-      <div className="grid grid-cols-5 grid-rows-5 gap-2 md:gap-4">
+      <div className="grid grid-cols-5 grid-rows-5 gap-1 sm:gap-2 md:gap-4">
         {card.cells.map((cell) => (
           cell.isJoker ?
             <JokerCell key={cell.id} />
@@ -108,8 +86,8 @@ export function BingoCardContent(
               cell={cell}
               isOwner={isOwner}
               editMode={editMode}
-              gameId={gameId ? gameId : ""}
-              currentUserId={currentUserId ? currentUserId : ""}
+              gameId={gameId}
+              currentUserId={currentUserId}
               existingCells={card.cells}
               onUpdate={isOwner ? handleCellUpdate : undefined}
               onRefresh={reloadCard} />

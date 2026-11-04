@@ -6,7 +6,7 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import { InvitationStatus, TeamRole } from '../shared/types';
-import { query, withTransaction } from './connection';
+import { execute, query, withTransaction } from './connection';
 import { getTeamReviewFiles, removeOrphanedFiles } from './review-file-repository';
 import type {
   Team,
@@ -15,13 +15,12 @@ import type {
   TeamMemberWithProfile,
   TeamWithMembers,
 } from './types';
-import { getPublicUserProfile } from './user-repository';
+import { rowToPublicUserProfile, type PublicUserProfileRow } from './user-repository';
 
 // Row types from database (snake_case)
 interface TeamRow extends RowDataPacket {
   id: string;
   name: string;
-  leader_user_id: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -50,7 +49,6 @@ function rowToTeam(row: TeamRow): Team {
   return {
     id: row.id,
     name: row.name,
-    leaderUserId: row.leader_user_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -93,8 +91,8 @@ export async function createTeam(
   await withTransaction(async (connection) => {
     // Create team
     await connection.execute(
-      `INSERT INTO teams (id, name, leader_user_id) VALUES (?, ?, ?)`,
-      [teamId, name, leaderUserId]
+      `INSERT INTO teams (id, name) VALUES (?, ?)`,
+      [teamId, name]
     );
 
     // Add leader as member with 'leader' role
@@ -123,33 +121,66 @@ export async function getTeamById(id: string): Promise<Team | null> {
   return rows.length > 0 ? rowToTeam(rows[0]) : null;
 }
 
+/** A membership joined with its user's public profile columns. */
+type MemberWithProfileRow = MembershipRow & PublicUserProfileRow;
+
+const SELECT_MEMBER_WITH_PROFILE = `
+  SELECT m.id, m.team_id, m.user_id, m.role, m.joined_at,
+         u.username, p.display_name, p.bio, p.avatar_url,
+         p.display_name_public, p.bio_public, p.avatar_public
+  FROM team_memberships m
+  JOIN users u ON u.id = m.user_id
+  JOIN user_profiles p ON p.user_id = m.user_id`;
+
 /**
- * Get team with members
+ * Map membership rows joined with profiles to team members.
+ * @param rows The rows, in display order
+ * @returns The members
+ */
+function rowsToMembers(rows: MemberWithProfileRow[]): TeamMemberWithProfile[] {
+  return rows.map((row) => ({
+    membership: rowToMembership(row),
+    user: rowToPublicUserProfile(row),
+  }));
+}
+
+/**
+ * Get team with members, in join order. Users without a profile are left out.
  */
 export async function getTeamWithMembers(teamId: string): Promise<TeamWithMembers | null> {
-  const team = await getTeamById(teamId);
+  const [team, memberRows] = await Promise.all([
+    getTeamById(teamId),
+    query<MemberWithProfileRow[]>(
+      `${SELECT_MEMBER_WITH_PROFILE}
+       WHERE m.team_id = ?
+       ORDER BY m.joined_at ASC, m.id ASC`,
+      [teamId]
+    ),
+  ]);
   if (!team) return null;
-
-  const memberRows = await query<MembershipRow[]>(
-    `SELECT * FROM team_memberships WHERE team_id = ? ORDER BY joined_at ASC`,
-    [teamId]
-  );
-
-  const members: TeamMemberWithProfile[] = [];
-  for (const row of memberRows) {
-    const profile = await getPublicUserProfile(row.user_id);
-    if (profile) {
-      members.push({
-        membership: rowToMembership(row),
-        user: profile,
-      });
-    }
-  }
 
   return {
     ...team,
-    members,
+    members: rowsToMembers(memberRows),
   };
+}
+
+/**
+ * Get the players of a game as members of its team, in join order.
+ * Users without a profile are left out.
+ * @param gameId The game
+ * @returns Its players with their memberships and public profiles
+ */
+export async function getGameMembersWithProfiles(gameId: string): Promise<TeamMemberWithProfile[]> {
+  const rows = await query<MemberWithProfileRow[]>(
+    `${SELECT_MEMBER_WITH_PROFILE}
+     JOIN games g ON g.team_id = m.team_id
+     JOIN game_players gp ON gp.game_id = g.id AND gp.user_id = m.user_id
+     WHERE g.id = ?
+     ORDER BY m.joined_at ASC, m.id ASC`,
+    [gameId]
+  );
+  return rowsToMembers(rows);
 }
 
 /**
@@ -180,32 +211,39 @@ export async function isTeamMember(teamId: string, userId: string): Promise<bool
 }
 
 /**
- * Check if user is team leader
- * Spec: 04-bingo-teams.md - Permissions
+ * Make a team member a leader. The caller checks that the acting user is a leader.
+ * Spec: 04-bingo-teams.md - Leaders
+ * @param teamId The team
+ * @param userId The member to promote
+ * @returns An error when the user is not a member or is already a leader
  */
-export async function isTeamLeader(teamId: string, userId: string): Promise<boolean> {
-  const rows = await query<MembershipRow[]>(
-    `SELECT * FROM team_memberships WHERE team_id = ? AND user_id = ? AND role = 'leader'`,
+export async function promoteToLeader(
+  teamId: string,
+  userId: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  const result = await execute(
+    `UPDATE team_memberships SET role = 'leader' WHERE team_id = ? AND user_id = ? AND role <> 'leader'`,
     [teamId, userId]
   );
-  return rows.length > 0;
+  if (result.affectedRows > 0) {
+    return { success: true };
+  }
+
+  const isMember = await isTeamMember(teamId, userId);
+  return { success: false, error: isMember ? 'User is already a leader' : 'User is not a member of this team' };
 }
 
 /**
- * Create team invitation
+ * Create a team invitation. The caller checks that the user may invite (spec 21: team.invite).
  * Spec: 04-bingo-teams.md - Invitations / Joining
+ * @param teamId The team
+ * @param invitedEmail An optional email stored on the invitation
+ * @returns The invitation
  */
 export async function createTeamInvitation(
   teamId: string,
-  leaderUserId: string,
   invitedEmail?: string
-): Promise<TeamInvitation | null> {
-  // Only team leader can invite
-  const isLeader = await isTeamLeader(teamId, leaderUserId);
-  if (!isLeader) {
-    return null;
-  }
-
+): Promise<TeamInvitation> {
   const id = uuidv4();
   const inviteCode = uuidv4();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -296,8 +334,8 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
 }
 
 /**
- * Delete a team
- * Spec: 04-bingo-teams.md - Only team leader can manage the team
+ * Delete a team. The caller checks that the user may delete it (spec 21: team.delete).
+ * Spec: 04-bingo-teams.md - Team Deletion
  * 
  * This is a hard delete. Due to ON DELETE CASCADE foreign keys, deleting the team
  * will automatically delete:
@@ -305,16 +343,7 @@ export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> 
  * - Team invitations
  * - Games, with their resolutions and bingo cards (and cells, proofs, reviews, etc.)
  */
-export async function deleteTeam(
-  teamId: string,
-  userId: string
-): Promise<boolean> {
-  // Only team leader can delete the team
-  const isLeader = await isTeamLeader(teamId, userId);
-  if (!isLeader) {
-    return false;
-  }
-
+export async function deleteTeam(teamId: string): Promise<void> {
   // Collected first: the cascade below removes the rows that name these files
   const reviewFiles = await getTeamReviewFiles(teamId);
 
@@ -325,6 +354,4 @@ export async function deleteTeam(
   );
 
   await removeOrphanedFiles(reviewFiles);
-
-  return true;
 }

@@ -1,10 +1,10 @@
 import { useToast } from "@/hooks/use-toast";
-import { unifiedToFormData } from "@/lib/shared/resolution-form";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import type { ResolutionFormData } from "@/lib/shared/types";
-import { apiFetch } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { Game, TeamProvidedResolution } from "../types";
+import { useLastLoaded } from "./use-last-loaded";
 
 interface UseGameActionsParams {
   gameId: string;
@@ -16,8 +16,8 @@ interface UseGameActionsParams {
 }
 
 /**
- * Owns the game page data (game, team goal, member-provided resolutions) together with
- * the actions that reload or mutate it: load, start bingo, end and delete.
+ * Exposes the game page data (game, team goal, member-provided resolutions) together with
+ * the actions that refresh or mutate it: refresh, start bingo, end, delete and leave.
  *
  * @param params - The game id and the server-fetched initial payloads.
  * @returns The current data, the actions and their loading flags.
@@ -30,67 +30,22 @@ export function useGameActions({
 }: UseGameActionsParams) {
   const { toast } = useToast();
   const router = useRouter();
-  // Initial game payload is server-fetched to avoid first-render client waterfalls.
-  const [game, setGame] = useState<Game>(initialGame);
-  const [teamGoal, setTeamGoal] = useState<ResolutionFormData | null>(initialTeamGoal ?? null);
-  const [existingResolutions, setExistingResolutions] = useState<TeamProvidedResolution[]>(
-    initialExistingResolutions ?? []
-  );
+  // The server page loads the data; a refresh brings new props (also signalled over WebSocket).
+  // A failed read keeps the last loaded value on screen.
+  const game = useLastLoaded<Game>(initialGame, initialGame);
+  const teamGoal = useLastLoaded<ResolutionFormData | null>(initialTeamGoal, null);
+  const existingResolutions = useLastLoaded<TeamProvidedResolution[]>(initialExistingResolutions, []);
   const [isStarting, setIsStarting] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
-  // A server refresh brings new props (team changes signalled over WebSocket)
-  useEffect(() => setGame(initialGame), [initialGame]);
-  useEffect(() => {
-    if (initialTeamGoal !== undefined) setTeamGoal(initialTeamGoal);
-  }, [initialTeamGoal]);
-  useEffect(() => {
-    if (initialExistingResolutions) setExistingResolutions(initialExistingResolutions);
-  }, [initialExistingResolutions]);
+  /** Reloads the whole game page (game, goal, resolutions, cards, leaderboard) from the server. */
+  const refreshGame = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
-  /** Reloads the game, its goal and the member-provided resolutions from the API. */
-  const loadGame = useCallback(async () => {
-    try {
-      // Get game details
-      const response = await fetch(`/api/games/${gameId}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        setGame(data.game);
-
-        // Get team goal resolution
-        const goalRes = await fetch(`/api/games/${gameId}/goal`);
-        const goalData = await goalRes.json();
-        if (goalRes.ok && goalData.goal) {
-          setTeamGoal(unifiedToFormData(goalData.goal));
-        } else {
-          setTeamGoal(null);
-        }
-
-        // Get existing member-provided resolutions
-        const resRes = await fetch(`/api/games/${gameId}/resolutions`);
-        const resData = await resRes.json();
-        if (resRes.ok) {
-          setExistingResolutions(resData.createdByUser || []);
-        }
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to load game",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      });
-    }
-  }, [gameId, toast]);
-
-  /** Starts the bingo game, then reloads it to show the cards. */
+  /** Starts the bingo game, then refreshes the page to show the cards. */
   const handleStartBingo = async () => {
     setIsStarting(true);
     const result = await apiFetch<unknown>(`/api/games/${gameId}/start`, {
@@ -102,13 +57,9 @@ export function useGameActions({
         title: "Success",
         description: "Bingo game started!",
       });
-      loadGame(); // Reload to show cards
+      refreshGame();
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to start game",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to start game");
     }
     setIsStarting(false);
   };
@@ -134,11 +85,7 @@ export function useGameActions({
       router.push('/games');
       router.refresh();
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || failureMessage,
-        variant: "destructive",
-      });
+      toastApiError(result, failureMessage);
     }
   };
 
@@ -147,6 +94,13 @@ export function useGameActions({
     setIsEnding(true);
     await leaveGameAfter(`/api/games/${gameId}/end`, 'POST', 'Game ended', 'Failed to end game');
     setIsEnding(false);
+  };
+
+  /** Leaves the game: the user's card and the resolutions written for them are removed. */
+  const handleLeaveGame = async () => {
+    setIsLeaving(true);
+    await leaveGameAfter(`/api/games/${gameId}/leave`, 'POST', 'You left the game', 'Failed to leave game');
+    setIsLeaving(false);
   };
 
   /** Deletes the game and everything in it. */
@@ -160,12 +114,14 @@ export function useGameActions({
     game,
     teamGoal,
     existingResolutions,
-    loadGame,
+    refreshGame,
     isStarting,
     handleStartBingo,
     isEnding,
     handleEndGame,
     isDeleting,
     handleDeleteGame,
+    isLeaving,
+    handleLeaveGame,
   };
 }

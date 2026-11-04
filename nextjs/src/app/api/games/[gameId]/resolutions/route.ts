@@ -3,16 +3,16 @@
  * Spec Reference: 16-games.md - Member-Provided Resolutions
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, withAuth } from '@/app/api/utils';
 import {
-  isTeamMember,
+  checkAllResolutionsProvided,
+  getGamePlayerIds,
   getMemberProvidedResolutionsByUser,
   getMemberProvidedResolutionsForUser,
-  checkAllResolutionsProvided,
-  getRunningGame,
   getTeamMembers,
 } from '@/lib/db';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/games/[gameId]/resolutions - Get resolutions status
@@ -27,16 +27,9 @@ export const GET = withAuth(async (
   // Spec: 09-bingo-card-editing.md - Replacement Options
   const toUserId = request.nextUrl.searchParams.get('toUserId');
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  // Check if user is a member
-  const isMember = await isTeamMember(game.teamId, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
-  }
+  const access = await authorizeGameAction(currentUser, 'game.view', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   if (toUserId) {
     const resolutions = await getMemberProvidedResolutionsForUser(gameId, toUserId);
@@ -49,8 +42,9 @@ export const GET = withAuth(async (
   // Get resolutions created for the user
   const createdForUser = await getMemberProvidedResolutionsForUser(gameId, currentUser.id);
 
-  // Get all team members
-  const members = await getTeamMembers(game.teamId);
+  // Spec: 16-games.md - the members of a game are its players
+  const playerIds = new Set(await getGamePlayerIds(game.id));
+  const members = (await getTeamMembers(game.teamId)).filter((member) => playerIds.has(member.userId));
 
   // Check overall status
   const status = await checkAllResolutionsProvided(game);

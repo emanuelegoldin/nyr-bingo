@@ -345,3 +345,67 @@ None. Existing users have notifications on.
 ### Idempotency
 
 `CREATE TABLE IF NOT EXISTS` skips a table that already exists, so the migration can run again.
+
+## 5.6.0 - Game Players
+
+Gives each game an explicit roster, so a leader chooses who plays and a player can leave (spec 16).
+
+### Schema changes
+
+- New table `game_players`, keyed by `(game_id, user_id)`, cascading from `games` and `users`.
+
+### Data migration
+
+Every existing game gets its team's current members as players, with their team join date.
+
+### Design notes
+
+- Every player is a team member, but not every member is a player: a member may be left out of a new
+  game, or leave one. Leaving the team leaves its games, so no player outlives their membership.
+- A user who joins a team is added to each running game, which keeps the existing "join after start"
+  rule.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` skips the table and `INSERT IGNORE` skips existing rows, so the migration
+can run again.
+
+## 5.7.0 - Multiple Team Leaders
+
+Lets a team have several leaders (specs 04 and 18).
+
+### Schema changes
+
+- `teams.leader_user_id` is dropped, with its foreign key. The leaders are the memberships with
+  `role = 'leader'`.
+- `archived_game_players.is_leader` (`TINYINT(1)`, default `0`) replaces `archived_games.leader_user_id`,
+  which is dropped.
+
+### Data migration
+
+- Each team's `leader_user_id` membership gets `role = 'leader'`. Teams created by the app already have
+  it.
+- Each archived game flags its former `leader_user_id` player as a leader.
+
+### Idempotency
+
+The steps that read a column to be dropped are skipped once it is gone, and `Create_Column` and
+`Drop_Column` do nothing when the column already exists or is already gone. The dropped columns are
+read before they are dropped, so the migration can run again after a partial failure.
+
+## 5.8.0 - Card Lock
+
+Lets a card owner shuffle their card until they lock it (spec 22).
+
+### Schema changes
+
+- `bingo_cards.locked_at` (`DATETIME`, nullable) is the time the card was locked. It is `NULL` while the
+  card can be shuffled.
+
+### Data migration
+
+None: every existing card starts unlocked.
+
+### Idempotency
+
+`Create_Column` does nothing when the column already exists, so the migration can run again.

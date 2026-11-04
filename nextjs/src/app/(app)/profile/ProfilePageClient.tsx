@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from '@/hooks/use-toast';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, toastApiError } from '@/lib/api-client';
 import type { UserProfile } from '@/lib/db/types';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
@@ -66,11 +66,7 @@ export default function ProfilePageClient({
         description: "Profile updated successfully",
       });
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to update profile",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to update profile");
     }
     setIsSaving(false);
   };
@@ -87,11 +83,7 @@ export default function ProfilePageClient({
         description: result.data.message || "Verification email sent successfully",
       });
     } else {
-      toast({
-        title: "Error",
-        description: result.status === 0 ? "An error occurred" : result.error || "Failed to resend verification email",
-        variant: "destructive",
-      });
+      toastApiError(result, "Failed to resend verification email");
     }
     setIsResendingVerification(false);
   };

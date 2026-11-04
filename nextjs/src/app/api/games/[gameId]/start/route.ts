@@ -3,19 +3,17 @@
  * Spec Reference: 16-games.md - Start Conditions
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { notifications } from '@/lib/notifications';
-import { notifyTeams } from '@/lib/team-signals';
-import { isUserVerified } from '@/lib/auth';
+import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import {
   checkGameCanStart,
-  startGameWithCards,
-  isTeamLeader,
   getGameWithMembers,
-  getRunningGame,
   initializeGameLeaderboard,
+  startGameWithCards,
 } from '@/lib/db';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { notifications } from '@/lib/notifications';
+import { notifyTeams } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * POST /api/games/[gameId]/start - Start the bingo game
@@ -26,28 +24,15 @@ export const POST = withAuth(async (
   request: NextRequest,
   { params, currentUser }: AuthContext<{ gameId: string }>
 ) => {
-    // Check if user has verified their email
-  // Unverified users can only write resolutions and update their profiles
-  if (!isUserVerified(currentUser)) {
-    return errorResponse('Email verification required. Please verify your email before starting a game.', 403);
-  }
-
   const { gameId } = await params;
 
-  const runningGame = await getRunningGame(gameId);
-  if (!runningGame) {
-    return errorResponse('Game not found', 404);
-  }
-
-  // Check if user is team leader
-  // Spec: 16-games.md - Only team leader can start game
-  const isLeader = await isTeamLeader(runningGame.teamId, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only the team leader can start the game', 403);
-  }
+  // Spec: 21-authorization.md - game.start: a verified leader of the game. A missing game gives 404.
+  const access = await authorizeGameAction(currentUser, 'game.start', gameId);
+  if ('response' in access) return access.response;
+  const runningGame = access.game;
 
   // Validate all start conditions
-  const check = await checkGameCanStart(gameId, currentUser.id);
+  const check = await checkGameCanStart(gameId);
 
   if (!check.success) {
     return errorResponse(check.error, 400);

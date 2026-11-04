@@ -8,24 +8,24 @@
  * - Client component only handles interactive mutations and local UI state
  */
 
+import { PageSpinner } from '@/components/page-spinner';
+import { toTeamMember } from '@/components/team/types';
 import { requireUser } from '@/lib/auth';
+import { getGameCapabilities, requirePagePermission } from '@/lib/authz';
 import {
   getGameBingoCards,
   getGameGoalResolution,
   getGameLeaderboard,
   getGameWithMembers,
   getMemberProvidedResolutionsByUser,
-  isTeamMember,
   type BingoCardWithCells,
   type GameWithMembers,
   type Resolution,
 } from '@/lib/db';
 import { resolutionToFormData } from '@/lib/shared/resolution-form';
-import type { ResolutionFormData } from '@/lib/shared/types';
-import { PageSpinner } from '@/components/page-spinner';
+import type { LeaderboardEntry, ResolutionFormData } from '@/lib/shared/types';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import type { LeaderboardEntry } from './leaderboard-tab';
 import GameDetailPageClient from './game-detail-page-client';
 import type { Game } from './types';
 
@@ -39,37 +39,16 @@ function GameDetailLoadingFallback() {
   );
 }
 
-function toIsoDateString(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value;
-}
-
 function mapGame(game: GameWithMembers): Game {
   return {
     id: game.id,
     teamId: game.teamId,
     teamName: game.teamName,
-    leaderUserId: game.leaderUserId,
     name: game.name,
     teamResolutionText: game.teamResolutionText,
     status: game.status,
     deadline: game.deadline,
-    members: game.members.map((member) => ({
-      membership: {
-        id: member.membership.id,
-        teamId: member.membership.teamId,
-        userId: member.membership.userId,
-        role: member.membership.role,
-        joinedAt: toIsoDateString(member.membership.joinedAt),
-      },
-      user: {
-        id: member.user.id,
-        userId: member.user.userId,
-        username: member.user.username,
-        displayName: member.user.displayName,
-        bio: member.user.bio,
-        avatarUrl: member.user.avatarUrl,
-      },
-    })),
+    members: game.members.map(toTeamMember),
   };
 }
 
@@ -90,15 +69,14 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
     notFound();
   }
 
-  const member = await isTeamMember(game.teamId, currentUser.id);
-  if (!member) {
-    notFound();
-  }
+  await requirePagePermission(currentUser, 'game.view', { scope: 'game', game });
 
   // Non-critical sections are settled independently so one failed query does not block the page.
   const cardPromise = game.status === 'started'
-    ? getGameBingoCards(gameId, currentUser.id)
+    ? getGameBingoCards(gameId)
     : Promise.resolve([] as BingoCardWithCells[]);
+
+  const capabilities = await getGameCapabilities(currentUser, game);
 
   const [cardsResult, goalResult, resolutionsResult, leaderboardResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
     cardPromise,
@@ -121,6 +99,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
       initialGame={mapGame(game)}
       initialCards={initialCards}
       initialCurrentUserId={currentUser.id}
+      capabilities={capabilities}
       initialTeamGoal={initialTeamGoal}
       initialExistingResolutions={initialExistingResolutions}
       initialLeaderboardEntries={initialLeaderboardEntries}

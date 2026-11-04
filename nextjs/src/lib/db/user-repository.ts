@@ -400,11 +400,29 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
     [userId]
   );
 
-  if (rows.length === 0) return null;
+  return rows.length > 0 ? rowToPublicUserProfile(rows[0]) : null;
+}
 
-  const row = rows[0];
+/** Columns of a user and its profile that a public profile is built from. */
+export interface PublicUserProfileRow {
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  display_name_public: boolean | number;
+  bio_public: boolean | number;
+  avatar_public: boolean | number;
+}
+
+/**
+ * Build a public profile, leaving out the fields the user keeps private.
+ * @param row The user and profile columns
+ * @returns The public profile
+ */
+export function rowToPublicUserProfile(row: PublicUserProfileRow): PublicUserProfile {
   return {
-    id: row.id,
+    id: row.user_id,
     userId: row.user_id,
     username: row.username,
     displayName: row.display_name_public ? row.display_name : null,

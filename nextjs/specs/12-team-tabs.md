@@ -57,15 +57,17 @@ members only; others get a not-found page.
   - It does not play when the user's system prefers reduced motion.
 - **Clickable source-user badges:** On each cell, the badge showing the
   resolution source user (for `member_provided` cells) is a link to that
-  user's profile page.
+  user's profile page. A provider who is no longer a player shows as
+  "Former Teammates", without a link.
 
 ### 2. Members Tab
 
-- A simple list of all team members.
+- A simple list of the game's players (spec 16). The team page uses the same list for all team members (spec 04).
 - Each row contains:
   - **Avatar** on the left (clickable → navigates to the member's profile).
   - **Display name**, or the username when no public display name exists.
-  - A "Leader" badge for the team leader.
+  - A "Leader" badge for every team leader.
+  - On the team page only, a **Make Leader** button for leaders on each non-leader row, after confirmation (spec 04).
 - The current user's entry is annotated with "(You)".
 
 ### 3. Leaderboard Tab

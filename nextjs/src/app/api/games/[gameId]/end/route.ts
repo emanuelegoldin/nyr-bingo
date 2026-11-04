@@ -3,10 +3,10 @@
  * Spec Reference: 16-games.md - Ending a Game
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getRunningGame, isTeamLeader } from '@/lib/db';
-import { finishGame } from '@/lib/game-ending';
+import { authorizeGameAction } from '@/app/api/games/game-access';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { finishGame } from '@/lib/game-ending';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * POST /api/games/[gameId]/end - End a started game (leader only)
@@ -17,15 +17,9 @@ export const POST = withAuth(async (
 ) => {
   const { gameId } = await params;
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const isLeader = await isTeamLeader(game.teamId, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only the team leader can end the game', 403);
-  }
+  const access = await authorizeGameAction(currentUser, 'game.end', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   const ended = await finishGame(game, currentUser.id);
   if (!ended) {

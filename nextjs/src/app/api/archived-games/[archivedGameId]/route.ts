@@ -3,14 +3,14 @@
  * Spec Reference: 18-game-archive.md
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { requirePermission } from '@/lib/authz';
 import {
   deleteArchivedGame,
   getArchivedGame,
   getArchivedGameSummary,
-  isArchivedGamePlayer,
 } from '@/lib/db';
-import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/archived-games/[archivedGameId] - Get an archived game (players only)
@@ -26,15 +26,14 @@ export const GET = withAuth(async (
     return errorResponse('Archived game not found', 404);
   }
 
-  if (!(await isArchivedGamePlayer(archivedGameId, currentUser.id))) {
-    return errorResponse('You did not take part in this game', 403);
-  }
+  const denied = await requirePermission(currentUser, 'archive.view', { scope: 'archive', archivedGameId });
+  if (denied) return denied;
 
   return NextResponse.json({ archivedGame });
 });
 
 /**
- * DELETE /api/archived-games/[archivedGameId] - Delete an archived game (its leader only)
+ * DELETE /api/archived-games/[archivedGameId] - Delete an archived game (its leaders only)
  */
 export const DELETE = withAuth(async (
   _request: NextRequest,
@@ -47,9 +46,8 @@ export const DELETE = withAuth(async (
     return errorResponse('Archived game not found', 404);
   }
 
-  if (archivedGame.leaderUserId !== currentUser.id) {
-    return errorResponse('Only the leader of the game can delete it', 403);
-  }
+  const denied = await requirePermission(currentUser, 'archive.delete', { scope: 'archive', archivedGameId });
+  if (denied) return denied;
 
   await deleteArchivedGame(archivedGameId);
 

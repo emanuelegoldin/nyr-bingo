@@ -3,7 +3,7 @@
  * Spec Reference: Resolution Review & Proof Workflow - Thread Capabilities
  */
 
-import { threadErrorStatus } from '@/app/api/threads/error-status';
+import { authorizeThreadAction } from '@/app/api/threads/thread-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyThread } from '@/lib/team-signals';
 import { addMessage } from '@/lib/db';
@@ -11,7 +11,7 @@ import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
  * POST /api/threads/[threadId]/messages - Post a message to a thread
- * All team members can post messages
+ * All players of the game can post messages
  */
 export const POST = withAuth(async (
   request: NextRequest,
@@ -25,9 +25,12 @@ export const POST = withAuth(async (
     return errorResponse('Message content is required', 400);
   }
 
+  const access = await authorizeThreadAction(currentUser, 'thread.message', threadId);
+  if ('response' in access) return access.response;
+
   const result = await addMessage(threadId, currentUser.id, content);
   if (!result.success) {
-    return errorResponse(result.error, threadErrorStatus(result.error!));
+    return errorResponse(result.error, result.status);
   }
 
   await notifyThread(threadId);

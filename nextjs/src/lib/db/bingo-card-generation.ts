@@ -6,6 +6,8 @@
 import { randomUUID } from 'crypto';
 import type { PoolConnection } from 'mysql2/promise';
 import { getResolutionTextKey } from '../shared/resolution-type';
+import { shuffleArray } from '../shared/shuffle';
+import type { PreparedResolution } from '../shared/types';
 import {
   BINGO_GRID_SIZE,
   CellSourceType,
@@ -14,12 +16,11 @@ import {
   ResolutionScope,
   ResolutionType,
 } from '../shared/types';
-import type { PreparedResolution } from '../shared/types';
 import { CardRow, rowToCard } from './bingo-card-rows';
 import { autoTransitionCellState } from './bingo-cell-repository';
 import { execute, query, withTransaction } from './connection';
+import { getGameById, getGamePlayerIds } from './game-repository';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
-import { getGameById } from './game-repository';
 import { getRandomPreparedResolutions, preparedResolutionToContent } from './prepared-resolution-repository';
 import {
   createResolution,
@@ -28,7 +29,6 @@ import {
   getRandomResolutions,
   isProgressComplete,
 } from './resolution-repository';
-import { getTeamMembers } from './team-repository';
 import { BingoCard, Game, GameStatus, Resolution } from './types';
 
 const TOTAL_CELLS = BINGO_GRID_SIZE * BINGO_GRID_SIZE;
@@ -100,7 +100,7 @@ export async function startGameWithCards(gameId: string): Promise<{ success: boo
   }
 
   const { game, teamGoalResolution } = context;
-  const members = await getTeamMembers(game.teamId);
+  const playerIds = await getGamePlayerIds(gameId);
 
   return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
     // The status guard stops two concurrent starts from generating cards twice.
@@ -114,8 +114,8 @@ export async function startGameWithCards(gameId: string): Promise<{ success: boo
       return { success: false, error: WRONG_STATUS_ERRORS[GameStatus.FORMING] };
     }
 
-    for (const member of members) {
-      await generateCardForUser(connection, game, member.userId, teamGoalResolution, true);
+    for (const playerId of playerIds) {
+      await generateCardForUser(connection, game, playerId, teamGoalResolution, true);
     }
 
     return { success: true };
@@ -123,21 +123,21 @@ export async function startGameWithCards(gameId: string): Promise<{ success: boo
 }
 
 /**
- * Count the other team members who provided no resolution for a user.
- * @param teamId The game's team
+ * Count the other players of a game who provided no resolution for a user.
+ * @param gameId The game
  * @param userId The card owner
  * @param provided The member-provided resolutions targeted to the card owner
  * @returns The number of missing proposals
  */
 async function countMissingProposals(
-  teamId: string,
+  gameId: string,
   userId: string,
   provided: Resolution[]
 ): Promise<number> {
-  const members = await getTeamMembers(teamId);
+  const playerIds = await getGamePlayerIds(gameId);
   const authors = new Set(provided.map((resolution) => resolution.ownerUserId));
 
-  return members.filter((member) => member.userId !== userId && !authors.has(member.userId)).length;
+  return playerIds.filter((playerId) => playerId !== userId && !authors.has(playerId)).length;
 }
 
 /**
@@ -209,7 +209,7 @@ async function planCells(
   // Replace every missing proposal with an easy prepared resolution
   // Spec: 05-bingo-card-generation.md - Step 3
   if (useFallbacks) {
-    const missing = await countMissingProposals(game.teamId, userId, memberProvided);
+    const missing = await countMissingProposals(game.id, userId, memberProvided);
     await addPrepared(
       await getRandomPreparedResolutions(PreparedResolutionCategory.SHORT, missing, Array.from(usedTexts))
     );
@@ -325,17 +325,8 @@ async function generateCardForUser(
     userId,
     gridSize: BINGO_GRID_SIZE,
     createdAt: new Date(),
+    lockedAt: null,
   };
-}
-
-/**
- * Fisher-Yates shuffle
- */
-function shuffleArray<T>(array: T[]): void {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
 }
 
 /**

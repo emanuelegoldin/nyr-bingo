@@ -3,6 +3,7 @@
  * Spec Reference: 09-bingo-card-editing.md
  */
 import { updateCellContent } from "@/lib/db";
+import { requireCardOwner } from "../../card-owner";
 import { NextRequest, NextResponse } from "next/server";
 import { notifications } from '@/lib/notifications';
 import { notifyCell } from '@/lib/team-signals';
@@ -34,7 +35,10 @@ export const PUT = withAuth(async (
   if (sourceType === 'member_provided' && !resolutionId) {
     return errorResponse('resolutionId is required for member_provided cells', 400);
   }
-  const result = await updateCellContent(cellId, currentUser.id, {
+  const denied = await requireCardOwner(currentUser, cellId, 'Only the card owner can edit cell content');
+  if (denied) return denied;
+
+  const result = await updateCellContent(cellId, {
     resolutionId,
     sourceType,
   });

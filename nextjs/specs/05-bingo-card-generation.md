@@ -1,7 +1,7 @@
 # 05 — Bingo Card Generation
 
 ## Purpose
-Define the rules for generating each team member's bingo card when a game is started, or when a member joins a team with a started game.
+Define the rules for generating each player's bingo card (spec 16) when a game is started, or when a member joins a team with a started game.
 
 ## User Stories Covered
 - Cards generated automatically at start
@@ -35,7 +35,7 @@ Define the rules for generating each team member's bingo card when a game is sta
 ## Generation Rules
 1. Create a 5x5 grid with the Joker in the center, leaving 24 cells to fill.
 2. Add the member-provided resolutions targeted to the owner.
-3. For each other team member who has no member-provided resolution for the owner, add one random `short` prepared resolution.
+3. For each other player who has no member-provided resolution for the owner, add one random `short` prepared resolution.
 4. If there is still space, add the team goal as a normal, checkable `team` cell.
 5. Fill remaining cells by randomly selecting from the owner's personal resolutions.
 6. Fill remaining cells with random `long` prepared resolutions and, once those run out, `medium` ones.
@@ -43,7 +43,7 @@ Define the rules for generating each team member's bingo card when a game is sta
 8. Shuffle the 24 cells across the non-center positions.
 9. Every stored cell starts in state `pending`.
 
-Generation runs in a transaction. Cards are generated once: at game start for all members, and at join time for a member joining a team, in each of its started games. A user has at most one card per game, and cards are never regenerated.
+Generation runs in a transaction. Cards are generated once: at game start for all players, and at join time for a member joining a team, in each of its started games. A user has at most one card per game, and cards are never regenerated.
 
 Steps 3 and 6 apply only at game start. A card generated at join time uses no prepared resolutions, so it can contain `empty` cells; its owner can fill them through card editing (spec 09).
 
@@ -59,7 +59,7 @@ Steps 3 and 6 apply only at game start. A card generated at join time uses no pr
 - Generation requires the game to be `started` and its team goal to exist.
 
 ## Acceptance Criteria
-- Starting the game generates a card for each team member.
+- Starting the game generates a card for each player.
 - Joining a team generates a card for the new member in each of its started games.
 - Center cell is the Joker.
 - Remaining cells follow selection and fallback rules.

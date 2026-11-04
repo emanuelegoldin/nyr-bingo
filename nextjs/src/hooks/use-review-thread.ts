@@ -2,7 +2,7 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { useWsRoom } from "@/hooks/use-ws-room";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import { ReviewFile, ReviewThreadWithDetails } from "@/lib/db/types";
 import { useEffect, useState } from "react";
 
@@ -11,6 +11,8 @@ interface UseReviewThreadOptions {
   onRefresh?: () => void;
   /** Opens or closes the dialog that hosts the thread. */
   setIsOpen: (isOpen: boolean) => void;
+  /** Name shown on the viewer's own message until the thread is re-read. */
+  currentUsername?: string;
 }
 
 /**
@@ -20,13 +22,13 @@ interface UseReviewThreadOptions {
  *
  * @param reviewThreadId - Thread id taken from the cell (may be empty).
  * @param isOpen - Whether the dialog is open; the socket and loading depend on it.
- * @param options - Parent callbacks (`onRefresh`, `setIsOpen`).
+ * @param options - Parent callbacks (`onRefresh`, `setIsOpen`) and the viewer's name.
  * @returns Thread state, form drafts and the mutation handlers.
  */
 export const useReviewThread = (
   reviewThreadId: string,
   isOpen: boolean,
-  { onRefresh, setIsOpen }: UseReviewThreadOptions
+  { onRefresh, setIsOpen, currentUsername }: UseReviewThreadOptions
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [messageDraft, setMessageDraft] = useState('');
@@ -34,8 +36,6 @@ export const useReviewThread = (
   const [thread, setThread] = useState<ReviewThreadWithDetails | null>(null);
   const [isThreadLoading, setIsThreadLoading] = useState(false);
   const { toast } = useToast();
-  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const currentThreadId = reviewThreadId || thread?.id;
 
@@ -55,11 +55,7 @@ export const useReviewThread = (
     if (result.ok) {
       setThread(result.data.thread);
     } else {
-      toast({
-        title: 'Error',
-        description: result.error || (silent ? 'Failed to refresh review thread' : 'Failed to load review thread'),
-        variant: 'destructive',
-      });
+      toastApiError(result, silent ? 'Failed to refresh review thread' : 'Failed to load review thread');
     }
     if (!silent) setIsThreadLoading(false);
   };
@@ -67,36 +63,13 @@ export const useReviewThread = (
   /** Re-reads the thread without showing the loading state. */
   const refetchThread = () => fetchThread(true);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    let cancelled = false;
-
-    const loadCurrentUsername = async () => {
-      // Failures are ignored on purpose
-      const result = await apiFetch<{ user?: { username?: unknown; id?: unknown } }>('/api/profile');
-      if (!result.ok) return;
-      const username = result.data?.user?.username;
-      const userId = result.data?.user?.id;
-      if (!cancelled && typeof username === 'string' && username) {
-        setCurrentUsername(username);
-      }
-      if (!cancelled && typeof userId === 'string' && userId) {
-        setCurrentUserId(userId);
-      }
-    };
-
-    loadCurrentUsername();
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen]);
-
   useWsRoom(currentThreadId ? { type: 'thread', id: currentThreadId } : null, refetchThread, isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
     fetchThread(false);
-  }, [reviewThreadId, isOpen, thread?.id, toast]);
+    // fetchThread only depends on currentThreadId, which the first fetch leaves unchanged
+  }, [currentThreadId, isOpen]);
 
   /** Uploads the selected file to the thread (owner only, enforced by the API). */
   const uploadFile = async () => {
@@ -115,11 +88,7 @@ export const useReviewThread = (
         body: form,
       });
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to upload file',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to upload file');
         return;
       }
       // If succesful, the response contains the uploaded file info.
@@ -161,11 +130,7 @@ export const useReviewThread = (
         json: { content },
       });
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to post message',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to post message');
         return;
       }
 
@@ -199,11 +164,7 @@ export const useReviewThread = (
         json: { fileId },
       });
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to delete file',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to delete file');
         return;
       }
 
@@ -238,11 +199,7 @@ export const useReviewThread = (
         method: 'DELETE',
       });
       if (!result.ok) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to close thread',
-          variant: 'destructive',
-        });
+        toastApiError(result, 'Failed to close thread');
         return;
       }
 
@@ -263,7 +220,6 @@ export const useReviewThread = (
     thread,
     isThreadLoading,
     isSubmitting,
-    currentUserId,
     messageDraft,
     setMessageDraft,
     selectedFile,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast } from "@/hooks/use-toast";
+import { apiFetch, toastApiError } from "@/lib/api-client";
 import type { BingoCellWithThread } from "@/lib/db/types";
 import { CellSourceType, ResolutionType } from "@/lib/shared/types";
 import { useEffect, useState } from "react";
@@ -35,7 +35,6 @@ interface TeamResolutionItem {
 }
 
 interface UseEditCellOptionsParams {
-  cellId: string;
   existingCells: BingoCellWithThread[];
   gameId: string;
   currentUserId: string;
@@ -45,15 +44,13 @@ interface UseEditCellOptionsParams {
 
 /**
  * Loads the resolutions a cell can be replaced with: the user's own resolutions
- * plus, when a team is given, the ones provided by team members (and the member
- * usernames used to label them). Resolutions already used by another cell of the
- * card are left out. Failures are reported with a destructive toast.
+ * plus, when a game is given, the ones provided by team members. Resolutions already
+ * used by another cell of the card are left out. Failures are reported with a destructive toast.
  *
- * @param params - Cell, card, team and user the options are loaded for, and the dialog's open state.
- * @returns The options, the team member usernames, the loading flag and a `reset` that clears all three.
+ * @param params - Card, game and user the options are loaded for, and the dialog's open state.
+ * @returns The options, the loading flag and a `reset` that clears both.
  */
 export const useEditCellOptions = ({
-  cellId,
   existingCells,
   gameId,
   currentUserId,
@@ -61,8 +58,6 @@ export const useEditCellOptions = ({
 }: UseEditCellOptionsParams) => {
   const [isLoading, setIsLoading] = useState(false);
   const [editOptions, setEditOptions] = useState<EditOption[]>([]);
-  const [usernames, setUsernames] = useState<Record<string, string>>({});
-  const { toast } = useToast();
 
   useEffect(() => {
     const loadEditOptions = async () => {
@@ -79,112 +74,67 @@ export const useEditCellOptions = ({
       );
 
       setIsLoading(true);
-      try {
-        // Fetch ALL resolution types (base + compound + iterative) via the unified endpoint
-        const personalReq = fetch('/api/resolutions/all');
-        const teamReq = gameId && currentUserId
-          ? fetch(`/api/games/${gameId}/resolutions?toUserId=${encodeURIComponent(currentUserId)}`)
-          : null;
+      // Fetch ALL resolution types (base + compound + iterative) via the unified endpoint
+      const teamReq = gameId && currentUserId
+        ? apiFetch<{ resolutions?: TeamResolutionItem[] }>(
+          `/api/games/${gameId}/resolutions?toUserId=${encodeURIComponent(currentUserId)}`
+        )
+        : Promise.resolve(null);
+      const [personalResult, teamResult] = await Promise.all([
+        apiFetch<{ resolutions?: PersonalResolutionItem[] }>('/api/resolutions/all'),
+        teamReq,
+      ]);
+      setIsLoading(false);
 
-        const [personalRes, teamRes] = await Promise.all([
-          personalReq,
-          teamReq ?? Promise.resolve(null as unknown as Response | null),
-        ]);
-
-        const personalData = await personalRes.json().catch(() => ({}));
-        if (!personalRes.ok) {
-          toast({
-            title: 'Error',
-            description: personalData?.error || 'Failed to load personal resolutions',
-            variant: 'destructive',
-          });
-          return;
-        }
-
-        const personalOptions: EditOption[] = (personalData?.resolutions || [])
-          .map((r: PersonalResolutionItem) => ({
-            key: `personal:${r.id}`,
-            label: r.title || r.text || r.title,
-            resolutionText: r.text || r.title,
-            resolutionId: typeof r.id === 'string' ? r.id : null,
-            resolutionType: (r.type as ResolutionType) ?? ResolutionType.BASE,
-            sourceType: CellSourceType.PERSONAL,
-            sourceUserId: currentUserId ?? null,
-            isEmpty: false,
-          }))
-          // Prevent duplicates: do not allow selecting texts already used in other non-empty cells
-          // Spec: 05-bingo-card-generation.md - No duplicates in a card
-          .filter((opt: EditOption) => !occupiedKeys.has(opt.key));
-
-        let teamOptions: EditOption[] = [];
-        if (teamRes) {
-          const teamData = await teamRes.json().catch(() => ({}));
-          if (!teamRes.ok) {
-            toast({
-              title: 'Error',
-              description: teamData?.error || 'Failed to load team-provided resolutions',
-              variant: 'destructive',
-            });
-            return;
-          }
-
-          teamOptions = (teamData?.resolutions || [])
-            .map((r: TeamResolutionItem) => ({
-              key: `member_provided:${r.id}`,
-              label: r.title || r.description,
-              resolutionText: r.description || r.title,
-              resolutionId: typeof r.id === 'string' ? r.id : null,
-              resolutionType: (r.resolutionType as ResolutionType) ?? ResolutionType.BASE,
-              sourceType: CellSourceType.MEMBER_PROVIDED,
-              sourceUserId: typeof r.ownerUserId === 'string' ? r.ownerUserId : null,
-              isEmpty: false,
-            }))
-            // Prevent duplicates: do not allow selecting texts already used in other non-empty cells
-            .filter((opt: EditOption) => !occupiedKeys.has(opt.key));
-
-          const gameRes = await fetch(`/api/games/${gameId}`);
-
-          const gameData: {
-            game?: { members: Array<{ user: { userId: string; username: string } }> };
-            error?: string;
-          } = await gameRes.json().catch(() => ({}));
-
-          if (!gameRes.ok) {
-            toast({
-              title: 'Error',
-              description: gameData?.error || 'Failed to load team member usernames',
-              variant: 'destructive',
-            });
-            return;
-          }
-          setUsernames(Object.fromEntries(
-            (gameData.game?.members ?? []).map(({ user }) => [user.userId, user.username])
-          ));
-        }
-
-        setEditOptions([...teamOptions, ...personalOptions]);
-      } catch {
-        toast({
-          title: 'Error',
-          description: 'Failed to load replacement options',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
+      if (!personalResult.ok) {
+        toastApiError(personalResult, 'Failed to load personal resolutions', 'Failed to load replacement options');
+        return;
       }
+      if (teamResult && !teamResult.ok) {
+        toastApiError(teamResult, 'Failed to load team-provided resolutions', 'Failed to load replacement options');
+        return;
+      }
+
+      const personalOptions: EditOption[] = (personalResult.data.resolutions || [])
+        .map((r) => ({
+          key: `personal:${r.id}`,
+          label: r.title || r.text || r.title,
+          resolutionText: r.text || r.title,
+          resolutionId: typeof r.id === 'string' ? r.id : null,
+          resolutionType: (r.type as ResolutionType) ?? ResolutionType.BASE,
+          sourceType: CellSourceType.PERSONAL,
+          sourceUserId: currentUserId ?? null,
+          isEmpty: false,
+        }))
+        // Prevent duplicates: do not allow selecting texts already used in other non-empty cells
+        // Spec: 05-bingo-card-generation.md - No duplicates in a card
+        .filter((opt) => !occupiedKeys.has(opt.key));
+
+      const teamOptions: EditOption[] = (teamResult?.data.resolutions || [])
+        .map((r) => ({
+          key: `member_provided:${r.id}`,
+          label: r.title || r.description,
+          resolutionText: r.description || r.title,
+          resolutionId: typeof r.id === 'string' ? r.id : null,
+          resolutionType: (r.resolutionType as ResolutionType) ?? ResolutionType.BASE,
+          sourceType: CellSourceType.MEMBER_PROVIDED,
+          sourceUserId: typeof r.ownerUserId === 'string' ? r.ownerUserId : null,
+          isEmpty: false,
+        }))
+        // Prevent duplicates: do not allow selecting texts already used in other non-empty cells
+        .filter((opt) => !occupiedKeys.has(opt.key));
+
+      setEditOptions([...teamOptions, ...personalOptions]);
     };
 
     loadEditOptions();
-    // usernames is intentionally not a dependency to avoid re-loading options on username updates
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, gameId, currentUserId, cellId, existingCells, toast]);
+  }, [isOpen, gameId, currentUserId, existingCells]);
 
-  /** Clears the loaded options, usernames and loading flag. */
+  /** Clears the loaded options and loading flag. */
   const reset = () => {
     setIsLoading(false);
     setEditOptions([]);
-    setUsernames({});
   };
 
-  return { editOptions, usernames, isLoading, reset };
+  return { editOptions, isLoading, reset };
 };

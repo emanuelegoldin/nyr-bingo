@@ -11,28 +11,30 @@
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
-import { GameStatusBadge } from "@/components/team/game-status-badge";
-import { MembersTab } from "@/components/team/members-tab";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
+import { GameStatusBadge } from "@/components/team/game-status-badge";
+import { MembersTab } from "@/components/team/members-tab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
-import { CalendarClock, Crown, Flag, Loader2, Settings, Swords, Trash2 } from "lucide-react";
+import { CalendarClock, Crown, Flag, Loader2, LogOut, Settings, Swords, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from 'react';
 
+import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
+import { formatLeaderNames } from "@/components/team/leaders";
+import type { GamePermission } from "@/lib/authz/permissions";
 import { BingoCardWithCells } from "@/lib/db/types";
-import type { ResolutionFormData } from "@/lib/shared/types";
-import { GameActionDialog } from "./_components/GameActionDialog";
+import type { LeaderboardEntry, ResolutionFormData } from "@/lib/shared/types";
 import { GameConfigDialog } from "./_components/GameConfigDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
-import { useLastLoaded } from "./_components/use-last-loaded";
 import { useGameActions } from "./_components/use-game-actions";
+import { useLastLoaded } from "./_components/use-last-loaded";
 import { CardsTab } from "./cards-tab";
-import { LeaderboardTab, type LeaderboardEntry } from "./leaderboard-tab";
+import { LeaderboardTab } from "./leaderboard-tab";
 import type { Game, TeamProvidedResolution } from "./types";
 
 interface GameDetailPageClientProps {
@@ -40,6 +42,8 @@ interface GameDetailPageClientProps {
   /** Undefined when the server failed to read them, as for the other optional props. */
   initialCards?: BingoCardWithCells[];
   initialCurrentUserId: string;
+  /** The caller's permissions in the game, computed on the server (spec 21 - Client Gating). */
+  capabilities: GamePermission[];
   initialTeamGoal?: ResolutionFormData | null;
   initialExistingResolutions?: TeamProvidedResolution[];
   initialLeaderboardEntries?: LeaderboardEntry[];
@@ -49,6 +53,7 @@ export default function GameDetailPageClient({
   initialGame,
   initialCards,
   initialCurrentUserId,
+  capabilities,
   initialTeamGoal,
   initialExistingResolutions,
   initialLeaderboardEntries,
@@ -62,26 +67,26 @@ export default function GameDetailPageClient({
     game,
     teamGoal,
     existingResolutions,
-    loadGame,
+    refreshGame,
     isStarting,
     handleStartBingo,
     isEnding,
     handleEndGame,
     isDeleting,
     handleDeleteGame,
+    isLeaving,
+    handleLeaveGame,
   } = useGameActions({ gameId: initialGame.id, initialGame, initialTeamGoal, initialExistingResolutions });
-  const [currentUserId] = useState<string>(initialCurrentUserId);
 
   // Team goal resolution dialog
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
 
-  const isLeader = game.leaderUserId === currentUserId;
-  const leader = game.members.find(m => m.membership.role === 'leader');
+  const can = (permission: GamePermission): boolean => capabilities.includes(permission);
 
   /** Called when team goal is saved via the resolution dialog. */
   const handleGoalSaved = () => {
     setGoalDialogOpen(false);
-    loadGame();
+    refreshGame();
   };
 
   return (
@@ -95,7 +100,7 @@ export default function GameDetailPageClient({
             </CardDescription>
             <CardDescription className="flex items-center gap-2 mt-2">
               <Crown className="h-4 w-4 text-amber-500" />
-              Team Leader: {leader?.user.displayName || leader?.user.username || 'Unknown'}
+              Leaders: {formatLeaderNames(game.members)}
             </CardDescription>
             {game.deadline && (
               <CardDescription className="flex items-center gap-2 mt-2">
@@ -108,54 +113,65 @@ export default function GameDetailPageClient({
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {isLeader && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
-                  <Settings className="h-4 w-4 mr-2" /> Set Goal
-                </Button>
+            {can('game.goal.set') && (
+              <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
+                <Settings className="h-4 w-4 mr-2" /> Set Goal
+              </Button>
+            )}
 
-                {game.status === 'forming' && (
-                  <GameConfigDialog gameId={game.id} deadline={game.deadline} onSaved={loadGame} />
-                )}
+            {can('game.configure') && game.status === 'forming' && (
+              <GameConfigDialog gameId={game.id} deadline={game.deadline} onSaved={refreshGame} />
+            )}
 
-                {game.status !== 'started' && (
-                  <Button onClick={handleStartBingo} disabled={isStarting}>
-                    {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Swords className="h-4 w-4 mr-2" /> Start Bingo
-                  </Button>
-                )}
+            {can('game.start') && game.status !== 'started' && (
+              <Button onClick={handleStartBingo} disabled={isStarting}>
+                {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Swords className="h-4 w-4 mr-2" /> Start Bingo
+              </Button>
+            )}
 
-                {game.status === 'started' && (
-                  <GameActionDialog
-                    triggerLabel="End Game"
-                    triggerIcon={Flag}
-                    triggerVariant="outline"
-                    title="End this game?"
-                    description="The game finishes for everyone and moves to the archive. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
-                    confirmLabel="End Game"
-                    onConfirm={handleEndGame}
-                    isPending={isEnding}
-                  />
-                )}
+            {can('game.end') && game.status === 'started' && (
+              <ConfirmActionDialog
+                triggerLabel="End Game"
+                triggerIcon={Flag}
+                triggerVariant="outline"
+                title="End this game?"
+                description="The game finishes for everyone and moves to the archive. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
+                confirmLabel="End Game"
+                onConfirm={handleEndGame}
+                isPending={isEnding}
+              />
+            )}
 
-                <GameActionDialog
-                  triggerLabel="Delete Game"
-                  triggerIcon={Trash2}
-                  triggerVariant="destructive"
-                  title="Delete this game?"
-                  description="This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone."
-                  confirmLabel="Delete"
-                  onConfirm={handleDeleteGame}
-                  isPending={isDeleting}
-                />
-              </>
+            {can('game.delete') && (
+              <ConfirmActionDialog
+                triggerLabel="Delete Game"
+                triggerIcon={Trash2}
+                triggerVariant="destructive"
+                title="Delete this game?"
+                description="This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone."
+                confirmLabel="Delete"
+                onConfirm={handleDeleteGame}
+                isPending={isDeleting}
+              />
             )}
 
             <ProposeResolutionsDialog
               game={game}
-              currentUserId={currentUserId}
+              currentUserId={initialCurrentUserId}
               existingResolutions={existingResolutions}
-              onReload={loadGame}
+              onReload={refreshGame}
+            />
+
+            <ConfirmActionDialog
+              triggerLabel="Leave Game"
+              triggerIcon={LogOut}
+              triggerVariant="outline"
+              title="Leave this game?"
+              description="Your bingo card, your leaderboard entry and the resolutions written for you in this game will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only leader, promote another player on the team page first."
+              confirmLabel="Leave Game"
+              onConfirm={handleLeaveGame}
+              isPending={isLeaving}
             />
           </div>
         </CardHeader>
@@ -164,7 +180,7 @@ export default function GameDetailPageClient({
         <CardContent>
           <TeamGoalDisplay
             goal={teamGoal}
-            isLeader={isLeader}
+            isLeader={can('game.goal.set')}
             onEdit={() => setGoalDialogOpen(true)}
           />
         </CardContent>
@@ -182,7 +198,7 @@ export default function GameDetailPageClient({
       />
 
       {/* ── Tab navigation ────────────────────────────────────── */}
-      <TeamWsProvider teamId={game.teamId} gameName={game.name}>
+      <TeamWsProvider teamId={game.teamId}>
         <TeamRefreshListener />
         <Tabs defaultValue="cards">
           <TabsList>
@@ -195,12 +211,12 @@ export default function GameDetailPageClient({
             <CardsTab
               game={game}
               initialCards={cards}
-              currentUserId={currentUserId}
+              currentUserId={initialCurrentUserId}
             />
           </TabsContent>
 
           <TabsContent value="members" className="mt-6">
-            <MembersTab members={game.members} currentUserId={currentUserId} />
+            <MembersTab members={game.members} currentUserId={initialCurrentUserId} />
           </TabsContent>
 
           <TabsContent value="leaderboard" className="mt-6">

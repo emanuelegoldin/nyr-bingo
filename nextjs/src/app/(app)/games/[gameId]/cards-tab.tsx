@@ -79,7 +79,7 @@ export function CardsTab({
                   isOwner={isCurrentUser}
                   gameId={game.id}
                   currentUserId={currentUserId}
-                  cardFetchInput={`/api/games/${game.id}/cards?userId=${member.user.userId}`}
+                  cardUserId={member.user.userId}
                 />
               ) : (
                 <p className="text-muted-foreground text-center py-8">

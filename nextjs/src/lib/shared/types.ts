@@ -47,10 +47,17 @@ export enum CellState {
   FAILED = 'failed'
 }
 
+/** Spec: 22-card-shuffle.md - States of a done cell. A card with one cannot be shuffled. */
+export const DONE_CELL_STATES: readonly CellState[] = [
+  CellState.COMPLETED,
+  CellState.PENDING_REVIEW,
+  CellState.ACCOMPLISHED,
+];
+
 // Review thread types
 // Spec: Resolution Review & Proof Workflow
 export enum ThreadStatus {
-  OPEN = 'open', 
+  OPEN = 'open',
   CLOSED = 'closed'
 }
 
@@ -165,8 +172,8 @@ export interface ArchivedCard {
   cells: ArchivedCell[];
 }
 
-/** One line of an archived game's final leaderboard, in rank order. */
-export interface ArchivedLeaderboardEntry {
+/** One line of a game's leaderboard, live or archived. */
+export interface LeaderboardEntry {
   userId: string;
   username: string;
   displayName: string | null;
@@ -177,8 +184,6 @@ export interface ArchivedLeaderboardEntry {
 /** An archived game as listed on the archive page. */
 export interface ArchivedGameSummary {
   id: string;
-  /** The leader who ran the game, who alone can delete it. */
-  leaderUserId: string | null;
   name: string;
   teamName: string;
   endedAt: string;
@@ -186,6 +191,6 @@ export interface ArchivedGameSummary {
 
 /** An archived game with its leaderboard and cards. */
 export interface ArchivedGameDetail extends ArchivedGameSummary {
-  leaderboard: ArchivedLeaderboardEntry[];
+  leaderboard: LeaderboardEntry[];
   cards: ArchivedCard[];
 }

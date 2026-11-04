@@ -1,4 +1,5 @@
 import type { EditOption } from "@/hooks/use-edit-cell-options";
+import { getProviderName } from "@/lib/shared/cell-source";
 import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import { CellSourceType, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,7 @@ interface EditOptionRowProps {
  * its type badge (hidden for base resolutions) and who provided it.
  *
  * @param option - The replacement resolution shown by the row.
- * @param usernames - Team member usernames by user id, used for member-provided options.
+ * @param usernames - The game's player usernames by user id, used for member-provided options.
  * @param isSubmitting - Whether an edit is in flight; disables the row.
  * @param onSelect - Called with the option when the row is clicked.
  * @returns The option row button.
@@ -28,7 +29,7 @@ export const EditOptionRow = ({
   onSelect
 }: EditOptionRowProps) => {
   const isMemberProvided = opt.sourceType === CellSourceType.MEMBER_PROVIDED;
-  const providerName = opt.sourceUserId ? (usernames[opt.sourceUserId] ?? 'Team member') : null;
+  const providerName = opt.sourceUserId ? getProviderName(opt.sourceUserId, usernames) : null;
   const typeLabel = opt.resolutionType === ResolutionType.BASE ? null : RESOLUTION_TYPE_LABELS[opt.resolutionType];
   return (
     <button

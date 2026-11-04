@@ -3,18 +3,16 @@
  * Spec Reference: 16-games.md
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { notifyTeams } from '@/lib/team-signals';
+import { authorizeGameAction } from '@/app/api/games/game-access';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import {
   deleteGame,
   getGameWithMembers,
-  getRunningGame,
   isDeadlinePast,
-  isTeamLeader,
-  isTeamMember,
   setGameDeadline,
 } from '@/lib/db';
-import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
+import { notifyTeams } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Check that a value is a real calendar date written as YYYY-MM-DD.
@@ -37,15 +35,9 @@ export const GET = withAuth(async (
 ) => {
   const { gameId } = await params;
 
-  const game = await getGameWithMembers(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const isMember = await isTeamMember(game.teamId, currentUser.id);
-  if (!isMember) {
-    return errorResponse('You are not a member of this team', 403);
-  }
+  const access = await authorizeGameAction(currentUser, 'game.view', gameId, getGameWithMembers);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   return NextResponse.json({ game });
 });
@@ -60,15 +52,9 @@ export const PATCH = withAuth(async (
 ) => {
   const { gameId } = await params;
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const isLeader = await isTeamLeader(game.teamId, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only the team leader can configure the game', 403);
-  }
+  const access = await authorizeGameAction(currentUser, 'game.configure', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   const { deadline } = await request.json();
   if (deadline !== null && !isCalendarDate(deadline)) {
@@ -99,15 +85,9 @@ export const DELETE = withAuth(async (
 ) => {
   const { gameId } = await params;
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const isLeader = await isTeamLeader(game.teamId, currentUser.id);
-  if (!isLeader) {
-    return errorResponse('Only the team leader can delete the game', 403);
-  }
+  const access = await authorizeGameAction(currentUser, 'game.delete', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   await deleteGame(gameId);
 

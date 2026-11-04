@@ -10,6 +10,7 @@ import {
   CellState,
   JOKER_POSITION,
   ResolutionType,
+  TeamRole,
   type ArchivedCard,
   type ArchivedCell,
   type ArchivedGameDetail,
@@ -18,6 +19,7 @@ import {
 } from '../shared/types';
 import { getBingoCard } from './bingo-card-repository';
 import { execute, query, withTransaction } from './connection';
+import { getGamePlayerIds } from './game-repository';
 import { getGameLeaderboard } from './leaderboard-repository';
 import { parseSubtasks } from './resolution-repository';
 import { getTeamWithMembers } from './team-repository';
@@ -25,7 +27,6 @@ import type { BingoCellWithThread, Game } from './types';
 
 interface ArchivedGameRow extends RowDataPacket {
   id: string;
-  leader_user_id: string | null;
   name: string;
   team_name: string;
   ended_at: Date;
@@ -73,6 +74,7 @@ interface ResolutionProgressRow extends RowDataPacket {
 interface PlayerSnapshot {
   userId: string;
   playerName: string;
+  isLeader: boolean;
   leaderboardRank: number | null;
   completedTasks: number;
   firstBingoAt: Date | null;
@@ -82,7 +84,6 @@ interface PlayerSnapshot {
 function rowToSummary(row: ArchivedGameRow): ArchivedGameSummary {
   return {
     id: row.id,
-    leaderUserId: row.leader_user_id,
     name: row.name,
     teamName: row.team_name,
     endedAt: row.ended_at.toISOString(),
@@ -170,7 +171,8 @@ function snapshotCell(
 }
 
 /**
- * Read an ended game into plain values. Its players are the members with a card.
+ * Read an ended game into plain values. Its players are the roster members with a card. A
+ * member-provided cell whose author is no longer a player is labelled "Former Teammates".
  * @param game The ended game
  * @returns One snapshot per player
  */
@@ -180,11 +182,13 @@ async function buildPlayerSnapshots(game: Game): Promise<PlayerSnapshot[]> {
     throw new Error(`Team not found for game ${game.id}`);
   }
 
-  const usernames = Object.fromEntries(team.members.map((m) => [m.user.userId, m.user.username]));
+  const rosterIds = new Set(await getGamePlayerIds(game.id));
+  const roster = team.members.filter((member) => rosterIds.has(member.user.userId));
+  const usernames = Object.fromEntries(roster.map((m) => [m.user.userId, m.user.username]));
   const progress = await getResolutionProgress(game.id);
 
   const cards = await Promise.all(
-    team.members.map(async (member) => ({
+    roster.map(async (member) => ({
       member,
       card: await getBingoCard(game.id, member.user.userId),
     }))
@@ -202,6 +206,7 @@ async function buildPlayerSnapshots(game: Game): Promise<PlayerSnapshot[]> {
     return {
       userId,
       playerName: member.user.displayName || member.user.username,
+      isLeader: member.membership.role === TeamRole.LEADER,
       leaderboardRank: rankIndex >= 0 ? rankIndex + 1 : null,
       completedTasks: entry?.completedTasks ?? 0,
       firstBingoAt: entry?.firstBingoAt ? new Date(entry.firstBingoAt) : null,
@@ -232,18 +237,18 @@ export async function archiveGame(game: Game): Promise<boolean> {
 
   await withTransaction(async (connection) => {
     await execute(
-      `INSERT INTO archived_games (id, leader_user_id, name, team_name, ended_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [game.id, game.leaderUserId, game.name, game.teamName, game.endedAt ?? game.updatedAt],
+      `INSERT INTO archived_games (id, name, team_name, ended_at)
+       VALUES (?, ?, ?, ?)`,
+      [game.id, game.name, game.teamName, game.endedAt ?? game.updatedAt],
       connection
     );
 
     for (const player of players) {
       await execute(
         `INSERT INTO archived_game_players
-           (archived_game_id, user_id, player_name, leaderboard_rank, completed_tasks, first_bingo_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [game.id, player.userId, player.playerName, player.leaderboardRank, player.completedTasks, player.firstBingoAt],
+           (archived_game_id, user_id, player_name, is_leader, leaderboard_rank, completed_tasks, first_bingo_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [game.id, player.userId, player.playerName, player.isLeader, player.leaderboardRank, player.completedTasks, player.firstBingoAt],
         connection
       );
 
@@ -425,20 +430,6 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
       })),
     cards: await getArchivedCards(id, players),
   };
-}
-
-/**
- * Check whether a user took part in an archived game.
- * @param id The archived game
- * @param userId The user
- * @returns True if the user is one of its players
- */
-export async function isArchivedGamePlayer(id: string, userId: string): Promise<boolean> {
-  const rows = await query<RowDataPacket[]>(
-    `SELECT user_id FROM archived_game_players WHERE archived_game_id = ? AND user_id = ?`,
-    [id, userId]
-  );
-  return rows.length > 0;
 }
 
 /**

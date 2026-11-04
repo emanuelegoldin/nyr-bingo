@@ -3,7 +3,7 @@
  * Spec Reference: Resolution Review & Proof Workflow - Voting Rules
  */
 
-import { threadErrorStatus } from '@/app/api/threads/error-status';
+import { authorizeThreadAction } from '@/app/api/threads/thread-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyThread, notifyThreadClosed } from '@/lib/team-signals';
 import { submitVote } from '@/lib/db';
@@ -12,7 +12,7 @@ import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
  * POST /api/threads/[threadId]/vote - Submit or update a vote
- * All team members except the completing user can vote
+ * All players of the game except the completing user can vote
  */
 export const POST = withAuth(async (request: NextRequest, { params, currentUser }: AuthContext<{ threadId: string }>) => {
     const { threadId } = await params;
@@ -23,9 +23,12 @@ export const POST = withAuth(async (request: NextRequest, { params, currentUser 
     if (!vote || !['accept', 'deny'].includes(vote)) {
       return errorResponse('Vote must be "accept" or "deny"', 400);
     }
+    const access = await authorizeThreadAction(currentUser, 'thread.vote', threadId);
+    if ('response' in access) return access.response;
+
     const result = await submitVote(threadId, currentUser.id, vote as VoteType);
     if (!result.success) {
-      return errorResponse(result.error!, threadErrorStatus(result.error!));
+      return errorResponse(result.error, result.status);
     }
 
     await (result.threadClosed ? notifyThreadClosed : notifyThread)(threadId);

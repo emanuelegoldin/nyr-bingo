@@ -78,9 +78,9 @@ Manual entry content must be non-empty text.
 
 - Owner can always view the history of their own resolution.
 - For `scope = team`, `scope = member_provided` and `scope = prepared` resolutions:
-  - Team members of the associated team can view history.
+  - Players of the associated game (spec 16) can view history. Without a game, team members of the associated team can.
 - For `scope = personal` resolutions:
-  - A user can view history only if the resolution appears in at least one bingo card of a team they belong to.
+  - A user can view history only if the resolution appears in at least one bingo card of a game they play.
 - Anyone else receives `403`.
 
 ### 4) Sharing Policy
@@ -117,6 +117,8 @@ A failure to log an event does not fail the action that produced it.
 ---
 
 ## Permissions
+
+The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
 
 - Auth required for all resolution history APIs.
 - Write allowed only under the table in section 2.

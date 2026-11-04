@@ -4,14 +4,14 @@
  */
 
 import { CellSourceType, CellState, GameStatus, ResolutionType } from '../shared/types';
-import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
+import { CellRow, getResolvedCellRowById, rowToCell, SELECT_CELL_WITH_RESOLVED_TEXT } from './bingo-card-rows';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getResolutionById } from './resolution-repository';
 import { removeThreadFiles } from './review-file-repository';
 import { BingoCell, Resolution } from './types';
 
-interface OwnedCellRow {
+interface CardCellRow {
   card_id: string;
   is_empty: boolean | number;
   resolution_type: ResolutionType;
@@ -61,18 +61,26 @@ function canPlaceResolution(
 }
 
 /**
- * Load a cell for a change only its card owner may make.
+ * Find the owner of the card a cell is on.
+ * Spec: 21-authorization.md - Resource Rules (Ownership)
+ * @param cellId The cell
+ * @returns The card owner's id, or null when the cell does not exist
+ */
+export async function getCellCardOwnerId(cellId: string): Promise<string | null> {
+  const rows = await query<Array<{ user_id: string }>>(
+    `SELECT bc.user_id FROM bingo_cells c JOIN bingo_cards bc ON c.card_id = bc.id WHERE c.id = ?`,
+    [cellId]
+  );
+  return rows.length > 0 ? rows[0].user_id : null;
+}
+
+/**
+ * Load a cell for a change by its card owner. The route checks ownership.
  * @param cellId The cell to load
- * @param userId The user making the change
- * @param notOwnerError The error to report when the user does not own the card
  * @returns The cell, or the error explaining why it cannot be changed
  */
-async function loadOwnedCell(
-  cellId: string,
-  userId: string,
-  notOwnerError: string
-): Promise<{ cell: OwnedCellRow } | { error: string }> {
-  const rows = await query<OwnedCellRow[]>(
+async function loadCardCell(cellId: string): Promise<{ cell: CardCellRow } | { error: string }> {
+  const rows = await query<CardCellRow[]>(
     `SELECT c.card_id, c.is_empty, c.resolution_type, c.source_type, c.state, bc.user_id as card_user_id, bc.game_id, g.status as game_status
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
@@ -85,8 +93,9 @@ async function loadOwnedCell(
     return { error: 'Cell not found' };
   }
 
-  if (rows[0].card_user_id !== userId) {
-    return { error: notOwnerError };
+  // Spec: 16-games.md - Ending a Game
+  if (rows[0].game_status === GameStatus.ENDED) {
+    return { error: 'This game has ended' };
   }
 
   // Spec: 16-games.md - Ending a Game
@@ -98,12 +107,14 @@ async function loadOwnedCell(
 }
 
 /**
- * Update cell state
+ * Update a cell's state on behalf of its card owner (the route checks ownership).
  * Spec: 06-bingo-gameplay.md - Card State
+ * @param cellId The cell
+ * @param newState pending, completed or failed
+ * @returns The updated cell, or the error
  */
 export async function updateCellState(
   cellId: string,
-  userId: string,
   newState: CellState
 ): Promise<{ success: boolean; error?: string; cell?: BingoCell }> {
   // Spec: 05-bingo-card-generation.md, 06-bingo-gameplay.md - Joker is implicit and not modifiable.
@@ -111,8 +122,7 @@ export async function updateCellState(
     return { success: false, error: 'Joker cell cannot be modified' };
   }
 
-  // Spec: 06-bingo-gameplay.md - Only the card owner can change their card's cell states
-  const owned = await loadOwnedCell(cellId, userId, 'Only the card owner can update cell state');
+  const owned = await loadCardCell(cellId);
   if ('error' in owned) {
     return { success: false, error: owned.error };
   }
@@ -150,7 +160,7 @@ export async function updateCellState(
   }
 
   // Refresh persisted leaderboard data after state change
-  await refreshLeaderboardEntry(cell.game_id, userId);
+  await refreshLeaderboardEntry(cell.game_id, cell.card_user_id);
 
   const updatedRow = await getResolvedCellRowById(cellId);
   if (!updatedRow) {
@@ -160,9 +170,15 @@ export async function updateCellState(
   return { success: true, cell: rowToCell(updatedRow) };
 }
 
+/**
+ * Replace a cell's content on behalf of its card owner (the route checks ownership).
+ * Spec: 09-bingo-card-editing.md - Persisting a Cell Edit
+ * @param cellId The cell
+ * @param update The new source and resolution
+ * @returns The updated cell, or the error
+ */
 export async function updateCellContent(
   cellId: string,
-  userId: string,
   update: {
     resolutionId: string | null;
     sourceType: Exclude<CellSourceType, CellSourceType.TEAM | CellSourceType.PREPARED>;
@@ -180,8 +196,7 @@ export async function updateCellContent(
     return { success: false, error: 'resolutionId is required for personal/member_provided cells' };
   }
 
-  // Get the cell (and card owner) for authorization and joker protection
-  const owned = await loadOwnedCell(cellId, userId, 'Only the card owner can edit cell content');
+  const owned = await loadCardCell(cellId);
   if ('error' in owned) {
     return { success: false, error: owned.error };
   }
@@ -208,7 +223,7 @@ export async function updateCellContent(
 
   if (referencesResolution) {
     const resolution = await getResolutionById(update.resolutionId as string);
-    if (!resolution || !canPlaceResolution(resolution, update.sourceType, userId, owned.cell.game_id)) {
+    if (!resolution || !canPlaceResolution(resolution, update.sourceType, owned.cell.card_user_id, owned.cell.game_id)) {
       return { success: false, error: 'This resolution cannot be placed on this card' };
     }
 
@@ -242,7 +257,7 @@ export async function updateCellContent(
   }
 
   // The edit resets the state to pending, which can undo a completion or a bingo
-  await refreshLeaderboardEntry(owned.cell.game_id, userId);
+  await refreshLeaderboardEntry(owned.cell.game_id, owned.cell.card_user_id);
 
   const updatedRow = await getResolvedCellRowById(cellId);
   if (!updatedRow) {
@@ -253,15 +268,16 @@ export async function updateCellContent(
 }
 
 /**
- * Undo completion or failure - revert cell to pending and close any open thread
+ * Undo completion or failure - revert cell to pending and close any open thread.
+ * The route checks that the caller owns the card.
  * Spec: Resolution Review & Proof Workflow - Undo Completion
+ * @param cellId The cell
+ * @returns The updated cell, or the error
  */
 export async function undoCompletion(
-  cellId: string,
-  userId: string
+  cellId: string
 ): Promise<{ success: boolean; error?: string; cell?: BingoCell }> {
-  // Only the card owner can undo completion
-  const owned = await loadOwnedCell(cellId, userId, 'Only the card owner can undo completion');
+  const owned = await loadCardCell(cellId);
   if ('error' in owned) {
     return { success: false, error: owned.error };
   }
@@ -329,7 +345,7 @@ export async function undoCompletion(
   }
 
   // Refresh persisted leaderboard data after undo
-  await refreshLeaderboardEntry(cell.game_id, userId);
+  await refreshLeaderboardEntry(cell.game_id, cell.card_user_id);
 
   const updatedRow = await getResolvedCellRowById(cellId);
   if (!updatedRow) {
@@ -371,34 +387,35 @@ export async function autoTransitionCellState(
     return [];
   }
 
-  const updatedCells: BingoCell[] = [];
-
-  for (const cellRow of cellRows) {
-    let newState: CellState | null = null;
-
-    if (isComplete && (cellRow.state === CellState.PENDING || cellRow.state === CellState.FAILED)) {
-      // Auto-complete: pending or failed → completed
-      newState = CellState.COMPLETED;
-    } else if (!isComplete && cellRow.state === CellState.COMPLETED) {
-      // Auto-revert: completed → pending
-      newState = CellState.PENDING;
-    }
-
-    if (newState) {
-      await query(
-        `UPDATE bingo_cells SET state = ? WHERE id = ? AND state = ?`,
-        [newState, cellRow.id, cellRow.state]
-      );
-
-      // Refresh leaderboard for this user/game
-      await refreshLeaderboardEntry(cellRow.game_id, cellRow.user_id);
-
-      const updatedRow = await getResolvedCellRowById(cellRow.id);
-      if (updatedRow) {
-        updatedCells.push(rowToCell(updatedRow));
-      }
-    }
+  // Auto-complete: pending or failed → completed. Auto-revert: completed → pending.
+  const [fromStates, newState] = isComplete
+    ? [[CellState.PENDING, CellState.FAILED], CellState.COMPLETED]
+    : [[CellState.COMPLETED], CellState.PENDING];
+  const changedRows = cellRows.filter((row) => fromStates.includes(row.state));
+  if (changedRows.length === 0) {
+    return [];
   }
 
-  return updatedCells;
+  const ids = changedRows.map((row) => row.id);
+  const idPlaceholders = ids.map(() => '?').join(', ');
+  await query(
+    `UPDATE bingo_cells SET state = ?
+     WHERE id IN (${idPlaceholders}) AND state IN (${fromStates.map(() => '?').join(', ')})`,
+    [newState, ...ids, ...fromStates]
+  );
+
+  // One leaderboard refresh per card owner, and one read of the changed cells
+  const owners = new Map(changedRows.map((row) => [`${row.game_id}:${row.user_id}`, row]));
+  const [updatedRows] = await Promise.all([
+    query<CellRow[]>(
+      `${SELECT_CELL_WITH_RESOLVED_TEXT}
+       WHERE c.id IN (${idPlaceholders})`,
+      ids
+    ),
+    ...[...owners.values()].map((row) => refreshLeaderboardEntry(row.game_id, row.user_id)),
+  ]);
+
+  // Keep the order in which the cells were found
+  const updatedById = new Map(updatedRows.map((row) => [row.id, rowToCell(row)]));
+  return ids.flatMap((id) => updatedById.get(id) ?? []);
 }

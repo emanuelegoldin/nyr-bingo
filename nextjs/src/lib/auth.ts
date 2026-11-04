@@ -41,11 +41,3 @@ export async function requireUser(): Promise<User> {
   }
   return currentUser;
 }
-
-/**
- * Check if user is verified
- * Returns true if user has verified their email
- */
-export function isUserVerified(user: User): boolean {
-  return user.emailVerifiedAt !== null;
-}

@@ -7,9 +7,10 @@
 
 import { PageSpinner } from '@/components/page-spinner';
 import type { GameListItem } from '@/components/team/game-list';
-import type { Team } from '@/components/team/types';
+import { toTeamMember, type Team } from '@/components/team/types';
 import { requireUser } from '@/lib/auth';
-import { getRunningGamesForTeam, getTeamWithMembers, isTeamMember, type TeamWithMembers } from '@/lib/db';
+import { getTeamCapabilities, requirePagePermission } from '@/lib/authz';
+import { getRunningGamesForTeam, getTeamWithMembers, type TeamWithMembers } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import TeamPageClient from './team-page-client';
@@ -22,38 +23,19 @@ function mapTeam(team: TeamWithMembers): Team {
   return {
     id: team.id,
     name: team.name,
-    leaderUserId: team.leaderUserId,
-    members: team.members.map((member) => ({
-      membership: {
-        id: member.membership.id,
-        teamId: member.membership.teamId,
-        userId: member.membership.userId,
-        role: member.membership.role,
-        joinedAt: new Date(member.membership.joinedAt).toISOString(),
-      },
-      user: {
-        id: member.user.id,
-        userId: member.user.userId,
-        username: member.user.username,
-        displayName: member.user.displayName,
-        bio: member.user.bio,
-        avatarUrl: member.user.avatarUrl,
-      },
-    })),
+    members: team.members.map(toTeamMember),
   };
 }
 
 async function TeamContent({ teamId }: { teamId: string }) {
   const currentUser = await requireUser();
 
-  const member = await isTeamMember(teamId, currentUser.id);
-  if (!member) {
-    notFound();
-  }
+  await requirePagePermission(currentUser, 'team.view', { scope: 'team', teamId });
 
-  const [team, games] = await Promise.all([
+  const [team, games, capabilities] = await Promise.all([
     getTeamWithMembers(teamId),
-    getRunningGamesForTeam(teamId),
+    getRunningGamesForTeam(teamId, currentUser.id),
+    getTeamCapabilities(currentUser, teamId),
   ]);
   if (!team) {
     notFound();
@@ -66,7 +48,14 @@ async function TeamContent({ teamId }: { teamId: string }) {
     status,
   }));
 
-  return <TeamPageClient team={mapTeam(team)} games={gameItems} currentUserId={currentUser.id} />;
+  return (
+    <TeamPageClient
+      team={mapTeam(team)}
+      games={gameItems}
+      currentUserId={currentUser.id}
+      capabilities={capabilities}
+    />
+  );
 }
 
 export default async function TeamPage({ params }: TeamPageProps) {
