@@ -162,24 +162,22 @@ export async function getThreadDetails(thread: ReviewThread): Promise<ReviewThre
     return null;
   }
 
-  // Get messages
-  const messages = await query<MessageAndUsernameRow[]>(
-    `${SELECT_MESSAGE_WITH_AUTHOR}
-     WHERE msg.thread_id = ? ORDER BY msg.created_at ASC`,
-    [threadId]
-  );
-
-  // Get files
-  const fileRows = await query<FileRow[]>(
-    `SELECT * FROM review_files WHERE thread_id = ? ORDER BY created_at ASC`,
-    [threadId]
-  );
-
-  // Get votes
-  const voteRows = await query<VoteRow[]>(
-    `SELECT * FROM review_votes WHERE thread_id = ? ORDER BY created_at ASC`,
-    [threadId]
-  );
+  // Messages, files and votes are independent reads
+  const [messages, fileRows, voteRows] = await Promise.all([
+    query<MessageAndUsernameRow[]>(
+      `${SELECT_MESSAGE_WITH_AUTHOR}
+       WHERE msg.thread_id = ? ORDER BY msg.created_at ASC`,
+      [threadId]
+    ),
+    query<FileRow[]>(
+      `SELECT * FROM review_files WHERE thread_id = ? ORDER BY created_at ASC`,
+      [threadId]
+    ),
+    query<VoteRow[]>(
+      `SELECT * FROM review_votes WHERE thread_id = ? ORDER BY created_at ASC`,
+      [threadId]
+    ),
+  ]);
 
   return {
     ...thread,

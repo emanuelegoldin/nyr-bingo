@@ -234,6 +234,7 @@ export const ResolutionCell = ({
                         reviewThreadId: cell.reviewThreadId ? cell.reviewThreadId : ""
                     }}
                     isOwner={isOwner}
+                    currentUserId={currentUserId}
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}
                     onRefresh={onRefresh} />
