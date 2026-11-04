@@ -42,7 +42,7 @@ Let a card owner rearrange the cells of their bingo card at random until they ar
 ### Shuffle
 
 - A shuffle gives the 24 stored cells of the card a new random arrangement over the non-center positions. The Joker stays at position 12.
-- Every stored cell moves, including the team goal cell, empty cells and `failed` cells.
+- Every stored cell takes part in the shuffle, including the team goal cell, empty cells and `failed` cells. A cell may land on its old position.
 - A cell keeps its id, content, state, review threads and `updated_at`. Only its `position` changes.
 - A card can be shuffled any number of times while it is unlocked and has no done cell. Bingo lines depend on positions (spec 12), so a done cell must not be moved into a line.
 
