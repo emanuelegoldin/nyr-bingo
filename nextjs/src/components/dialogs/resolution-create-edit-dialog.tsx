@@ -126,8 +126,6 @@ export const ResolutionCreateEditDialog = ({
 
   const [isSaving, setIsSaving] = useState(false);
 
-  /** Original type (for detecting type changes on edit). */
-
   const canSave = () => {
     if (!title.trim()) return false;
     if (type === "compound" && subtasks.length === 0) return false;

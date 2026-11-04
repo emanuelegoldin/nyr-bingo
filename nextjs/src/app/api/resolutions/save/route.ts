@@ -182,11 +182,10 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
   }
 
   // ── UPDATE (with id) ───────────────────────────────────────
-  // Verify ownership of existing resolution
-  const ownerErr = await verifyOwnership(id, currentUser.id);
-  if (ownerErr) return ownerErr;
+  const owned = await loadOwnedResolution(id, currentUser.id);
+  if ('response' in owned) return owned.response;
 
-  const existing = (await getResolutionById(id))!;
+  const existing = owned.resolution;
   if (await isResolutionFrozen(existing)) {
     return errorResponse('This game has ended', 400);
   }
@@ -195,6 +194,13 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
 });
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
+
+/** History entry logged after a successful save. */
+interface SaveEvent {
+  key: string;
+  content: string;
+  metadata: Record<string, unknown>;
+}
 
 /**
  * Update a resolution, comparing the submitted type with the stored one.
@@ -207,31 +213,44 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
 async function updateExisting(existing: Resolution, userId: string, content: ResolutionContent) {
   // Same type → simple update
   if (existing.resolutionType === content.type) {
-    return handleSameTypeUpdate(existing.id, userId, content);
+    await updateResolutionContent(existing.id, userId, content);
+    return respondWithSaved(existing.id, userId, {
+      key: 'resolution.updated',
+      content: `Updated ${content.type} resolution`,
+      metadata: { type: content.type, title: content.title },
+    });
   }
 
   // Type changed → atomic update of the resolution and its cells
-  return handleTypeChange(existing.id, userId, existing.resolutionType, content);
+  await changeResolutionType(existing.id, userId, content);
+  return respondWithSaved(existing.id, userId, {
+    key: 'resolution.type_changed',
+    content: `Changed resolution type from ${existing.resolutionType} to ${content.type}`,
+    metadata: { oldType: existing.resolutionType, newType: content.type, title: content.title },
+  });
 }
 
 /**
- * Check that a resolution exists and belongs to the user saving it.
+ * Load a resolution and check that it belongs to the user saving it.
  * Spec: 21-authorization.md - Resource Rules (Ownership)
  *
  * @param id - The resolution to update.
  * @param userId - The user saving it.
- * @returns The error response to return, or null when the user owns it.
+ * @returns The resolution, or the 404/403 response to return.
  */
-async function verifyOwnership(id: string, userId: string): Promise<NextResponse | null> {
-  const existing = await getResolutionById(id);
+async function loadOwnedResolution(
+  id: string,
+  userId: string
+): Promise<{ resolution: Resolution } | { response: NextResponse }> {
+  const resolution = await getResolutionById(id);
 
-  if (!existing) {
-    return errorResponse('Resolution not found', 404);
+  if (!resolution) {
+    return { response: errorResponse('Resolution not found', 404) };
   }
-  if (!isResolutionOwner(existing, userId)) {
-    return errorResponse('You can only modify your own resolutions', 403);
+  if (!isResolutionOwner(resolution, userId)) {
+    return { response: errorResponse('You can only modify your own resolutions', 403) };
   }
-  return null;
+  return { resolution };
 }
 
 /**
@@ -250,53 +269,30 @@ async function handleCreate(
     gameId: game?.id,
     toUserId,
   });
-  const saved = await getResolutionById(id);
-  await notifyResolution(id);
 
-  await logResolutionHistoryEventSafe(
-    id,
-    userId,
-    'resolution.created',
-    `Created ${content.type} resolution`,
-    {
+  return respondWithSaved(id, userId, {
+    key: 'resolution.created',
+    content: `Created ${content.type} resolution`,
+    metadata: {
       type: content.type,
       scope,
       teamId: game?.teamId ?? null,
       gameId: game?.id ?? null,
       toUserId: toUserId || null,
     },
-  );
-
-  return NextResponse.json({ resolution: toUnifiedResolution(saved!) }, { status: 201 });
+  }, 201);
 }
 
 /**
- * Update a resolution without changing type.
+ * Signal a saved resolution, log its history entry and return it.
+ *
+ * @param id - The saved resolution.
+ * @param userId - The user who saved it.
+ * @param event - The history entry to log.
+ * @param status - HTTP status of the response.
+ * @returns The saved resolution in the unified shape, or 500 when it cannot be read back.
  */
-async function handleSameTypeUpdate(id: string, userId: string, content: ResolutionContent) {
-  await updateResolutionContent(id, userId, content);
-  const saved = await getResolutionById(id);
-  await notifyResolution(id);
-
-  await logResolutionHistoryEventSafe(
-    id,
-    userId,
-    'resolution.updated',
-    `Updated ${content.type} resolution`,
-    {
-      type: content.type,
-      title: content.title,
-    },
-  );
-
-  return NextResponse.json({ resolution: toUnifiedResolution(saved!) });
-}
-
-/**
- * Change resolution type: update the single resolutions row and any bingo_cells referencing it.
- */
-async function handleTypeChange(id: string, userId: string, oldType: string, content: ResolutionContent) {
-  await changeResolutionType(id, userId, content);
+async function respondWithSaved(id: string, userId: string, event: SaveEvent, status = 200) {
   const saved = await getResolutionById(id);
   await notifyResolution(id);
 
@@ -304,17 +300,7 @@ async function handleTypeChange(id: string, userId: string, oldType: string, con
     return errorResponse('Failed to save resolution', 500);
   }
 
-  await logResolutionHistoryEventSafe(
-    id,
-    userId,
-    'resolution.type_changed',
-    `Changed resolution type from ${oldType} to ${content.type}`,
-    {
-      oldType,
-      newType: content.type,
-      title: content.title,
-    },
-  );
+  await logResolutionHistoryEventSafe(id, userId, event.key, event.content, event.metadata);
 
-  return NextResponse.json({ resolution: toUnifiedResolution(saved) });
+  return NextResponse.json({ resolution: toUnifiedResolution(saved) }, { status });
 }
