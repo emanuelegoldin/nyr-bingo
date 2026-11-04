@@ -1,5 +1,5 @@
 import { apiFetch, toastApiError } from "@/lib/api-client";
-import { BingoCardWithCells } from "@/lib/db/types";
+import type { BingoCell, BingoCardWithCells } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
 import { useCallback, useEffect, useState } from "react";
@@ -48,14 +48,20 @@ export function BingoCardContent(
     async (cellId: string, newState: 'pending' | 'completed' | 'failed') => {
       const result =
         newState === 'pending'
-          ? await apiFetch<unknown>(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
-          : await apiFetch<unknown>(`/api/cells/${cellId}`, {
+          ? await apiFetch<{ cell: BingoCell }>(`/api/cells/${cellId}/undo-complete`, { method: 'POST' })
+          : await apiFetch<{ cell: BingoCell }>(`/api/cells/${cellId}`, {
             method: 'PUT',
             json: { state: newState },
           });
 
       if (result.ok) {
-        await reloadCard();
+        // Patch the returned cell; the refresh signalled over WebSocket brings the rest.
+        // These actions never open or close a review thread, so it is kept.
+        const updated = result.data.cell;
+        setCard((current) => ({
+          ...current,
+          cells: current.cells.map((cell) => (cell.id === updated.id ? { ...cell, ...updated } : cell)),
+        }));
         return;
       }
 
