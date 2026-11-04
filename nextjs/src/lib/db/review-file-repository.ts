@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { query } from './connection';
-import { FileRow, loadOpenThread, rowToFile } from './review-thread-rows';
+import { FileRow, loadOpenThread, rowToFile, ThreadFailure } from './review-thread-rows';
 import type { ReviewFile } from './types';
 
 interface ThreadFilePathRow {
@@ -16,30 +16,31 @@ interface ThreadFilePathRow {
 }
 
 /**
- * Check that a user may upload proof files to a thread.
- * Spec: Only completing user can upload files, and only while the thread is open
+ * Check that a thread accepts proof files: it must exist and be open.
+ * The route checks that the uploader is the completing user (spec 21 - Resource Rules).
  *
  * @param threadId - The thread being uploaded to.
- * @param uploadingUserId - The user uploading the file.
- * @returns An error message, or null when the upload is allowed.
+ * @returns The error and its HTTP status, or null when the upload is allowed.
  */
-export async function getFileUploadError(
-  threadId: string,
-  uploadingUserId: string
-): Promise<string | null> {
+export async function getFileUploadError(threadId: string): Promise<ThreadFailure | null> {
   const loaded = await loadOpenThread(threadId);
   if ('error' in loaded) {
-    return loaded.error;
-  }
-  if (loaded.thread.completedByUserId !== uploadingUserId) {
-    return 'Only the completing user can upload proof files';
+    return { success: false, error: loaded.error, status: loaded.status };
   }
   return null;
 }
 
 /**
- * Upload file to thread
- * Spec: Only completing user can upload files
+ * Record a proof file on an open thread.
+ * Spec: 07-proof-and-approval.md - Proof Submission
+ *
+ * @param threadId - The thread.
+ * @param uploadingUserId - The completing user, checked by the route.
+ * @param filePath - Public path of the stored file.
+ * @param fileSize - Size in bytes.
+ * @param fileName - Original file name.
+ * @param mimeType - MIME type, if known.
+ * @returns The file, or the error and its HTTP status.
  */
 export async function uploadFile(
   threadId: string,
@@ -48,17 +49,17 @@ export async function uploadFile(
   fileSize: number,
   fileName: string,
   mimeType?: string
-): Promise<{ success: boolean; file?: ReviewFile; error?: string }> {
+): Promise<{ success: true; file: ReviewFile } | ThreadFailure> {
   // Validate file size (max 5MB)
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
   if (fileSize > MAX_FILE_SIZE) {
-    return { success: false, error: 'File size exceeds 5MB limit' };
+    return { success: false, error: 'File size exceeds 5MB limit', status: 400 };
   }
 
   // Repeated here because the thread can close while the route stores the file
-  const uploadError = await getFileUploadError(threadId, uploadingUserId);
+  const uploadError = await getFileUploadError(threadId);
   if (uploadError) {
-    return { success: false, error: uploadError };
+    return uploadError;
   }
 
   const fileId = randomUUID();
@@ -77,21 +78,20 @@ export async function uploadFile(
 }
 
 /**
- * Delete a previously uploaded file from an open thread
- * Spec: only the completing user can delete a proof file
+ * Delete a previously uploaded file from an open thread.
+ * The route checks that the caller is the completing user (spec 21 - Resource Rules).
+ *
+ * @param threadId - The thread.
+ * @param fileId - The file to delete.
+ * @returns Success, or the error and its HTTP status.
  */
 export async function deleteThreadFile(
   threadId: string,
-  deletingUserId: string,
   fileId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: true } | ThreadFailure> {
   const loaded = await loadOpenThread(threadId);
   if ('error' in loaded) {
-    return { success: false, error: loaded.error };
-  }
-
-  if (loaded.thread.completedByUserId !== deletingUserId) {
-    return { success: false, error: 'Only the completing user can delete proof files' };
+    return { success: false, error: loaded.error, status: loaded.status };
   }
 
   const fileRows = await query<ThreadFilePathRow[]>(
@@ -100,7 +100,7 @@ export async function deleteThreadFile(
   );
 
   if (fileRows.length === 0) {
-    return { success: false, error: 'File not found' };
+    return { success: false, error: 'File not found', status: 404 };
   }
 
   const file = fileRows[0];

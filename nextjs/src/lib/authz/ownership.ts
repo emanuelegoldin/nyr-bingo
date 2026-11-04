@@ -53,12 +53,3 @@ export function isThreadCompleter(thread: Pick<ReviewThread, 'completedByUserId'
   return thread.completedByUserId === userId;
 }
 
-/**
- * Whether a player may vote on a thread: anyone but the completing user.
- * @param thread The review thread
- * @param userId The player
- * @returns True if the player may vote
- */
-export function canVoteOnThread(thread: Pick<ReviewThread, 'completedByUserId'>, userId: string): boolean {
-  return !isThreadCompleter(thread, userId);
-}

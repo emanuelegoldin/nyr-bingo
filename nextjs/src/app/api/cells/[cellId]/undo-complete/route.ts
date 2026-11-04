@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { notifications } from '@/lib/notifications';
 import { notifyCell } from '@/lib/team-signals';
 import { undoCompletion } from '@/lib/db';
+import { requireCardOwner } from '../../card-owner';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
@@ -18,7 +19,10 @@ export const POST = withAuth(async (
   { params, currentUser }: AuthContext<{ cellId: string }>
 ) => {
   const { cellId } = await params;
-  const result = await undoCompletion(cellId, currentUser.id);
+  const denied = await requireCardOwner(currentUser, cellId, 'Only the card owner can undo completion');
+  if (denied) return denied;
+
+  const result = await undoCompletion(cellId);
   if (!result.success) {
     return errorResponse(result.error, 400);
   }

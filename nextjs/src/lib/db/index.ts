@@ -22,5 +22,6 @@ export * from './resolution-history-repository';
 export * from './resolution-repository';
 export { deleteThreadFile, getFileUploadError, uploadFile } from './review-file-repository';
 export * from './review-thread-repository';
+export { loadThread, type ThreadFailure } from './review-thread-rows';
 export * from './team-repository';
 export * from './user-repository';

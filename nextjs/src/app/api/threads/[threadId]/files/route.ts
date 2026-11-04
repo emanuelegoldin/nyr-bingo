@@ -3,7 +3,7 @@
  * Spec Reference: Resolution Review & Proof Workflow - Thread Capabilities (max 5MB per file)
  */
 
-import { threadErrorStatus } from '@/app/api/threads/error-status';
+import { authorizeThreadCompleter } from '@/app/api/threads/thread-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyThread } from '@/lib/team-signals';
 import { deleteThreadFile, getFileUploadError, uploadFile } from '@/lib/db';
@@ -64,9 +64,11 @@ export const POST = withAuth(async (
   const { threadId } = await params;
 
   // Authorize first, so a rejected upload never reaches the disk
-  const uploadError = await getFileUploadError(threadId, currentUser.id);
+  const access = await authorizeThreadCompleter(currentUser, threadId, 'Only the completing user can upload proof files');
+  if ('response' in access) return access.response;
+  const uploadError = await getFileUploadError(threadId);
   if (uploadError) {
-    return errorResponse(uploadError, threadErrorStatus(uploadError));
+    return errorResponse(uploadError.error, uploadError.status);
   }
 
   const contentType = request.headers.get('content-type') || '';
@@ -117,7 +119,7 @@ export const POST = withAuth(async (
   );
 
   if (!result.success) {
-    return errorResponse(result.error, threadErrorStatus(result.error!));
+    return errorResponse(result.error, result.status);
   }
 
   await notifyThread(threadId);
@@ -141,9 +143,12 @@ export const DELETE = withAuth(async (
     return errorResponse('File ID is required', 400);
   }
 
-  const result = await deleteThreadFile(threadId, currentUser.id, fileId);
+  const access = await authorizeThreadCompleter(currentUser, threadId, 'Only the completing user can delete proof files');
+  if ('response' in access) return access.response;
+
+  const result = await deleteThreadFile(threadId, fileId);
   if (!result.success) {
-    return errorResponse(result.error, threadErrorStatus(result.error!));
+    return errorResponse(result.error, result.status);
   }
 
   await notifyThread(threadId);

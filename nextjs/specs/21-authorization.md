@@ -77,7 +77,7 @@ Where they are used:
 - `team.view`: the team route `GET /api/teams/[teamId]`, the team's game list `GET /api/teams/[teamId]/games` and the team page.
 - `game.view`: every read under `/api/games/[gameId]` (the game, its cards, goal and resolutions) and the game page.
 - `game.propose`: saving a member-provided resolution (spec 16). The target must also be a player of the game.
-- `thread.*`: a cell's or thread's game is resolved first, and the role is the caller's role in that game (spec 07).
+- `thread.*`: a cell's or thread's game is resolved first, and the role is the caller's role in that game (spec 07). The game is resolved whatever its status; what an ended game's cells and threads allow is a game status rule (spec 16).
 - `game.goal.set`: saving the team goal of a game (spec 16).
 
 Lists of the caller's own teams, games, archived games, resolutions and notifications (`GET /api/teams`, `/api/games`, `/api/archived-games`, the dashboard) only return the caller's own data and need no permission.
@@ -93,7 +93,6 @@ Some actions depend on who owns a record, not on a role. They apply on top of th
 - **Resolution history:** read and write access as defined in spec 13 (History Visibility, Manual Entry Creation).
 - **Cell complete, undo or edit:** only the owner of the card.
 - **Thread close, proof upload and proof delete:** only the completing user.
-- **Vote:** any player of the game except the completing user.
 - **Self-scoped data:** profile and notifications routes (`/api/profile`, `/api/notifications`) only read and change the caller's own data.
 
 ---
@@ -115,7 +114,7 @@ The HTTP status of a refusal:
 - Team routes that look the team up first, and return `404` for a missing team: delete (`DELETE /api/teams/[teamId]`), promote (`/leaders`) and leave (`/leave`). The other team routes (read, invite, game list and game creation) return `403` for a missing team, as for a non-member.
 - Pages call not-found instead of returning `403`: a user without the permission sees the same page as for a missing resource.
 - Cell routes (`/api/cells/[cellId]` and its sub-routes) return `400` for every refusal, including a missing cell and a user who does not own the card.
-- Thread routes return `404` for a missing thread, cell or file, `403` for a refused permission or resource rule and `400` for any other refusal.
+- Thread routes return `404` for a missing thread, cell or file, `403` for a refused permission or resource rule and `400` for any other refusal. The role and the resource rule are checked before the thread's state, so a non-player or a user other than the completing user gets `403` on a closed thread too.
 
 ---
 

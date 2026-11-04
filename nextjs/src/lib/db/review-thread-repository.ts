@@ -11,14 +11,13 @@ import { removeThreadFiles } from './review-file-repository';
 import {
   FileRow,
   getCellInfo,
-  getCellInfoForMember,
   loadOpenThread,
-  loadThread,
   MessageAndUsernameRow,
   rowToFile,
   rowToMessage,
   rowToThread,
   rowToVote,
+  ThreadFailure,
   ThreadRow,
   VoteRow,
 } from './review-thread-rows';
@@ -83,13 +82,11 @@ export async function requestProof(
   cellId: string,
   requestingUserId: string
 ): Promise<{ success: boolean; thread?: ReviewThread; error?: string }> {
-  // Only team members can request proof
-  const access = await getCellInfoForMember(cellId, requestingUserId, 'Only team members can request proof');
-  if ('error' in access) {
-    return { success: false, error: access.error };
+  // The route checks that the user is a player of the cell's game (spec 21: thread.request)
+  const cellInfo = await getCellInfo(cellId);
+  if (!cellInfo) {
+    return { success: false, error: 'Cell not found' };
   }
-
-  const { cellInfo } = access;
 
   // Spec: 16-games.md - Ending a Game
   if (cellInfo.game_status === GameStatus.ENDED) {
@@ -154,25 +151,16 @@ export async function requestProof(
 }
 
 /**
- * Get thread by ID with full details
+ * Load a thread's messages, files and votes. The route checks access (spec 21: thread.view).
+ * @param thread The thread, already loaded
+ * @returns The thread with its details, or null when its cell no longer exists
  */
-export async function getThreadById(
-  threadId: string,
-  requestingUserId: string
-): Promise<{ success: boolean; thread?: ReviewThreadWithDetails; error?: string }> {
-  const thread = await loadThread(threadId);
-
-  if (!thread) {
-    return { success: false, error: 'Thread not found' };
+export async function getThreadDetails(thread: ReviewThread): Promise<ReviewThreadWithDetails | null> {
+  const threadId = thread.id;
+  const cellInfo = await getCellInfo(thread.cellId);
+  if (!cellInfo) {
+    return null;
   }
-
-  // Only team members can access thread
-  const access = await getCellInfoForMember(thread.cellId, requestingUserId, 'Only team members can access this thread');
-  if ('error' in access) {
-    return { success: false, error: access.error };
-  }
-
-  const { cellInfo } = access;
 
   // Get messages
   const messages = await query<MessageAndUsernameRow[]>(
@@ -194,39 +182,34 @@ export async function getThreadById(
   );
 
   return {
-    success: true,
-    thread: {
-      ...thread,
-      messages: messages.map(rowToMessage),
-      files: fileRows.map(rowToFile),
-      votes: voteRows.map(rowToVote),
-      cellResolutionText: cellInfo.resolution_text,
-      teamId: cellInfo.team_id,
-    },
+    ...thread,
+    messages: messages.map(rowToMessage),
+    files: fileRows.map(rowToFile),
+    votes: voteRows.map(rowToVote),
+    cellResolutionText: cellInfo.resolution_text,
+    teamId: cellInfo.team_id,
   };
 }
 
 /**
- * Add message to thread
+ * Add a message to an open thread. The route checks access (spec 21: thread.message).
+ * @param threadId The thread
+ * @param authorUserId The author
+ * @param content The message text
+ * @returns The message, or the error and its HTTP status
  */
 export async function addMessage(
   threadId: string,
   authorUserId: string,
   content: string
-): Promise<{ success: boolean; message?: ReviewMessageAndAuthor; error?: string }> {
+): Promise<{ success: true; message: ReviewMessageAndAuthor } | ThreadFailure> {
   if (!content || content.trim().length === 0) {
-    return { success: false, error: 'Message content is required' };
+    return { success: false, error: 'Message content is required', status: 400 };
   }
 
   const loaded = await loadOpenThread(threadId);
   if ('error' in loaded) {
-    return { success: false, error: loaded.error };
-  }
-
-  // Only team members can post messages
-  const access = await getCellInfoForMember(loaded.thread.cellId, authorUserId, 'Only team members can post messages');
-  if ('error' in access) {
-    return { success: false, error: access.error };
+    return { success: false, error: loaded.error, status: loaded.status };
   }
 
   const messageId = randomUUID();
@@ -246,32 +229,33 @@ export async function addMessage(
 }
 
 /**
- * Submit or update vote
- * Spec: All team members except completing user must vote
+ * Submit or update a vote on an open thread. The route checks access (spec 21: thread.vote).
+ * Spec: 07-proof-and-approval.md - Eligible Voters
+ * @param threadId The thread
+ * @param voterUserId The voter
+ * @param vote The vote
+ * @returns The vote and whether it closed the thread, or the error and its HTTP status
  */
 export async function submitVote(
   threadId: string,
   voterUserId: string,
   vote: VoteType
-): Promise<{ success: boolean; vote?: ReviewVote; threadClosed?: boolean; error?: string }> {
+): Promise<{ success: true; vote: ReviewVote; threadClosed: boolean } | ThreadFailure> {
   const loaded = await loadOpenThread(threadId);
   if ('error' in loaded) {
-    return { success: false, error: loaded.error };
+    return { success: false, error: loaded.error, status: loaded.status };
   }
 
   const { thread } = loaded;
 
-  // Only team members can vote
-  const access = await getCellInfoForMember(thread.cellId, voterUserId, 'Only team members can vote');
-  if ('error' in access) {
-    return { success: false, error: access.error };
+  const cellInfo = await getCellInfo(thread.cellId);
+  if (!cellInfo) {
+    return { success: false, error: 'Cell not found', status: 404 };
   }
 
-  const { cellInfo } = access;
-
-  // Completing user cannot vote
+  // Spec: 07-proof-and-approval.md - the completing user is blocked from voting
   if (thread.completedByUserId === voterUserId) {
-    return { success: false, error: 'Completing user cannot vote on their own proof' };
+    return { success: false, error: 'Completing user cannot vote on their own proof', status: 403 };
   }
 
   const { savedVote, nextCellState } = await withTransaction(async (connection) => {
@@ -330,16 +314,16 @@ export async function submitVote(
 }
 
 /**
- * Close thread
- * Spec: When undone, any open review thread is closed and data deleted
+ * Close an open thread on behalf of its completing user; the cell returns to pending.
+ * The route checks that the caller is the completing user (spec 21 - Resource Rules).
+ * Spec: 07-proof-and-approval.md - Closure by the Completing User
+ * @param threadId The thread
+ * @returns Success, or the error and its HTTP status
  */
-export async function closeThread(
-  threadId: string,
-  userId: string
-): Promise<{ success: boolean; error?: string }> {
+export async function closeThread(threadId: string): Promise<{ success: true } | ThreadFailure> {
   const loaded = await loadOpenThread(threadId, 'Thread is already closed');
   if ('error' in loaded) {
-    return { success: false, error: loaded.error };
+    return { success: false, error: loaded.error, status: loaded.status };
   }
 
   const { thread } = loaded;
@@ -347,17 +331,12 @@ export async function closeThread(
   // Get cell info
   const cellInfo = await getCellInfo(thread.cellId);
   if (!cellInfo) {
-    return { success: false, error: 'Cell not found' };
-  }
-
-  // Only the completing user can close their thread
-  if (thread.completedByUserId !== userId) {
-    return { success: false, error: 'Only the completing user can close the thread' };
+    return { success: false, error: 'Cell not found', status: 404 };
   }
 
   const closeResult = await finalizeThreadClosure(threadId, thread.cellId, 'pending');
   if (!closeResult.success) {
-    return closeResult;
+    return { success: false, error: closeResult.error ?? 'Failed to close the thread', status: 400 };
   }
 
   await refreshLeaderboardEntry(cellInfo.game_id, thread.completedByUserId);

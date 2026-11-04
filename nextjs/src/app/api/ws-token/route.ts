@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getResolutionHistoryAccess, getThreadById, isTeamMember } from '@/lib/db';
+import { authorizeThreadAction } from '@/app/api/threads/thread-access';
+import { getResolutionHistoryAccess, isTeamMember, type User } from '@/lib/db';
 import type { WsRoom } from '@/lib/shared/ws-messages';
 import { createRoomToken } from '@/lib/ws-token';
 import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
@@ -13,14 +14,14 @@ import { errorResponse, withAuth, AuthContextNoParams } from '../utils';
  * Whether a user may watch a room. A room shows the same data as the page behind it.
  *
  * @param room - The room to join.
- * @param userId - The user asking.
+ * @param user - The user asking.
  * @returns True if the user may join.
  */
-async function canJoinRoom(room: WsRoom, userId: string): Promise<boolean> {
-  if (room.type === 'user') return room.id === userId;
-  if (room.type === 'card') return isTeamMember(room.id, userId);
-  if (room.type === 'thread') return (await getThreadById(room.id, userId)).success;
-  return (await getResolutionHistoryAccess(room.id, userId)).canView;
+async function canJoinRoom(room: WsRoom, user: User): Promise<boolean> {
+  if (room.type === 'user') return room.id === user.id;
+  if (room.type === 'card') return isTeamMember(room.id, user.id);
+  if (room.type === 'thread') return !('response' in await authorizeThreadAction(user, 'thread.view', room.id));
+  return (await getResolutionHistoryAccess(room.id, user.id)).canView;
 }
 
 /**
@@ -39,7 +40,7 @@ export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthCo
   }
 
   const room: WsRoom = { type, id };
-  if (!await canJoinRoom(room, currentUser.id)) {
+  if (!await canJoinRoom(room, currentUser)) {
     return errorResponse('You are not allowed to join this room', 403);
   }
 

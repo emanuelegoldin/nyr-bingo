@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { announceCellChanges } from '@/lib/notifications';
 import { notifyCell } from '@/lib/team-signals';
 import { updateCellState } from '@/lib/db';
+import { requireCardOwner } from '../card-owner';
 import type { CellState } from '@/lib/db/types';
 import { errorResponse, withAuth, AuthContext } from '../../utils';
 
@@ -27,9 +28,11 @@ export const PUT = withAuth(async (
     return errorResponse('Invalid state. Must be "pending", "completed" or "failed"', 400);
   }
 
-  // Update cell state
   // Spec: 06-bingo-gameplay.md - Only the card owner can change their card's cell states
-  const result = await updateCellState(cellId, currentUser.id, state as CellState);
+  const denied = await requireCardOwner(currentUser, cellId, 'Only the card owner can update cell state');
+  if (denied) return denied;
+
+  const result = await updateCellState(cellId, state as CellState);
 
   if (!result.success) {
     const message = typeof result.error === 'string' && result.error.trim().length > 0
