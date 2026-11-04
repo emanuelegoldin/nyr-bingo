@@ -4,13 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/lib/authz';
 import {
   getGameBingoCards,
   getBingoCard,
-  getRunningGame,
 } from '@/lib/db';
-import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
+import { withAuth, AuthContext } from '@/app/api/utils';
+import { authorizeGameAction } from '@/app/api/games/game-access';
 
 /**
  * GET /api/games/[gameId]/cards - Get all bingo cards of the game
@@ -21,14 +20,10 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
   // Spec: 08-visibility-and-updates.md - Only the game's players can view its cards
-  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
-  if (denied) return denied;
+  const access = await authorizeGameAction(currentUser, 'game.view', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   if (userId) {
     // Get specific user's card

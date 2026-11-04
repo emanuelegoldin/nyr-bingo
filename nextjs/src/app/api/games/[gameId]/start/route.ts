@@ -6,15 +6,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notifications } from '@/lib/notifications';
 import { notifyTeams } from '@/lib/team-signals';
-import { requirePermission } from '@/lib/authz';
 import {
   checkGameCanStart,
   startGameWithCards,
   getGameWithMembers,
-  getRunningGame,
   initializeGameLeaderboard,
 } from '@/lib/db';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { authorizeGameAction } from '@/app/api/games/game-access';
 
 /**
  * POST /api/games/[gameId]/start - Start the bingo game
@@ -28,9 +27,9 @@ export const POST = withAuth(async (
   const { gameId } = await params;
 
   // Spec: 21-authorization.md - game.start: a verified leader of the game. A missing game gives 404.
-  const runningGame = await getRunningGame(gameId);
-  const denied = await requirePermission(currentUser, 'game.start', { scope: 'game', game: runningGame });
-  if (denied || !runningGame) return denied ?? errorResponse('Game not found', 404);
+  const access = await authorizeGameAction(currentUser, 'game.start', gameId);
+  if ('response' in access) return access.response;
+  const runningGame = access.game;
 
   // Validate all start conditions
   const check = await checkGameCanStart(gameId);

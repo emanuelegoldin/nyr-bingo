@@ -4,16 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/lib/authz';
 import {
   getMemberProvidedResolutionsByUser,
   getMemberProvidedResolutionsForUser,
   checkAllResolutionsProvided,
-  getRunningGame,
   getGamePlayerIds,
   getTeamMembers,
 } from '@/lib/db';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { AuthContext, withAuth } from '@/app/api/utils';
+import { authorizeGameAction } from '@/app/api/games/game-access';
 
 /**
  * GET /api/games/[gameId]/resolutions - Get resolutions status
@@ -28,13 +27,9 @@ export const GET = withAuth(async (
   // Spec: 09-bingo-card-editing.md - Replacement Options
   const toUserId = request.nextUrl.searchParams.get('toUserId');
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
-  if (denied) return denied;
+  const access = await authorizeGameAction(currentUser, 'game.view', gameId);
+  if ('response' in access) return access.response;
+  const { game } = access;
 
   if (toUserId) {
     const resolutions = await getMemberProvidedResolutionsForUser(gameId, toUserId);

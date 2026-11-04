@@ -4,10 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/lib/authz';
-import { getGameGoalResolution, getRunningGame } from '@/lib/db';
+import { getGameGoalResolution } from '@/lib/db';
 import { toUnifiedResolution } from '@/lib/shared/resolution-form';
-import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
+import { withAuth, AuthContext } from '@/app/api/utils';
+import { authorizeGameAction } from '@/app/api/games/game-access';
 
 /**
  * GET /api/games/[gameId]/goal
@@ -16,13 +16,8 @@ import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 export const GET = withAuth(async (request: NextRequest, { params, currentUser }: AuthContext<{ gameId: string }>) => {
   const { gameId } = await params;
 
-  const game = await getRunningGame(gameId);
-  if (!game) {
-    return errorResponse('Game not found', 404);
-  }
-
-  const denied = await requirePermission(currentUser, 'game.view', { scope: 'game', game });
-  if (denied) return denied;
+  const access = await authorizeGameAction(currentUser, 'game.view', gameId);
+  if ('response' in access) return access.response;
 
   const goal = await getGameGoalResolution(gameId);
   if (!goal) {
