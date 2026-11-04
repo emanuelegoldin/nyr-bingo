@@ -112,6 +112,16 @@ export const ResolutionCell = ({
         if (!open) setActiveDialog(null);
     };
 
+    // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell not under review is selectable (including empty)
+    const canEditContent = Boolean(
+        editMode && isOwner && cell.sourceType !== CellSourceType.TEAM && cell.state !== CellState.PENDING_REVIEW
+    );
+    const canInteract =
+        (
+            canEditContent ||
+            (!editMode && !cell.isEmpty)  // Any non-empty cell can be clicked to open detail view
+        );
+
     /**
      * Primary click handler — all non-edit clicks now route through the detail dialog.
      * The detail dialog contains action buttons (Mark Complete, Undo, Request Proof, View Thread).
@@ -137,49 +147,7 @@ export const ResolutionCell = ({
         setActiveDialog('detail');
     };
 
-    /* ── Detail dialog action callbacks ──────────────────────────── */
-
-    /** Owner wants to mark a base/team cell as complete — open the complete dialog. */
-    const handleCompleteFromDetail = () => {
-        setActiveDialog('complete');
-    };
-
-    /** Owner wants to undo a completed base/team cell or a failed cell. */
-    const handleUndoFromDetail = () => {
-        onUpdate?.(cell.id, CellState.PENDING);
-    };
-
-    /** Owner wants to mark a pending cell as failed. */
-    const handleFailFromDetail = () => {
-        onUpdate?.(cell.id, CellState.FAILED);
-    };
-
-    /** Non-owner wants to request proof for a completed cell. */
-    const handleRequestProofFromDetail = () => {
-        setActiveDialog('request_proof');
-    };
-
-    /** Anyone wants to view the review thread. */
-    const handleViewThreadFromDetail = () => {
-        setActiveDialog('thread');
-    };
-
-    /** Open resolution history timeline dialog. */
-    const handleViewHistoryFromDetail = () => {
-        setActiveDialog('history');
-    };
-
     const sourceLabel = getSourceLabel(cell, usernames);
-    // Spec: 09-bingo-card-editing.md - In edit mode, any non-joker, non-team cell not under review is selectable (including empty)
-    const canEditContent = Boolean(
-        editMode && isOwner && cell.sourceType !== CellSourceType.TEAM && cell.state !== CellState.PENDING_REVIEW
-    );
-    const canInteract =
-        (
-            canEditContent ||
-            (!editMode && !cell.isEmpty)  // Any non-empty cell can be clicked to open detail view
-        );
-
     /** Build cell context for the detail dialog */
     const cellContext: CellContext = {
         cellId: cell.id,
@@ -220,8 +188,8 @@ export const ResolutionCell = ({
                 <EditCellDialog
                     cellId={cell.id}
                     existingCells={existingCells}
-                    gameId={gameId ? gameId : ""}
-                    currentUserId={currentUserId ? currentUserId : ""}
+                    gameId={gameId}
+                    currentUserId={currentUserId}
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}
                     onRefresh={onRefresh} />
@@ -254,12 +222,8 @@ export const ResolutionCell = ({
                     }
                     sourceLabel={sourceLabel}
                     onRefresh={onRefresh}
-                    onComplete={handleCompleteFromDetail}
-                    onUndo={handleUndoFromDetail}
-                    onFail={handleFailFromDetail}
-                    onRequestProof={handleRequestProofFromDetail}
-                    onViewThread={handleViewThreadFromDetail}
-                    onViewHistory={handleViewHistoryFromDetail}
+                    onOpenDialog={setActiveDialog}
+                    onSetState={(state) => onUpdate?.(cell.id, state)}
                 />
             }
             {activeDialog === "history" && detailData &&

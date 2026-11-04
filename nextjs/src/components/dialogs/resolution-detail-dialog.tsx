@@ -69,6 +69,9 @@ export interface CellContext {
 
 /* ─── Props ──────────────────────────────────────────────────────── */
 
+/** Dialogs the detail dialog can hand over to. */
+export type DetailFollowUpDialog = 'complete' | 'request_proof' | 'thread' | 'history';
+
 interface ResolutionDetailDialogProps {
   data: ResolutionDetailData;
   cell: CellContext;
@@ -81,18 +84,10 @@ interface ResolutionDetailDialogProps {
   sourceLabel?: string;
   /** Called after a mutation so the parent can refresh the bingo card */
   onRefresh?: () => void;
-  /** Called when the owner wants to mark a base/team cell as complete */
-  onComplete?: () => void;
-  /** Called when the owner wants to undo a completed base/team cell or a failed cell */
-  onUndo?: () => void;
-  /** Called when the owner wants to mark a pending cell as failed */
-  onFail?: () => void;
-  /** Called when a non-owner wants to request proof */
-  onRequestProof?: () => void;
-  /** Called when someone wants to view the review thread */
-  onViewThread?: () => void;
-  /** Called when someone wants to view resolution history */
-  onViewHistory?: () => void;
+  /** Replaces this dialog with a follow-up one (complete, request proof, thread or history) */
+  onOpenDialog: (dialog: DetailFollowUpDialog) => void;
+  /** Called when the owner undoes a completed or failed cell, or marks a pending cell as failed */
+  onSetState: (state: CellState.PENDING | CellState.FAILED) => void;
 }
 
 /**
@@ -125,12 +120,8 @@ export const ResolutionDetailDialog = ({
   canChangeProgress,
   sourceLabel,
   onRefresh,
-  onComplete,
-  onUndo,
-  onFail,
-  onRequestProof,
-  onViewThread,
-  onViewHistory,
+  onOpenDialog,
+  onSetState,
 }: ResolutionDetailDialogProps) => {
   const isAutomatic = data.type === ResolutionType.COMPOUND || data.type === ResolutionType.ITERATIVE;
 
@@ -190,43 +181,41 @@ export const ResolutionDetailDialog = ({
 
         {/* Action buttons */}
         <DialogFooter className="gap-2 sm:gap-0">
-          {onViewHistory && (
-            <Button variant="outline" onClick={() => { setIsOpen(false); onViewHistory(); }}>
-              <History className="h-4 w-4 mr-2" /> History
-            </Button>
-          )}
+          <Button variant="outline" onClick={() => onOpenDialog('history')}>
+            <History className="h-4 w-4 mr-2" /> History
+          </Button>
 
           {/* Owner + pending → Mark Failed */}
-          {isOwner && cell.state === CellState.PENDING && onFail && (
-            <Button variant="outline" onClick={() => { setIsOpen(false); onFail(); }}>
+          {isOwner && cell.state === CellState.PENDING && (
+            <Button variant="outline" onClick={() => { setIsOpen(false); onSetState(CellState.FAILED); }}>
               <X className="h-4 w-4 mr-2" /> Mark Failed
             </Button>
           )}
 
           {/* Owner + pending or failed + non-automatic → Mark Complete */}
-          {isOwner && (cell.state === CellState.PENDING || cell.state === CellState.FAILED) && !isAutomatic && onComplete && (
-            <Button onClick={() => { setIsOpen(false); onComplete(); }}>
+          {isOwner && (cell.state === CellState.PENDING || cell.state === CellState.FAILED) && !isAutomatic && (
+            <Button onClick={() => onOpenDialog('complete')}>
               <Check className="h-4 w-4 mr-2" /> Mark Complete
             </Button>
           )}
 
           {/* Owner + (completed + non-automatic, or failed) → Undo */}
-          {isOwner && ((cell.state === CellState.COMPLETED && !isAutomatic) || cell.state === CellState.FAILED) && onUndo && (
-            <Button variant="outline" onClick={() => { setIsOpen(false); onUndo(); }}>
+          {isOwner && ((cell.state === CellState.COMPLETED && !isAutomatic) || cell.state === CellState.FAILED) && (
+            <Button variant="outline" onClick={() => { setIsOpen(false); onSetState(CellState.PENDING); }}>
               <Undo2 className="h-4 w-4 mr-2" /> Undo
             </Button>
           )}
 
           {/* Non-owner + completed → Request Proof */}
-          {!isOwner && cell.state === CellState.COMPLETED && onRequestProof && (
-            <Button variant="outline" onClick={() => { setIsOpen(false); onRequestProof(); }}>
+          {!isOwner && cell.state === CellState.COMPLETED && (
+            <Button variant="outline" onClick={() => onOpenDialog('request_proof')}>
               <Eye className="h-4 w-4 mr-2" /> Request Proof
             </Button>
           )}
 
           {/* Any + pending_review → View Thread */}
-          {cell.state === CellState.PENDING_REVIEW && onViewThread && (
-            <Button variant="outline" onClick={() => { setIsOpen(false); onViewThread(); }}>
+          {cell.state === CellState.PENDING_REVIEW && (
+            <Button variant="outline" onClick={() => onOpenDialog('thread')}>
               <MessageSquare className="h-4 w-4 mr-2" /> View Thread
             </Button>
           )}

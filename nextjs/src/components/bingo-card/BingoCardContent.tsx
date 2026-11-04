@@ -86,8 +86,8 @@ export function BingoCardContent(
               cell={cell}
               isOwner={isOwner}
               editMode={editMode}
-              gameId={gameId ? gameId : ""}
-              currentUserId={currentUserId ? currentUserId : ""}
+              gameId={gameId}
+              currentUserId={currentUserId}
               existingCells={card.cells}
               onUpdate={isOwner ? handleCellUpdate : undefined}
               onRefresh={reloadCard} />
