@@ -175,6 +175,8 @@ If a file cannot be removed from disk during any closure, the closure fails and 
 
 ## Permissions & Security
 
+The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
+
 - Only team members may access review threads, post messages or vote.
 - Only the completing user may upload or delete proof files, and only while the thread is open.
 - Completing user is blocked from voting.

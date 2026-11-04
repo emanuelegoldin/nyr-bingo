@@ -125,6 +125,8 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 
 ## Permissions
 
+The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
+
 - Only verified users can participate in teams.
 - Only a team leader can:
   - Invite users

@@ -233,6 +233,8 @@ Until it is archived, after a game has ended:
 
 ## Permissions
 
+The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
+
 - Only verified users can create or start games.
 - Only a team leader can create a game.
 - Only a leader of the game (a team leader who plays it) can:

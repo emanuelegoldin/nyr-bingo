@@ -118,6 +118,8 @@ A failure to log an event does not fail the action that produced it.
 
 ## Permissions
 
+The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
+
 - Auth required for all resolution history APIs.
 - Write allowed only under the table in section 2.
 - Read allowed only under the visibility rules above.

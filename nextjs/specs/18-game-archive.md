@@ -82,6 +82,8 @@ Cards are read-only. They have no edit mode, real-time updates, confetti, proof 
 
 ## Permissions
 
+The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
+
 - Only the players of an archived game can view it.
 - Only a leader who ran the game can delete it.
 - Archived games cannot be edited by anyone.
