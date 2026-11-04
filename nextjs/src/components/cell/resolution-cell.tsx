@@ -159,8 +159,6 @@ export const ResolutionCell = ({
         <>
             <CellFace
                 cell={cell}
-                editMode={editMode}
-                isOwner={isOwner}
                 canInteract={canInteract}
                 sourceLabel={sourceLabel}
                 onClick={handleClick} />

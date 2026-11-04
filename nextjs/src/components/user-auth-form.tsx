@@ -46,7 +46,6 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
 function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -55,9 +54,9 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
       password: ""
     }
   });
+  const isLoading = form.formState.isSubmitting;
 
   async function onSubmit(data: LoginFormData) {
-    setIsLoading(true);
 
     const result = await apiFetch<unknown>('/api/auth/login', {
       method: 'POST',
@@ -73,7 +72,6 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
     } else {
       toastApiError(result, "Failed to login", "An error occurred. Please try again.");
     }
-    setIsLoading(false);
   }
 
   return (
@@ -121,7 +119,6 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
 function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -131,9 +128,9 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
       password: ""
     }
   });
+  const isLoading = form.formState.isSubmitting;
 
   async function onSubmit(data: RegisterFormData) {
-    setIsLoading(true);
 
     const result = await apiFetch<unknown>('/api/auth/register', {
       method: 'POST',
@@ -149,7 +146,6 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
     } else {
       toastApiError(result, "Failed to register", "An error occurred. Please try again.");
     }
-    setIsLoading(false);
   }
 
   return (

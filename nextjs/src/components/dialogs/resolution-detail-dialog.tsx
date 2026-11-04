@@ -16,7 +16,7 @@
 
 "use client";
 
-import { CELL_STATE_COLORS, getCellStateIcon } from "@/components/cell/cell-state-style";
+import { STATE_CONFIG } from "@/components/cell/cell-state-style";
 import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { Subtask } from "@/lib/shared/types";
 import { CellState, ResolutionType } from "@/lib/shared/types";
@@ -89,23 +89,6 @@ interface ResolutionDetailDialogProps {
   /** Called when the owner undoes a completed or failed cell, or marks a pending cell as failed */
   onSetState: (state: CellState.PENDING | CellState.FAILED) => void;
 }
-
-/**
- * Visual state config mirroring the bingo cell grid styling.
- * Reuses the same colors and icons so the detail dialog feels consistent.
- */
-export const STATE_CONFIG: Record<CellState, {
-  label: string;
-  icon: React.ReactNode;
-  bg: string;
-  text: string;
-}> = {
-  [CellState.PENDING]:        { label: "Pending",       icon: null,                                                  bg: "bg-secondary",                           text: "text-secondary-foreground" },
-  [CellState.COMPLETED]:      { label: "Completed",     icon: getCellStateIcon("completed", "h-3.5 w-3.5"),      ...CELL_STATE_COLORS.completed },
-  [CellState.PENDING_REVIEW]: { label: "Under Review",  icon: getCellStateIcon("pending_review", "h-3.5 w-3.5"), ...CELL_STATE_COLORS.pending_review },
-  [CellState.ACCOMPLISHED]:   { label: "Accomplished",  icon: getCellStateIcon("accomplished", "h-3.5 w-3.5"),   ...CELL_STATE_COLORS.accomplished },
-  [CellState.FAILED]:         { label: "Failed",        icon: getCellStateIcon("failed", "h-3.5 w-3.5"),         ...CELL_STATE_COLORS.failed },
-};
 
 /**
  * Dialog showing the full detail view for any resolution on the bingo card.

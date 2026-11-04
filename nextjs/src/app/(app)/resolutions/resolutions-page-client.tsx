@@ -46,7 +46,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingResolution, setEditingResolution] = useState<ResolutionFormData | undefined>(undefined);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [historyResolution, setHistoryResolution] = useState<{ id: string; title: string } | null>(null);
   const [browseOpen, setBrowseOpen] = useState(false);
 
@@ -79,7 +78,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
 
   const handleViewHistory = (res: UnifiedResolution) => {
     setHistoryResolution({ id: res.id, title: res.title });
-    setHistoryOpen(true);
   };
 
   /**
@@ -231,8 +229,8 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
         <ResolutionHistoryDialog
           resolutionId={historyResolution.id}
           resolutionTitle={historyResolution.title}
-          isOpen={historyOpen}
-          setIsOpen={setHistoryOpen}
+          isOpen={true}
+          setIsOpen={(open) => { if (!open) setHistoryResolution(null); }}
         />
       )}
     </>

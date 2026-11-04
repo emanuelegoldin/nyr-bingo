@@ -39,8 +39,6 @@ export function ArchivedCardView({ card }: ArchivedCardViewProps) {
               <CellFace
                 key={cell.position}
                 cell={cell}
-                editMode={false}
-                isOwner={false}
                 canInteract={!cell.isEmpty}
                 sourceLabel={cell.sourceLabel}
                 onClick={() => setSelectedCell(cell)}
