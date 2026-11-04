@@ -18,19 +18,21 @@ import type { TeamMember } from "./types";
 interface MembersTabProps {
   members: TeamMember[];
   currentUserId: string;
-  /** Promotes a member to leader. When set, non-leader rows show Make Leader. */
+  /** Whether the current user may promote members (spec 21: team.promote). */
+  canPromote?: boolean;
+  /** Promotes a member to leader. Non-leader rows show Make Leader when `canPromote` is set. */
   onPromote?: (userId: string) => void;
   /** The member being promoted, while the request runs. */
   promotingUserId?: string | null;
 }
 
 /**
- * Lists members with their leader badge, and the Make Leader action when `onPromote` is set.
+ * Lists members with their leader badge, and the Make Leader action when `canPromote` and `onPromote` are set.
  *
  * @param props - The members, the current user and the optional promote action.
  * @returns The members card.
  */
-export function MembersTab({ members, currentUserId, onPromote, promotingUserId = null }: MembersTabProps) {
+export function MembersTab({ members, currentUserId, canPromote = false, onPromote, promotingUserId = null }: MembersTabProps) {
   return (
     <Card>
       <CardHeader>
@@ -66,7 +68,7 @@ export function MembersTab({ members, currentUserId, onPromote, promotingUserId 
                   </p>
                 </div>
 
-                {!isLeader && onPromote && (
+                {!isLeader && canPromote && onPromote && (
                   <ConfirmActionDialog
                     triggerLabel="Make Leader"
                     triggerIcon={Crown}

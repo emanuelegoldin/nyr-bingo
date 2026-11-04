@@ -9,7 +9,7 @@
  */
 
 import { requireUser } from '@/lib/auth';
-import { requirePagePermission } from '@/lib/authz';
+import { getGameCapabilities, requirePagePermission } from '@/lib/authz';
 import {
   getGameBingoCards,
   getGameGoalResolution,
@@ -96,6 +96,8 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
     ? getGameBingoCards(gameId)
     : Promise.resolve([] as BingoCardWithCells[]);
 
+  const capabilities = await getGameCapabilities(currentUser, game);
+
   const [cardsResult, goalResult, resolutionsResult, leaderboardResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
     cardPromise,
     getGameGoalResolution(gameId),
@@ -117,6 +119,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
       initialGame={mapGame(game)}
       initialCards={initialCards}
       initialCurrentUserId={currentUser.id}
+      capabilities={capabilities}
       initialTeamGoal={initialTeamGoal}
       initialExistingResolutions={initialExistingResolutions}
       initialLeaderboardEntries={initialLeaderboardEntries}

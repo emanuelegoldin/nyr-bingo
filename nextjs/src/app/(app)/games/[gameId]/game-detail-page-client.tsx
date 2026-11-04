@@ -26,7 +26,8 @@ import { useState } from 'react';
 import { BingoCardWithCells } from "@/lib/db/types";
 import type { ResolutionFormData } from "@/lib/shared/types";
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
-import { formatLeaderNames, isLeaderIn } from "@/components/team/leaders";
+import { formatLeaderNames } from "@/components/team/leaders";
+import type { GamePermission } from "@/lib/authz/permissions";
 import { GameConfigDialog } from "./_components/GameConfigDialog";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
@@ -41,6 +42,8 @@ interface GameDetailPageClientProps {
   /** Undefined when the server failed to read them, as for the other optional props. */
   initialCards?: BingoCardWithCells[];
   initialCurrentUserId: string;
+  /** The caller's permissions in the game, computed on the server (spec 21 - Client Gating). */
+  capabilities: GamePermission[];
   initialTeamGoal?: ResolutionFormData | null;
   initialExistingResolutions?: TeamProvidedResolution[];
   initialLeaderboardEntries?: LeaderboardEntry[];
@@ -50,6 +53,7 @@ export default function GameDetailPageClient({
   initialGame,
   initialCards,
   initialCurrentUserId,
+  capabilities,
   initialTeamGoal,
   initialExistingResolutions,
   initialLeaderboardEntries,
@@ -78,7 +82,7 @@ export default function GameDetailPageClient({
   // Team goal resolution dialog
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
 
-  const isLeader = isLeaderIn(game.members, currentUserId);
+  const can = (permission: GamePermission): boolean => capabilities.includes(permission);
 
   /** Called when team goal is saved via the resolution dialog. */
   const handleGoalSaved = () => {
@@ -110,47 +114,47 @@ export default function GameDetailPageClient({
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {isLeader && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
-                  <Settings className="h-4 w-4 mr-2" /> Set Goal
-                </Button>
+            {can('game.goal.set') && (
+              <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
+                <Settings className="h-4 w-4 mr-2" /> Set Goal
+              </Button>
+            )}
 
-                {game.status === 'forming' && (
-                  <GameConfigDialog gameId={game.id} deadline={game.deadline} onSaved={loadGame} />
-                )}
+            {can('game.configure') && game.status === 'forming' && (
+              <GameConfigDialog gameId={game.id} deadline={game.deadline} onSaved={loadGame} />
+            )}
 
-                {game.status !== 'started' && (
-                  <Button onClick={handleStartBingo} disabled={isStarting}>
-                    {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Swords className="h-4 w-4 mr-2" /> Start Bingo
-                  </Button>
-                )}
+            {can('game.start') && game.status !== 'started' && (
+              <Button onClick={handleStartBingo} disabled={isStarting}>
+                {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Swords className="h-4 w-4 mr-2" /> Start Bingo
+              </Button>
+            )}
 
-                {game.status === 'started' && (
-                  <ConfirmActionDialog
-                    triggerLabel="End Game"
-                    triggerIcon={Flag}
-                    triggerVariant="outline"
-                    title="End this game?"
-                    description="The game finishes for everyone and moves to the archive. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
-                    confirmLabel="End Game"
-                    onConfirm={handleEndGame}
-                    isPending={isEnding}
-                  />
-                )}
+            {can('game.end') && game.status === 'started' && (
+              <ConfirmActionDialog
+                triggerLabel="End Game"
+                triggerIcon={Flag}
+                triggerVariant="outline"
+                title="End this game?"
+                description="The game finishes for everyone and moves to the archive. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
+                confirmLabel="End Game"
+                onConfirm={handleEndGame}
+                isPending={isEnding}
+              />
+            )}
 
-                <ConfirmActionDialog
-                  triggerLabel="Delete Game"
-                  triggerIcon={Trash2}
-                  triggerVariant="destructive"
-                  title="Delete this game?"
-                  description="This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone."
-                  confirmLabel="Delete"
-                  onConfirm={handleDeleteGame}
-                  isPending={isDeleting}
-                />
-              </>
+            {can('game.delete') && (
+              <ConfirmActionDialog
+                triggerLabel="Delete Game"
+                triggerIcon={Trash2}
+                triggerVariant="destructive"
+                title="Delete this game?"
+                description="This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone."
+                confirmLabel="Delete"
+                onConfirm={handleDeleteGame}
+                isPending={isDeleting}
+              />
             )}
 
             <ProposeResolutionsDialog
@@ -177,7 +181,7 @@ export default function GameDetailPageClient({
         <CardContent>
           <TeamGoalDisplay
             goal={teamGoal}
-            isLeader={isLeader}
+            isLeader={can('game.goal.set')}
             onEdit={() => setGoalDialogOpen(true)}
           />
         </CardContent>

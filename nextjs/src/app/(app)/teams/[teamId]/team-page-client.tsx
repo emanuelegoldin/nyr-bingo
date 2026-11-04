@@ -9,7 +9,8 @@
  */
 
 import { GameList, type GameListItem } from "@/components/team/game-list";
-import { formatLeaderNames, isLeaderIn } from "@/components/team/leaders";
+import { formatLeaderNames } from "@/components/team/leaders";
+import type { TeamPermission } from "@/lib/authz/permissions";
 import { MembersTab } from "@/components/team/members-tab";
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import type { Team } from "@/components/team/types";
@@ -30,9 +31,11 @@ interface TeamPageClientProps {
   team: Team;
   games: GameListItem[];
   currentUserId: string;
+  /** The caller's permissions in the team, computed on the server (spec 21 - Client Gating). */
+  capabilities: TeamPermission[];
 }
 
-export default function TeamPageClient({ team, games, currentUserId }: TeamPageClientProps) {
+export default function TeamPageClient({ team, games, currentUserId, capabilities }: TeamPageClientProps) {
   usePageTitle("Team");
 
   const { toast } = useToast();
@@ -43,7 +46,7 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
   const [isLeaving, setIsLeaving] = useState(false);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
 
-  const isLeader = isLeaderIn(team.members, currentUserId);
+  const canCreateGame = capabilities.includes('game.create');
 
   /** Deletes the team; on success navigates back to the teams list. */
   const handleDeleteTeam = async () => {
@@ -120,17 +123,17 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
               </CardDescription>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {isLeader && (
-                <>
-                  <NewGameDialog teamId={team.id} members={team.members} currentUserId={currentUserId} />
-                  <InviteDialog teamId={team.id} />
-                  <DeleteTeamDialog
-                    open={deleteDialogOpen}
-                    onOpenChange={setDeleteDialogOpen}
-                    onConfirm={handleDeleteTeam}
-                    isDeleting={isDeleting}
-                  />
-                </>
+              {canCreateGame && (
+                <NewGameDialog teamId={team.id} members={team.members} currentUserId={currentUserId} />
+              )}
+              {capabilities.includes('team.invite') && <InviteDialog teamId={team.id} />}
+              {capabilities.includes('team.delete') && (
+                <DeleteTeamDialog
+                  open={deleteDialogOpen}
+                  onOpenChange={setDeleteDialogOpen}
+                  onConfirm={handleDeleteTeam}
+                  isDeleting={isDeleting}
+                />
               )}
               <ConfirmActionDialog
                 triggerLabel="Leave Team"
@@ -152,7 +155,7 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
             <GameList games={games} />
           ) : (
             <p className="text-muted-foreground">
-              {isLeader ? 'No games yet. Click "New Game" to create one.' : "No games yet."}
+              {canCreateGame ? 'No games yet. Click "New Game" to create one.' : "No games yet."}
             </p>
           )}
         </section>
@@ -160,7 +163,8 @@ export default function TeamPageClient({ team, games, currentUserId }: TeamPageC
         <MembersTab
           members={team.members}
           currentUserId={currentUserId}
-          onPromote={isLeader ? handlePromote : undefined}
+          canPromote={capabilities.includes('team.promote')}
+          onPromote={handlePromote}
           promotingUserId={promotingUserId}
         />
       </div>
