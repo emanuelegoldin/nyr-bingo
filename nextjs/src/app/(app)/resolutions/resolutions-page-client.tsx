@@ -124,14 +124,14 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between space-y-0">
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
           <div className="space-y-1.5">
             <CardTitle className="font-headline">{t.title}</CardTitle>
             <CardDescription>
               {t.description}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" onClick={() => setBrowseOpen(true)}>
               <Lightbulb className="h-4 w-4 mr-2" />
               {t.browseIdeas}
@@ -151,8 +151,8 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                 className="flex items-center justify-between p-2 rounded-md bg-secondary/50"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium truncate">{res.title}</span>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 md:flex-nowrap">
+                    <span className="min-w-0 text-sm font-medium break-words md:truncate">{res.title}</span>
                     <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[res.type]} className="text-xs flex-shrink-0">
                       {RESOLUTION_TYPE_LABELS[res.type]}
                     </Badge>
