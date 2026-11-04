@@ -4,7 +4,7 @@
  */
 
 import type { PoolConnection } from 'mysql2/promise';
-import { CellState } from '../shared/types';
+import { CellState, DONE_CELL_STATES } from '../shared/types';
 import { shuffleArray } from '../shared/shuffle';
 import { execute, query, withTransaction } from './connection';
 
@@ -12,13 +12,6 @@ import { execute, query, withTransaction } from './connection';
 export type CardArrangementResult =
   | { success: true }
   | { success: false; status: 400 | 404; error: string };
-
-/** Cell states that count as done: a done cell must not be moved into a bingo line. */
-const DONE_STATES: readonly CellState[] = [
-  CellState.COMPLETED,
-  CellState.PENDING_REVIEW,
-  CellState.ACCOMPLISHED,
-];
 
 /** Offset that moves every cell out of the grid's positions, so the unique (card, position) key holds while they are reassigned. */
 const PARKING_OFFSET = 1000;
@@ -71,7 +64,8 @@ export async function shuffleBingoCard(gameId: string, userId: string): Promise<
       [card.id],
       connection
     );
-    if (cells.some((cell) => DONE_STATES.includes(cell.state))) {
+    // A done cell must not be moved into a bingo line
+    if (cells.some((cell) => DONE_CELL_STATES.includes(cell.state))) {
       return { success: false, status: 400, error: 'A card with completed cells can no longer be shuffled' };
     }
 
