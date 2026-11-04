@@ -64,6 +64,7 @@ Every role is listed with the full set of permissions it holds; there is no inhe
 | `thread.view` | game | `leader`, `player` | – |
 | `thread.message` | game | `leader`, `player` | – |
 | `thread.vote` | game | `leader`, `player` | – |
+| `card.arrange` | game | `leader`, `player` | – |
 | `game.configure` | game | `leader` | – |
 | `game.start` | game | `leader` | yes |
 | `game.end` | game | `leader` | – |
@@ -79,6 +80,7 @@ Where they are used:
 - `game.propose`: saving a member-provided resolution (spec 16). The target must also be a player of the game.
 - `thread.*`: a cell's or thread's game is resolved first, and the role is the caller's role in that game (spec 07). The game is resolved whatever its status; what an ended game's cells and threads allow is a game status rule (spec 16).
 - `game.goal.set`: saving the team goal of a game (spec 16).
+- `card.arrange`: shuffling and locking the caller's own card (spec 22).
 
 Lists of the caller's own teams, games, archived games, resolutions and notifications (`GET /api/teams`, `/api/games`, `/api/archived-games`, the dashboard) only return the caller's own data and need no permission.
 
@@ -92,6 +94,7 @@ Some actions depend on who owns a record, not on a role. They apply on top of th
 - **Resolution progress** (compound subtasks, iterative counter): the owner, or the recipient for a `member_provided` resolution. A team goal's progress belongs to the leader who owns it.
 - **Resolution history:** read and write access as defined in spec 13 (History Visibility, Manual Entry Creation).
 - **Cell complete, undo or edit:** only the owner of the card.
+- **Card shuffle or lock:** only the owner of the card. The routes act on the caller's own card (spec 22).
 - **Thread close, proof upload and proof delete:** only the completing user.
 - **Self-scoped data:** profile and notifications routes (`/api/profile`, `/api/notifications`) only read and change the caller's own data.
 
