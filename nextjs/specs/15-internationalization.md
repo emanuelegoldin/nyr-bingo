@@ -2,14 +2,15 @@
 
 ## Purpose
 
-Let users choose the language of the application.
+Let users choose the language of the application, and show every piece of interface text in that language.
 
 ---
 
 ## User Stories Covered
 
-- Select my language from the landing page or the sidebar
+- Select my language from any page, through a control in the page header
 - Keep my language across visits
+- Read the whole interface, including messages, labels and dates, in my language
 
 ---
 
@@ -17,6 +18,7 @@ Let users choose the language of the application.
 
 - Supported locales
 - Locale selection and persistence
+- The translation module
 - Translated surfaces
 
 ---
@@ -28,38 +30,48 @@ Let users choose the language of the application.
 - Supported locales: `en` (English), `de` (German), `it` (Italian).
 - The default locale is `en`. It applies when no valid locale is stored.
 - The locale is not part of the URL.
+- German and Italian use the informal address ("du", "tu").
 
 ### Selection and Persistence
 
-- `LanguageSelectorDropdown` appears on the landing page and in the application sidebar.
-- Selecting a language stores it in the `locale` cookie for one year and refreshes the page.
-- The server reads the cookie on each request.
+- The **language switcher** is a compact button with a globe icon and the active locale code (only the icon on narrow screens). It opens a menu listing each locale by its own name (English, Deutsch, Italiano), with a check mark on the active one.
+- It appears in:
+  - the application header, before the notification bell
+  - the landing page header, next to the login and register links
+  - the top right of the login, registration, invitation (`/join/...`) and email verification pages
+- Selecting a language stores it in the `locale` cookie for one year and refreshes the page. The rest of the page state is kept.
+- The server reads the cookie on each request and sets the `lang` attribute of the page.
 
-### Translations
+### Translation Module
 
-- Strings live in `src/i18n/dictionaries/<locale>.json`, one file per locale with the same sections.
-- Server components read them with `getDictionary()`. Client components use `getDictionaryForLocale()` with the language from `AppContext`, or receive the strings as props.
+All translation code lives in `src/i18n/` and is built on `next-intl`:
+- `config.ts` lists the locales, the default locale, the cookie name and the locale names.
+- `request.ts` resolves the locale from the cookie and loads its messages.
+- Messages live in `messages/<locale>/<Namespace>.json`, one file per namespace and locale. `messages/index.ts` assembles them.
+- Every locale has exactly the same keys as `en`. The type check fails otherwise.
+- Message keys are typed: using a key that does not exist in `en` fails the type check.
+- Server components use `getTranslations()`; client components use `useTranslations()`.
+- Placeholders and plurals use the ICU message syntax (`{name}`, `{count, plural, one {…} other {…}}`).
+- Dates and relative times are formatted in the active locale.
+- Code keeps translation keys, not text, in constants (navigation items, labels of states and types), and resolves them when rendering.
 
 ### Translated Surfaces
 
-| Dictionary section | Surface |
-| ------------------ | ------- |
-| `App`, `Home` | Landing page content |
-| `LoginPage` | Login page title, description and register link |
-| `RegisterPage` | Registration page title, description and login link |
-| `Dashboard` | Dashboard card title and description, empty-state heading and text, missing-card message |
-| `ResolutionsPage` | Resolutions page title, description, history button label and browse button |
-| `PreparedResolutionsDialog` | Prepared resolutions dialog text (spec 17) |
-| `ResolutionHistoryDialog` | History dialog text |
-| `Notifications` | Notification bell, list and text, and the profile switch (spec 19) |
+All text the interface shows is translated, including:
+- Page and dialog titles, descriptions, labels, buttons, placeholders, empty and loading states
+- Toast titles and descriptions written by the client, and the fallback text shown when a request fails without a message
+- Form validation messages
+- Accessible labels (`aria-label`, screen-reader-only text) and image descriptions
+- Confirmation dialogs
+- The page title and description (metadata)
+- Notifications (spec 19)
 
-Everything else is English only, including:
-- The team, game and archive pages, the profile pages, the card cells and dialogs, and the resolution form
-- The login and registration form fields, buttons and messages
-- The dashboard's **Get Started** button and loading and error text
-- The language selector's own labels and the landing page's version line
+Not translated:
+- The app name "Resolution Bingo"
+- Messages written by the server: API errors and success messages, shown as they arrive
+- The verification email
 - The prepared resolutions themselves (spec 17)
-- Toast titles and API error messages
+- Content entered by users
 
 ### Localized Assets
 
@@ -69,7 +81,9 @@ Everything else is English only, including:
 
 ## Acceptance Criteria
 
-- A user can switch between English, German and Italian.
+- A user can switch between English, German and Italian from the application header, the landing page, and the login, registration, invitation and verification pages.
+- The switcher shows the active locale and lists each locale by its own name.
 - The selection persists across visits.
 - An unknown or missing locale falls back to English.
-- The strings listed under Translated Surfaces render in the selected language; other strings stay in English.
+- Interface text, including toasts, validation messages, accessible labels and dates, renders in the selected language, except for the items listed under "Not translated".
+- Every locale defines the same keys, enforced by the type check.

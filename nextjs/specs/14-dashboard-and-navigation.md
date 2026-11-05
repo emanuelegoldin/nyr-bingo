@@ -30,15 +30,15 @@ Define the public landing page, the authenticated application shell, and the das
 ### Landing Page
 
 `/` is public and shows:
-- The app name, the language selector (spec 15), and login and register links
+- The app name, the language switcher (spec 15), and login and register links
 - A hero section and three feature cards
 - A footer with the version from `NEXT_PUBLIC_APP_VERSION`
 
 ### Application Shell
 
 Pages under `/dashboard`, `/games`, `/teams`, `/profile`, `/resolutions` and `/archive` share a shell:
-- **Sidebar**: links to Dashboard, Games, Teams, Profile, Resolutions and Archive, plus the language selector.
-- **Header**: the current page title, the notification bell (spec 19) and a user menu.
+- **Sidebar**: links to Dashboard, Games, Teams, Profile, Resolutions and Archive.
+- **Header**: the current page title, the language switcher (spec 15), the notification bell (spec 19) and a user menu.
 - **User menu**: username, email, links to Profile and Teams, and Logout. When no user is loaded it shows a Login button instead.
 
 ### Access to Pages
@@ -53,7 +53,6 @@ There is no route middleware.
 
 - Each card loads independently, with its own loading state, so one slow or failed card does not affect the others.
 - A card shows the game name, an **Edit Card** button (spec 09), the **Shuffle** and **Lock** buttons while the card is unlocked (spec 22) and the same interactive cells as the owner's card on the game page (spec 06).
-- The card's title and description are translated (spec 15).
 - A game without a card for this user shows a "none available" message.
 
 Empty states, with a **Get Started** button:
