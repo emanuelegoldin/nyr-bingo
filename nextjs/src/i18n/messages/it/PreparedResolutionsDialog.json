@@ -13,5 +13,7 @@
     "short": "Si completano in pochi giorni, senza preparazione.",
     "medium": "Si completano in qualche settimana, oppure più impegnativi ma conclusi in pochi giorni.",
     "long": "Richiedono mesi, fino a un anno intero."
-  }
+  },
+  "addedToast": "Obiettivo aggiunto",
+  "addError": "Impossibile aggiungere l'obiettivo"
 }

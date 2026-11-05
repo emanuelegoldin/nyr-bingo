@@ -13,5 +13,7 @@
     "short": "In wenigen Tagen erledigt, ohne Vorbereitung.",
     "medium": "In wenigen Wochen erledigt, oder anspruchsvoller, aber in Tagen vorbei.",
     "long": "Dauert Monate, bis zum ganzen Jahr."
-  }
+  },
+  "addedToast": "Vorsatz hinzugefügt",
+  "addError": "Vorsatz konnte nicht hinzugefügt werden"
 }

@@ -1,1 +1,34 @@
-{}
+{
+  "teamTitleEdit": "Edit Team Goal",
+  "teamTitleNew": "Set Team Goal",
+  "teamDescription": "Set the team goal that will appear on everyone's bingo card.",
+  "memberTitleEdit": "Edit Resolution for {name}",
+  "memberTitleNew": "New Resolution for {name}",
+  "memberDescription": "Create a resolution for {name}.",
+  "defaultMember": "Member",
+  "defaultMemberLower": "this member",
+  "titleEdit": "Edit Resolution",
+  "titleNew": "New Resolution",
+  "descriptionEdit": "Update the resolution details below.",
+  "descriptionNew": "Create a new personal resolution.",
+  "titlePlaceholder": "Resolution title",
+  "textPlaceholder": "Description (optional)",
+  "saveError": "Failed to save resolution",
+  "saveErrorGeneric": "An error occurred while saving",
+  "updated": "Resolution updated",
+  "created": "Resolution created",
+  "subtasks": {
+    "heading": "Subtasks",
+    "newPlaceholder": "New subtask...",
+    "addAriaLabel": "Add subtask",
+    "saveAriaLabel": "Save subtask",
+    "cancelAriaLabel": "Cancel editing",
+    "editAriaLabel": "Edit subtask",
+    "deleteAriaLabel": "Delete subtask",
+    "empty": "No subtasks yet. Add at least one subtask."
+  },
+  "repetitions": {
+    "label": "Number of Repetitions",
+    "hint": "Must be at least 2. The resolution will be completed when you reach this count."
+  }
+}

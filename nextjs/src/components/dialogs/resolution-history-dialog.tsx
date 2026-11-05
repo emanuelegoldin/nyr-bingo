@@ -13,11 +13,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useWsRoom } from "@/hooks/use-ws-room";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import type { ResolutionHistoryEntry } from "@/lib/db/types";
 import { History, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 
 /** History entry as received from the API, with its date serialized. */
 type HistoryEntry = Omit<ResolutionHistoryEntry, "createdAt"> & { createdAt: string };
@@ -36,6 +37,9 @@ export const ResolutionHistoryDialog = ({
   setIsOpen,
 }: ResolutionHistoryDialogProps) => {
   const t = useTranslations("ResolutionHistoryDialog");
+  const tc = useTranslations("Common");
+  const format = useFormatter();
+  const toastApiError = useApiErrorToast();
   const { toast } = useToast();
 
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -59,7 +63,7 @@ export const ResolutionHistoryDialog = ({
       toastApiError(result, t('loadError'));
     }
     setLoading(false);
-  }, [resolutionId, toast]);
+  }, [resolutionId, toastApiError, t]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -86,14 +90,14 @@ export const ResolutionHistoryDialog = ({
       await loadHistory();
     } catch {
       toast({
-        title: "Error",
+        title: tc("error"),
         description: t('addError'),
         variant: "destructive",
       });
     } finally {
       setSaving(false);
     }
-  }, [canSubmit, draft, loadHistory, resolutionId, toast]);
+  }, [canSubmit, draft, loadHistory, resolutionId, toast, toastApiError, tc, t]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -149,7 +153,7 @@ export const ResolutionHistoryDialog = ({
                         </span>
                       </div>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(entry.createdAt).toLocaleString()}
+                        {format.dateTime(new Date(entry.createdAt), { dateStyle: "medium", timeStyle: "short" })}
                       </span>
                     </div>
                     <p className="text-sm whitespace-pre-wrap break-words">{entry.content}</p>

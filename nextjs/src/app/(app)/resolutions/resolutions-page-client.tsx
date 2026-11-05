@@ -23,7 +23,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
@@ -40,6 +41,8 @@ interface ResolutionsManagerProps {
 
 function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) {
   const tl = useTranslations("Labels");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const { toast } = useToast();
   const [resolutions, setResolutions] = useState<UnifiedResolution[]>(initialResolutions);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -58,12 +61,12 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
     } else if (result.status === 0) {
       // No usable response (network failure or non-JSON body)
       toast({
-        title: "Error",
-        description: "Failed to load resolutions",
+        title: tc("error"),
+        description: t("loadError"),
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, tc, t]);
 
   /** Open dialog in create mode. */
   const handleCreate = () => {
@@ -92,9 +95,9 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
 
     if (result.ok) {
       setResolutions((prev) => prev.filter((r) => r.id !== res.id));
-      toast({ title: "Success", description: "Resolution deleted" });
+      toast({ title: tc("success"), description: t("deleted") });
     } else {
-      toastApiError(result, "Failed to delete resolution");
+      toastApiError(result, t("deleteError"));
     }
     setDeletingId(null);
   };
@@ -121,7 +124,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
               <Lightbulb className="h-4 w-4 mr-2" />
               {t('browseIdeas')}
             </Button>
-            <Button size="icon" onClick={handleCreate} aria-label="Add resolution">
+            <Button size="icon" onClick={handleCreate} aria-label={t("addAriaLabel")}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -150,7 +153,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                   {/* Compound: show subtask count */}
                   {res.type === "compound" && res.subtasks && (
                     <span className="text-xs text-muted-foreground block mt-0.5">
-                      {res.subtasks.filter((s) => s.completed).length} / {res.subtasks.length} subtasks
+                      {t("subtaskProgress", { done: res.subtasks.filter((s) => s.completed).length, total: res.subtasks.length })}
                     </span>
                   )}
                   {/* Iterative: show progress */}
@@ -158,7 +161,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                     res.numberOfRepetition !== undefined &&
                     res.completedTimes !== undefined && (
                       <span className="text-xs text-muted-foreground block mt-0.5">
-                        {res.completedTimes} / {res.numberOfRepetition} repetitions
+                        {t("repetitionProgress", { done: res.completedTimes, total: res.numberOfRepetition })}
                       </span>
                     )}
                 </div>
@@ -180,8 +183,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() => handleEdit(res)}
                     disabled={deletingId === res.id}
-                    /*TODO: check label*/
-                    aria-label={t('viewHistoryAriaLabel')}
+                    aria-label={t('editAriaLabel')}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -191,7 +193,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     onClick={() => handleDelete(res)}
                     disabled={deletingId === res.id}
-                    aria-label="Delete resolution"
+                    aria-label={t('deleteAriaLabel')}
                   >
                     {deletingId === res.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -204,7 +206,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
             ))}
             {resolutions.length === 0 && (
               <p className="text-sm text-center text-muted-foreground py-4">
-                You haven&apos;t added any resolutions yet. Click the + button to create one.
+                {t('empty')}
               </p>
             )}
           </ul>

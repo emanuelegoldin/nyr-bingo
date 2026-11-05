@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import {
   getResolutionTextKey,
   RESOLUTION_TYPE_BADGE_VARIANTS,
@@ -109,6 +110,8 @@ export const PreparedResolutionsDialog = ({
   onAdded,
 }: PreparedResolutionsDialogProps) => {
   const t = useTranslations("PreparedResolutionsDialog");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const { toast } = useToast();
 
   const [pool, setPool] = useState<PreparedResolution[] | null>(null);
@@ -148,9 +151,9 @@ export const PreparedResolutionsDialog = ({
 
     if (result.ok) {
       await onAdded();
-      toast({ title: "Success", description: "Resolution added" });
+      toast({ title: tc("success"), description: t("addedToast") });
     } else {
-      toastApiError(result, "Failed to add resolution");
+      toastApiError(result, t("addError"));
     }
     setAddingId(null);
   };
