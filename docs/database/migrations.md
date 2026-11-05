@@ -409,3 +409,53 @@ None: every existing card starts unlocked.
 ### Idempotency
 
 `Create_Column` does nothing when the column already exists, so the migration can run again.
+
+## 5.9.0 - Cell Resolution Snapshot
+
+A resolution becomes a definition only, and every card cell holds a copy of it with its own progress
+(specs 03, 05, 06 and 13). The same resolution can now be completed in one game and pending in another.
+
+### Schema changes
+
+- `bingo_cells` gets `title` (`VARCHAR(255)`, nullable), `description` (`TEXT`, nullable),
+  `number_of_repetition` (`INT`, nullable) and `completed_times` (`INT`, default `0`). With the existing
+  `resolution_type`, they are the cell's copy of its resolution and its iterative progress.
+- New table `bingo_cell_subtasks`, keyed by `(cell_id, subtask_index)` and cascading from `bingo_cells`.
+  It holds each subtask of a compound cell (`title`, `description`) and whether it is `completed`.
+  `subtask_index` is 0-based.
+- New table `cell_history_entries` replaces `resolution_history_entries`. It has the same columns, with
+  `cell_id` (cascading from `bingo_cells`) in place of `resolution_id`, and indexes on
+  `(cell_id, created_at)` and `(author_user_id, created_at)`.
+- `bingo_cells.is_empty` is redefined as `source_type = 'empty'`. `resolution_id` is now only a link to
+  the resolution the cell was copied from, so it no longer decides whether a cell is empty.
+- `resolutions.scope` loses the `prepared` value.
+- `resolutions.completed_times` and the `resolution_history_entries` table are dropped.
+
+### Data migration
+
+- Every cell with a resolution gets that resolution's title, description, type and target. It also gets
+  the resolution's current progress: `completed_times` and the subtasks with their `completed` flags.
+  Progress used to be shared, so every cell of a resolution starts from the same value.
+- Every history entry is copied to each cell that showed its resolution. Entries of a resolution that is
+  on no card are dropped, because history now belongs to cells.
+- Cells of prepared fallbacks lose their `resolution_id`, and the per-cell `prepared` resolution rows are
+  deleted. The cells keep their copy.
+- The `completed` flag is removed from every subtask in `resolutions.subtasks`. The order is kept.
+
+### Design notes
+
+- Snapshot, no propagation: editing or deleting a resolution no longer changes the cards that were filled
+  with it. A cell whose resolution is deleted keeps its copy, because `resolution_id` is `ON DELETE SET
+  NULL`.
+- Cells whose resolution had been deleted before this migration have no copy to take, so they keep a
+  `NULL` title, as they had no content before.
+- The cell subtasks are rows rather than JSON, like `archived_cell_subtasks`.
+
+### Idempotency
+
+- The steps that read `resolutions.completed_times` or `resolution_history_entries` are skipped once
+  those are gone, and both are dropped last.
+- Subtasks are inserted with `INSERT IGNORE`, and history copies skip an entry the cell already has.
+- `Create_Column`, `CREATE TABLE IF NOT EXISTS`, `Drop_Column` and `Drop_Table` do nothing on a second
+  run. Rebuilding the subtask lists gives the same lists again.
+- The migration can therefore run again, including after a partial failure.
