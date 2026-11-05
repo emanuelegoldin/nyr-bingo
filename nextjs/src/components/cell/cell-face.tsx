@@ -2,12 +2,12 @@ import { BingoCell } from "@/lib/db/types";
 import { cellSourceText } from "@/lib/shared/cell-source";
 import { CellSourceType, type CellSourceLabel } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
 import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
 import { EmptyCell } from "./empty";
-import { useTranslations } from "next-intl";
 
 /** The cell fields shown on the grid, shared by live and archived cells. */
 type CellFaceData = Pick<BingoCell, "state" | "resolutionTitle" | "resolutionText" | "isEmpty" | "sourceType" | "sourceUserId">;

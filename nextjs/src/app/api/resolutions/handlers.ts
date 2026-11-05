@@ -3,13 +3,13 @@
  * Spec Reference: 03-personal-resolutions.md - Read, Delete
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { AuthContextNoParams, errorResponse, withAuth } from '@/app/api/utils';
 import { isResolutionOwner } from '@/lib/authz';
-import { getResolutionTeamIds, notifyTeams } from '@/lib/team-signals';
 import { deleteResolution, getResolutionById } from '@/lib/db';
 import type { Resolution } from '@/lib/db/types';
 import { ResolutionType } from '@/lib/shared/types';
-import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
+import { getResolutionTeamIds, notifyTeams } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Builds a DELETE handler for `?id=<id>` that only lets the owner delete the resolution.

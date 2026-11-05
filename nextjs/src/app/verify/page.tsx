@@ -7,14 +7,14 @@
  * Users land here after clicking the verification link in their email
  */
 
-import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { CornerLocaleSwitcher } from '@/components/locale-switcher';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiErrorMessage, apiFetch } from '@/lib/api-client';
+import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -73,34 +73,34 @@ function VerifyContent() {
           {status === 'loading' && (
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
           )}
-          
+
           {status === 'success' && (
             <>
               <CheckCircle2 className="h-16 w-16 text-green-600" />
               <p className="text-center text-muted-foreground">{message}</p>
-              <Button 
-                onClick={() => router.push('/login')} 
+              <Button
+                onClick={() => router.push('/login')}
                 className="w-full"
               >
                 {t('goToLogin')}
               </Button>
             </>
           )}
-          
+
           {status === 'error' && (
             <>
               <XCircle className="h-16 w-16 text-destructive" />
               <p className="text-center text-muted-foreground">{message}</p>
               <div className="flex gap-2 w-full">
-                <Button 
-                  onClick={() => router.push('/login')} 
+                <Button
+                  onClick={() => router.push('/login')}
                   variant="outline"
                   className="flex-1"
                 >
                   {t('login')}
                 </Button>
-                <Button 
-                  onClick={() => router.push('/profile')} 
+                <Button
+                  onClick={() => router.push('/profile')}
                   className="flex-1"
                 >
                   {t('goToProfile')}

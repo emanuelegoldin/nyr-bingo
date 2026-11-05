@@ -1,5 +1,6 @@
 "use client";
 
+import { useTeamWs } from "@/components/team-ws-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,15 +12,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useTeamWs } from "@/components/team-ws-provider";
-import { useWsRoom } from "@/hooks/use-ws-room";
-import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/api-client";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useWsRoom } from "@/hooks/use-ws-room";
+import { apiFetch } from "@/lib/api-client";
 import type { ResolutionHistoryEntry } from "@/lib/db/types";
 import { History, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
+import { useCallback, useEffect, useState } from "react";
 
 /** History entry as received from the API, with its date serialized. */
 type HistoryEntry = Omit<ResolutionHistoryEntry, "createdAt"> & { createdAt: string };

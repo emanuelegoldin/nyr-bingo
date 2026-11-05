@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AuthContext } from '@/app/api/utils';
 import { AppLogo } from '@/components/icons';
 import { CornerLocaleSwitcher } from '@/components/locale-switcher';
-import { Loader2, Users, CheckCircle2, XCircle } from 'lucide-react';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { AuthContext } from '@/app/api/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiErrorMessage, apiFetch } from '@/lib/api-client';
+import { CheckCircle2, Loader2, Users, XCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 /**
  * Join Team Page
@@ -30,7 +30,7 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
 
   const handleJoin = async () => {
     if (!inviteCode) return;
-    
+
     setStatus('joining');
 
     const result = await apiFetch<{ team: { id: string } }>('/api/join', {

@@ -18,9 +18,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
-import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import {
   getResolutionTextKey,
   RESOLUTION_TYPE_BADGE_VARIANTS,
@@ -28,8 +28,8 @@ import {
 import type { PreparedResolution, UnifiedResolution } from "@/lib/shared/types";
 import { PreparedResolutionCategory } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 
 const CATEGORIES = [
   PreparedResolutionCategory.SHORT,
@@ -60,29 +60,29 @@ const PreparedResolutionRow = ({
   const tl = useTranslations("Labels");
 
   return (
-  <li className="flex items-center justify-between gap-2 p-2 rounded-md bg-secondary/50">
-    <div className="min-w-0 flex-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium">{resolution.title}</span>
-        <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[resolution.resolutionType]} className="text-xs flex-shrink-0">
-          {tl(`resolutionType.${resolution.resolutionType}`)}
-        </Badge>
+    <li className="flex items-center justify-between gap-2 p-2 rounded-md bg-secondary/50">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">{resolution.title}</span>
+          <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[resolution.resolutionType]} className="text-xs flex-shrink-0">
+            {tl(`resolutionType.${resolution.resolutionType}`)}
+          </Badge>
+        </div>
+        {resolution.description && (
+          <span className="text-xs text-muted-foreground block mt-0.5">{resolution.description}</span>
+        )}
       </div>
-      {resolution.description && (
-        <span className="text-xs text-muted-foreground block mt-0.5">{resolution.description}</span>
-      )}
-    </div>
-    <Button
-      size="sm"
-      variant="outline"
-      className="flex-shrink-0"
-      disabled={isAdded || disabled}
-      onClick={() => onAdd(resolution)}
-    >
-      {isAdding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-      {isAdded ? t('added') : t('add')}
-    </Button>
-  </li>
+      <Button
+        size="sm"
+        variant="outline"
+        className="flex-shrink-0"
+        disabled={isAdded || disabled}
+        onClick={() => onAdd(resolution)}
+      >
+        {isAdding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+        {isAdded ? t('added') : t('add')}
+      </Button>
+    </li>
   );
 };
 

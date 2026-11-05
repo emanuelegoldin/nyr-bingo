@@ -1,3 +1,4 @@
+
 /**
  * Result of a client-side API call. Failures carry the HTTP status and the
  * `error` string of the response body (null when the body has none), so every

@@ -6,14 +6,14 @@
  * POST /api/cells/[cellId]/history  - add manual history entry (card owner only)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import { getCellAccess } from '@/lib/authz';
-import { notifyCell } from '@/lib/team-signals';
 import {
   createManualCellHistoryEntry,
   getCellHistoryEntries,
 } from '@/lib/db';
-import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
+import { notifyCell } from '@/lib/team-signals';
+import { NextRequest, NextResponse } from 'next/server';
 
 function parsePaginationParam(
   rawValue: string | null,

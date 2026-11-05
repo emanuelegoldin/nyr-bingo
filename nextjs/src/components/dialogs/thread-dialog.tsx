@@ -1,7 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { useReviewThread } from "@/hooks/use-review-thread";
+import { useTranslations } from "next-intl";
 import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";

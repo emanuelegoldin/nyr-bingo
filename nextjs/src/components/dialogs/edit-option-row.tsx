@@ -2,8 +2,8 @@ import type { EditOption } from "@/hooks/use-edit-cell-options";
 import { getProviderName } from "@/lib/shared/cell-source";
 import { CellSourceType, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
-import { Badge } from "../ui/badge";
 import { useTranslations } from "next-intl";
+import { Badge } from "../ui/badge";
 
 interface EditOptionRowProps {
   option: EditOption,

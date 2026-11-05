@@ -15,8 +15,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/hooks/AppContext";
-import { useToast } from "@/hooks/use-toast";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
 import { useTranslations } from "next-intl";

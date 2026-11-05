@@ -21,15 +21,15 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { usePageTitle } from "@/hooks/AppContext";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
-import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
 import { Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useCallback, useState } from "react";
 
 /* ─── Manager Component ──────────────────────────────────────────── */
 

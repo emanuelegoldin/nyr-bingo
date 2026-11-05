@@ -194,6 +194,13 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
 
+/** History entry logged after a successful save. */
+interface SaveEvent {
+  key: string;
+  content: string;
+  metadata: Record<string, unknown>;
+}
+
 /**
  * Update a resolution, comparing the submitted type with the stored one.
  *

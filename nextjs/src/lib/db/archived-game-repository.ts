@@ -19,6 +19,11 @@ import {
   type CellSubtask,
 } from '../shared/types';
 import { getBingoCard } from './bingo-card-repository';
+import { execute, query, withTransaction } from './connection';
+import { getGamePlayerIds } from './game-repository';
+import { getGameLeaderboard } from './leaderboard-repository';
+import { getTeamWithMembers } from './team-repository';
+import type { BingoCellWithThread, Game } from './types';
 
 /**
  * Text stored in `source_label` for each fixed source. The snapshot keeps the format it had
@@ -58,11 +63,6 @@ function fromStoredSourceText(sourceType: CellSourceType, storedText: string): C
   }
   return { kind: 'personal' };
 }
-import { execute, query, withTransaction } from './connection';
-import { getGamePlayerIds } from './game-repository';
-import { getGameLeaderboard } from './leaderboard-repository';
-import { getTeamWithMembers } from './team-repository';
-import type { BingoCellWithThread, Game } from './types';
 
 interface ArchivedGameRow extends RowDataPacket {
   id: string;

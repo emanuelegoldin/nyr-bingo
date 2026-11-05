@@ -18,18 +18,17 @@
 
 import { STATE_CONFIG } from "@/components/cell/cell-state-style";
 import { cellSourceText } from "@/lib/shared/cell-source";
-import type { CellSourceLabel } from "@/lib/shared/types";
-import type { CellSubtask } from "@/lib/shared/types";
+import type { CellSourceLabel, CellSubtask } from "@/lib/shared/types";
 import { CellState, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Check, Eye, History, MessageSquare, Undo2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { DialogFooter } from "../ui/dialog";
 import { CellDialog } from "./cell-dialog";
 import { CompoundChecklist } from "./resolution-detail/compound-checklist";
 import { IterativeCounter } from "./resolution-detail/iterative-counter";
-import { useTranslations } from "next-intl";
 
 /* ─── Data types ─────────────────────────────────────────────────── */
 

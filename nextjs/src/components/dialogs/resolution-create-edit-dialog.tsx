@@ -13,11 +13,12 @@
 
 "use client";
 
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
-import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import type { ResolutionFormData, ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { Button } from "../ui/button";
 import {
@@ -39,7 +40,6 @@ import {
 import { Textarea } from "../ui/textarea";
 import { CompoundSubtaskEditor } from "./resolution-form/compound-subtask-editor";
 import { IterativeRepetitionInput } from "./resolution-form/iterative-repetition-input";
-import { useTranslations } from "next-intl";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
@@ -193,7 +193,7 @@ export const ResolutionCreateEditDialog = ({
     } finally {
       setIsSaving(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, title, text, subtasks, numberOfRepetition, isSaving, initialData, isEdit, scope, gameId, toUserId]);
 
   const copy = dialogCopy(t, scope, isEdit, recipientName);
