@@ -58,7 +58,7 @@ export function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps
       )}
       {goal.type === "compound" && goal.subtasks && (
         <p className="text-xs text-muted-foreground">
-          {t("subtasks", { done: goal.subtasks.filter(s => s.completed).length, total: goal.subtasks.length })}
+          {t("subtasks", { count: goal.subtasks.length })}
         </p>
       )}
       {goal.type === "iterative" && goal.numberOfRepetition !== undefined && (

@@ -10,7 +10,6 @@
 
 import { PreparedResolutionsDialog } from "@/components/dialogs/prepared-resolutions-dialog";
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
-import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +27,7 @@ import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
-import { History, Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 
@@ -50,7 +49,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingResolution, setEditingResolution] = useState<ResolutionFormData | undefined>(undefined);
-  const [historyResolution, setHistoryResolution] = useState<{ id: string; title: string } | null>(null);
   const [browseOpen, setBrowseOpen] = useState(false);
 
   /** Fetch all resolution types from the unified endpoint. */
@@ -78,10 +76,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
   const handleEdit = (res: UnifiedResolution) => {
     setEditingResolution(unifiedToFormData(res));
     setDialogOpen(true);
-  };
-
-  const handleViewHistory = (res: UnifiedResolution) => {
-    setHistoryResolution({ id: res.id, title: res.title });
   };
 
   /**
@@ -153,30 +147,18 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                   {/* Compound: show subtask count */}
                   {res.type === "compound" && res.subtasks && (
                     <span className="text-xs text-muted-foreground block mt-0.5">
-                      {t("subtaskProgress", { done: res.subtasks.filter((s) => s.completed).length, total: res.subtasks.length })}
+                      {t("subtaskCount", { count: res.subtasks.length })}
                     </span>
                   )}
-                  {/* Iterative: show progress */}
-                  {res.type === "iterative" &&
-                    res.numberOfRepetition !== undefined &&
-                    res.completedTimes !== undefined && (
-                      <span className="text-xs text-muted-foreground block mt-0.5">
-                        {t("repetitionProgress", { done: res.completedTimes, total: res.numberOfRepetition })}
-                      </span>
-                    )}
+                  {/* Iterative: show the target */}
+                  {res.type === "iterative" && res.numberOfRepetition !== undefined && (
+                    <span className="text-xs text-muted-foreground block mt-0.5">
+                      {t("repetitionTarget", { count: res.numberOfRepetition })}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    onClick={() => handleViewHistory(res)}
-                    disabled={deletingId === res.id}
-                    aria-label={t('viewHistoryAriaLabel')}
-                  >
-                    <History className="h-4 w-4" />
-                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -227,15 +209,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
         setIsOpen={setBrowseOpen}
         onAdded={loadResolutions}
       />
-
-      {historyResolution && (
-        <ResolutionHistoryDialog
-          resolutionId={historyResolution.id}
-          resolutionTitle={historyResolution.title}
-          isOpen={true}
-          setIsOpen={(open) => { if (!open) setHistoryResolution(null); }}
-        />
-      )}
     </>
   );
 }

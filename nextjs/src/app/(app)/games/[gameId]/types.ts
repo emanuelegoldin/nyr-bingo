@@ -33,5 +33,4 @@ export type TeamProvidedResolution = Pick<
   | "resolutionType"
   | "subtasks"
   | "numberOfRepetition"
-  | "completedTimes"
 >;

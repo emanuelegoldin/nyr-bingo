@@ -2,7 +2,6 @@
   "title": "I tuoi Obiettivi",
   "description": "Gestisci i tuoi obiettivi personali. Questi possono essere utilizzati per riempire le tue carte del bingo.",
   "headerTitle": "Obiettivi",
-  "viewHistoryAriaLabel": "Visualizza la cronologia degli obiettivi",
   "browseIdeas": "Sfoglia idee",
   "loadError": "Impossibile caricare gli obiettivi",
   "deleted": "Obiettivo eliminato",
@@ -11,6 +10,6 @@
   "editAriaLabel": "Modifica obiettivo",
   "deleteAriaLabel": "Elimina obiettivo",
   "empty": "Non hai ancora aggiunto nessun obiettivo. Clicca sul pulsante + per crearne uno.",
-  "subtaskProgress": "{done} / {total} sottoattività",
-  "repetitionProgress": "{done} / {total} ripetizioni"
+  "subtaskCount": "{count, plural, one {# sottoattività} other {# sottoattività}}",
+  "repetitionTarget": "Traguardo: {count, plural, one {# ripetizione} other {# ripetizioni}}"
 }
