@@ -116,8 +116,7 @@ export async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
         c.card_id,
         CASE
           WHEN c.is_empty THEN 'Empty'
-          WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.description, r.title, '')
-          ELSE ''
+          ELSE COALESCE(c.description, c.title, '')
         END as resolution_text,
         c.state,
         bc.user_id as card_user_id,
@@ -127,7 +126,6 @@ export async function getCellInfo(cellId: string): Promise<CellInfoRow | null> {
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
      JOIN games g ON bc.game_id = g.id
-     LEFT JOIN resolutions r ON c.resolution_id = r.id
      WHERE c.id = ?`,
     [cellId]
   );

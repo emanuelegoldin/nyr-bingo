@@ -24,7 +24,7 @@ export interface CellRow {
   position: number;
   resolution_id: string | null;
   resolution_type: ResolutionType;
-  // Derived display text (resolved from join with unified resolutions table)
+  // Display text, from the cell's own copy of its resolution
   resolution_text: string;
   resolution_title: string;
   is_empty: boolean | number;
@@ -77,13 +77,11 @@ export const SELECT_CELL_WITH_RESOLVED_TEXT = `
     c.resolution_type,
     CASE
       WHEN c.is_empty THEN 'Empty'
-      WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.description, r.title, '')
-      ELSE ''
+      ELSE COALESCE(c.description, c.title, '')
     END AS resolution_text,
     CASE
       WHEN c.is_empty THEN 'Empty'
-      WHEN c.resolution_id IS NOT NULL THEN COALESCE(r.title, '')
-      ELSE ''
+      ELSE COALESCE(c.title, '')
     END AS resolution_title,
     c.is_empty,
     c.source_type,
@@ -93,7 +91,6 @@ export const SELECT_CELL_WITH_RESOLVED_TEXT = `
     c.updated_at
   FROM bingo_cells c
   JOIN bingo_cards bc ON c.card_id = bc.id
-  LEFT JOIN resolutions r ON c.resolution_id = r.id
 `;
 
 export async function getResolvedCellRowById(cellId: string): Promise<CellRow | null> {

@@ -10,7 +10,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import type { Subtask } from '../shared/types';
 import { ResolutionScope, ResolutionType } from '../shared/types';
-import { query, withTransaction, type Executor } from './connection';
+import { query, type Executor } from './connection';
 import type { Resolution } from './types';
 
 // ── Row type from database (snake_case) ──────────────────────────
@@ -27,7 +27,6 @@ interface ResolutionRow extends RowDataPacket {
   to_user_id: string | null;
   subtasks: string | Subtask[] | null;
   number_of_repetition: number | null;
-  completed_times: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -59,7 +58,6 @@ function rowToResolution(row: ResolutionRow): Resolution {
     toUserId: row.to_user_id,
     subtasks,
     numberOfRepetition: row.number_of_repetition,
-    completedTimes: row.completed_times,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -84,7 +82,7 @@ export async function getResolutionById(id: string): Promise<Resolution | null> 
  * Whether a resolution belongs to a game that has ended, which freezes it.
  * Spec: 16-games.md - Ending a Game
  * @param resolution The resolution to check
- * @returns True for a team goal, member-provided or prepared resolution of an ended game
+ * @returns True for a team goal or member-provided resolution of an ended game
  */
 export async function isResolutionFrozen(resolution: Resolution): Promise<boolean> {
   if (!resolution.gameId) return false;
@@ -120,27 +118,6 @@ export async function deleteResolution(
   return rows.length === 0;
 }
 
-/**
- * Whether a compound or iterative resolution has reached its goal.
- * @param resolution The resolution to check
- * @returns True if all subtasks are done or the counter reached its target
- */
-export function isProgressComplete(resolution: Resolution): boolean {
-  if (resolution.resolutionType === ResolutionType.COMPOUND) {
-    return resolution.subtasks?.every((subtask) => subtask.completed) ?? false;
-  }
-  return resolution.completedTimes >= (resolution.numberOfRepetition ?? Infinity);
-}
-
-/**
- * Column that must match the acting user when writing a resolution's progress.
- * @param resolution The resolution being written
- * @returns The column name, safe to interpolate into SQL
- */
-function progressOwnerColumn(resolution: Resolution): 'to_user_id' | 'owner_user_id' {
-  return resolution.scope === 'member_provided' ? 'to_user_id' : 'owner_user_id';
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // Saving resolutions
 // ═══════════════════════════════════════════════════════════════════
@@ -155,13 +132,14 @@ export interface ResolutionContent {
 }
 
 /**
- * Normalize subtasks: ensure correct shape, trim strings.
+ * Normalize subtasks: keep only the definition fields and trim them.
+ * @param subtasks The submitted subtasks
+ * @returns The subtasks to store, without progress
  */
 function normalizeSubtasks(subtasks: Subtask[]): Subtask[] {
   return subtasks.map((st) => ({
     title: st.title.trim(),
     description: st.description?.trim() ?? '',
-    completed: st.completed ?? false,
   }));
 }
 
@@ -198,8 +176,8 @@ export async function createResolution(
 
   await query(
     `INSERT INTO resolutions
-       (id, owner_user_id, title, description, resolution_type, scope, team_id, game_id, to_user_id, subtasks, number_of_repetition, completed_times)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+       (id, owner_user_id, title, description, resolution_type, scope, team_id, game_id, to_user_id, subtasks, number_of_repetition)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       ownerUserId,
@@ -221,7 +199,7 @@ export async function createResolution(
 
 /**
  * Update a resolution's content without changing its type.
- * Writes only the columns of content.type, leaving resolution_type and progress untouched.
+ * Writes only the columns of content.type, leaving resolution_type untouched. Cells keep their snapshot.
  * @param id The resolution to update
  * @param ownerUserId Its owner; other users' rows are not matched
  * @param content The validated content
@@ -246,7 +224,7 @@ export async function updateResolutionContent(
 }
 
 /**
- * Change a resolution's type, resetting its progress and retyping the bingo cells that reference it.
+ * Change a resolution's type. Cells filled from it keep their snapshot (spec 03).
  * @param id The resolution to change
  * @param ownerUserId Its owner; other users' rows are not matched
  * @param content The validated content, whose type is the new type
@@ -258,19 +236,12 @@ export async function changeResolutionType(
 ): Promise<void> {
   const { description, subtasks, numberOfRepetition } = toColumnValues(content);
 
-  await withTransaction(async (connection) => {
-    await connection.execute(
-      `UPDATE resolutions SET title = ?, description = ?, resolution_type = ?,
-       subtasks = ?, number_of_repetition = ?, completed_times = 0
-       WHERE id = ? AND owner_user_id = ?`,
-      [content.title, description, content.type, subtasks, numberOfRepetition, id, ownerUserId]
-    );
-
-    await connection.execute(
-      `UPDATE bingo_cells SET resolution_type = ? WHERE resolution_id = ?`,
-      [content.type, id]
-    );
-  });
+  await query(
+    `UPDATE resolutions SET title = ?, description = ?, resolution_type = ?,
+     subtasks = ?, number_of_repetition = ?
+     WHERE id = ? AND owner_user_id = ?`,
+    [content.title, description, content.type, subtasks, numberOfRepetition, id, ownerUserId]
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -350,35 +321,6 @@ export async function getCompoundResolutionById(id: string): Promise<Resolution 
   return row && row.resolutionType === ResolutionType.COMPOUND ? row : null;
 }
 
-/**
- * Toggle a subtask's completed state. The route checks the progress rule (spec 21);
- * the UPDATE only applies for the user who owns the progress.
- * @param id The compound resolution
- * @param ownerUserId The user making the change
- * @param subtaskIndex The subtask to toggle
- * @returns The resolution after the change, or null if it or the subtask does not exist
- */
-export async function toggleCompoundSubtask(
-  id: string,
-  ownerUserId: string,
-  subtaskIndex: number
-): Promise<Resolution | null> {
-  const existing = await getCompoundResolutionById(id);
-  if (!existing || !existing.subtasks) {
-    return null;
-  }
-
-  if (subtaskIndex < 0 || subtaskIndex >= existing.subtasks.length) return null;
-
-  const updated = [...existing.subtasks];
-  updated[subtaskIndex] = { ...updated[subtaskIndex], completed: !updated[subtaskIndex].completed };
-  await query(
-    `UPDATE resolutions SET subtasks = ? WHERE id = ? AND ${progressOwnerColumn(existing)} = ?`,
-    [JSON.stringify(updated), id, ownerUserId]
-  );
-  return getResolutionById(id);
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // Iterative resolutions (resolution_type = iterative)
 // ═══════════════════════════════════════════════════════════════════
@@ -396,31 +338,6 @@ export async function getIterativeResolutionsByUser(userId: string): Promise<Res
 export async function getIterativeResolutionById(id: string): Promise<Resolution | null> {
   const row = await getResolutionById(id);
   return row && row.resolutionType === ResolutionType.ITERATIVE ? row : null;
-}
-
-/**
- * Move the completed_times counter one step. The counter never goes below zero.
- * @param id The iterative resolution
- * @param ownerUserId The user making the change
- * @param delta 1 to increment, -1 to decrement
- * @returns The resolution after the change, or null if it does not exist.
- *   The route checks the progress rule (spec 21); the UPDATE only applies for the user who owns the progress.
- */
-export async function adjustIterativeProgress(
-  id: string,
-  ownerUserId: string,
-  delta: 1 | -1
-): Promise<Resolution | null> {
-  const existing = await getIterativeResolutionById(id);
-  if (!existing) {
-    return null;
-  }
-  if (delta < 0 && existing.completedTimes <= 0) return existing;
-  await query(
-    `UPDATE resolutions SET completed_times = completed_times + ? WHERE id = ? AND ${progressOwnerColumn(existing)} = ?`,
-    [delta, id, ownerUserId]
-  );
-  return getResolutionById(id);
 }
 
 // ═══════════════════════════════════════════════════════════════════
