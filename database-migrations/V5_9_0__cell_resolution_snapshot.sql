@@ -167,6 +167,19 @@ SET r.subtasks = (
 WHERE r.subtasks IS NOT NULL
   AND JSON_LENGTH(r.subtasks) > 0;
 
+-- The prepared pool is a definition too (spec 17), so its seed flags go as well.
+UPDATE prepared_resolutions p
+SET p.subtasks = (
+  SELECT JSON_ARRAYAGG(JSON_OBJECT('title', jt.title, 'description', jt.description) ORDER BY jt.ord)
+  FROM JSON_TABLE(p.subtasks, '$[*]' COLUMNS (
+    ord FOR ORDINALITY,
+    title TEXT PATH '$.title',
+    description TEXT PATH '$.description'
+  )) jt
+)
+WHERE p.subtasks IS NOT NULL
+  AND JSON_LENGTH(p.subtasks) > 0;
+
 -- ╔═══════════════════════════════════════════════════════════════════╗
 -- ║ Step 8 — Drop the progress kept on resolutions                    ║
 -- ╚═══════════════════════════════════════════════════════════════════╝

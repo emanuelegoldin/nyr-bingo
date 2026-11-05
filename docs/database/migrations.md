@@ -440,7 +440,8 @@ A resolution becomes a definition only, and every card cell holds a copy of it w
   on no card are dropped, because history now belongs to cells.
 - Cells of prepared fallbacks lose their `resolution_id`, and the per-cell `prepared` resolution rows are
   deleted. The cells keep their copy.
-- The `completed` flag is removed from every subtask in `resolutions.subtasks`. The order is kept.
+- The `completed` flag is removed from every subtask in `resolutions.subtasks` and `prepared_resolutions.subtasks`.
+  The order is kept.
 
 ### Design notes
 
