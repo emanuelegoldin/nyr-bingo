@@ -43,7 +43,7 @@ export const GET = withAuth(async (
 });
 
 /**
- * PATCH /api/games/[gameId] - Configure a forming game (leader only)
+ * PATCH /api/games/[gameId] - Configure a running game (leader only)
  * Spec: 16-games.md - Game Configuration
  */
 export const PATCH = withAuth(async (
@@ -67,7 +67,7 @@ export const PATCH = withAuth(async (
 
   const updated = await setGameDeadline(gameId, deadline);
   if (!updated) {
-    return errorResponse('Only a forming game can be configured', 400);
+    return errorResponse('Only a running game can be configured', 400);
   }
 
   await notifyTeams([game.teamId]);

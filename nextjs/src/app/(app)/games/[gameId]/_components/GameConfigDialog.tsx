@@ -1,38 +1,47 @@
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch, toastApiError } from "@/lib/api-client";
-import { Loader2, SlidersHorizontal } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 interface GameConfigDialogProps {
   gameId: string;
   /** The saved deadline as YYYY-MM-DD, or null when there is none. */
   deadline: string | null;
+  /** Whether the dialog is open. */
+  open: boolean;
+  /** Called to open or close the dialog. */
+  onOpenChange: (open: boolean) => void;
   /** Called after the configuration is saved. */
   onSaved: () => void;
 }
 
 /**
- * Configure button plus its dialog, where the leader sets or removes the game's deadline
- * before starting it.
- * Spec Reference: 16-games.md - Game Configuration
+ * Configure dialog, where the leader sets, changes or removes the deadline of a running game.
+ * The caller opens it, from the game's More actions menu.
+ * Spec Reference: 16-games.md - Game Configuration, Game Page
  *
- * @param props - The game, its saved deadline and the callback run after saving.
- * @returns The button and dialog.
+ * @param props - The game, its saved deadline, the open state and the callback run after saving.
+ * @returns The dialog.
  */
-export function GameConfigDialog({ gameId, deadline, onSaved }: GameConfigDialogProps) {
-  const [open, setOpen] = useState(false);
+export function GameConfigDialog({ gameId, deadline, open, onOpenChange, onSaved }: GameConfigDialogProps) {
   // An empty value means no deadline
   const [selectedDate, setSelectedDate] = useState(deadline ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const [wasOpen, setWasOpen] = useState(open);
 
-  /** Opens or closes the dialog, starting from the saved deadline each time. */
+  // Start from the saved deadline each time the dialog opens
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSelectedDate(deadline ?? "");
+  }
+
+  /** Closes the dialog unless the configuration is being saved. */
   const handleOpenChange = (nextOpen: boolean) => {
     if (isSaving) return;
-    if (nextOpen) setSelectedDate(deadline ?? "");
-    setOpen(nextOpen);
+    onOpenChange(nextOpen);
   };
 
   /** Saves the selected deadline, or removes it when none is selected. */
@@ -45,7 +54,7 @@ export function GameConfigDialog({ gameId, deadline, onSaved }: GameConfigDialog
     setIsSaving(false);
 
     if (result.ok) {
-      setOpen(false);
+      onOpenChange(false);
       onSaved();
     } else {
       toastApiError(result, "Failed to configure game");
@@ -54,17 +63,12 @@ export function GameConfigDialog({ gameId, deadline, onSaved }: GameConfigDialog
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <SlidersHorizontal className="h-4 w-4 mr-2" /> Configure
-        </Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="font-headline">Configure Game</DialogTitle>
           <DialogDescription>
             The game ends automatically after its last day. Without a date, it ends only when you
-            end it. You cannot change this after the game starts.
+            end it.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2 py-4">

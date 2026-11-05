@@ -15,7 +15,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 - See the games I am playing in one list
 - Define a team goal for a game
 - Create resolutions for the other members of a game
-- Set a deadline before starting a game
+- Set or change the deadline of a game
 - Start bingo once setup is complete
 - End a game, or have it end at its deadline
 - Delete a game
@@ -93,12 +93,18 @@ The header holds the game name, the team name linking to the team page, the lead
 | Action | Who | When |
 | ------ | --- | ---- |
 | **Set Goal** | Leader | Always |
-| **Configure** | Leader | `forming` |
+| **Configure** | Leader | Running (`forming` or `started`) |
 | **Start Bingo** | Leader | `forming` |
 | **End Game** | Leader | `started`, after confirmation |
 | **Delete Game** | Leader | Always, after confirmation |
 | **Propose Resolutions** | Any member | Always |
 | **Leave Game** | Any player | Always, after confirmation |
+
+The header keeps only the most used actions visible, so it stays readable for leaders:
+- **Start Bingo** (when the caller can use it) and **Propose Resolutions** are buttons.
+- The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Set Goal, Configure, End Game, a separator, Leave Game and Delete Game, which is styled as destructive. The menu lists only the actions the caller can use in the current state, as in the table above.
+- Choosing a menu item opens the same dialog or confirmation as the action's button did.
+- While no goal is set, a leader also sees a **Set Goal** button in the goal area. Once a goal is set, the goal area has an edit button instead.
 
 `/games` lists the caller's running games with their name, team, status and a link to the game page. New games are created from the team page (spec 04).
 
@@ -108,11 +114,11 @@ The header holds the game name, the team name linking to the team page, the lead
 
 `PATCH /api/games/[gameId]` with `deadline`, a date as `YYYY-MM-DD` or `null` for no deadline.
 
-- Only the leader can configure a game (`403` otherwise), and it must be `forming` (`400` otherwise).
+- Only the leader can configure a game (`403` otherwise), and it must be running: `forming` or `started` (`400` otherwise).
 - `deadline` must be a real date that is not before today (`400` otherwise). `null` removes the deadline.
 - A new game has no deadline. Setting one is optional.
-- Once the game has started, the deadline cannot be set, changed or removed.
-- The **Configure** dialog sets the deadline with a date picker.
+- The deadline of a started game can also be set, changed or removed, under the same rules. The new deadline applies from the next deadline sweep (Ending a Game); removing it means the game only ends manually.
+- The **Configure** dialog sets the deadline with a date picker. It is reached from the More actions menu in both statuses.
 
 The deadline is a calendar date with no time or time zone. "Today" is the date on the database server's clock. The chosen day is still playable: the deadline is over once that date has passed.
 
@@ -283,7 +289,8 @@ The primary key is `(game_id, user_id)`.
 - Each game has its own goal, member-provided resolutions, cards and leaderboard.
 - Bingo cannot start until the team goal exists.
 - Bingo can start while member-provided resolutions are missing.
-- A leader can set, change or remove the deadline of a forming game, and only of a forming game.
+- A leader can set, change or remove the deadline of a running game (`forming` or `started`), and not of an ended one.
+- Changing the deadline of a started game changes when it ends automatically.
 - A game with no deadline only ends manually.
 - A started game is ended automatically once its deadline is over, the same way as a manual end.
 - A leader can end a started game before its deadline.
@@ -297,6 +304,7 @@ The primary key is `(game_id, user_id)`.
 - Only players can see and play a game.
 - A player can leave a game after confirming. Their card, leaderboard row and the resolutions written for them are removed; resolutions they wrote for others stay, tagged "Former Teammates".
 - The only leader of a game cannot leave it until another player is promoted.
+- A leader's game header shows at most two action buttons plus the More actions menu, and every action in the Game Page table can be reached from the header or the menu.
 
 ---
 

@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData } from "@/lib/shared/types";
-import { Pencil } from "lucide-react";
+import { Pencil, Settings } from "lucide-react";
 
 interface TeamGoalDisplayProps {
   goal: ResolutionFormData | null;
@@ -11,17 +11,22 @@ interface TeamGoalDisplayProps {
 }
 
 /**
- * Shows the team goal inline. Leader sees an edit button.
+ * Shows the team goal inline. A leader sees a Set Goal button while no goal is set, and an
+ * edit button once it is.
+ * Spec Reference: 16-games.md - Game Page
  * All members see the title, type badge, description, and type-specific details.
  */
 export function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps) {
   if (!goal) {
     return (
-      <p className="text-sm text-muted-foreground">
-        {isLeader
-          ? 'No team goal set yet. Click "Set Goal" to define one.'
-          : "No team goal set yet."}
-      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="text-sm text-muted-foreground">No team goal set yet.</p>
+        {isLeader && (
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            <Settings className="h-4 w-4 mr-2" /> Set Goal
+          </Button>
+        )}
+      </div>
     );
   }
 

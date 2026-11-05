@@ -55,7 +55,7 @@ export function ProposeResolutionsDialog({
 
   return (
     <>
-      <Button variant="outline" onClick={() => { setMemberResolutionsOpen(true); onReload(); }}>
+      <Button variant="outline" size="sm" onClick={() => { setMemberResolutionsOpen(true); onReload(); }}>
         <Send className="h-4 w-4 mr-2" /> Propose Resolutions
       </Button>
 
