@@ -3,11 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { resolutionToFormData } from "@/lib/shared/resolution-form";
-import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import { RESOLUTION_TYPE_BADGE_VARIANTS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, ResolutionTypeValue } from "@/lib/shared/types";
 import { Pencil, Plus, Send } from "lucide-react";
 import { useState } from "react";
 import type { Game, TeamProvidedResolution } from "../types";
+import { useTranslations } from "next-intl";
 
 interface ProposeResolutionsDialogProps {
   game: Game;
@@ -118,6 +119,7 @@ interface MemberResolutionRowProps {
  * Shows member name and their resolution (title + type badge), or a prompt to add one.
  */
 function MemberResolutionRow({ memberName, resolution, onEdit }: MemberResolutionRowProps) {
+  const tl = useTranslations("Labels");
   return (
     <div className="flex items-center justify-between p-2 rounded-md bg-secondary/50">
       <div className="min-w-0 flex-1">
@@ -129,7 +131,7 @@ function MemberResolutionRow({ memberName, resolution, onEdit }: MemberResolutio
               variant={RESOLUTION_TYPE_BADGE_VARIANTS[resolution.resolutionType as ResolutionTypeValue]}
               className="text-xs flex-shrink-0"
             >
-              {RESOLUTION_TYPE_LABELS[resolution.resolutionType as ResolutionTypeValue]}
+              {tl(`resolutionType.${resolution.resolutionType as ResolutionTypeValue}`)}
             </Badge>
           </div>
         ) : (

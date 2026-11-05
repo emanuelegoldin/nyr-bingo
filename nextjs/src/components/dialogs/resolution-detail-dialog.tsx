@@ -17,7 +17,8 @@
 "use client";
 
 import { STATE_CONFIG } from "@/components/cell/cell-state-style";
-import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import { cellSourceText } from "@/lib/shared/cell-source";
+import type { CellSourceLabel } from "@/lib/shared/types";
 import type { Subtask } from "@/lib/shared/types";
 import { CellState, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ import { DialogFooter } from "../ui/dialog";
 import { CellDialog } from "./cell-dialog";
 import { CompoundChecklist } from "./resolution-detail/compound-checklist";
 import { IterativeCounter } from "./resolution-detail/iterative-counter";
+import { useTranslations } from "next-intl";
 
 /* ─── Data types ─────────────────────────────────────────────────── */
 
@@ -81,7 +83,7 @@ interface ResolutionDetailDialogProps {
   /** Whether the viewer's progress changes take effect (only the leader's do on team goals) */
   canChangeProgress: boolean;
   /** Human-readable source label, e.g. "Personal", "Team Goal", or a username */
-  sourceLabel?: string;
+  sourceLabel?: CellSourceLabel;
   /** Called after a mutation so the parent can refresh the bingo card */
   onRefresh?: () => void;
   /** Replaces this dialog with a follow-up one (complete, request proof, thread or history) */
@@ -106,6 +108,7 @@ export const ResolutionDetailDialog = ({
   onOpenDialog,
   onSetState,
 }: ResolutionDetailDialogProps) => {
+  const tl = useTranslations("Labels");
   const isAutomatic = data.type === ResolutionType.COMPOUND || data.type === ResolutionType.ITERATIVE;
 
   const stateConfig = STATE_CONFIG[cell.state];
@@ -126,11 +129,11 @@ export const ResolutionDetailDialog = ({
             stateConfig.text,
           )}>
             {stateConfig.icon}
-            {stateConfig.label}
+            {tl(`cellState.${cell.state}`)}
           </span>
-          <Badge variant="outline">{RESOLUTION_TYPE_LABELS[data.type] ?? data.type}</Badge>
+          <Badge variant="outline">{tl(`resolutionType.${data.type}`)}</Badge>
           {sourceLabel && (
-            <Badge variant="secondary">{sourceLabel}</Badge>
+            <Badge variant="secondary">{cellSourceText(sourceLabel, tl)}</Badge>
           )}
         </div>
 

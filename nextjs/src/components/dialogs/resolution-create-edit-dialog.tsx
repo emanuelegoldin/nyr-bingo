@@ -15,7 +15,6 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, toastApiError } from "@/lib/api-client";
-import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -39,6 +38,7 @@ import {
 import { Textarea } from "../ui/textarea";
 import { CompoundSubtaskEditor } from "./resolution-form/compound-subtask-editor";
 import { IterativeRepetitionInput } from "./resolution-form/iterative-repetition-input";
+import { useTranslations } from "next-intl";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
@@ -108,6 +108,7 @@ export const ResolutionCreateEditDialog = ({
   toUserId,
   recipientName,
 }: ResolutionCreateEditDialogProps) => {
+  const tl = useTranslations("Labels");
   const { toast } = useToast();
   const isEdit = Boolean(initialData?.id);
 
@@ -219,9 +220,9 @@ export const ResolutionCreateEditDialog = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="base">{RESOLUTION_TYPE_LABELS.base}</SelectItem>
-              <SelectItem value="compound">{RESOLUTION_TYPE_LABELS.compound}</SelectItem>
-              <SelectItem value="iterative">{RESOLUTION_TYPE_LABELS.iterative}</SelectItem>
+              <SelectItem value="base">{tl("resolutionType.base")}</SelectItem>
+              <SelectItem value="compound">{tl("resolutionType.compound")}</SelectItem>
+              <SelectItem value="iterative">{tl("resolutionType.iterative")}</SelectItem>
             </SelectContent>
           </Select>
         </div>

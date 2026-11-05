@@ -1,9 +1,9 @@
 import type { EditOption } from "@/hooks/use-edit-cell-options";
 import { getProviderName } from "@/lib/shared/cell-source";
-import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import { CellSourceType, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
+import { useTranslations } from "next-intl";
 
 interface EditOptionRowProps {
   option: EditOption,
@@ -29,8 +29,11 @@ export const EditOptionRow = ({
   onSelect
 }: EditOptionRowProps) => {
   const isMemberProvided = opt.sourceType === CellSourceType.MEMBER_PROVIDED;
-  const providerName = opt.sourceUserId ? getProviderName(opt.sourceUserId, usernames) : null;
-  const typeLabel = opt.resolutionType === ResolutionType.BASE ? null : RESOLUTION_TYPE_LABELS[opt.resolutionType];
+  const tl = useTranslations("Labels");
+  const providerName = opt.sourceUserId
+    ? getProviderName(opt.sourceUserId, usernames) ?? tl("cellSource.formerTeammates")
+    : null;
+  const typeLabel = opt.resolutionType === ResolutionType.BASE ? null : tl(`resolutionType.${opt.resolutionType}`);
   return (
     <button
       onClick={() => onSelect(opt)}

@@ -1,0 +1,20 @@
+{
+  "resolutionType": {
+    "base": "Common",
+    "compound": "Complex",
+    "iterative": "Iterative"
+  },
+  "cellState": {
+    "pending": "Pending",
+    "completed": "Completed",
+    "pending_review": "Under Review",
+    "accomplished": "Accomplished",
+    "failed": "Failed"
+  },
+  "cellSource": {
+    "team": "Team Goal",
+    "prepared": "Suggested",
+    "personal": "Personal",
+    "formerTeammates": "Former Teammates"
+  }
+}

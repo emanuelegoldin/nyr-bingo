@@ -23,7 +23,6 @@ import { apiFetch, toastApiError } from "@/lib/api-client";
 import {
   getResolutionTextKey,
   RESOLUTION_TYPE_BADGE_VARIANTS,
-  RESOLUTION_TYPE_LABELS,
 } from "@/lib/shared/resolution-type";
 import type { PreparedResolution, UnifiedResolution } from "@/lib/shared/types";
 import { PreparedResolutionCategory } from "@/lib/shared/types";
@@ -56,13 +55,16 @@ const PreparedResolutionRow = ({
   disabled,
   onAdd,
   t,
-}: PreparedResolutionRowProps) => (
+}: PreparedResolutionRowProps) => {
+  const tl = useTranslations("Labels");
+
+  return (
   <li className="flex items-center justify-between gap-2 p-2 rounded-md bg-secondary/50">
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">{resolution.title}</span>
         <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[resolution.resolutionType]} className="text-xs flex-shrink-0">
-          {RESOLUTION_TYPE_LABELS[resolution.resolutionType]}
+          {tl(`resolutionType.${resolution.resolutionType}`)}
         </Badge>
       </div>
       {resolution.description && (
@@ -80,7 +82,8 @@ const PreparedResolutionRow = ({
       {isAdded ? t('added') : t('add')}
     </Button>
   </li>
-);
+  );
+};
 
 interface PreparedResolutionsDialogProps {
   /** The user's personal resolutions, used to mark entries they already have. */

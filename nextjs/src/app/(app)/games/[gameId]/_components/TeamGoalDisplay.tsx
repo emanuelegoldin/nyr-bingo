@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import { RESOLUTION_TYPE_BADGE_VARIANTS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData } from "@/lib/shared/types";
 import { Pencil, Settings } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface TeamGoalDisplayProps {
   goal: ResolutionFormData | null;
@@ -17,6 +18,7 @@ interface TeamGoalDisplayProps {
  * All members see the title, type badge, description, and type-specific details.
  */
 export function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps) {
+  const tl = useTranslations("Labels");
   if (!goal) {
     return (
       <div className="flex items-center gap-2 flex-wrap">
@@ -36,7 +38,7 @@ export function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps
         <span className="text-sm font-semibold text-foreground">Team Goal:</span>
         <span className="text-sm font-medium">{goal.title}</span>
         <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[goal.type]} className="text-xs">
-          {RESOLUTION_TYPE_LABELS[goal.type]}
+          {tl(`resolutionType.${goal.type}`)}
         </Badge>
         {isLeader && (
           <Button

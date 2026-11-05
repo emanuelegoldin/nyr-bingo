@@ -25,7 +25,7 @@ import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, toastApiError } from "@/lib/api-client";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
-import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import { RESOLUTION_TYPE_BADGE_VARIANTS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
 import { History, Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -39,6 +39,7 @@ interface ResolutionsManagerProps {
 }
 
 function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) {
+  const tl = useTranslations("Labels");
   const { toast } = useToast();
   const [resolutions, setResolutions] = useState<UnifiedResolution[]>(initialResolutions);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -138,7 +139,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 md:flex-nowrap">
                     <span className="min-w-0 text-sm font-medium break-words md:truncate">{res.title}</span>
                     <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[res.type]} className="text-xs flex-shrink-0">
-                      {RESOLUTION_TYPE_LABELS[res.type]}
+                      {tl(`resolutionType.${res.type}`)}
                     </Badge>
                   </div>
                   {res.text && res.text !== res.title && (
