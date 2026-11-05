@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useTeamWs } from "@/components/team-ws-provider";
 import { useWsRoom } from "@/hooks/use-ws-room";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
@@ -24,14 +25,14 @@ import { useFormatter, useTranslations } from "next-intl";
 type HistoryEntry = Omit<ResolutionHistoryEntry, "createdAt"> & { createdAt: string };
 
 interface ResolutionHistoryDialogProps {
-  resolutionId: string;
+  cellId: string;
   resolutionTitle: string;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
 
 export const ResolutionHistoryDialog = ({
-  resolutionId,
+  cellId,
   resolutionTitle,
   isOpen,
   setIsOpen,
@@ -39,6 +40,7 @@ export const ResolutionHistoryDialog = ({
   const t = useTranslations("ResolutionHistoryDialog");
   const tc = useTranslations("Common");
   const format = useFormatter();
+  const { teamId } = useTeamWs();
   const toastApiError = useApiErrorToast();
   const { toast } = useToast();
 
@@ -51,10 +53,10 @@ export const ResolutionHistoryDialog = ({
   const canSubmit = draft.trim().length > 0 && canWrite && !saving;
 
   const loadHistory = useCallback(async () => {
-    if (!resolutionId) return;
+    if (!cellId) return;
     setLoading(true);
     const result = await apiFetch<{ entries?: unknown; canWrite?: boolean }>(
-      `/api/resolutions/${resolutionId}/history?limit=100&offset=0`,
+      `/api/cells/${cellId}/history?limit=100&offset=0`,
     );
     if (result.ok) {
       setEntries(Array.isArray(result.data.entries) ? (result.data.entries as HistoryEntry[]) : []);
@@ -63,21 +65,21 @@ export const ResolutionHistoryDialog = ({
       toastApiError(result, t('loadError'));
     }
     setLoading(false);
-  }, [resolutionId, toastApiError, t]);
+  }, [cellId, toastApiError, t]);
 
   useEffect(() => {
     if (!isOpen) return;
     loadHistory();
   }, [isOpen, loadHistory]);
 
-  useWsRoom({ type: "resolution", id: resolutionId }, loadHistory, isOpen && Boolean(resolutionId));
+  useWsRoom(teamId ? { type: "card", id: teamId } : null, loadHistory, isOpen && Boolean(cellId));
 
   const handleAddEntry = useCallback(async () => {
     if (!canSubmit) return;
 
     setSaving(true);
     try {
-      const result = await apiFetch<unknown>(`/api/resolutions/${resolutionId}/history`, {
+      const result = await apiFetch<unknown>(`/api/cells/${cellId}/history`, {
         method: "POST",
         json: { content: draft.trim() },
       });
@@ -97,7 +99,7 @@ export const ResolutionHistoryDialog = ({
     } finally {
       setSaving(false);
     }
-  }, [canSubmit, draft, loadHistory, resolutionId, toast, toastApiError, tc, t]);
+  }, [canSubmit, draft, loadHistory, cellId, toast, toastApiError, tc, t]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

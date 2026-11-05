@@ -19,7 +19,7 @@
 import { STATE_CONFIG } from "@/components/cell/cell-state-style";
 import { cellSourceText } from "@/lib/shared/cell-source";
 import type { CellSourceLabel } from "@/lib/shared/types";
-import type { Subtask } from "@/lib/shared/types";
+import type { CellSubtask } from "@/lib/shared/types";
 import { CellState, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Check, Eye, History, MessageSquare, Undo2, X } from "lucide-react";
@@ -35,26 +35,21 @@ import { useTranslations } from "next-intl";
 
 interface BaseData {
   type: ResolutionType.BASE;
-  id: string;
   title: string;
   description?: string | null;
 }
 
 interface CompoundData {
   type: ResolutionType.COMPOUND;
-  id: string;
   title: string;
   description?: string | null;
-  ownerUserId: string;
-  subtasks: Subtask[];
+  subtasks: CellSubtask[];
 }
 
 interface IterativeData {
   type: ResolutionType.ITERATIVE;
-  id: string;
   title: string;
   description?: string | null;
-  ownerUserId: string;
   numberOfRepetition: number;
   completedTimes: number;
 }
@@ -80,8 +75,6 @@ interface ResolutionDetailDialogProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   isOwner: boolean;
-  /** Whether the viewer's progress changes take effect (only the leader's do on team goals) */
-  canChangeProgress: boolean;
   /** Human-readable source label, e.g. "Personal", "Team Goal", or a username */
   sourceLabel?: CellSourceLabel;
   /** Called after a mutation so the parent can refresh the bingo card */
@@ -102,7 +95,6 @@ export const ResolutionDetailDialog = ({
   isOpen,
   setIsOpen,
   isOwner,
-  canChangeProgress,
   sourceLabel,
   onRefresh,
   onOpenDialog,
@@ -141,19 +133,19 @@ export const ResolutionDetailDialog = ({
         {/* Type-specific content */}
         {data.type === ResolutionType.COMPOUND && (
           <CompoundChecklist
-            id={data.id}
+            cellId={cell.cellId}
             subtasks={data.subtasks}
-            isOwner={canChangeProgress}
+            isOwner={isOwner}
             onRefresh={onRefresh}
           />
         )}
 
         {data.type === ResolutionType.ITERATIVE && (
           <IterativeCounter
-            id={data.id}
+            cellId={cell.cellId}
             numberOfRepetition={data.numberOfRepetition}
             completedTimes={data.completedTimes}
-            isOwner={canChangeProgress}
+            isOwner={isOwner}
             onRefresh={onRefresh}
           />
         )}

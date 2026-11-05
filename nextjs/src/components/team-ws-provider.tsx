@@ -31,6 +31,8 @@ export type WsMessageHandler = (msg: WsListenerMessage) => void;
 // ── Context ───────────────────────────────────────────────────────
 
 interface TeamWsContextValue {
+  /** The team whose card room the provider joins, or null outside a provider. */
+  teamId: string | null;
   /** Join a room on the shared WebSocket. Returns a function that stops tracking it. */
   joinRoom: (room: WsRoom) => () => void;
   /**
@@ -41,6 +43,7 @@ interface TeamWsContextValue {
 }
 
 const TeamWsContext = createContext<TeamWsContextValue>({
+  teamId: null,
   joinRoom: () => () => { },
   addMessageListener: () => () => { },
 });
@@ -131,7 +134,7 @@ export function TeamWsProvider({ teamId, children }: TeamWsProviderProps) {
   }, []);
 
   return (
-    <TeamWsContext.Provider value={{ joinRoom, addMessageListener }}>
+    <TeamWsContext.Provider value={{ teamId, joinRoom, addMessageListener }}>
       {children}
     </TeamWsContext.Provider>
   );
