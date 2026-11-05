@@ -16,13 +16,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import { Loader2, Plus, Users } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from 'react';
 
 export default function TeamsPage() {
-  usePageTitle("Teams");
+  const t = useTranslations("Teams");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
+  usePageTitle(t("list.pageTitle"));
 
   const { toast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
@@ -38,13 +43,13 @@ export default function TeamsPage() {
     } else if (result.status === 0) {
       // No usable response (network failure or non-JSON body)
       toast({
-        title: "Error",
-        description: "Failed to load teams",
+        title: tc("error"),
+        description: t("list.loadFailed"),
         variant: "destructive",
       });
     }
     setIsLoading(false);
-  }, [toast]);
+  }, [toast, t, tc]);
 
   useEffect(() => {
     loadTeams();
@@ -64,11 +69,11 @@ export default function TeamsPage() {
       setNewTeamName("");
       setDialogOpen(false);
       toast({
-        title: "Success",
-        description: "Team created successfully",
+        title: tc("success"),
+        description: t("list.createdTitle"),
       });
     } else {
-      toastApiError(result, "Failed to create team");
+      toastApiError(result, t("list.createFailed"));
     }
     setIsCreating(false);
   };
@@ -83,27 +88,27 @@ export default function TeamsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight font-headline">
-          My Teams
+          {t("list.heading")}
         </h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Create New Team
+              <Plus className="mr-2 h-4 w-4" /> {t("list.createButton")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="font-headline">Create New Team</DialogTitle>
+              <DialogTitle className="font-headline">{t("list.dialogTitle")}</DialogTitle>
               <DialogDescription>
-                Create a team and invite your friends. You can then start as many games as you like with them.
+                {t("list.dialogDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="teamName">Team Name</Label>
+                <Label htmlFor="teamName">{t("list.nameLabel")}</Label>
                 <Input
                   id="teamName"
-                  placeholder="e.g., Goal Getters 2025"
+                  placeholder={t("list.namePlaceholder")}
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !isCreating && handleCreateTeam()}
@@ -112,11 +117,11 @@ export default function TeamsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancel
+                {tc("cancel")}
               </Button>
               <Button onClick={handleCreateTeam} disabled={isCreating || !newTeamName.trim()}>
                 {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Team
+                {t("list.submit")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -134,11 +139,11 @@ export default function TeamsPage() {
                     {team.name}
                   </CardTitle>
                   <CardDescription>
-                    Led by {formatLeaderNames(team.members)}
+                    {t("list.ledBy", { names: formatLeaderNames(team.members, t("leaders.unknown")) })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <p className="text-sm font-medium mb-2">Team Members:</p>
+                  <p className="text-sm font-medium mb-2">{t("list.membersLabel")}</p>
                   <div className="flex items-center space-x-2">
                     <div className="flex -space-x-2 overflow-hidden">
                       {team.members.map(member => (
@@ -150,13 +155,13 @@ export default function TeamsPage() {
                       ))}
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {team.members.length} members
+                      {t("list.memberCount", { count: team.members.length })}
                     </span>
                   </div>
                 </CardContent>
                 <CardFooter>
                   <Button asChild className="w-full">
-                    <Link href={`/teams/${team.id}`}>View Team</Link>
+                    <Link href={`/teams/${team.id}`}>{t("list.viewTeam")}</Link>
                   </Button>
                 </CardFooter>
               </Card>
@@ -165,10 +170,10 @@ export default function TeamsPage() {
         </div>
       ) : (
         <div className="text-center py-16 border-2 border-dashed rounded-lg">
-          <h3 className="text-xl font-semibold font-headline">No Teams Yet</h3>
-          <p className="text-muted-foreground mt-2 mb-4">You're not part of any team. Create one to get started!</p>
+          <h3 className="text-xl font-semibold font-headline">{t("list.emptyTitle")}</h3>
+          <p className="text-muted-foreground mt-2 mb-4">{t("list.emptyText")}</p>
           <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Create Your First Team
+            <Plus className="mr-2 h-4 w-4" /> {t("list.createFirst")}
           </Button>
         </div>
       )}

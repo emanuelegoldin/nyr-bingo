@@ -12,6 +12,7 @@ import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import type { TeamMember } from "./types";
 
@@ -33,10 +34,11 @@ interface MembersTabProps {
  * @returns The members card.
  */
 export function MembersTab({ members, currentUserId, canPromote = false, onPromote, promotingUserId = null }: MembersTabProps) {
+  const t = useTranslations("Teams");
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Team Members</CardTitle>
+        <CardTitle className="font-headline">{t("membersTab.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="divide-y">
@@ -63,19 +65,19 @@ export function MembersTab({ members, currentUserId, canPromote = false, onPromo
                   <p className="font-medium truncate">
                     {member.user.displayName || member.user.username}
                     {isCurrentUser && (
-                      <span className="text-muted-foreground text-sm ml-1">(You)</span>
+                      <span className="text-muted-foreground text-sm ml-1">{t("membersTab.you")}</span>
                     )}
                   </p>
                 </div>
 
                 {!isLeader && canPromote && onPromote && (
                   <ConfirmActionDialog
-                    triggerLabel="Make Leader"
+                    triggerLabel={t("membersTab.makeLeader")}
                     triggerIcon={Crown}
                     triggerVariant="outline"
-                    title={`Make ${member.user.displayName || member.user.username} a leader?`}
-                    description="Leaders can invite members, create, start, end and delete games, promote other members and delete the team. This cannot be undone."
-                    confirmLabel="Make Leader"
+                    title={t("membersTab.makeLeaderTitle", { name: member.user.displayName || member.user.username })}
+                    description={t("membersTab.makeLeaderDescription")}
+                    confirmLabel={t("membersTab.makeLeader")}
                     onConfirm={() => onPromote(member.user.userId)}
                     isPending={promotingUserId === member.user.userId}
                   />
@@ -84,11 +86,11 @@ export function MembersTab({ members, currentUserId, canPromote = false, onPromo
                 {/* Leader badge */}
                 {isLeader && (
                   <span
-                    title="Team Leader"
+                    title={t("membersTab.teamLeader")}
                     className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400"
                   >
                     <Crown className="h-4 w-4" />
-                    Leader
+                    {t("membersTab.leader")}
                   </span>
                 )}
               </li>
