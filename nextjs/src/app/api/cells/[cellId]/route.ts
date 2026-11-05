@@ -14,6 +14,7 @@ import { errorResponse, withAuth, AuthContext } from '../../utils';
 /**
  * GET /api/cells/[cellId] - The cell with its copy of the resolution and its progress
  * Spec: 06-bingo-gameplay.md - Cell Detail Dialog. Visible to whoever can view the card.
+ * Like every cell route, refusals are 400 (spec 21 - Status Rules).
  */
 export const GET = withAuth(async (
   _request: NextRequest,
@@ -23,10 +24,10 @@ export const GET = withAuth(async (
 
   const access = await getCellAccess(cellId, currentUser.id);
   if (!access.cell) {
-    return errorResponse('Cell not found', 404);
+    return errorResponse('Cell not found', 400);
   }
   if (!access.canView) {
-    return errorResponse('You are not allowed to view this cell', 403);
+    return errorResponse('You are not allowed to view this cell', 400);
   }
 
   return NextResponse.json({ cell: access.cell });
