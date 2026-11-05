@@ -1,8 +1,12 @@
-export default function NotFound() {
+import { getTranslations } from 'next-intl/server';
+
+export default async function NotFound() {
+  const t = await getTranslations('Common');
+
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center gap-4">
       <h1 className="text-6xl font-bold">404</h1>
-      <p className="text-lg text-gray-600">Page Not Found - (┬┬﹏┬┬)</p>
+      <p className="text-lg text-gray-600">{t('notFound')} - (┬┬﹏┬┬)</p>
     </div>
   );
 }

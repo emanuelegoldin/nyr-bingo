@@ -2,13 +2,16 @@
 
 import { apiFetch } from "@/lib/api-client";
 import { useWsRoom } from "@/hooks/use-ws-room";
+import { useTeamWs } from "@/components/team-ws-provider";
+import type { BingoCellDetail } from "@/lib/db/types";
 import { Check, Loader2, Minus, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { Button } from "../../ui/button";
 import { Progress } from "../../ui/progress";
 
 interface IterativeCounterProps {
-  id: string;
+  cellId: string;
   numberOfRepetition: number;
   completedTimes: number;
   isOwner: boolean;
@@ -18,16 +21,18 @@ interface IterativeCounterProps {
 /**
  * Renders a counter display (X / N) with increment/decrement buttons
  * and a progress bar. Only the owner can change the counter.
- * Joins a resolution-level WS room to receive real-time updates
+ * Listens on the team's card room to receive real-time updates
  * when the owner increments/decrements from another session/device.
  */
 export const IterativeCounter = ({
-  id,
+  cellId,
   numberOfRepetition,
   completedTimes: initialCompleted,
   isOwner,
   onRefresh,
 }: IterativeCounterProps) => {
+  const t = useTranslations("Cell");
+  const { teamId } = useTeamWs();
   const [completedTimes, setCompletedTimes] = useState(initialCompleted);
   const [loading, setLoading] = useState(false);
 
@@ -37,16 +42,13 @@ export const IterativeCounter = ({
     Math.round((completedTimes / numberOfRepetition) * 100)
   );
 
-  // ── Join the resolution room and listen for refresh events ────
-  useWsRoom({ type: "resolution", id }, () => {
-    // Re-fetch the resolution data from the API
-    apiFetch<{ resolution?: { completedTimes?: unknown } }>(`/api/resolutions/iterative?id=${id}`)
-      .then((result) => {
-        const completed = result.ok ? result.data?.resolution?.completedTimes : undefined;
-        if (typeof completed === "number") {
-          setCompletedTimes(completed);
-        }
-      });
+  // ── Listen on the card room and re-fetch the cell ─────────────
+  useWsRoom(teamId ? { type: "card", id: teamId } : null, () => {
+    apiFetch<{ cell: BingoCellDetail }>(`/api/cells/${cellId}`).then((result) => {
+      if (result.ok) {
+        setCompletedTimes(result.data.cell.completedTimes);
+      }
+    });
   });
 
   const handleAction = useCallback(
@@ -54,19 +56,19 @@ export const IterativeCounter = ({
       if (loading) return;
       setLoading(true);
       try {
-        const result = await apiFetch<{ resolution: { completedTimes: number } }>(
-          `/api/resolutions/iterative/${id}/${action}`,
+        const result = await apiFetch<{ cell: BingoCellDetail }>(
+          `/api/cells/${cellId}/progress/${action}`,
           { method: "PATCH" },
         );
         if (result.ok) {
-          setCompletedTimes(result.data.resolution.completedTimes);
+          setCompletedTimes(result.data.cell.completedTimes);
           onRefresh?.();
         }
       } finally {
         setLoading(false);
       }
     },
-    [id, loading, onRefresh]
+    [cellId, loading, onRefresh]
   );
 
   return (
@@ -80,7 +82,7 @@ export const IterativeCounter = ({
 
         {isComplete && (
           <span className="flex items-center gap-1 text-green-600 font-medium text-sm">
-            <Check className="h-4 w-4" /> Target reached!
+            <Check className="h-4 w-4" /> {t("iterative.targetReached")}
           </span>
         )}
 
@@ -92,7 +94,7 @@ export const IterativeCounter = ({
               size="icon"
               disabled={loading || completedTimes <= 0}
               onClick={() => handleAction("decrement")}
-              aria-label="Decrement counter"
+              aria-label={t("iterative.decrement")}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Minus className="h-4 w-4" />}
             </Button>
@@ -101,7 +103,7 @@ export const IterativeCounter = ({
               size="icon"
               disabled={loading}
               onClick={() => handleAction("increment")}
-              aria-label="Increment counter"
+              aria-label={t("iterative.increment")}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             </Button>
@@ -112,7 +114,7 @@ export const IterativeCounter = ({
       {/* Progress bar */}
       <div className="space-y-1">
         <Progress value={progressPercent} className="h-3" />
-        <p className="text-xs text-muted-foreground text-center">{progressPercent}% complete</p>
+        <p className="text-xs text-muted-foreground text-center">{t("iterative.percentComplete", { percent: progressPercent })}</p>
       </div>
     </div>
   );

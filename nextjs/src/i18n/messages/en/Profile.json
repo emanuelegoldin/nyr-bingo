@@ -1,0 +1,42 @@
+{
+  "pageTitle": "Settings",
+  "tabs": {
+    "profile": "Profile",
+    "password": "Password"
+  },
+  "info": {
+    "title": "Profile Information",
+    "description": "Update your personal details here.",
+    "verified": "Verified",
+    "notVerified": "Not verified",
+    "verifyNeeded": "You need to verify your email to create or join teams.",
+    "resend": "Resend Verification Email",
+    "sending": "Sending...",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Your display name",
+    "displayNamePublic": "Make display name public",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell others about yourself...",
+    "bioPublic": "Make bio public",
+    "save": "Save Changes"
+  },
+  "toasts": {
+    "updated": "Profile updated successfully",
+    "updateFailed": "Failed to update profile",
+    "verificationSent": "Verification email sent successfully",
+    "resendFailed": "Failed to resend verification email"
+  },
+  "password": {
+    "title": "Change Password",
+    "description": "Update your password here. It's a good idea to use a strong, unique password.",
+    "current": "Current Password",
+    "new": "New Password",
+    "confirm": "Confirm New Password",
+    "update": "Update Password"
+  },
+  "publicPage": {
+    "pageTitle": "Profile",
+    "title": "Profile",
+    "bio": "Bio"
+  }
+}

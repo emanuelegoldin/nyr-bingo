@@ -1,0 +1,56 @@
+{
+  "dialog": {
+    "title": "Prüfungs-Thread",
+    "description": "Diskussion, Dateien und Abstimmung zu \"{resolutionText}\".",
+    "loading": "Thread wird geladen…",
+    "status": "Status",
+    "statusValue": {
+      "open": "offen",
+      "closed": "geschlossen"
+    },
+    "closeThread": "Thread schließen",
+    "unavailable": "Thread nicht verfügbar."
+  },
+  "files": {
+    "title": "Dateien",
+    "empty": "Noch keine Dateien",
+    "delete": "Löschen",
+    "chooseFile": "Datei auswählen",
+    "noFileSelected": "Keine Datei ausgewählt",
+    "upload": "Hochladen"
+  },
+  "messages": {
+    "title": "Nachrichten",
+    "empty": "Noch keine Nachrichten",
+    "placeholder": "Schreibe eine Nachricht…",
+    "send": "Senden",
+    "fallbackAuthor": "Nutzer"
+  },
+  "vote": {
+    "vote": "Abstimmen",
+    "votes": "Stimmen",
+    "accept": "Akzeptieren",
+    "deny": "Ablehnen",
+    "noVotes": "Noch keine Stimmen",
+    "summary": "{acceptCount} akzeptiert, {denyCount} abgelehnt",
+    "submitFailed": "Stimme konnte nicht abgegeben werden"
+  },
+  "requestProof": {
+    "title": "Nachweis anfordern?",
+    "description": "Fordere einen Nachweis für \"{resolutionText}\" an. Dadurch wird ein Prüfungs-Thread eröffnet und der Vorsatz in die Prüfung verschoben.",
+    "submit": "Nachweis anfordern",
+    "successTitle": "Nachweis angefordert",
+    "successDescription": "Für diesen Vorsatz wurde ein Prüfungs-Thread eröffnet.",
+    "failed": "Nachweis konnte nicht angefordert werden"
+  },
+  "hook": {
+    "refreshFailed": "Prüfungs-Thread konnte nicht aktualisiert werden",
+    "loadFailed": "Prüfungs-Thread konnte nicht geladen werden",
+    "uploadFailed": "Datei konnte nicht hochgeladen werden",
+    "uploadMissingInfo": "Datei hochgeladen, aber die Antwort enthält keine Dateiinformationen",
+    "postFailed": "Nachricht konnte nicht gesendet werden",
+    "deleteFailed": "Datei konnte nicht gelöscht werden",
+    "closeConfirm": "Diesen Thread schließen und den Vorsatz auf ausstehend zurücksetzen? Dabei werden alle Dateien und Nachrichten des Threads gelöscht.",
+    "closeFailed": "Thread konnte nicht geschlossen werden"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Verlauf des Vorsatzes",
+  "description": "Verlauf für \"{title}\".",
+  "addNoteTitle": "Fortschrittsnotiz hinzufügen",
+  "addNotePlaceholder": "Schreib auf, was du getan, gelernt oder geschafft hast...",
+  "addNoteButton": "Notiz hinzufügen",
+  "loading": "Verlauf wird geladen...",
+  "empty": "Noch kein Verlauf.",
+  "close": "Schließen",
+  "noteLabel": "Notiz",
+  "progressLabel": "Fortschritt",
+  "loadError": "Der Verlauf konnte nicht geladen werden",
+  "addError": "Der Eintrag konnte nicht hinzugefügt werden"
+}

@@ -3,11 +3,11 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, ThreadStatus, VoteType } from "../shared/types";
+import { CellSourceType, CellState, CellSubtask, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, ThreadStatus, VoteType } from "../shared/types";
 
 // Re-export shared enums/types so consumers can import from db/types
 export { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, ThreadStatus, VoteType };
-export type { Subtask };
+export type { CellSubtask, Subtask };
 
 // User entity
 // Spec: 00-system-overview.md, 01-authentication.md
@@ -77,21 +77,21 @@ export interface Resolution {
   resolutionType: ResolutionType;
   scope: ResolutionScope;
   teamId: string | null;
-  /** The game of a team, member-provided or prepared resolution; null for personal ones. */
+  /** The game of a team or member-provided resolution; null for personal ones. */
   gameId: string | null;
   toUserId: string | null;
   subtasks: Subtask[] | null;
   numberOfRepetition: number | null;
-  completedTimes: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export type ResolutionHistoryEntryType = 'manual_note' | 'system_event';
 
+/** An entry of a cell's history. Spec: 13-resolution-history-and-progress.md */
 export interface ResolutionHistoryEntry {
   id: string;
-  resolutionId: string;
+  cellId: string;
   authorUserId: string;
   authorUsername: string;
   entryType: ResolutionHistoryEntryType;
@@ -101,8 +101,8 @@ export interface ResolutionHistoryEntry {
   createdAt: Date;
 }
 
-export interface ResolutionHistoryAccess {
-  resolution: Resolution | null;
+export interface CellAccess {
+  cell: BingoCellDetail | null;
   canView: boolean;
   canWrite: boolean;
 }
@@ -210,6 +210,21 @@ export interface BingoCardWithCells extends BingoCard {
 
 export interface BingoCellWithThread extends BingoCell {
   reviewThreadId?: string | null;
+}
+
+/**
+ * A cell with its copy of the resolution and its progress, as shown in the cell dialog.
+ * Spec: 06-bingo-gameplay.md - Cell Detail Dialog, Progress on a Cell
+ */
+export interface BingoCellDetail extends BingoCell {
+  gameId: string;
+  gameStatus: GameStatus;
+  cardUserId: string;
+  description: string | null;
+  /** The subtasks of a compound cell, in order; null for other types. */
+  subtasks: CellSubtask[] | null;
+  numberOfRepetition: number | null;
+  completedTimes: number;
 }
 
 export interface ReviewThread {

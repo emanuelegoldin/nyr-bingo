@@ -1,8 +1,8 @@
 import type { EditOption } from "@/hooks/use-edit-cell-options";
 import { getProviderName } from "@/lib/shared/cell-source";
-import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import { CellSourceType, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { Badge } from "../ui/badge";
 
 interface EditOptionRowProps {
@@ -29,8 +29,12 @@ export const EditOptionRow = ({
   onSelect
 }: EditOptionRowProps) => {
   const isMemberProvided = opt.sourceType === CellSourceType.MEMBER_PROVIDED;
-  const providerName = opt.sourceUserId ? getProviderName(opt.sourceUserId, usernames) : null;
-  const typeLabel = opt.resolutionType === ResolutionType.BASE ? null : RESOLUTION_TYPE_LABELS[opt.resolutionType];
+  const tl = useTranslations("Labels");
+  const t = useTranslations("Cell");
+  const providerName = opt.sourceUserId
+    ? getProviderName(opt.sourceUserId, usernames) ?? tl("cellSource.formerTeammates")
+    : null;
+  const typeLabel = opt.resolutionType === ResolutionType.BASE ? null : tl(`resolutionType.${opt.resolutionType}`);
   return (
     <button
       onClick={() => onSelect(opt)}
@@ -47,7 +51,7 @@ export const EditOptionRow = ({
             <Badge variant="secondary" className="text-xs">{typeLabel}</Badge>
           )}
           <Badge variant="outline" className="shrink-0">
-            {isMemberProvided ? (providerName ?? 'Member') : 'Personal'}
+            {isMemberProvided ? (providerName ?? t("editOption.member")) : tl("cellSource.personal")}
           </Badge>
         </div>
       </div>

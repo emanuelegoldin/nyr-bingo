@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageTitle } from "@/hooks/AppContext";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 interface PublicProfilePageShellProps {
@@ -16,7 +17,8 @@ interface PublicProfilePageShellProps {
 export default function PublicProfilePageShell({
   children,
 }: PublicProfilePageShellProps) {
-  usePageTitle("Profile");
+  const t = useTranslations("Profile");
+  usePageTitle(t("publicPage.pageTitle"));
 
   return <>{children}</>;
 }

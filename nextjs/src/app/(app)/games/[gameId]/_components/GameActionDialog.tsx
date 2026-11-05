@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, type LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 interface GameActionDialogProps {
@@ -41,6 +42,7 @@ export function GameActionDialog({
   onConfirm,
   isPending,
 }: GameActionDialogProps) {
+  const tc = useTranslations("Common");
   const [open, setOpen] = useState(false);
 
   return (
@@ -63,7 +65,7 @@ export function GameActionDialog({
         <AlertDialogFooter>
           <AlertDialogCancel asChild>
             <Button variant="outline" disabled={isPending}>
-              Cancel
+              {tc("cancel")}
             </Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>

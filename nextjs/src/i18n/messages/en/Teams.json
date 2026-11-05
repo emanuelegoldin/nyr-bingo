@@ -1,0 +1,94 @@
+{
+  "list": {
+    "pageTitle": "Teams",
+    "loadFailed": "Failed to load teams",
+    "createdTitle": "Team created successfully",
+    "createFailed": "Failed to create team",
+    "heading": "My Teams",
+    "createButton": "Create New Team",
+    "dialogTitle": "Create New Team",
+    "dialogDescription": "Create a team and invite your friends. You can then start as many games as you like with them.",
+    "nameLabel": "Team Name",
+    "namePlaceholder": "e.g., Goal Getters 2025",
+    "submit": "Create Team",
+    "ledBy": "Led by {names}",
+    "membersLabel": "Team Members:",
+    "memberCount": "{count, plural, one {# member} other {# members}}",
+    "viewTeam": "View Team",
+    "emptyTitle": "No Teams Yet",
+    "emptyText": "You're not part of any team. Create one to get started!",
+    "createFirst": "Create Your First Team"
+  },
+  "detail": {
+    "pageTitle": "Team",
+    "deletedTitle": "Team deleted",
+    "deletedDescription": "The team and its related data were removed.",
+    "deleteFailed": "Failed to delete team",
+    "leftTitle": "You left the team",
+    "leaveFailed": "Failed to leave team",
+    "promotedTitle": "Member promoted to leader",
+    "promoteFailed": "Failed to promote member",
+    "leaders": "Team Leaders: {names}",
+    "deleteTrigger": "Delete Team",
+    "deleteTitle": "Delete this team?",
+    "deleteDescription": "This will permanently delete the team, its memberships, invitations and all of its games, with their resolutions, bingo cards and related gameplay data. Archived games are kept. This action cannot be undone.",
+    "leaveTrigger": "Leave Team",
+    "leaveTitle": "Leave this team?",
+    "leaveDescription": "You will also leave every running game of this team that you play: your bingo cards, leaderboard entries and the resolutions written for you are deleted. The resolutions you wrote for others stay on their cards. You can only come back with a new invitation. If you are the only leader, promote another member first.",
+    "gamesHeading": "Games",
+    "noGamesCanCreate": "No games yet. Click \"New Game\" to create one.",
+    "noGames": "No games yet."
+  },
+  "inviteDialog": {
+    "createdDescription": "Invite link created",
+    "createFailed": "Failed to create invite",
+    "trigger": "Invite",
+    "title": "Invite Members",
+    "description": "Create an invite link to share with your friends.",
+    "generate": "Generate Invite Link",
+    "linkLabel": "Invite Link"
+  },
+  "newGameDialog": {
+    "createFailed": "Failed to create game",
+    "trigger": "New Game",
+    "title": "New Game",
+    "description": "Start a new game with this team and choose who plays. No one needs to be invited again.",
+    "nameLabel": "Game Name",
+    "namePlaceholder": "e.g., Resolutions 2027",
+    "players": "Players",
+    "you": "(You)",
+    "submit": "Create Game"
+  },
+  "membersTab": {
+    "title": "Team Members",
+    "you": "(You)",
+    "makeLeader": "Make Leader",
+    "makeLeaderTitle": "Make {name} a leader?",
+    "makeLeaderDescription": "Leaders can invite members, create, start, end and delete games, promote other members and delete the team. This cannot be undone.",
+    "teamLeader": "Team Leader",
+    "leader": "Leader"
+  },
+  "gameList": {
+    "viewGame": "View Game"
+  },
+  "gameStatus": {
+    "started": "Game Started",
+    "forming": "Forming"
+  },
+  "leaders": {
+    "unknown": "Unknown"
+  },
+  "join": {
+    "title": "Join a Team",
+    "invited": "You've been invited to join a Resolution Bingo team!",
+    "ready": "Ready to join? Click the button below to accept the invitation.",
+    "accept": "Accept Invitation",
+    "loginNeeded": "You'll need to be logged in to join the team.",
+    "joining": "Joining team...",
+    "joined": "Successfully joined the team!",
+    "redirecting": "Redirecting to team page...",
+    "joinFailed": "Failed to join team",
+    "tryAgain": "Try Again",
+    "login": "Login to Continue"
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input } from "../../ui/input";
 
 interface IterativeRepetitionInputProps {
@@ -13,10 +14,12 @@ interface IterativeRepetitionInputProps {
  * Minimum value: 2.
  */
 export const IterativeRepetitionInput = ({ value, onChange, disabled }: IterativeRepetitionInputProps) => {
+  const t = useTranslations("ResolutionForm");
+
   return (
     <div className="space-y-2">
       <label htmlFor="num-repetitions" className="text-sm font-medium">
-        Number of Repetitions
+        {t("repetitions.label")}
       </label>
       <Input
         id="num-repetitions"
@@ -32,7 +35,7 @@ export const IterativeRepetitionInput = ({ value, onChange, disabled }: Iterativ
         className="w-32"
       />
       <p className="text-xs text-muted-foreground">
-        Must be at least 2. The resolution will be completed when you reach this count.
+        {t("repetitions.hint")}
       </p>
     </div>
   );

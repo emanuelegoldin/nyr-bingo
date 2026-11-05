@@ -1,0 +1,94 @@
+{
+  "list": {
+    "pageTitle": "Team",
+    "loadFailed": "Impossibile caricare i team",
+    "createdTitle": "Team creato con successo",
+    "createFailed": "Impossibile creare il team",
+    "heading": "I miei team",
+    "createButton": "Crea nuovo team",
+    "dialogTitle": "Crea nuovo team",
+    "dialogDescription": "Crea un team e invita i tuoi amici. Poi potrai avviare con loro tutte le partite che vuoi.",
+    "nameLabel": "Nome del team",
+    "namePlaceholder": "es. Cacciatori di obiettivi 2025",
+    "submit": "Crea team",
+    "ledBy": "Guidato da {names}",
+    "membersLabel": "Membri del team:",
+    "memberCount": "{count, plural, one {# membro} other {# membri}}",
+    "viewTeam": "Vai al team",
+    "emptyTitle": "Ancora nessun team",
+    "emptyText": "Non fai parte di nessun team. Creane uno per iniziare!",
+    "createFirst": "Crea il tuo primo team"
+  },
+  "detail": {
+    "pageTitle": "Team",
+    "deletedTitle": "Team eliminato",
+    "deletedDescription": "Il team e i dati collegati sono stati rimossi.",
+    "deleteFailed": "Impossibile eliminare il team",
+    "leftTitle": "Hai lasciato il team",
+    "leaveFailed": "Impossibile lasciare il team",
+    "promotedTitle": "Membro promosso a leader",
+    "promoteFailed": "Impossibile promuovere il membro",
+    "leaders": "Leader del team: {names}",
+    "deleteTrigger": "Elimina team",
+    "deleteTitle": "Eliminare questo team?",
+    "deleteDescription": "Verranno eliminati definitivamente il team, le sue iscrizioni, gli inviti e tutte le sue partite, con i relativi obiettivi, carte bingo e dati di gioco. Le partite archiviate vengono conservate. Questa azione non può essere annullata.",
+    "leaveTrigger": "Lascia il team",
+    "leaveTitle": "Lasciare questo team?",
+    "leaveDescription": "Lascerai anche ogni partita in corso di questo team a cui partecipi: le tue carte bingo, le voci in classifica e gli obiettivi scritti per te verranno eliminati. Gli obiettivi che hai scritto per gli altri restano sulle loro carte. Potrai rientrare solo con un nuovo invito. Se sei l'unico leader, promuovi prima un altro membro.",
+    "gamesHeading": "Partite",
+    "noGamesCanCreate": "Ancora nessuna partita. Clicca su \"Nuova partita\" per crearne una.",
+    "noGames": "Ancora nessuna partita."
+  },
+  "inviteDialog": {
+    "createdDescription": "Link di invito creato",
+    "createFailed": "Impossibile creare l'invito",
+    "trigger": "Invita",
+    "title": "Invita membri",
+    "description": "Crea un link di invito da condividere con i tuoi amici.",
+    "generate": "Genera link di invito",
+    "linkLabel": "Link di invito"
+  },
+  "newGameDialog": {
+    "createFailed": "Impossibile creare la partita",
+    "trigger": "Nuova partita",
+    "title": "Nuova partita",
+    "description": "Avvia una nuova partita con questo team e scegli chi gioca. Nessuno deve essere invitato di nuovo.",
+    "nameLabel": "Nome della partita",
+    "namePlaceholder": "es. Obiettivi 2027",
+    "players": "Giocatori",
+    "you": "(Tu)",
+    "submit": "Crea partita"
+  },
+  "membersTab": {
+    "title": "Membri del team",
+    "you": "(Tu)",
+    "makeLeader": "Rendi leader",
+    "makeLeaderTitle": "Rendere {name} un leader?",
+    "makeLeaderDescription": "I leader possono invitare membri, creare, avviare, terminare ed eliminare partite, promuovere altri membri ed eliminare il team. Questa azione non può essere annullata.",
+    "teamLeader": "Leader del team",
+    "leader": "Leader"
+  },
+  "gameList": {
+    "viewGame": "Vai alla partita"
+  },
+  "gameStatus": {
+    "started": "Partita iniziata",
+    "forming": "In formazione"
+  },
+  "leaders": {
+    "unknown": "Sconosciuto"
+  },
+  "join": {
+    "title": "Unisciti a un team",
+    "invited": "Sei stato invitato a unirti a un team di Resolution Bingo!",
+    "ready": "Pronto a unirti? Clicca il pulsante qui sotto per accettare l'invito.",
+    "accept": "Accetta l'invito",
+    "loginNeeded": "Devi aver effettuato l'accesso per unirti al team.",
+    "joining": "Ingresso nel team...",
+    "joined": "Ti sei unito al team con successo!",
+    "redirecting": "Reindirizzamento alla pagina del team...",
+    "joinFailed": "Impossibile unirsi al team",
+    "tryAgain": "Riprova",
+    "login": "Accedi per continuare"
+  }
+}

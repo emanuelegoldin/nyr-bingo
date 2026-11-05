@@ -1,13 +1,13 @@
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import type { BingoCardWithCells } from "@/lib/db/types";
 import { DONE_CELL_STATES } from "@/lib/shared/types";
 import { Button } from "@ui/button";
 import { Loader2, Lock, Shuffle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useContext, useState } from "react";
 import { BingoCardContext } from "../BingoCardProvider";
-
-const SHUFFLE_BLOCKED_HINT = "A card with completed cells can no longer be shuffled";
 
 /**
  * Shuffle and Lock buttons of the owner's dashboard card. Both are hidden once the card is
@@ -17,6 +17,8 @@ const SHUFFLE_BLOCKED_HINT = "A card with completed cells can no longer be shuff
  * @returns The buttons, or nothing when the card cannot be rearranged.
  */
 export function BingoCardArrangeButtons() {
+  const t = useTranslations("Dashboard");
+  const toastApiError = useApiErrorToast();
   const { card, setCard, gameId, isEditMode } = useContext(BingoCardContext);
   const [pendingAction, setPendingAction] = useState<"shuffle" | "lock" | null>(null);
 
@@ -37,7 +39,7 @@ export function BingoCardArrangeButtons() {
     setPendingAction(null);
 
     if (!result.ok) {
-      toastApiError(result, action === "shuffle" ? "Failed to shuffle card" : "Failed to lock card");
+      toastApiError(result, action === "shuffle" ? t("shuffleFailed") : t("lockFailed"));
       return;
     }
     const updatedCard = result.data.card;
@@ -46,7 +48,7 @@ export function BingoCardArrangeButtons() {
 
   return (
     <>
-      <span title={hasDoneCell ? SHUFFLE_BLOCKED_HINT : undefined}>
+      <span title={hasDoneCell ? t("shuffleBlockedHint") : undefined}>
         <Button
           variant="outline"
           size="sm"
@@ -56,16 +58,16 @@ export function BingoCardArrangeButtons() {
           {pendingAction === "shuffle"
             ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             : <Shuffle className="h-4 w-4 mr-2" />}
-          Shuffle
+          {t("shuffle")}
         </Button>
       </span>
       <ConfirmActionDialog
-        triggerLabel="Lock"
+        triggerLabel={t("lock")}
         triggerIcon={Lock}
         triggerVariant="outline"
-        title="Lock this card?"
-        description="Once locked, the card keeps its current layout and can no longer be shuffled. This cannot be undone."
-        confirmLabel="Lock"
+        title={t("lockTitle")}
+        description={t("lockDescription")}
+        confirmLabel={t("lock")}
         onConfirm={() => arrangeCard("lock")}
         isPending={pendingAction === "lock"}
       />

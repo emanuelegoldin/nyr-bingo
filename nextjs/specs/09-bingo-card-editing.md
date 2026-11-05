@@ -17,7 +17,7 @@ This spec defines:
 - 06-bingo-gameplay.md (cell state model)
 
 ## In Scope
-- Editing card content (resolution reference and source metadata) for a card the user owns
+- Editing card content (the cell's snapshot and source metadata) for a card the user owns
 - Editing empty filler cells
 - Resetting edited cells back to `pending`
 
@@ -61,15 +61,19 @@ The list:
 
 ### 5) Persisting a Cell Edit
 When a replacement option is selected, the system updates the cell via `PUT /api/cells/[cellId]/edit`:
-- `bingo_cells.resolution_id`
-- `bingo_cells.resolution_type`
+- `bingo_cells.resolution_id` (the link to the chosen resolution)
+- A fresh snapshot of the chosen resolution (spec 05): `bingo_cells.title`, `description`, `resolution_type` and `number_of_repetition`, and the cell's rows in `bingo_cell_subtasks`, replaced by the chosen resolution's subtasks
+- Progress reset: `bingo_cells.completed_times = 0` and every subtask uncompleted
+- For `sourceType = 'empty'` the snapshot is cleared instead: no title, description, target or subtasks, and `resolution_type = 'base'`
 - `bingo_cells.source_type`
 - `bingo_cells.source_user_id` (`NULL` when absent)
 - `bingo_cells.state`, reset to `pending`
 
-`is_empty` follows from these values because it is a generated column.
+`is_empty` follows from `source_type` because it is a generated column.
 
-A `prepared` cell (spec 05) can be replaced like any other, but not chosen as a replacement. The replaced copy is left unused until its game is deleted.
+The cell's earlier history (spec 13) stays on the cell.
+
+A `prepared` cell (spec 05) can be replaced like any other, but a pool entry is not offered as a replacement. A cell edit changes only that cell: the chosen resolution and the other cards are untouched.
 
 ### 6) Permissions & Safety
 - Only the card owner can edit the content of cells on their card.
@@ -84,7 +88,7 @@ Request body (JSON):
 - `sourceType: 'member_provided' | 'personal' | 'empty'` (required)
 - `resolutionId: string | null` (optional)
 
-The cell's `resolution_type` and `source_user_id` come from the resolution. Other fields in the body are ignored.
+The cell's snapshot fields and `source_user_id` come from the resolution. Other fields in the body are ignored.
 
 Request constraints:
 - If `sourceType` is `personal` or `member_provided`, `resolutionId` is required.
@@ -104,7 +108,7 @@ Validation:
 Validation failures return `400` with a message.
 
 Effects:
-- Update the cell content fields and set state to `pending`
+- Copy the snapshot, reset progress and set state to `pending`, in one transaction
 - Refresh the card owner's leaderboard entry (spec 12)
 
 ### `GET /api/games/[gameId]/resolutions?toUserId=...`
@@ -122,7 +126,9 @@ Effects:
 - Dismissing the dialog returns to the card still in edit mode.
 - The joker cell cannot be modified (both UI and API enforce this).
 - The team goal cell cannot be modified (both UI and API enforce this).
-- On edit, the cell updates `resolution_id`, `resolution_type`, `source_type`, `source_user_id` (NULL when absent), and resets state to `pending`.
+- On edit, the cell updates `resolution_id`, `source_type`, `source_user_id` (NULL when absent) and receives a fresh snapshot of the chosen resolution (title, description, type, target, subtasks).
+- On edit, the cell's progress is reset (`completed_times = 0`, subtasks uncompleted) and its state returns to `pending`.
+- Editing a resolution later does not change a cell that was filled from it.
 
 ## Known Gaps
 - `sourceType = 'empty'` is accepted, so a cell can be cleared through the API although the UI has no such option.

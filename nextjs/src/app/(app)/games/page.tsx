@@ -12,10 +12,13 @@ import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 export default function GamesPage() {
-  usePageTitle("Games");
+  const t = useTranslations("Games");
+  const tc = useTranslations("Common");
+  usePageTitle(t("list.pageTitle"));
 
   const { toast } = useToast();
   const [games, setGames] = useState<GameListItem[]>([]);
@@ -29,8 +32,8 @@ export default function GamesPage() {
       } else if (result.status === 0) {
         // No usable response (network failure or non-JSON body)
         toast({
-          title: "Error",
-          description: "Failed to load games",
+          title: tc("error"),
+          description: t("list.loadFailed"),
           variant: "destructive",
         });
       }
@@ -38,7 +41,7 @@ export default function GamesPage() {
     };
 
     loadGames();
-  }, [toast]);
+  }, [toast, tc, t]);
 
   if (isLoading) {
     return <PageSpinner />;
@@ -46,18 +49,18 @@ export default function GamesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight font-headline">My Games</h1>
+      <h1 className="text-3xl font-bold tracking-tight font-headline">{t("list.heading")}</h1>
 
       {games.length > 0 ? (
         <GameList games={games} showTeamName />
       ) : (
         <div className="text-center py-16 border-2 border-dashed rounded-lg">
-          <h3 className="text-xl font-semibold font-headline">No Games Yet</h3>
+          <h3 className="text-xl font-semibold font-headline">{t("list.emptyTitle")}</h3>
           <p className="text-muted-foreground mt-2 mb-4">
-            A team leader creates games from the team page.
+            {t("list.emptyDescription")}
           </p>
           <Button asChild>
-            <Link href="/teams">Go to Teams</Link>
+            <Link href="/teams">{t("list.goToTeams")}</Link>
           </Button>
         </div>
       )}

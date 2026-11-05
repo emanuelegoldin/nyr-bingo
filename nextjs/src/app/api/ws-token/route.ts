@@ -4,7 +4,7 @@
  */
 
 import { authorizeThreadAction } from '@/app/api/threads/thread-access';
-import { authorize, getResolutionHistoryAccess } from '@/lib/authz';
+import { authorize } from '@/lib/authz';
 import type { User } from '@/lib/db';
 import type { WsRoom } from '@/lib/shared/ws-messages';
 import { createRoomToken } from '@/lib/ws-token';
@@ -22,17 +22,16 @@ async function canJoinRoom(room: WsRoom, user: User): Promise<boolean> {
   if (room.type === 'user') return room.id === user.id;
   // Spec: 21-authorization.md - Known Gaps: card rooms are joined by team membership
   if (room.type === 'card') return (await authorize(user, 'team.view', { scope: 'team', teamId: room.id })).allowed;
-  if (room.type === 'thread') return !('response' in await authorizeThreadAction(user, 'thread.view', room.id));
-  return (await getResolutionHistoryAccess(room.id, user.id)).canView;
+  return !('response' in await authorizeThreadAction(user, 'thread.view', room.id));
 }
 
 /**
- * GET /api/ws-token?type=card|thread|resolution|user&id=... - Get a token to join a room
+ * GET /api/ws-token?type=card|thread|user&id=... - Get a token to join a room
  */
 export const GET = withAuth(async (request: NextRequest, { currentUser }: AuthContextNoParams) => {
   const type = request.nextUrl.searchParams.get('type');
   const id = request.nextUrl.searchParams.get('id');
-  if (!id || (type !== 'card' && type !== 'thread' && type !== 'resolution' && type !== 'user')) {
+  if (!id || (type !== 'card' && type !== 'thread' && type !== 'user')) {
     return errorResponse('A room type and id are required', 400);
   }
 

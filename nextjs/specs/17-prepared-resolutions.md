@@ -30,7 +30,7 @@ The pool lives in the `prepared_resolutions` table, separate from `resolutions`.
 | `number_of_repetition` | INT | `iterative` only |
 | `created_at` | DATETIME | |
 
-An entry has no owner and no progress. Users only ever receive a copy of it, so any number of users can use the same entry and changing a copy never affects the pool or other copies.
+An entry has no owner and no progress. Users and cards only ever receive a copy of it, so any number of users can use the same entry and changing a copy never affects the pool or other copies.
 
 ### Categories
 | Category | Meaning | Example |
@@ -51,14 +51,14 @@ On `/resolutions`, the **Browse ideas** button next to the add button opens a di
 ### Adding to Personal Resolutions
 `POST /api/resolutions/prepared/[id]/add`
 
-- Creates a resolution with `scope = 'personal'` owned by the caller, with the entry's type, title, description and type-specific data. Progress starts at zero.
+- Creates a resolution with `scope = 'personal'` owned by the caller, with the entry's type, title, description and type-specific data. It is a definition only (spec 03).
 - The copy is an ordinary personal resolution (spec 03): the user can edit or delete it, and it fills cards like any other.
 - Returns `201` with the id of the copy.
 - Returns `404` for an unknown entry.
 - Returns `409` if the caller already has a personal resolution with the same text, compared as in spec 05. A user who changes the text of a copy can add the entry again.
 
 ### Fallbacks on Bingo Cards
-At game start, card generation copies entries onto cards where proposals or resolutions are missing (spec 05). These copies have `scope = 'prepared'` and belong to the game, so they do not appear in the owner's personal resolutions. On a card they are labeled **Suggested**.
+At game start, card generation snapshots entries directly onto cells where proposals or resolutions are missing (spec 05): the cell gets the entry's type, title, description, target and subtasks, with `source_type = 'prepared'` and no `resolution_id`. No row is created in `resolutions`, so these cells do not appear in the owner's personal resolutions. On a card they are labeled **Suggested**.
 
 ## Permissions
 - Both endpoints require authentication.
@@ -68,4 +68,5 @@ At game start, card generation copies entries onto cards where proposals or reso
 - A user can browse the pool by category from `/resolutions`.
 - A user can add an entry, which appears in their personal resolutions.
 - Two users can add the same entry, and each gets an independent copy.
+- Prepared fallback cells on a card are copied straight from the pool and create no resolution row.
 - Adding an entry the user already has fails with `409` and creates nothing, and the dialog shows such an entry as added.

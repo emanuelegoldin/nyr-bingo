@@ -1,7 +1,7 @@
 import { apiFetch } from "@/lib/api-client";
-import { BingoCellWithThread } from "@/lib/db/types";
+import { BingoCellDetail, BingoCellWithThread } from "@/lib/db/types";
 import { getSourceLabel } from "@/lib/shared/cell-source";
-import { CellSourceType, CellState, ResolutionType, type Subtask } from "@/lib/shared/types";
+import { CellSourceType, CellState, ResolutionType } from "@/lib/shared/types";
 import { useState } from "react";
 import { MarkCellCompleteDialog } from "../dialogs/complete-dialog";
 import { EditCellDialog } from "../dialogs/edit-cell";
@@ -19,67 +19,40 @@ import { CellFace } from "./cell-face";
 /** The dialog currently opened from a cell, or null when none is open. */
 type ActiveDialog = 'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | 'history' | null;
 
-/** Body of `GET /api/resolutions/{compound,iterative}?id=...`. */
-interface ResolutionDetailResponse {
-    resolution?: {
-        id: string,
-        title: string,
-        description?: string | null,
-        ownerUserId: string,
-        // Compound resolutions carry `subtasks`, iterative ones the two counters.
-        subtasks: Subtask[],
-        numberOfRepetition: number,
-        completedTimes: number,
-    },
-}
-
 /**
  * Load the data shown by the detail dialog for a cell.
- * For base/team: uses the cell's existing data (no extra fetch needed).
- * For compound/iterative: fetches full data from the API.
+ * The cell holds its own copy of the resolution and its progress.
+ * Spec: 06-bingo-gameplay.md - Cell Detail Dialog
  *
  * @param cell - The cell that was opened.
  * @returns The detail data, or null if the fetch failed (failures are silent).
  */
 const fetchResolutionDetail = async (cell: BingoCellWithThread): Promise<ResolutionDetailData | null> => {
-    const resType = cell.resolutionType;
-
-    if (resType !== ResolutionType.COMPOUND && resType !== ResolutionType.ITERATIVE) {
-        // Base or Team: no extra fetch needed, use cell data directly
-        return {
-            type: ResolutionType.BASE,
-            id: cell.resolutionId ?? cell.id,
-            title: cell.resolutionTitle || cell.resolutionText,
-            description: cell.resolutionText !== cell.resolutionTitle ? cell.resolutionText : null,
-        };
-    }
-
-    const endpoint = resType === ResolutionType.COMPOUND ? 'compound' : 'iterative';
-    const result = await apiFetch<ResolutionDetailResponse>(`/api/resolutions/${endpoint}?id=${cell.resolutionId}`);
+    const result = await apiFetch<{ cell: BingoCellDetail }>(`/api/cells/${cell.id}`);
     if (!result.ok) return null;
-    // With ?id= the route returns a single `resolution`
-    const data = result.data.resolution;
-    if (!data) return null;
+    const detail = result.data.cell;
+    const title = detail.resolutionTitle || detail.resolutionText;
+    // A base resolution without text stores its title as description; show it only once
+    const description = detail.description !== title ? detail.description : null;
 
-    if (resType === ResolutionType.COMPOUND) {
+    if (detail.resolutionType === ResolutionType.COMPOUND) {
         return {
             type: ResolutionType.COMPOUND,
-            id: data.id,
-            title: data.title,
-            description: data.description,
-            ownerUserId: data.ownerUserId,
-            subtasks: data.subtasks,
+            title,
+            description,
+            subtasks: detail.subtasks ?? [],
         };
     }
-    return {
-        type: ResolutionType.ITERATIVE,
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        ownerUserId: data.ownerUserId,
-        numberOfRepetition: data.numberOfRepetition,
-        completedTimes: data.completedTimes,
-    };
+    if (detail.resolutionType === ResolutionType.ITERATIVE) {
+        return {
+            type: ResolutionType.ITERATIVE,
+            title,
+            description,
+            numberOfRepetition: detail.numberOfRepetition ?? 0,
+            completedTimes: detail.completedTimes,
+        };
+    }
+    return { type: ResolutionType.BASE, title, description };
 };
 
 interface ResolutionCellProps {
@@ -212,12 +185,6 @@ export const ResolutionCell = ({
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}
                     isOwner={isOwner}
-                    canChangeProgress={
-                        isOwner && (
-                            cell.sourceType !== CellSourceType.TEAM
-                            || (detailData.type !== ResolutionType.BASE && detailData.ownerUserId === currentUserId)
-                        )
-                    }
                     sourceLabel={sourceLabel}
                     onRefresh={onRefresh}
                     onOpenDialog={setActiveDialog}
@@ -226,7 +193,7 @@ export const ResolutionCell = ({
             }
             {activeDialog === "history" && detailData &&
                 <ResolutionHistoryDialog
-                    resolutionId={detailData.id}
+                    cellId={cell.id}
                     resolutionTitle={detailData.title}
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}

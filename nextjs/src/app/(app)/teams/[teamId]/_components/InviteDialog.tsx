@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import { Check, Copy, Loader2, UserPlus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 interface InviteDialogProps {
@@ -17,6 +19,9 @@ interface InviteDialogProps {
  * survives closing and reopening the dialog.
  */
 export function InviteDialog({ teamId }: InviteDialogProps) {
+  const t = useTranslations("Teams");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const { toast } = useToast();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
@@ -34,11 +39,11 @@ export function InviteDialog({ teamId }: InviteDialogProps) {
     if (result.ok) {
       setInviteCode(result.data.invitation.inviteCode);
       toast({
-        title: "Success",
-        description: "Invite link created",
+        title: tc("success"),
+        description: t("inviteDialog.createdDescription"),
       });
     } else {
-      toastApiError(result, "Failed to create invite");
+      toastApiError(result, t("inviteDialog.createFailed"));
     }
     setIsCreatingInvite(false);
   };
@@ -55,25 +60,25 @@ export function InviteDialog({ teamId }: InviteDialogProps) {
     <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <UserPlus className="h-4 w-4 mr-2" /> Invite
+          <UserPlus className="h-4 w-4 mr-2" /> {t("inviteDialog.trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite Members</DialogTitle>
+          <DialogTitle>{t("inviteDialog.title")}</DialogTitle>
           <DialogDescription>
-            Create an invite link to share with your friends.
+            {t("inviteDialog.description")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           {!inviteCode ? (
             <Button onClick={handleCreateInvite} disabled={isCreatingInvite}>
               {isCreatingInvite && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Invite Link
+              {t("inviteDialog.generate")}
             </Button>
           ) : (
             <div className="space-y-2">
-              <Label>Invite Link</Label>
+              <Label>{t("inviteDialog.linkLabel")}</Label>
               <div className="flex gap-2">
                 <Input
                   value={`${typeof window !== 'undefined' ? window.location.origin : ''}/join/${inviteCode}`}

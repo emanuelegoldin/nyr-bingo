@@ -51,7 +51,6 @@ Let users see what happened in their teams since they last looked: after logging
 - The team means its members when the notification is released. The game's players means its roster (spec 16) when the notification is released, or the players of its archive (spec 18) once the game has been archived.
 - An actor never receives their own event.
 - `failed` and `accomplished` cells are not progress. An `accomplished` cell was already announced when it was completed.
-- A `team` cell of a `compound` or `iterative` goal is not progress, because one change moves that cell on every card. A bingo it causes is still announced.
 - A bingo is announced at most once per player per game. A proof request clears `first_bingo_at` and accepting the proof sets it again, which is the same bingo.
 
 ### Release
@@ -168,5 +167,5 @@ All endpoints require authentication and act only on the caller's own notificati
 - **11 — Real-Time Updates**: defines the user room and the signal.
 - **12 — Game Tabs**: defines `first_bingo_at`.
 - **14 — Dashboard and Navigation**: hosts the bell.
-- **15 — Internationalization**: defines the dictionary section.
+- **15 — Internationalization**: defines the `Notifications` namespace.
 - **18 — Game Archive**: explains why notifications hold plain values.

@@ -14,6 +14,7 @@ import { TeamMembersProvider } from "@/components/team-members-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BingoCardWithCells } from "@/lib/db/types";
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import type { Game } from "./types";
 
@@ -28,6 +29,7 @@ export function CardsTab({
   initialCards: cards,
   currentUserId,
 }: CardsTabProps) {
+  const t = useTranslations("Games.cardsTab");
   // Build the userId → username map once from the already-loaded game data.
   const membersMap = useMemo(
     () =>
@@ -41,10 +43,9 @@ export function CardsTab({
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <h3 className="text-xl font-semibold font-headline mb-2">Game Not Started Yet</h3>
+          <h3 className="text-xl font-semibold font-headline mb-2">{t("notStartedTitle")}</h3>
           <p className="text-muted-foreground">
-            The team leader will start the game once everyone has proposed resolutions for each
-            other.
+            {t("notStartedDescription")}
           </p>
         </CardContent>
       </Card>
@@ -55,7 +56,7 @@ export function CardsTab({
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <p className="text-muted-foreground">No bingo cards available yet.</p>
+          <p className="text-muted-foreground">{t("noCards")}</p>
         </CardContent>
       </Card>
     );
@@ -64,7 +65,7 @@ export function CardsTab({
   return (
     <TeamMembersProvider members={membersMap}>
       <div className="space-y-8">
-        <h2 className="text-2xl font-bold font-headline">Bingo Cards</h2>
+        <h2 className="text-2xl font-bold font-headline">{t("heading")}</h2>
 
         {game.members.map((member, index) => {
           const card = cards.find((c) => c.userId === member.user.userId);
@@ -83,7 +84,7 @@ export function CardsTab({
                 />
               ) : (
                 <p className="text-muted-foreground text-center py-8">
-                  No bingo card available
+                  {t("noCard")}
                 </p>
               )}
               {index < game.members.length - 1 && <Separator className="my-8" />}

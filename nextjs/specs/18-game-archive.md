@@ -35,9 +35,9 @@ Every game that ends is archived, whether it ended manually or at its deadline (
   - The card of every player
 - The **players** of an archived game are the game's players (spec 16) who had a card in it. A member without a card has no access.
 - A member-provided cell whose provider was no longer a player is labelled "Former Teammates".
-- A cell keeps its position, title, description, type, state, source and source label. A `compound` cell also keeps its subtasks and an `iterative` cell its counters. A cell whose resolution was deleted before the game ended is archived blank (spec 03).
+- A cell keeps its position, title, description, type, state, source and source label. The snapshot is taken from the cell's own columns and from `bingo_cell_subtasks` (spec 05) when the game ends. A `compound` cell also keeps its subtasks and an `iterative` cell its counters.
 - A game is archived only once it has no open review thread, so every cell is final.
-- Saving the archive and deleting the game happen in one transaction. The game's cards, cells, leaderboard rows, closed threads, team goal and member-provided and prepared resolutions are deleted with it.
+- Saving the archive and deleting the game happen in one transaction. The game's cards, cells, leaderboard rows, closed threads, team goal and member-provided resolutions, and the cells' subtasks and history, are deleted with it.
 - A game that could not be archived stays `ended`. The hourly sweep (spec 16) closes its open threads and archives it, so a failure is not reported to the leader. The same step archives games that ended before the archive existed. For those without a stored end date, the game's last update is used.
 
 ### Independence

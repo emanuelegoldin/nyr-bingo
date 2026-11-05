@@ -1,0 +1,19 @@
+{
+  "title": "Ideen für Vorsätze",
+  "description": "Füge einen dieser vorbereiteten Vorsätze zu deiner persönlichen Liste hinzu. Deine Kopie kannst du danach bearbeiten.",
+  "add": "Hinzufügen",
+  "added": "Hinzugefügt",
+  "loadError": "Die Ideen konnten nicht geladen werden. Schließe dieses Fenster und versuche es erneut.",
+  "categories": {
+    "short": "Kurz",
+    "medium": "Mittel",
+    "long": "Lang"
+  },
+  "categoryHints": {
+    "short": "In wenigen Tagen erledigt, ohne Vorbereitung.",
+    "medium": "In wenigen Wochen erledigt, oder anspruchsvoller, aber in Tagen vorbei.",
+    "long": "Dauert Monate, bis zum ganzen Jahr."
+  },
+  "addedToast": "Vorsatz hinzugefügt",
+  "addError": "Vorsatz konnte nicht hinzugefügt werden"
+}

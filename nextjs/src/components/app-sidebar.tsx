@@ -14,50 +14,51 @@ import {
   Archive,
   LayoutGrid,
   ListCheck,
+  Swords,
   User,
   Users,
-  Swords,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LanguageSelectorDropdown } from "./LanguageSelectorDropdown";
 
 const menuItems = [
   {
     href: "/dashboard",
-    label: "Dashboard",
+    labelKey: "dashboard",
     icon: LayoutGrid,
   },
   {
     href: "/games",
-    label: "Games",
+    labelKey: "games",
     icon: Swords,
   },
   {
     href: "/teams",
-    label: "Teams",
+    labelKey: "teams",
     icon: Users,
   },
   {
     href: "/profile",
-    label: "Profile",
+    labelKey: "profile",
     icon: User,
   },
   {
     href: "/resolutions",
-    label: "Resolutions",
+    labelKey: "resolutions",
     icon: ListCheck,
   },
   {
     href: "/archive",
-    label: "Archive",
+    labelKey: "archive",
     icon: Archive,
   }
-];
+] as const;
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const t = useTranslations("Nav");
 
   /**
    * Close the mobile drawer once a destination is chosen.
@@ -82,16 +83,15 @@ export function AppSidebar() {
               <SidebarMenuButton
                 asChild
                 isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}
-                tooltip={item.label}
+                tooltip={t(item.labelKey)}
               >
                 <Link href={item.href} onClick={closeMobileSidebar}>
                   <item.icon />
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey)}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          <LanguageSelectorDropdown />
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter />

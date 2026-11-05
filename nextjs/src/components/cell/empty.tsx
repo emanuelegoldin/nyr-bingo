@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { Cell } from "./cell";
 
 interface EmptyCellProps {
@@ -16,6 +17,7 @@ export const EmptyCell = ({
   canInteract,
   onClick
 }: EmptyCellProps) => {
+  const t = useTranslations("Cell");
   return (
     <Cell
       cellClassName={cn(
@@ -26,7 +28,7 @@ export const EmptyCell = ({
       isDisabled={!canInteract}
       onClick={onClick}>
       <p className="text-[10px] sm:text-xs md:text-sm font-medium text-card-foreground">
-        Empty
+        {t("empty")}
       </p>
     </Cell>
   );

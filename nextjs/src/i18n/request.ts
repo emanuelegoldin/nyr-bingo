@@ -1,26 +1,19 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies } from 'next/headers';
-import { getDictionaryForLocale } from './dictionary';
-import { hasLocale, LOCALE_COOKIE_NAME, type Locale } from './locale';
+import { defaultLocale, isAppLocale, LOCALE_COOKIE_NAME } from './config';
+import { messages } from './messages';
 
-export const getLocaleFromRequest = async (): Promise<Locale> => {
+/**
+ * Per-request next-intl configuration: the locale comes from the `locale` cookie,
+ * falling back to the default locale when it is missing or unknown (spec 15).
+ */
+export default getRequestConfig(async () => {
   const cookieStore = await cookies();
   const storedLocale = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
-
-  return storedLocale && hasLocale(storedLocale) ? storedLocale : 'en';
-};
-
-export const getDictionary = async (locale?: Locale) => {
-  const resolvedLocale = locale ?? (await getLocaleFromRequest());
-
-  return getDictionaryForLocale(resolvedLocale);
-};
-
-export default getRequestConfig(async () => {
-  const locale = await getLocaleFromRequest();
+  const locale = isAppLocale(storedLocale) ? storedLocale : defaultLocale;
 
   return {
     locale,
-    messages: getDictionaryForLocale(locale),
+    messages: messages[locale],
   };
 });

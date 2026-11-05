@@ -1,0 +1,43 @@
+{
+  "empty": "Leer",
+  "joker": "Joker",
+  "markComplete": "Als erledigt markieren",
+  "completeDialog": {
+    "title": "Als erledigt markieren?",
+    "description": "Du bist dabei, „{text}“ als erledigt zu markieren."
+  },
+  "editOption": {
+    "member": "Mitglied"
+  },
+  "editDialog": {
+    "title": "Feld bearbeiten",
+    "description": "Wähle einen Ersatz-Vorsatz für dieses Feld.",
+    "filterPlaceholder": "Vorsätze filtern…",
+    "loadingOptions": "Optionen werden geladen…",
+    "noOptions": "Keine Optionen verfügbar.",
+    "updateFailed": "Feld konnte nicht aktualisiert werden",
+    "updatedTitle": "Feld aktualisiert",
+    "updatedDescription": "Die Bingo-Karte wurde aktualisiert.",
+    "loadPersonalFailed": "Persönliche Vorsätze konnten nicht geladen werden",
+    "loadTeamFailed": "Vorsätze des Teams konnten nicht geladen werden"
+  },
+  "detail": {
+    "noDescription": "Keine Beschreibung vorhanden.",
+    "history": "Verlauf",
+    "markFailed": "Als gescheitert markieren",
+    "undo": "Rückgängig",
+    "requestProof": "Nachweis anfordern",
+    "viewThread": "Unterhaltung ansehen"
+  },
+  "compound": {
+    "progress": "{completed} / {total} Teilaufgaben",
+    "allDone": "Alles erledigt!",
+    "toggleSubtask": "Teilaufgabe umschalten: {title}"
+  },
+  "iterative": {
+    "targetReached": "Ziel erreicht!",
+    "decrement": "Zähler verringern",
+    "increment": "Zähler erhöhen",
+    "percentComplete": "{percent} % abgeschlossen"
+  }
+}

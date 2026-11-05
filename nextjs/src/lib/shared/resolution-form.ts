@@ -55,7 +55,6 @@ export const unifiedToFormData = (resolution: UnifiedFormSource): ResolutionForm
 /** Subset of a stored resolution (db `Resolution`) needed for the unified API shape. */
 export interface UnifiedResolutionSource extends ResolutionFormSource {
   ownerUserId: string;
-  completedTimes: number;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -74,7 +73,6 @@ export const toUnifiedResolution = (resolution: UnifiedResolutionSource): Unifie
   text: resolution.description ?? "",
   subtasks: resolution.subtasks ?? undefined,
   numberOfRepetition: resolution.numberOfRepetition ?? undefined,
-  completedTimes: resolution.completedTimes,
   createdAt: toIsoDateString(resolution.createdAt),
   updatedAt: toIsoDateString(resolution.updatedAt),
 });

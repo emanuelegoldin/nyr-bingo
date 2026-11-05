@@ -1,0 +1,34 @@
+{
+  "teamTitleEdit": "Modifica obiettivo del team",
+  "teamTitleNew": "Imposta obiettivo del team",
+  "teamDescription": "Imposta l'obiettivo del team che apparirà sulla carta bingo di tutti.",
+  "memberTitleEdit": "Modifica obiettivo per {name}",
+  "memberTitleNew": "Nuovo obiettivo per {name}",
+  "memberDescription": "Crea un obiettivo per {name}.",
+  "defaultMember": "Membro",
+  "defaultMemberLower": "questo membro",
+  "titleEdit": "Modifica obiettivo",
+  "titleNew": "Nuovo obiettivo",
+  "descriptionEdit": "Aggiorna i dettagli dell'obiettivo qui sotto.",
+  "descriptionNew": "Crea un nuovo obiettivo personale.",
+  "titlePlaceholder": "Titolo dell'obiettivo",
+  "textPlaceholder": "Descrizione (facoltativa)",
+  "saveError": "Impossibile salvare l'obiettivo",
+  "saveErrorGeneric": "Si è verificato un errore durante il salvataggio",
+  "updated": "Obiettivo aggiornato",
+  "created": "Obiettivo creato",
+  "subtasks": {
+    "heading": "Sottoattività",
+    "newPlaceholder": "Nuova sottoattività...",
+    "addAriaLabel": "Aggiungi sottoattività",
+    "saveAriaLabel": "Salva sottoattività",
+    "cancelAriaLabel": "Annulla modifica",
+    "editAriaLabel": "Modifica sottoattività",
+    "deleteAriaLabel": "Elimina sottoattività",
+    "empty": "Nessuna sottoattività. Aggiungi almeno una sottoattività."
+  },
+  "repetitions": {
+    "label": "Numero di ripetizioni",
+    "hint": "Deve essere almeno 2. L'obiettivo sarà completato quando raggiungi questo numero."
+  }
+}

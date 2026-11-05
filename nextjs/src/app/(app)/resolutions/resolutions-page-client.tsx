@@ -10,7 +10,6 @@
 
 import { PreparedResolutionsDialog } from "@/components/dialogs/prepared-resolutions-dialog";
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
-import { ResolutionHistoryDialog } from "@/components/dialogs/resolution-history-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,24 +20,28 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAppContext, usePageTitle } from "@/hooks/AppContext";
+import { usePageTitle } from "@/hooks/AppContext";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
-import { getDictionaryForLocale } from "@/i18n/dictionary";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
-import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import { RESOLUTION_TYPE_BADGE_VARIANTS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
-import { History, Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 
 /* ─── Manager Component ──────────────────────────────────────────── */
 
 interface ResolutionsManagerProps {
   initialResolutions: UnifiedResolution[];
-  t: ReturnType<typeof getDictionaryForLocale>["ResolutionsPage"];
+  t: ReturnType<typeof useTranslations<"ResolutionsPage">>;
 }
 
 function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) {
+  const tl = useTranslations("Labels");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const { toast } = useToast();
   const [resolutions, setResolutions] = useState<UnifiedResolution[]>(initialResolutions);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -46,7 +49,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingResolution, setEditingResolution] = useState<ResolutionFormData | undefined>(undefined);
-  const [historyResolution, setHistoryResolution] = useState<{ id: string; title: string } | null>(null);
   const [browseOpen, setBrowseOpen] = useState(false);
 
   /** Fetch all resolution types from the unified endpoint. */
@@ -57,12 +59,12 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
     } else if (result.status === 0) {
       // No usable response (network failure or non-JSON body)
       toast({
-        title: "Error",
-        description: "Failed to load resolutions",
+        title: tc("error"),
+        description: t("loadError"),
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, tc, t]);
 
   /** Open dialog in create mode. */
   const handleCreate = () => {
@@ -76,10 +78,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
     setDialogOpen(true);
   };
 
-  const handleViewHistory = (res: UnifiedResolution) => {
-    setHistoryResolution({ id: res.id, title: res.title });
-  };
-
   /**
    * Delete a resolution through the generic endpoint, which accepts every type.
    */
@@ -91,9 +89,9 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
 
     if (result.ok) {
       setResolutions((prev) => prev.filter((r) => r.id !== res.id));
-      toast({ title: "Success", description: "Resolution deleted" });
+      toast({ title: tc("success"), description: t("deleted") });
     } else {
-      toastApiError(result, "Failed to delete resolution");
+      toastApiError(result, t("deleteError"));
     }
     setDeletingId(null);
   };
@@ -110,17 +108,17 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
           <div className="space-y-1.5">
-            <CardTitle className="font-headline">{t.title}</CardTitle>
+            <CardTitle className="font-headline">{t('title')}</CardTitle>
             <CardDescription>
-              {t.description}
+              {t('description')}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" onClick={() => setBrowseOpen(true)}>
               <Lightbulb className="h-4 w-4 mr-2" />
-              {t.browseIdeas}
+              {t('browseIdeas')}
             </Button>
-            <Button size="icon" onClick={handleCreate} aria-label="Add resolution">
+            <Button size="icon" onClick={handleCreate} aria-label={t("addAriaLabel")}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -138,7 +136,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 md:flex-nowrap">
                     <span className="min-w-0 text-sm font-medium break-words md:truncate">{res.title}</span>
                     <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[res.type]} className="text-xs flex-shrink-0">
-                      {RESOLUTION_TYPE_LABELS[res.type]}
+                      {tl(`resolutionType.${res.type}`)}
                     </Badge>
                   </div>
                   {res.text && res.text !== res.title && (
@@ -149,17 +147,15 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                   {/* Compound: show subtask count */}
                   {res.type === "compound" && res.subtasks && (
                     <span className="text-xs text-muted-foreground block mt-0.5">
-                      {res.subtasks.filter((s) => s.completed).length} / {res.subtasks.length} subtasks
+                      {t("subtaskCount", { count: res.subtasks.length })}
                     </span>
                   )}
-                  {/* Iterative: show progress */}
-                  {res.type === "iterative" &&
-                    res.numberOfRepetition !== undefined &&
-                    res.completedTimes !== undefined && (
-                      <span className="text-xs text-muted-foreground block mt-0.5">
-                        {res.completedTimes} / {res.numberOfRepetition} repetitions
-                      </span>
-                    )}
+                  {/* Iterative: show the target */}
+                  {res.type === "iterative" && res.numberOfRepetition !== undefined && (
+                    <span className="text-xs text-muted-foreground block mt-0.5">
+                      {t("repetitionTarget", { count: res.numberOfRepetition })}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1 ml-2 flex-shrink-0">
@@ -167,20 +163,9 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    onClick={() => handleViewHistory(res)}
-                    disabled={deletingId === res.id}
-                    aria-label={t.viewHistoryAriaLabel}
-                  >
-                    <History className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() => handleEdit(res)}
                     disabled={deletingId === res.id}
-                    /*TODO: check label*/
-                    aria-label={t.viewHistoryAriaLabel}
+                    aria-label={t('editAriaLabel')}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -190,7 +175,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     onClick={() => handleDelete(res)}
                     disabled={deletingId === res.id}
-                    aria-label="Delete resolution"
+                    aria-label={t('deleteAriaLabel')}
                   >
                     {deletingId === res.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -203,7 +188,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
             ))}
             {resolutions.length === 0 && (
               <p className="text-sm text-center text-muted-foreground py-4">
-                You haven&apos;t added any resolutions yet. Click the + button to create one.
+                {t('empty')}
               </p>
             )}
           </ul>
@@ -224,15 +209,6 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
         setIsOpen={setBrowseOpen}
         onAdded={loadResolutions}
       />
-
-      {historyResolution && (
-        <ResolutionHistoryDialog
-          resolutionId={historyResolution.id}
-          resolutionTitle={historyResolution.title}
-          isOpen={true}
-          setIsOpen={(open) => { if (!open) setHistoryResolution(null); }}
-        />
-      )}
     </>
   );
 }
@@ -244,10 +220,9 @@ interface ResolutionsPageClientProps {
 export default function ResolutionsPageClient({
   initialResolutions,
 }: ResolutionsPageClientProps) {
-  const { language } = useAppContext();
-  const t = getDictionaryForLocale(language).ResolutionsPage;
+  const t = useTranslations("ResolutionsPage");
 
-  usePageTitle(t.headerTitle);
+  usePageTitle(t('headerTitle'));
 
   return (
     <div className="space-y-6">

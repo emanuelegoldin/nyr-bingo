@@ -15,15 +15,54 @@ import {
   type ArchivedCell,
   type ArchivedGameDetail,
   type ArchivedGameSummary,
-  type Subtask,
+  type CellSourceLabel,
+  type CellSubtask,
 } from '../shared/types';
 import { getBingoCard } from './bingo-card-repository';
 import { execute, query, withTransaction } from './connection';
 import { getGamePlayerIds } from './game-repository';
 import { getGameLeaderboard } from './leaderboard-repository';
-import { parseSubtasks } from './resolution-repository';
 import { getTeamWithMembers } from './team-repository';
 import type { BingoCellWithThread, Game } from './types';
+
+/**
+ * Text stored in `source_label` for each fixed source. The snapshot keeps the format it had
+ * before the label became language-neutral, so older archives read the same way (spec 15, 18).
+ */
+const STORED_SOURCE_TEXT: Record<Exclude<CellSourceLabel['kind'], 'member'>, string> = {
+  team: 'Team Goal',
+  prepared: 'Suggested',
+  personal: 'Personal',
+  formerTeammates: 'Former Teammates',
+};
+
+/**
+ * Turn a source label into the text stored in the snapshot.
+ *
+ * @param label - The source label.
+ * @returns The member's name, or the stored text of the fixed source.
+ */
+function toStoredSourceText(label: CellSourceLabel): string {
+  return label.kind === 'member' ? label.name : STORED_SOURCE_TEXT[label.kind];
+}
+
+/**
+ * Read a stored source text back into a source label.
+ *
+ * @param sourceType - The cell's source type.
+ * @param storedText - The text stored in `source_label`.
+ * @returns The source label.
+ */
+function fromStoredSourceText(sourceType: CellSourceType, storedText: string): CellSourceLabel {
+  if (sourceType === CellSourceType.TEAM) return { kind: 'team' };
+  if (sourceType === CellSourceType.PREPARED) return { kind: 'prepared' };
+  if (sourceType === CellSourceType.MEMBER_PROVIDED) {
+    return storedText === STORED_SOURCE_TEXT.formerTeammates
+      ? { kind: 'formerTeammates' }
+      : { kind: 'member', name: storedText };
+  }
+  return { kind: 'personal' };
+}
 
 interface ArchivedGameRow extends RowDataPacket {
   id: string;
@@ -63,11 +102,24 @@ interface ArchivedSubtaskRow extends RowDataPacket {
   completed: number | boolean;
 }
 
-interface ResolutionProgressRow extends RowDataPacket {
+interface CellProgressRow extends RowDataPacket {
   id: string;
-  subtasks: string | Subtask[] | null;
   number_of_repetition: number | null;
-  completed_times: number | null;
+  completed_times: number;
+}
+
+interface CellSubtaskProgressRow extends RowDataPacket {
+  cell_id: string;
+  title: string;
+  description: string | null;
+  completed: number | boolean;
+}
+
+/** The progress a live cell holds. */
+interface CellProgress {
+  numberOfRepetition: number | null;
+  completedTimes: number;
+  subtasks: CellSubtask[];
 }
 
 /** A player's card and leaderboard line, ready to be written to the archive. */
@@ -119,35 +171,55 @@ async function hasOpenThreads(gameId: string): Promise<boolean> {
 }
 
 /**
- * Load the current progress of every resolution on a game's cards.
+ * Load the progress of every cell on a game's cards.
  * @param gameId The game
- * @returns The progress of each resolution, by resolution id
+ * @returns The progress of each cell, by cell id
  */
-async function getResolutionProgress(gameId: string): Promise<Map<string, ResolutionProgressRow>> {
-  const rows = await query<ResolutionProgressRow[]>(
-    `SELECT r.id, r.subtasks, r.number_of_repetition, r.completed_times
-     FROM resolutions r
-     WHERE r.id IN (
-       SELECT c.resolution_id
+async function getCellProgress(gameId: string): Promise<Map<string, CellProgress>> {
+  const [cells, subtasks] = await Promise.all([
+    query<CellProgressRow[]>(
+      `SELECT c.id, c.number_of_repetition, c.completed_times
        FROM bingo_cells c
        JOIN bingo_cards bc ON c.card_id = bc.id
+       WHERE bc.game_id = ?`,
+      [gameId]
+    ),
+    query<CellSubtaskProgressRow[]>(
+      `SELECT s.cell_id, s.title, s.description, s.completed
+       FROM bingo_cell_subtasks s
+       JOIN bingo_cells c ON s.cell_id = c.id
+       JOIN bingo_cards bc ON c.card_id = bc.id
        WHERE bc.game_id = ?
-     )`,
-    [gameId]
-  );
-  return new Map(rows.map((row) => [row.id, row]));
+       ORDER BY s.cell_id, s.subtask_index`,
+      [gameId]
+    ),
+  ]);
+
+  const progress = new Map<string, CellProgress>(cells.map((row) => [row.id, {
+    numberOfRepetition: row.number_of_repetition,
+    completedTimes: row.completed_times,
+    subtasks: [],
+  }]));
+  for (const row of subtasks) {
+    progress.get(row.cell_id)?.subtasks.push({
+      title: row.title,
+      description: row.description ?? '',
+      completed: Boolean(row.completed),
+    });
+  }
+  return progress;
 }
 
 /**
  * Copy a live cell into its archived form, as plain values.
  * @param cell The live cell
- * @param progress The cell's resolution, if it still exists
+ * @param progress The cell's progress
  * @param usernames Map of user id to username, for the source label
  * @returns The archived cell
  */
 function snapshotCell(
   cell: BingoCellWithThread,
-  progress: ResolutionProgressRow | undefined,
+  progress: CellProgress | undefined,
   usernames: Record<string, string>
 ): ArchivedCell {
   const isCompound = cell.resolutionType === ResolutionType.COMPOUND;
@@ -164,9 +236,9 @@ function snapshotCell(
     sourceType: cell.sourceType,
     sourceUserId: cell.sourceUserId,
     sourceLabel: getSourceLabel(cell, usernames),
-    subtasks: isCompound && progress ? parseSubtasks(progress.subtasks) : null,
-    numberOfRepetition: isIterative ? progress?.number_of_repetition ?? null : null,
-    completedTimes: isIterative ? progress?.completed_times ?? null : null,
+    subtasks: isCompound && progress ? progress.subtasks : null,
+    numberOfRepetition: isIterative ? progress?.numberOfRepetition ?? null : null,
+    completedTimes: isIterative ? progress?.completedTimes ?? null : null,
   };
 }
 
@@ -185,7 +257,7 @@ async function buildPlayerSnapshots(game: Game): Promise<PlayerSnapshot[]> {
   const rosterIds = new Set(await getGamePlayerIds(game.id));
   const roster = team.members.filter((member) => rosterIds.has(member.user.userId));
   const usernames = Object.fromEntries(roster.map((m) => [m.user.userId, m.user.username]));
-  const progress = await getResolutionProgress(game.id);
+  const progress = await getCellProgress(game.id);
 
   const cards = await Promise.all(
     roster.map(async (member) => ({
@@ -214,7 +286,7 @@ async function buildPlayerSnapshots(game: Game): Promise<PlayerSnapshot[]> {
         .filter((cell) => !cell.isJoker)
         .map((cell) => snapshotCell(
           cell,
-          cell.resolutionId ? progress.get(cell.resolutionId) : undefined,
+          progress.get(cell.id),
           usernames
         )),
     };
@@ -268,7 +340,7 @@ export async function archiveGame(game: Game): Promise<boolean> {
             cell.state,
             cell.sourceType,
             cell.sourceUserId,
-            cell.sourceLabel,
+            toStoredSourceText(cell.sourceLabel),
             cell.isEmpty,
             cell.numberOfRepetition,
             cell.completedTimes,
@@ -352,7 +424,7 @@ async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promi
     [id]
   );
 
-  const subtasksByCell = new Map<string, Subtask[]>();
+  const subtasksByCell = new Map<string, CellSubtask[]>();
   for (const row of subtaskRows) {
     const key = cellKey(row.user_id, row.position);
     subtasksByCell.set(key, [
@@ -374,7 +446,7 @@ async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promi
         state: row.state,
         sourceType: row.source_type,
         sourceUserId: row.source_user_id,
-        sourceLabel: row.source_label,
+        sourceLabel: fromStoredSourceText(row.source_type, row.source_label),
         subtasks: subtasksByCell.get(cellKey(row.user_id, row.position)) ?? null,
         numberOfRepetition: row.number_of_repetition,
         completedTimes: row.completed_times,
@@ -390,7 +462,7 @@ async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promi
       state: CellState.PENDING,
       sourceType: CellSourceType.TEAM,
       sourceUserId: null,
-      sourceLabel: '',
+      sourceLabel: { kind: 'team' },
       subtasks: null,
       numberOfRepetition: null,
       completedTimes: null,

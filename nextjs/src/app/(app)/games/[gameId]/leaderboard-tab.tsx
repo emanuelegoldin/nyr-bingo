@@ -15,6 +15,7 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useFormatter, useTranslations } from "next-intl";
 import Link from "next/link";
 import type { LeaderboardEntry } from "@/lib/shared/types";
 
@@ -41,32 +42,32 @@ function rankColorClass(rank: number): string {
   }
 }
 
-/** Format an ISO date string in a human-friendly way. */
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 // ── Component ─────────────────────────────────────────────────────
 
 export function LeaderboardTab({ initialEntries }: LeaderboardTabProps) {
+  const t = useTranslations("Games.leaderboard");
+  const format = useFormatter();
   const entries = initialEntries;
+
+  /** Format an ISO date string in a human-friendly way, in the active locale. */
+  const formatDate = (iso: string): string =>
+    format.dateTime(new Date(iso), {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Leaderboard</CardTitle>
+        <CardTitle className="font-headline">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
           <p className="text-muted-foreground text-center py-4">
-            No leaderboard data available yet.
+            {t("empty")}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -74,9 +75,9 @@ export function LeaderboardTab({ initialEntries }: LeaderboardTabProps) {
               <thead>
                 <tr className="border-b text-left">
                   <th className="pb-2 pr-4 w-12">#</th>
-                  <th className="pb-2 pr-4">Player</th>
-                  <th className="pb-2 pr-4 text-center">Completed</th>
-                  <th className="pb-2">First Bingo</th>
+                  <th className="pb-2 pr-4">{t("player")}</th>
+                  <th className="pb-2 pr-4 text-center">{t("completed")}</th>
+                  <th className="pb-2">{t("firstBingo")}</th>
                 </tr>
               </thead>
               <tbody>

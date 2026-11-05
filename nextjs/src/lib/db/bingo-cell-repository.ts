@@ -4,7 +4,8 @@
  */
 
 import { CellSourceType, CellState, GameStatus, ResolutionType } from '../shared/types';
-import { CellRow, getResolvedCellRowById, rowToCell, SELECT_CELL_WITH_RESOLVED_TEXT } from './bingo-card-rows';
+import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
+import { EMPTY_SNAPSHOT, replaceCellSnapshot, snapshotOf } from './cell-snapshot';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getResolutionById } from './resolution-repository';
@@ -216,9 +217,9 @@ export async function updateCellContent(
     return { success: false, error: 'Empty cells cannot reference a resolution id' };
   }
 
-  // The type and source user come from the resolution, never from the client.
+  // The snapshot and source user come from the resolution, never from the client.
   let resolutionId: string | null = null;
-  let resolutionType = ResolutionType.BASE;
+  let snapshot = EMPTY_SNAPSHOT;
   let sourceUserId: string | null = null;
 
   if (referencesResolution) {
@@ -237,22 +238,29 @@ export async function updateCellContent(
     }
 
     resolutionId = resolution.id;
-    resolutionType = resolution.resolutionType;
+    snapshot = snapshotOf(resolution);
     sourceUserId = resolution.ownerUserId;
   }
 
-  const updateResult = await execute(
-    `UPDATE bingo_cells
-     SET resolution_id = ?,
-         resolution_type = ?,
-         source_type = ?,
-         source_user_id = ?,
-         state = 'pending'
-     WHERE id = ? AND state <> 'pending_review'`,
-    [resolutionId, resolutionType, update.sourceType, sourceUserId, cellId]
-  );
+  // Spec: 09-bingo-card-editing.md - a fresh copy of the resolution, with progress reset
+  const updated = await withTransaction(async (connection) => {
+    const updateResult = await execute(
+      `UPDATE bingo_cells
+       SET resolution_id = ?,
+           source_type = ?,
+           source_user_id = ?,
+           state = 'pending'
+       WHERE id = ? AND state <> 'pending_review'`,
+      [resolutionId, update.sourceType, sourceUserId, cellId],
+      connection
+    );
+    if (updateResult.affectedRows === 0) return false;
 
-  if (updateResult.affectedRows === 0) {
+    await replaceCellSnapshot(connection, cellId, snapshot);
+    return true;
+  }, (didUpdate) => didUpdate);
+
+  if (!updated) {
     return { success: false, error: 'Cell state has changed — please refresh and try again' };
   }
 
@@ -356,66 +364,47 @@ export async function undoCompletion(
 }
 
 /**
- * Auto-transition bingo cell state for compound/iterative resolutions.
- * When the resolution is fully completed (all subtasks done or counter reached),
- * the cell transitions from pending or failed → completed.
- * When the resolution becomes incomplete again, the cell transitions from completed → pending.
- *
- * This skips cells in pending_review or accomplished states (controlled by voting system).
- *
- * @param resolutionId - The compound or iterative resolution ID
- * @param resolutionType - 'compound' or 'iterative'
- * @param isComplete - Whether the resolution is now fully completed
- * @returns Array of updated cells, or empty if no transitions occurred
+ * Move a compound or iterative cell to the state its own progress calls for. Only this cell
+ * changes, even if other cells were copied from the same resolution.
+ * Spec: 06-bingo-gameplay.md - Automatic Completion
+ *   complete: pending or failed -> completed
+ *   incomplete: completed -> pending
+ * Cells in pending_review or accomplished, and cells of an ended game, are left unchanged.
+ * @param cellId The cell whose progress changed
+ * @param isComplete Whether its progress is now complete
+ * @returns The cell after the change, or an empty list if its state did not change
  */
 export async function autoTransitionCellState(
-  resolutionId: string,
-  resolutionType: ResolutionType,
+  cellId: string,
   isComplete: boolean
 ): Promise<BingoCell[]> {
-  // Find all bingo cells linked to this resolution. Ended games keep their final state.
-  const cellRows = await query<Array<{ id: string; state: CellState; game_id: string; user_id: string }>>(
-    `SELECT c.id, c.state, bc.game_id, bc.user_id
-     FROM bingo_cells c
-     JOIN bingo_cards bc ON c.card_id = bc.id
-     JOIN games g ON bc.game_id = g.id
-     WHERE c.resolution_id = ? AND c.resolution_type = ? AND g.status <> 'ended'`,
-    [resolutionId, resolutionType]
-  );
-
-  if (cellRows.length === 0) {
-    return [];
-  }
-
-  // Auto-complete: pending or failed → completed. Auto-revert: completed → pending.
   const [fromStates, newState] = isComplete
     ? [[CellState.PENDING, CellState.FAILED], CellState.COMPLETED]
     : [[CellState.COMPLETED], CellState.PENDING];
-  const changedRows = cellRows.filter((row) => fromStates.includes(row.state));
-  if (changedRows.length === 0) {
+
+  const owners = await query<Array<{ game_id: string; user_id: string }>>(
+    `SELECT bc.game_id, bc.user_id
+     FROM bingo_cells c
+     JOIN bingo_cards bc ON c.card_id = bc.id
+     JOIN games g ON bc.game_id = g.id
+     WHERE c.id = ? AND g.status <> 'ended'`,
+    [cellId]
+  );
+  if (owners.length === 0) {
     return [];
   }
 
-  const ids = changedRows.map((row) => row.id);
-  const idPlaceholders = ids.map(() => '?').join(', ');
-  await query(
+  const result = await execute(
     `UPDATE bingo_cells SET state = ?
-     WHERE id IN (${idPlaceholders}) AND state IN (${fromStates.map(() => '?').join(', ')})`,
-    [newState, ...ids, ...fromStates]
+     WHERE id = ? AND state IN (${fromStates.map(() => '?').join(', ')})`,
+    [newState, cellId, ...fromStates]
   );
+  if (result.affectedRows === 0) {
+    return [];
+  }
 
-  // One leaderboard refresh per card owner, and one read of the changed cells
-  const owners = new Map(changedRows.map((row) => [`${row.game_id}:${row.user_id}`, row]));
-  const [updatedRows] = await Promise.all([
-    query<CellRow[]>(
-      `${SELECT_CELL_WITH_RESOLVED_TEXT}
-       WHERE c.id IN (${idPlaceholders})`,
-      ids
-    ),
-    ...[...owners.values()].map((row) => refreshLeaderboardEntry(row.game_id, row.user_id)),
-  ]);
+  await refreshLeaderboardEntry(owners[0].game_id, owners[0].user_id);
 
-  // Keep the order in which the cells were found
-  const updatedById = new Map(updatedRows.map((row) => [row.id, rowToCell(row)]));
-  return ids.flatMap((id) => updatedById.get(id) ?? []);
+  const updatedRow = await getResolvedCellRowById(cellId);
+  return updatedRow ? [rowToCell(updatedRow)] : [];
 }

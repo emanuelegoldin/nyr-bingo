@@ -2,6 +2,7 @@
 
 import { BingoCardWithCells } from "@/lib/db/types";
 import { Card, CardDescription, CardHeader, CardTitle } from "@ui/card";
+import { useTranslations } from "next-intl";
 import { createContext, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { BingoCardContent } from "./BingoCardContent";
 import { BingoCardArrangeButtons } from "./dashboard-page/BingoCardArrangeButtons";
@@ -115,39 +116,34 @@ export function TeamBingoCardProvider(props: Omit<BaseBingoCardProviderProps, 'h
   );
 }
 
-// Helper type for passing translation strings to avoid issues with importing server functions into client components
 type DashboardBingoCardProviderProps = Omit<BaseBingoCardProviderProps, "headerSlot"> & {
   gameName: string;
-  dashboardText: {
-    cardTitle: string;
-    headerDescription: string;
-  };
 };
 
 /**
  * The current user's card on the dashboard, headed by the game name and the edit, shuffle and
  * lock buttons.
  *
- * @param props - The card, its owner, the game name and the translated header text.
+ * @param props - The card, its owner and the game name.
  * @returns The card.
  */
 export function DashboardBingoCardProvider({
   gameName,
-  dashboardText,
   ...props
 }: DashboardBingoCardProviderProps) {
+  const t = useTranslations("Dashboard");
   const headerSlot = (
     <div className="flex w-full flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
         <CardTitle className="font-headline text-2xl">
-          {dashboardText.cardTitle.replace('{gameName}', gameName)}
+          {t("cardTitle", { gameName })}
         </CardTitle>
         <CardDescription>
-          {dashboardText.headerDescription}
+          {t("headerDescription")}
         </CardDescription>
       </div>
 
-      <div className="flex shrink-0 flex-wrap gap-2">
+      <div className="flex min-w-0 flex-wrap gap-2">
         <BingoCardArrangeButtons />
         <BingoCardEditButton />
       </div>

@@ -1,4 +1,5 @@
 import { ThumbsUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { DialogFooter } from "../ui/dialog";
@@ -15,6 +16,7 @@ interface MarkCellCompleteDialogProps {
 }
 
 export const MarkCellCompleteDialog = ({ cell, onUpdate, open, setIsOpen }: MarkCellCompleteDialogProps) => {
+    const t = useTranslations("Cell");
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     const handleMarkComplete = async () => {
@@ -37,13 +39,13 @@ export const MarkCellCompleteDialog = ({ cell, onUpdate, open, setIsOpen }: Mark
         <CellDialog
             isOpen={open}
             setIsOpen={setIsOpen}
-            title="Mark as Completed?"
-            description={`You are about to mark "${cell.resolutionText}" as completed.`}
+            title={t("completeDialog.title")}
+            description={t("completeDialog.description", { text: cell.resolutionText })}
         >
             <DialogFooter>
                 <Button onClick={handleMarkComplete} disabled={isSubmitting}>
                     <ThumbsUp className="mr-2 h-4 w-4" />
-                    Mark Complete
+                    {t("markComplete")}
                 </Button>
             </DialogFooter>
         </CellDialog>

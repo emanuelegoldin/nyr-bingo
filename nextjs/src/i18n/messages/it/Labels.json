@@ -1,0 +1,20 @@
+{
+  "resolutionType": {
+    "base": "Semplice",
+    "compound": "Complesso",
+    "iterative": "Ricorrente"
+  },
+  "cellState": {
+    "pending": "In corso",
+    "completed": "Completato",
+    "pending_review": "In revisione",
+    "accomplished": "Raggiunto",
+    "failed": "Fallito"
+  },
+  "cellSource": {
+    "team": "Obiettivo del team",
+    "prepared": "Suggerito",
+    "personal": "Personale",
+    "formerTeammates": "Ex compagni di squadra"
+  }
+}

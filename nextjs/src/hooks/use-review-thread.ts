@@ -1,9 +1,11 @@
 "use client";
 
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
 import { useWsRoom } from "@/hooks/use-ws-room";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import { ReviewFile, ReviewThreadWithDetails } from "@/lib/db/types";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 interface UseReviewThreadOptions {
@@ -36,6 +38,10 @@ export const useReviewThread = (
   const [thread, setThread] = useState<ReviewThreadWithDetails | null>(null);
   const [isThreadLoading, setIsThreadLoading] = useState(false);
   const { toast } = useToast();
+  const t = useTranslations("Threads.hook");
+  const tc = useTranslations("Common");
+  const tm = useTranslations("Threads.messages");
+  const toastApiError = useApiErrorToast();
 
   const currentThreadId = reviewThreadId || thread?.id;
 
@@ -55,7 +61,7 @@ export const useReviewThread = (
     if (result.ok) {
       setThread(result.data.thread);
     } else {
-      toastApiError(result, silent ? 'Failed to refresh review thread' : 'Failed to load review thread');
+      toastApiError(result, silent ? t("refreshFailed") : t("loadFailed"));
     }
     if (!silent) setIsThreadLoading(false);
   };
@@ -88,15 +94,15 @@ export const useReviewThread = (
         body: form,
       });
       if (!result.ok) {
-        toastApiError(result, 'Failed to upload file');
+        toastApiError(result, t("uploadFailed"));
         return;
       }
       // If succesful, the response contains the uploaded file info.
       const uploadedFile = result.data.file;
       if (!uploadedFile) {
         toast({
-          title: 'Error',
-          description: 'File uploaded but response is missing file info',
+          title: tc("error"),
+          description: t("uploadMissingInfo"),
           variant: 'destructive',
         });
         return;
@@ -130,7 +136,7 @@ export const useReviewThread = (
         json: { content },
       });
       if (!result.ok) {
-        toastApiError(result, 'Failed to post message');
+        toastApiError(result, t("postFailed"));
         return;
       }
 
@@ -138,7 +144,7 @@ export const useReviewThread = (
       if (thread) {
         setThread({
           ...thread,
-          messages: [...(thread.messages || []), { id: `temp-${Date.now()}`, authorUsername: currentUsername ?? 'User', content }],
+          messages: [...(thread.messages || []), { id: `temp-${Date.now()}`, authorUsername: currentUsername ?? tm("fallbackAuthor"), content }],
         });
       }
       setMessageDraft('');
@@ -164,7 +170,7 @@ export const useReviewThread = (
         json: { fileId },
       });
       if (!result.ok) {
-        toastApiError(result, 'Failed to delete file');
+        toastApiError(result, t("deleteFailed"));
         return;
       }
 
@@ -187,7 +193,7 @@ export const useReviewThread = (
     if (isSubmitting) return;
     // TODO: Use modal for confirmation.
     const confirmed = window.confirm(
-      'Close this thread and revert the resolution to pending? This will delete all thread files and messages.'
+      t("closeConfirm")
     );
     if (!confirmed) {
       return;
@@ -199,7 +205,7 @@ export const useReviewThread = (
         method: 'DELETE',
       });
       if (!result.ok) {
-        toastApiError(result, 'Failed to close thread');
+        toastApiError(result, t("closeFailed"));
         return;
       }
 

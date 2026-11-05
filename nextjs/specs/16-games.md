@@ -15,7 +15,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 - See the games I am playing in one list
 - Define a team goal for a game
 - Create resolutions for the other members of a game
-- Set a deadline before starting a game
+- Set or change the deadline of a game
 - Start bingo once setup is complete
 - End a game, or have it end at its deadline
 - Delete a game
@@ -93,12 +93,18 @@ The header holds the game name, the team name linking to the team page, the lead
 | Action | Who | When |
 | ------ | --- | ---- |
 | **Set Goal** | Leader | Always |
-| **Configure** | Leader | `forming` |
+| **Configure** | Leader | Running (`forming` or `started`) |
 | **Start Bingo** | Leader | `forming` |
 | **End Game** | Leader | `started`, after confirmation |
 | **Delete Game** | Leader | Always, after confirmation |
 | **Propose Resolutions** | Any member | Always |
 | **Leave Game** | Any player | Always, after confirmation |
+
+The header keeps only the most used actions visible, so it stays readable for leaders:
+- **Start Bingo** (when the caller can use it) and **Propose Resolutions** are buttons.
+- The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Set Goal, Configure, End Game, a separator, Leave Game and Delete Game, which is styled as destructive. The menu lists only the actions the caller can use in the current state, as in the table above.
+- Choosing a menu item opens the same dialog or confirmation as the action's button did.
+- While no goal is set, a leader also sees a **Set Goal** button in the goal area. Once a goal is set, the goal area has an edit button instead.
 
 `/games` lists the caller's running games with their name, team, status and a link to the game page. New games are created from the team page (spec 04).
 
@@ -108,11 +114,11 @@ The header holds the game name, the team name linking to the team page, the lead
 
 `PATCH /api/games/[gameId]` with `deadline`, a date as `YYYY-MM-DD` or `null` for no deadline.
 
-- Only the leader can configure a game (`403` otherwise), and it must be `forming` (`400` otherwise).
+- Only the leader can configure a game (`403` otherwise), and it must be running: `forming` or `started` (`400` otherwise).
 - `deadline` must be a real date that is not before today (`400` otherwise). `null` removes the deadline.
 - A new game has no deadline. Setting one is optional.
-- Once the game has started, the deadline cannot be set, changed or removed.
-- The **Configure** dialog sets the deadline with a date picker.
+- The deadline of a started game can also be set, changed or removed, under the same rules. The new deadline applies from the next deadline sweep (Ending a Game); removing it means the game only ends manually.
+- The **Configure** dialog sets the deadline with a date picker. It is reached from the More actions menu in both statuses.
 
 The deadline is a calendar date with no time or time zone. "Today" is the date on the database server's clock. The chosen day is still playable: the deadline is over once that date has passed.
 
@@ -123,8 +129,9 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 - The team goal is a resolution with `scope = team`, of any type (spec 03). It belongs to one game.
 - Only the leader can create or edit it: `POST /api/resolutions/save` with `scope = 'team'` and `gameId`.
 - A game has one goal. Saving a new goal without an `id` when one already exists updates the existing goal, keeping its stored type (spec 03).
-- The goal belongs to the leader who set it: only they edit it and record its progress. When they leave the game, it passes to another leader of the game.
-- The goal can be edited at any time, including after the game has started. Cells reference it, so edits are reflected on every card of the game.
+- The goal belongs to the leader who set it: only they edit it. When they leave the game, it passes to another leader of the game.
+- The goal is one definition row per game. Each player's goal cell has its own snapshot and its own progress, tracked by that player, not by the leader.
+- The goal can be edited at any time, including after the game has started. Cards copy it when they are generated (spec 05), so an edit after the start affects only cards generated after it, for players who join late. Existing cards are unchanged.
 - `GET /api/games/[gameId]/goal` returns it to team members.
 - The goal is shown on the game page and appears as a normal `team` cell on the cards (spec 05). It is **not** the Joker.
 
@@ -143,7 +150,7 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 #### Ongoing Updates
 
 - Team members MAY create or update their member-provided resolutions at any time, before or after game start.
-- There is at most one resolution per `(game_id, owner_user_id, to_user_id)`; saving again overwrites it, keeping its stored type unless the save is a type change (spec 03). Cells reference resolutions by id, so edits are reflected on the card.
+- There is at most one resolution per `(game_id, owner_user_id, to_user_id)`; saving again overwrites it, keeping its stored type unless the save is a type change (spec 03). Cards hold a snapshot, so an edit does not change a card that already contains the resolution.
 - A resolution created after the recipient's card was generated is not added to that card automatically. The recipient can place it through card editing (spec 09).
 
 #### New Member Effects
@@ -175,7 +182,7 @@ On start:
 A user who joins a team (spec 04) becomes a player of **every** running game of that team, and receives a card in every `started` one:
 - The game stays in `started` status.
 - The card is generated at join time under the rules of spec 05. This requires the team goal to still exist; a failure to generate a card is not reported to the user and does not affect the other games.
-- If the team goal is `compound` or `iterative`, the new member's goal cell is set to match the goal's progress.
+- The new member's goal cell is a snapshot of the goal as it is at join time, with progress at zero.
 - Existing members' cards are not regenerated.
 
 ---
@@ -197,7 +204,7 @@ Steps:
 Until it is archived, after a game has ended:
 - Its cells cannot be completed, undone, edited or put under review.
 - Automatic completion (spec 06) no longer changes its cells.
-- Its team goal and member-provided resolutions cannot be saved, deleted or progressed.
+- Its team goal and member-provided resolutions cannot be saved or deleted, and progress on its cells cannot be changed.
 - Personal resolutions on its cards remain the user's to change. This does not change the game's final cards.
 
 ---
@@ -224,7 +231,8 @@ Until it is archived, after a game has ended:
   - Removes the user from the roster
   - Deletes their bingo card, with its cells and their threads, and their leaderboard row. Stored proof files of those threads are removed too, unless another thread uses the same file.
   - Deletes the member-provided resolutions written **for** them in this game
-- Resolutions they wrote **for** other players stay, on those players' cards and in the Propose Resolutions lists. Their badge reads "Former Teammates" (spec 05). The leaver can no longer edit them.
+  - Leaves no prepared resolutions to delete, because prepared fallbacks create no resolution rows (spec 05)
+- Resolutions they wrote **for** other players stay in the Propose Resolutions lists, and their snapshots stay on those players' cards. Their badge reads "Former Teammates" (spec 05). The leaver can no longer edit them.
 - Votes they cast on other players' threads stay.
 - A user who left a game cannot return to it while they stay in the team. A user who leaves the team and joins it again is a new member (Joining After Start), with a new card.
 - Leaving a team (spec 04) leaves each of its running games the user plays.
@@ -281,9 +289,12 @@ The primary key is `(game_id, user_id)`.
 - Non-leaders cannot create, start, end or delete a game.
 - Unverified users cannot create or start a game.
 - Each game has its own goal, member-provided resolutions, cards and leaderboard.
+- Two players track the team goal independently, each on their own cell.
+- Editing the team goal after the start changes only cards generated after the edit.
 - Bingo cannot start until the team goal exists.
 - Bingo can start while member-provided resolutions are missing.
-- A leader can set, change or remove the deadline of a forming game, and only of a forming game.
+- A leader can set, change or remove the deadline of a running game (`forming` or `started`), and not of an ended one.
+- Changing the deadline of a started game changes when it ends automatically.
 - A game with no deadline only ends manually.
 - A started game is ended automatically once its deadline is over, the same way as a manual end.
 - A leader can end a started game before its deadline.
@@ -297,6 +308,7 @@ The primary key is `(game_id, user_id)`.
 - Only players can see and play a game.
 - A player can leave a game after confirming. Their card, leaderboard row and the resolutions written for them are removed; resolutions they wrote for others stay, tagged "Former Teammates".
 - The only leader of a game cannot leave it until another player is promoted.
+- A leader's game header shows at most two action buttons plus the More actions menu, and every action in the Game Page table can be reached from the header or the menu.
 
 ---
 

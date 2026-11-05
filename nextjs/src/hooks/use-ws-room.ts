@@ -15,7 +15,7 @@ function isRoomRefresh(msg: WsListenerMessage, room: WsRoom): boolean {
   if (msg.type === "catch-up") return true;
   if (room.type === "card") return msg.type === "refresh-card";
   if (room.type === "thread") return msg.type === "refresh-thread" && msg.threadId === room.id;
-  return msg.type === "refresh-resolution" && msg.resolutionId === room.id;
+  return false;
 }
 
 /**

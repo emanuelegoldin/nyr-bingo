@@ -3,6 +3,7 @@
 import type { Subtask } from "@/lib/shared/types";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 
@@ -17,6 +18,7 @@ interface CompoundSubtaskEditorProps {
  * Similar to the original resolution list management style.
  */
 export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: CompoundSubtaskEditorProps) => {
+  const t = useTranslations("ResolutionForm");
   const [newTitle, setNewTitle] = useState("");
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
@@ -24,7 +26,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
   const handleAdd = () => {
     const trimmed = newTitle.trim();
     if (!trimmed) return;
-    onChange([...subtasks, { title: trimmed, description: "", completed: false }]);
+    onChange([...subtasks, { title: trimmed, description: "" }]);
     setNewTitle("");
   };
 
@@ -54,12 +56,12 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium">Subtasks</p>
+      <p className="text-sm font-medium">{t("subtasks.heading")}</p>
 
       {/* Add subtask */}
       <div className="flex gap-2">
         <Input
-          placeholder="New subtask..."
+          placeholder={t("subtasks.newPlaceholder")}
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -72,7 +74,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
           variant="outline"
           onClick={handleAdd}
           disabled={disabled || !newTitle.trim()}
-          aria-label="Add subtask"
+          aria-label={t("subtasks.addAriaLabel")}
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -110,6 +112,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-green-600"
                       onClick={() => handleSaveEdit(idx)}
+                      aria-label={t("subtasks.saveAriaLabel")}
                       disabled={disabled || !editingText.trim()}
                     >
                       <Check className="h-3.5 w-3.5" />
@@ -119,6 +122,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-red-600"
                       onClick={handleCancelEdit}
+                      aria-label={t("subtasks.cancelAriaLabel")}
                       disabled={disabled}
                     >
                       <X className="h-3.5 w-3.5" />
@@ -131,6 +135,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-foreground"
                       onClick={() => handleStartEdit(idx)}
+                      aria-label={t("subtasks.editAriaLabel")}
                       disabled={disabled}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -140,6 +145,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-destructive"
                       onClick={() => handleDelete(idx)}
+                      aria-label={t("subtasks.deleteAriaLabel")}
                       disabled={disabled}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -154,7 +160,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
 
       {subtasks.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-2">
-          No subtasks yet. Add at least one subtask.
+          {t("subtasks.empty")}
         </p>
       )}
     </div>

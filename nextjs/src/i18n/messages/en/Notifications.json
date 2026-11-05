@@ -1,0 +1,17 @@
+{
+  "title": "Notifications",
+  "open": "Open notifications",
+  "markAllRead": "Mark all as read",
+  "empty": "Nothing new",
+  "someone": "Someone",
+  "memberJoined": "{actor} joined the team",
+  "gameStarted": "{actor} started the game",
+  "gameEnded": "{actor} ended the game",
+  "gameEndedAtDeadline": "The game reached its deadline",
+  "bingoScored": "{actor} scored a BINGO!",
+  "proofRequested": "{actor} asked for proof of your resolution",
+  "settingLabel": "Notifications",
+  "settingDescription": "Show updates from your teams in the bell. While this is off, updates are not kept for later.",
+  "settingError": "Failed to update notifications",
+  "cardProgress": "{actor} completed {count, plural, one {a resolution} other {# resolutions}}"
+}

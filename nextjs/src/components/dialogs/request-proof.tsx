@@ -1,5 +1,7 @@
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { DialogFooter } from "../ui/dialog";
@@ -23,6 +25,9 @@ export const RequestProofDialog = ({
 }: RequestProofDialogProps) => {
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { toast } = useToast();
+    const t = useTranslations("Threads.requestProof");
+    const tc = useTranslations("Common");
+    const toastApiError = useApiErrorToast();
 
     const handleRequestProof = async () => {
         if (isSubmitting) return;
@@ -31,13 +36,13 @@ export const RequestProofDialog = ({
             const result = await apiFetch<unknown>(`/api/cells/${cell.id}/request-proof`, { method: 'POST' });
 
             if (!result.ok) {
-                toastApiError(result, 'Failed to request proof');
+                toastApiError(result, t("failed"));
                 return;
             }
 
             toast({
-                title: 'Proof requested',
-                description: 'A review thread has been opened for this resolution.',
+                title: t("successTitle"),
+                description: t("successDescription"),
             });
 
             // Parent pages keep cards in local state; request-proof changes cell state server-side.
@@ -45,8 +50,8 @@ export const RequestProofDialog = ({
             onRefresh?.();
         } catch {
             toast({
-                title: 'Error',
-                description: 'Failed to request proof',
+                title: tc("error"),
+                description: t("failed"),
                 variant: 'destructive',
             });
         } finally {
@@ -58,11 +63,11 @@ export const RequestProofDialog = ({
         <CellDialog
             isOpen={isOpen}
             setIsOpen={setIsOpen}
-            title="Request Proof?"
-            description={`Request proof for "${cell.resolutionText}". This will open a review thread and move the resolution into review.`}
+            title={t("title")}
+            description={t("description", { resolutionText: cell.resolutionText })}
         >
             <DialogFooter>
-                <Button onClick={handleRequestProof} disabled={isSubmitting}>Request Proof</Button>
+                <Button onClick={handleRequestProof} disabled={isSubmitting}>{t("submit")}</Button>
             </DialogFooter>
         </CellDialog>
     )

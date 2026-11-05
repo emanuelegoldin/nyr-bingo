@@ -30,6 +30,7 @@ This project is a web application that allows users to create and manage resolut
   - `messages/`: Contains the message definitions for the websocket communication.
 - `docs/`: Contains documentation for the project.
   - `database/`: Contains descriptions of the migration files (`migrations.md`).
+  - `external_deps/`: Inventory of every external dependency (npm packages, container images, tools, CI actions, fonts, assets, external services) with version, purpose and license. See [External Dependencies](#external-dependencies).
 - `docker-compose.yml`: Contains the Docker Compose configuration for the project, which defines how the different services (Next.js application, database, etc.) are orchestrated together. Used for local development and testing. The Dockerfiles in the `docker/` directory are used to build the individual images for each service.
 
 ### Libraries and Frameworks
@@ -110,6 +111,15 @@ When working on a feature, the agent MUST follow this sequence:
 
 ---
 
+## External Dependencies
+
+The app may be published commercially, so every external dependency (npm packages, images, tools, CI actions, fonts, assets, copied code, external services) must be tracked in `docs/external_deps/`.
+
+- Before adding, removing, upgrading across a major version, or starting to use anything external, read `docs/external_deps/README.md` ("Maintaining this inventory") and update the inventory **in the same change**.
+- Never add a dependency with an AGPL, SSPL, BUSL or unknown license, or one that requires a paid license, without explicit user approval.
+
+---
+
 ## Non-Goals
 
 Agents must NOT:
@@ -128,3 +138,4 @@ A task is considered complete ONLY IF:
 - No unrelated files were modified
 - No new requirements were invented
 - Behavior matches the domain rules exactly
+- Any new or changed external dependency is documented in `docs/external_deps/`

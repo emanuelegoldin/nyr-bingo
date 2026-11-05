@@ -1,0 +1,42 @@
+{
+  "pageTitle": "Einstellungen",
+  "tabs": {
+    "profile": "Profil",
+    "password": "Passwort"
+  },
+  "info": {
+    "title": "Profilinformationen",
+    "description": "Aktualisiere hier deine persönlichen Angaben.",
+    "verified": "Verifiziert",
+    "notVerified": "Nicht verifiziert",
+    "verifyNeeded": "Du musst deine E-Mail-Adresse verifizieren, um Teams zu erstellen oder beizutreten.",
+    "resend": "Verifizierungs-E-Mail erneut senden",
+    "sending": "Wird gesendet...",
+    "displayName": "Anzeigename",
+    "displayNamePlaceholder": "Dein Anzeigename",
+    "displayNamePublic": "Anzeigename öffentlich machen",
+    "bio": "Bio",
+    "bioPlaceholder": "Erzähl anderen etwas über dich...",
+    "bioPublic": "Bio öffentlich machen",
+    "save": "Änderungen speichern"
+  },
+  "toasts": {
+    "updated": "Profil erfolgreich aktualisiert",
+    "updateFailed": "Das Profil konnte nicht aktualisiert werden",
+    "verificationSent": "Verifizierungs-E-Mail erfolgreich gesendet",
+    "resendFailed": "Die Verifizierungs-E-Mail konnte nicht erneut gesendet werden"
+  },
+  "password": {
+    "title": "Passwort ändern",
+    "description": "Aktualisiere hier dein Passwort. Es ist sinnvoll, ein starkes, einzigartiges Passwort zu verwenden.",
+    "current": "Aktuelles Passwort",
+    "new": "Neues Passwort",
+    "confirm": "Neues Passwort bestätigen",
+    "update": "Passwort aktualisieren"
+  },
+  "publicPage": {
+    "pageTitle": "Profil",
+    "title": "Profil",
+    "bio": "Bio"
+  }
+}

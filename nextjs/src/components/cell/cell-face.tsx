@@ -1,7 +1,8 @@
 import { BingoCell } from "@/lib/db/types";
-import { FORMER_TEAMMATES_LABEL } from "@/lib/shared/cell-source";
-import { CellSourceType } from "@/lib/shared/types";
+import { cellSourceText } from "@/lib/shared/cell-source";
+import { CellSourceType, type CellSourceLabel } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
@@ -14,7 +15,7 @@ type CellFaceData = Pick<BingoCell, "state" | "resolutionTitle" | "resolutionTex
 interface CellFaceProps {
     cell: CellFaceData,
     canInteract: boolean,
-    sourceLabel: string,
+    sourceLabel: CellSourceLabel,
     onClick: () => void,
 }
 
@@ -35,6 +36,7 @@ export const CellFace = ({
     sourceLabel,
     onClick
 }: CellFaceProps) => {
+    const tl = useTranslations("Labels");
     const stateConfig = {
         pending: { icon: null, color: "bg-card hover:bg-secondary/50", text: "text-card-foreground" },
         completed: { icon: getCellStateIcon("completed", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.completed.bg, text: CELL_STATE_COLORS.completed.text },
@@ -71,17 +73,17 @@ export const CellFace = ({
                 {cell.state !== 'pending' && config.icon}
             </div>
             <Badge variant="outline" className="absolute bottom-1 right-1 max-w-[calc(100%-0.5rem)] text-xs hidden sm:inline-flex">
-                {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId && sourceLabel !== FORMER_TEAMMATES_LABEL ? (
+                {cell.sourceType === CellSourceType.MEMBER_PROVIDED && cell.sourceUserId && sourceLabel.kind === "member" ? (
                     <Link
                         href={`/profile/${cell.sourceUserId}`}
                         onClick={(e) => e.stopPropagation()}
                         className="truncate hover:underline"
                     >
-                        {sourceLabel}
+                        {sourceLabel.name}
                     </Link>
                 ) : (
                     <span className="truncate">
-                        {cell.sourceType !== CellSourceType.EMPTY && sourceLabel}
+                        {cell.sourceType !== CellSourceType.EMPTY && cellSourceText(sourceLabel, tl)}
                     </span>
                 )}
             </Badge>

@@ -30,12 +30,15 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 | 18 | Game archive |
 | 19 | Notifications |
 | 20 | Mobile layout |
+| 21 | Authorization |
+| 22 | Card shuffle |
 
 ## Scope
 In scope:
 - User accounts: register, login, logout, email verification
 - User profile: manage personal data and decide what is public
-- Resolutions: personal CRUD; `base`, `compound` and `iterative` types; history timeline; a pool of prepared resolutions to copy from
+- Resolutions: personal CRUD of definitions; `base`, `compound` and `iterative` types; a pool of prepared resolutions to copy from
+- Cell progress and history: progress and the history timeline live on each bingo cell
 - Bingo teams: create team, invite/join
 - Bingo games: the leader creates any number of games for a team; each has one team goal, members create resolutions for each other, and the leader starts and ends it
 - Bingo card generation (joker in the center, text de-duplication, personal and prepared fallbacks, empty filler cells)
@@ -73,7 +76,8 @@ Out of scope (not implemented):
   - resolutionType: `base` | `compound` | `iterative`
   - scope: `personal` | `team` | `member_provided`
   - teamId, gameId, toUserId (set according to scope)
-  - subtasks, numberOfRepetition, completedTimes (set according to type)
+  - subtasks (`{ title, description }[]`), numberOfRepetition (set according to type)
+  - A resolution is a definition only. It holds no progress.
 - **Team**
   - id, name, leaderUserId
 - **Game** (see spec 16)
@@ -89,13 +93,15 @@ Out of scope (not implemented):
   - id, gameId, teamId, userId, gridSize (always 5)
 - **BingoCell** (24 stored cells; the center Joker is not stored)
   - id, cardId, position (0–24)
-  - resolutionId, resolutionType
-  - sourceType: `team` | `member_provided` | `personal` | `empty`
-  - sourceUserId, isEmpty (generated)
+  - resolutionId (nullable link to the source resolution, used only to avoid duplicates during generation; `NULL` for `prepared` and `empty` cells)
+  - A snapshot of the definition: title, description, resolutionType, numberOfRepetition, and its subtasks in `bingo_cell_subtasks` (cellId, subtaskIndex, title, description, completed)
+  - Progress: completedTimes (iterative counter, starts at 0) and each subtask's `completed` flag (starts false)
+  - sourceType: `team` | `member_provided` | `personal` | `prepared` | `empty`
+  - sourceUserId, isEmpty (generated: `sourceType = 'empty'`)
   - state: `pending` | `completed` | `pending_review` | `accomplished` | `failed`
 - **ReviewThread**, **ReviewMessage**, **ReviewFile**, **ReviewVote** (see spec 07)
 - **TeamLeaderboard** (see spec 12)
-- **ResolutionHistoryEntry** (see spec 13)
+- **CellHistoryEntry** (see spec 13)
 - **NotificationEvent**, **NotificationRecipient**, **NotificationSetting** (see spec 19)
 
 The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in the schema but belong to removed flows. No code reads or writes them.
@@ -106,7 +112,7 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
   - their own profile and privacy settings
   - their own personal resolutions
   - their own bingo card (mark complete/undo, edit content, upload proof to threads about their cells)
-- Other members' actions can still change a cell's state: a proof request moves a cell to review, votes decide its outcome, and progress on a typed team goal moves that goal's cell on every card (spec 06).
+- Other members' actions can still change a cell's state: a proof request moves a cell to review, votes decide its outcome, and progress on a typed cell moves that cell only (spec 06).
 - Team leader can:
   - invite, delete the team, create, start, end and delete games, set their team goals
 - Any team member can:
@@ -117,7 +123,7 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
 ## Primary Flows
 1. Register → email verification → login
 2. Create/update profile + choose public fields
-3. Personal resolutions: add/update/delete, track progress, keep a history
+3. Personal resolutions: add/update/delete definitions. Progress and history belong to the cells of a card
 4. Team lifecycle: create team → invite/join members
    Game lifecycle: leader creates a game → sets its team goal → members provide resolutions for each other → leader starts bingo → leader ends it, which archives it, and can create the next one with the same team
 5. Card gameplay: mark completed / undo, or complete automatically through typed progress
@@ -126,6 +132,6 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
 8. Notifications: an event is held briefly, then released to the team's bell
 
 ## Non-Functional Requirements
-- Data integrity: generated cards do not contain duplicate texts; the concurrent cell mutations listed in spec 11 are guarded.
-- Auditability: resolutions record who wrote them, cells record their source user, votes record the voter, and resolution history records progress events.
+- Data integrity: generated cards do not contain duplicate texts; a card holds its own snapshot of every resolution, so editing or deleting a resolution never changes an existing card; the concurrent cell mutations listed in spec 11 are guarded.
+- Auditability: resolutions record who wrote them, cells record their source user, votes record the voter, and cell history records progress events.
 - Privacy: honor per-field public/private settings for profile data.

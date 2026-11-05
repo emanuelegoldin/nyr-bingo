@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { GameStatus } from "@/lib/shared/types";
 import { Swords } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 /** The game fields this list needs. */
@@ -31,6 +32,7 @@ interface GameListProps {
  * @returns The grid of games.
  */
 export function GameList({ games, showTeamName = false }: GameListProps) {
+  const t = useTranslations("Teams");
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {games.map((game) => (
@@ -47,7 +49,7 @@ export function GameList({ games, showTeamName = false }: GameListProps) {
           </CardHeader>
           <CardFooter>
             <Button asChild className="w-full">
-              <Link href={`/games/${game.id}`}>View Game</Link>
+              <Link href={`/games/${game.id}`}>{t("gameList.viewGame")}</Link>
             </Button>
           </CardFooter>
         </Card>

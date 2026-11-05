@@ -77,6 +77,14 @@ export enum ResolutionType {
 // String form of ResolutionType, for serialized data passed to the frontend
 export type ResolutionTypeValue = `${ResolutionType}`;
 
+/**
+ * Where a cell's resolution came from, as data the browser turns into text (spec 15):
+ * a member's name, or one of the fixed sources.
+ */
+export type CellSourceLabel =
+  | { kind: 'team' | 'prepared' | 'personal' | 'formerTeammates' }
+  | { kind: 'member'; name: string };
+
 // Resolution scope (ownership context)
 // A resolution can be personal, a team-wide goal, written by one member for another, or a
 // prepared resolution copied onto a card as a fallback.
@@ -84,15 +92,22 @@ export enum ResolutionScope {
   PERSONAL = 'personal',
   TEAM = 'team',
   MEMBER_PROVIDED = 'member_provided',
-  PREPARED = 'prepared',
 }
 
 /**
- * Subtask shape stored as JSON in resolutions.subtasks.
+ * Subtask of a compound resolution's definition, stored as JSON in resolutions.subtasks.
+ * Spec: 03-personal-resolutions.md - a resolution holds no progress
  */
 export interface Subtask {
   title: string;
   description: string;
+}
+
+/**
+ * Subtask of a compound cell: the cell's copy of the definition, with its progress.
+ * Spec: 06-bingo-gameplay.md - progress lives on the cell
+ */
+export interface CellSubtask extends Subtask {
   completed: boolean;
 }
 
@@ -108,7 +123,6 @@ export interface UnifiedResolution {
   text: string;
   subtasks?: Subtask[];
   numberOfRepetition?: number;
-  completedTimes?: number;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -159,8 +173,8 @@ export interface ArchivedCell {
   state: CellState;
   sourceType: CellSourceType;
   sourceUserId: string | null;
-  sourceLabel: string;
-  subtasks: Subtask[] | null;
+  sourceLabel: CellSourceLabel;
+  subtasks: CellSubtask[] | null;
   numberOfRepetition: number | null;
   completedTimes: number | null;
 }

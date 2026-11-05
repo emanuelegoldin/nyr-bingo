@@ -18,18 +18,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAppContext } from "@/hooks/AppContext";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
-import { getDictionaryForLocale } from "@/i18n/dictionary";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import {
   getResolutionTextKey,
   RESOLUTION_TYPE_BADGE_VARIANTS,
-  RESOLUTION_TYPE_LABELS,
 } from "@/lib/shared/resolution-type";
 import type { PreparedResolution, UnifiedResolution } from "@/lib/shared/types";
 import { PreparedResolutionCategory } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 const CATEGORIES = [
@@ -38,7 +37,7 @@ const CATEGORIES = [
   PreparedResolutionCategory.LONG,
 ];
 
-type DialogStrings = ReturnType<typeof getDictionaryForLocale>["PreparedResolutionsDialog"];
+type DialogStrings = ReturnType<typeof useTranslations<"PreparedResolutionsDialog">>;
 
 interface PreparedResolutionRowProps {
   resolution: PreparedResolution;
@@ -57,31 +56,35 @@ const PreparedResolutionRow = ({
   disabled,
   onAdd,
   t,
-}: PreparedResolutionRowProps) => (
-  <li className="flex items-center justify-between gap-2 p-2 rounded-md bg-secondary/50">
-    <div className="min-w-0 flex-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium">{resolution.title}</span>
-        <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[resolution.resolutionType]} className="text-xs flex-shrink-0">
-          {RESOLUTION_TYPE_LABELS[resolution.resolutionType]}
-        </Badge>
+}: PreparedResolutionRowProps) => {
+  const tl = useTranslations("Labels");
+
+  return (
+    <li className="flex items-center justify-between gap-2 p-2 rounded-md bg-secondary/50">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">{resolution.title}</span>
+          <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[resolution.resolutionType]} className="text-xs flex-shrink-0">
+            {tl(`resolutionType.${resolution.resolutionType}`)}
+          </Badge>
+        </div>
+        {resolution.description && (
+          <span className="text-xs text-muted-foreground block mt-0.5">{resolution.description}</span>
+        )}
       </div>
-      {resolution.description && (
-        <span className="text-xs text-muted-foreground block mt-0.5">{resolution.description}</span>
-      )}
-    </div>
-    <Button
-      size="sm"
-      variant="outline"
-      className="flex-shrink-0"
-      disabled={isAdded || disabled}
-      onClick={() => onAdd(resolution)}
-    >
-      {isAdding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-      {isAdded ? t.added : t.add}
-    </Button>
-  </li>
-);
+      <Button
+        size="sm"
+        variant="outline"
+        className="flex-shrink-0"
+        disabled={isAdded || disabled}
+        onClick={() => onAdd(resolution)}
+      >
+        {isAdding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+        {isAdded ? t('added') : t('add')}
+      </Button>
+    </li>
+  );
+};
 
 interface PreparedResolutionsDialogProps {
   /** The user's personal resolutions, used to mark entries they already have. */
@@ -106,8 +109,9 @@ export const PreparedResolutionsDialog = ({
   setIsOpen,
   onAdded,
 }: PreparedResolutionsDialogProps) => {
-  const { language } = useAppContext();
-  const t = getDictionaryForLocale(language).PreparedResolutionsDialog;
+  const t = useTranslations("PreparedResolutionsDialog");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const { toast } = useToast();
 
   const [pool, setPool] = useState<PreparedResolution[] | null>(null);
@@ -147,9 +151,9 @@ export const PreparedResolutionsDialog = ({
 
     if (result.ok) {
       await onAdded();
-      toast({ title: "Success", description: "Resolution added" });
+      toast({ title: tc("success"), description: t("addedToast") });
     } else {
-      toastApiError(result, "Failed to add resolution");
+      toastApiError(result, t("addError"));
     }
     setAddingId(null);
   };
@@ -157,7 +161,7 @@ export const PreparedResolutionsDialog = ({
   const renderBody = () => {
     if (!pool) {
       return loadFailed ? (
-        <p className="text-sm text-center text-muted-foreground py-4">{t.loadError}</p>
+        <p className="text-sm text-center text-muted-foreground py-4">{t('loadError')}</p>
       ) : (
         <div className="flex justify-center py-4">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -169,13 +173,13 @@ export const PreparedResolutionsDialog = ({
       <Tabs defaultValue={PreparedResolutionCategory.SHORT}>
         <TabsList className="grid w-full grid-cols-3">
           {CATEGORIES.map((category) => (
-            <TabsTrigger key={category} value={category}>{t.categories[category]}</TabsTrigger>
+            <TabsTrigger key={category} value={category}>{t(`categories.${category}`)}</TabsTrigger>
           ))}
         </TabsList>
 
         {CATEGORIES.map((category) => (
           <TabsContent key={category} value={category}>
-            <p className="text-xs text-muted-foreground mb-2">{t.categoryHints[category]}</p>
+            <p className="text-xs text-muted-foreground mb-2">{t(`categoryHints.${category}`)}</p>
             <ul className="space-y-2 max-h-[50vh] overflow-y-auto">
               {pool.filter((resolution) => resolution.category === category).map((resolution) => (
                 <PreparedResolutionRow
@@ -199,8 +203,8 @@ export const PreparedResolutionsDialog = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-headline">{t.title}</DialogTitle>
-          <DialogDescription>{t.description}</DialogDescription>
+          <DialogTitle className="font-headline">{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         {renderBody()}
       </DialogContent>

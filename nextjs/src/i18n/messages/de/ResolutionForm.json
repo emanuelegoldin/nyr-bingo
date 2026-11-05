@@ -1,0 +1,34 @@
+{
+  "teamTitleEdit": "Teamziel bearbeiten",
+  "teamTitleNew": "Teamziel festlegen",
+  "teamDescription": "Lege das Teamziel fest, das auf der Bingo-Karte aller erscheint.",
+  "memberTitleEdit": "Vorsatz für {name} bearbeiten",
+  "memberTitleNew": "Neuer Vorsatz für {name}",
+  "memberDescription": "Erstelle einen Vorsatz für {name}.",
+  "defaultMember": "Mitglied",
+  "defaultMemberLower": "dieses Mitglied",
+  "titleEdit": "Vorsatz bearbeiten",
+  "titleNew": "Neuer Vorsatz",
+  "descriptionEdit": "Aktualisiere die Details des Vorsatzes unten.",
+  "descriptionNew": "Erstelle einen neuen persönlichen Vorsatz.",
+  "titlePlaceholder": "Titel des Vorsatzes",
+  "textPlaceholder": "Beschreibung (optional)",
+  "saveError": "Vorsatz konnte nicht gespeichert werden",
+  "saveErrorGeneric": "Beim Speichern ist ein Fehler aufgetreten",
+  "updated": "Vorsatz aktualisiert",
+  "created": "Vorsatz erstellt",
+  "subtasks": {
+    "heading": "Teilaufgaben",
+    "newPlaceholder": "Neue Teilaufgabe...",
+    "addAriaLabel": "Teilaufgabe hinzufügen",
+    "saveAriaLabel": "Teilaufgabe speichern",
+    "cancelAriaLabel": "Bearbeitung abbrechen",
+    "editAriaLabel": "Teilaufgabe bearbeiten",
+    "deleteAriaLabel": "Teilaufgabe löschen",
+    "empty": "Noch keine Teilaufgaben. Füge mindestens eine Teilaufgabe hinzu."
+  },
+  "repetitions": {
+    "label": "Anzahl der Wiederholungen",
+    "hint": "Muss mindestens 2 sein. Der Vorsatz gilt als erledigt, sobald du diese Anzahl erreichst."
+  }
+}

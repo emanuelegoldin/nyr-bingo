@@ -1,8 +1,10 @@
 import { cn } from "@/lib/utils"
 import { Star } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Cell } from "./cell"
 
 export const JokerCell = () => {
+    const t = useTranslations("Cell");
     return(
       <Cell 
         cellClassName={cn(
@@ -17,7 +19,7 @@ export const JokerCell = () => {
             "text-card-foreground",
             "text-primary-foreground"   // isJoker
           )}>
-          Joker
+          {t("joker")}
         </p>
       </Cell>
     )

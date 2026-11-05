@@ -1,4 +1,5 @@
 import { Button } from "@ui/button";
+import { useTranslations } from "next-intl";
 import { useContext } from "react";
 import { BingoCardContext } from "../BingoCardProvider";
 
@@ -6,6 +7,7 @@ import { BingoCardContext } from "../BingoCardProvider";
 // TODO: check whether it is necessary to hide edit buttons for non-owners
 
 export function BingoCardEditButton() {
+  const t = useTranslations("Dashboard");
   const { isEditMode, setEditMode } = useContext(BingoCardContext);
 
   return (
@@ -14,7 +16,7 @@ export function BingoCardEditButton() {
       size="sm"
       onClick={() => setEditMode(!isEditMode)}
     >
-      {isEditMode ? 'Done' : 'Edit Card'}
+      {isEditMode ? t('done') : t('editCard')}
     </Button>
   );
 }
