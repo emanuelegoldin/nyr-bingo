@@ -17,7 +17,7 @@
  * Incoming messages are dispatched to the listeners registered with
  * `addMessageListener()`.
  *
- * Components that watch a thread or a resolution use `useWsRoom()`, which joins
+ * Components that watch a thread or a team's cards use `useWsRoom()`, which joins
  * the room on this socket and reacts to its refresh events.
  */
 
