@@ -100,6 +100,12 @@ The header holds the game name, the team name linking to the team page, the lead
 | **Propose Resolutions** | Any member | Always |
 | **Leave Game** | Any player | Always, after confirmation |
 
+The header keeps only the most used actions visible, so it stays readable for leaders:
+- **Start Bingo** (when the caller can use it) and **Propose Resolutions** are buttons.
+- The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Set Goal, Configure, End Game, a separator, Leave Game and Delete Game, which is styled as destructive. The menu lists only the actions the caller can use in the current state, as in the table above.
+- Choosing a menu item opens the same dialog or confirmation as the action's button did.
+- While no goal is set, a leader also sees a **Set Goal** button in the goal area. Once a goal is set, the goal area has an edit button instead.
+
 `/games` lists the caller's running games with their name, team, status and a link to the game page. New games are created from the team page (spec 04).
 
 ---
@@ -297,6 +303,7 @@ The primary key is `(game_id, user_id)`.
 - Only players can see and play a game.
 - A player can leave a game after confirming. Their card, leaderboard row and the resolutions written for them are removed; resolutions they wrote for others stay, tagged "Former Teammates".
 - The only leader of a game cannot leave it until another player is promoted.
+- A leader's game header shows at most two action buttons plus the More actions menu, and every action in the Game Page table can be reached from the header or the menu.
 
 ---
 
