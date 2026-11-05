@@ -1,0 +1,19 @@
+{
+  "title": "Resolution ideas",
+  "description": "Add any of these prepared resolutions to your personal list. You can edit your copy afterwards.",
+  "add": "Add",
+  "added": "Added",
+  "loadError": "Could not load the ideas. Close this window and try again.",
+  "categories": {
+    "short": "Short",
+    "medium": "Medium",
+    "long": "Long"
+  },
+  "categoryHints": {
+    "short": "Done in a few days, with no preparation.",
+    "medium": "Done in a few weeks, or more demanding but over in days.",
+    "long": "Takes months, up to the whole year."
+  },
+  "addedToast": "Resolution added",
+  "addError": "Failed to add resolution"
+}

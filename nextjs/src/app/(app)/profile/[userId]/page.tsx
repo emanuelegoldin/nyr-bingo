@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { requireUser } from "@/lib/auth";
 import { getPublicUserProfile, type PublicUserProfile } from "@/lib/db";
 import { PageSpinner } from "@/components/page-spinner";
+import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -27,12 +28,14 @@ function PublicProfileLoadingFallback() {
   );
 }
 
-function PublicProfileCard({ profile }: { profile: PublicUserProfile }) {
+async function PublicProfileCard({ profile }: { profile: PublicUserProfile }) {
+  const t = await getTranslations("Profile");
+
   return (
     <div className="max-w-xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Profile</CardTitle>
+          <CardTitle className="font-headline">{t("publicPage.title")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
@@ -55,7 +58,7 @@ function PublicProfileCard({ profile }: { profile: PublicUserProfile }) {
             <>
               <Separator />
               <div>
-                <p className="text-sm font-medium mb-1">Bio</p>
+                <p className="text-sm font-medium mb-1">{t("publicPage.bio")}</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {profile.bio}
                 </p>

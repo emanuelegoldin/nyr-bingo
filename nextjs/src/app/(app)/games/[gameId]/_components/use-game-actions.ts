@@ -1,6 +1,8 @@
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import type { ResolutionFormData } from "@/lib/shared/types";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import type { Game, TeamProvidedResolution } from "../types";
@@ -29,6 +31,9 @@ export function useGameActions({
   initialExistingResolutions,
 }: UseGameActionsParams) {
   const { toast } = useToast();
+  const t = useTranslations("Games.actions");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const router = useRouter();
   // The server page loads the data; a refresh brings new props (also signalled over WebSocket).
   // A failed read keeps the last loaded value on screen.
@@ -54,12 +59,12 @@ export function useGameActions({
 
     if (result.ok) {
       toast({
-        title: "Success",
-        description: "Bingo game started!",
+        title: tc("success"),
+        description: t("started"),
       });
       refreshGame();
     } else {
-      toastApiError(result, "Failed to start game");
+      toastApiError(result, t("startFailed"));
     }
     setIsStarting(false);
   };
@@ -92,21 +97,21 @@ export function useGameActions({
   /** Ends the game, closing its open reviews. */
   const handleEndGame = async () => {
     setIsEnding(true);
-    await leaveGameAfter(`/api/games/${gameId}/end`, 'POST', 'Game ended', 'Failed to end game');
+    await leaveGameAfter(`/api/games/${gameId}/end`, 'POST', t('ended'), t('endFailed'));
     setIsEnding(false);
   };
 
   /** Leaves the game: the user's card and the resolutions written for them are removed. */
   const handleLeaveGame = async () => {
     setIsLeaving(true);
-    await leaveGameAfter(`/api/games/${gameId}/leave`, 'POST', 'You left the game', 'Failed to leave game');
+    await leaveGameAfter(`/api/games/${gameId}/leave`, 'POST', t('left'), t('leaveFailed'));
     setIsLeaving(false);
   };
 
   /** Deletes the game and everything in it. */
   const handleDeleteGame = async () => {
     setIsDeleting(true);
-    await leaveGameAfter(`/api/games/${gameId}`, 'DELETE', 'Game deleted', 'Failed to delete game');
+    await leaveGameAfter(`/api/games/${gameId}`, 'DELETE', t('deleted'), t('deleteFailed'));
     setIsDeleting(false);
   };
 

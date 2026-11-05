@@ -6,27 +6,21 @@ import { TeamRefreshListener } from '@/components/team-refresh-listener';
 import { TeamWsProvider } from '@/components/team-ws-provider';
 import { Card } from '@/components/ui/card';
 import type { BingoCardWithCells, GameWithMembers } from '@/lib/db/types';
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-
-// Helper type for passing translation strings to avoid issues with importing server functions into client components
-type DashboardText = {
-  cardTitle: string;
-  headerDescription: string;
-};
 
 interface DashboardGameCardClientProps {
   game: GameWithMembers;
   currentUserId: string;
   initialCard: BingoCardWithCells;
-  dashboardText: DashboardText;
 }
 
 export default function DashboardGameCardClient({
   game,
   currentUserId,
   initialCard,
-  dashboardText,
 }: DashboardGameCardClientProps) {
+  const tc = useTranslations('Common');
   const membersMap = useMemo<TeamMembersMap>(() => {
     const map: TeamMembersMap = {};
     for (const member of game.members) {
@@ -41,15 +35,13 @@ export default function DashboardGameCardClient({
       <TeamMembersProvider members={membersMap}>
         <Card className="w-full max-w-4xl mx-auto">
           <DashboardBingoCardProvider
-            user={{ id: currentUserId, username: membersMap[currentUserId] || 'Unknown User' }}
+            user={{ id: currentUserId, username: membersMap[currentUserId] || tc('unknownUser') }}
             initialCard={initialCard}
             isOwner={true}
             gameId={game.id}
             currentUserId={currentUserId}
             cardUserId={currentUserId}
             gameName={game.name}
-            // Pass translation strings to avoid issues with importing server functions into client components
-            dashboardText={dashboardText}
           />
         </Card>
       </TeamMembersProvider>

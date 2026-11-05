@@ -1,20 +1,20 @@
 "use client";
 
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import type { Dictionary } from "@/i18n/dictionary";
 import { formatRelativeTime, notificationText } from "@/lib/notifications/text";
 import type { UserNotification } from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
+import { useLocale, useTranslations } from "next-intl";
 
 interface NotificationItemProps {
   notification: UserNotification;
-  strings: Dictionary["Notifications"];
-  locale: string;
   onSelect: (notification: UserNotification) => void;
 }
 
 /** One line of the notification list. */
-export function NotificationItem({ notification, strings, locale, onSelect }: NotificationItemProps) {
+export function NotificationItem({ notification, onSelect }: NotificationItemProps) {
+  const t = useTranslations("Notifications");
+  const locale = useLocale();
   const placeName = notification.gameName ?? notification.teamName;
 
   return (
@@ -28,7 +28,7 @@ export function NotificationItem({ notification, strings, locale, onSelect }: No
       />
       <span className="min-w-0 flex-1">
         <span className={cn("block text-sm", !notification.read && "font-medium")}>
-          {notificationText(notification, strings)}
+          {notificationText(notification, t)}
         </span>
         <span className="block truncate text-xs text-muted-foreground">
           {placeName} · {formatRelativeTime(notification.createdAt, locale)}

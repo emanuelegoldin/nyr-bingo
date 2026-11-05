@@ -15,29 +15,46 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
+/** Translator for the Auth namespace. */
+type AuthTranslator = ReturnType<typeof useTranslations<"Auth">>;
+
+/**
+ * Builds the login validation schema with messages in the active locale.
+ *
+ * @param t - Translator of the Auth namespace.
+ * @returns The zod schema for the login form.
+ */
+const createLoginSchema = (t: AuthTranslator) => z.object({
+  email: z.string().email({ message: t("validation.emailInvalid") }),
+  password: z.string().min(1, { message: t("validation.passwordRequired") }),
 });
 
-const registerSchema = z.object({
-  username: z.string().min(3, { message: "Username must be at least 3 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+/**
+ * Builds the registration validation schema with messages in the active locale.
+ *
+ * @param t - Translator of the Auth namespace.
+ * @returns The zod schema for the registration form.
+ */
+const createRegisterSchema = (t: AuthTranslator) => z.object({
+  username: z.string().min(3, { message: t("validation.usernameMin") }),
+  email: z.string().email({ message: t("validation.emailInvalid") }),
+  password: z.string().min(8, { message: t("validation.passwordMin") }),
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
+type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
+type RegisterFormData = z.infer<ReturnType<typeof createRegisterSchema>>;
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
   variant: "login" | "register";
@@ -46,6 +63,10 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
 function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations("Auth");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
+  const loginSchema = React.useMemo(() => createLoginSchema(t), [t]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -65,12 +86,12 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
 
     if (result.ok) {
       toast({
-        title: "Success",
-        description: "Logged in successfully!",
+        title: tc("success"),
+        description: t("loginSuccess"),
       });
       router.push("/dashboard");
     } else {
-      toastApiError(result, "Failed to login", "An error occurred. Please try again.");
+      toastApiError(result, t("loginFailed"));
     }
   }
 
@@ -83,9 +104,9 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t("email")}</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="name@example.com" {...field} disabled={isLoading} />
+                  <Input type="email" placeholder={t("emailPlaceholder")} {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -96,7 +117,7 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{t("password")}</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                 </FormControl>
@@ -108,7 +129,7 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
             {isLoading && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Sign In
+            {t("signIn")}
           </Button>
         </form>
       </Form>
@@ -119,6 +140,10 @@ function LoginForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) 
 function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'>) {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations("Auth");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
+  const registerSchema = React.useMemo(() => createRegisterSchema(t), [t]);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -139,12 +164,12 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
 
     if (result.ok) {
       toast({
-        title: "Success",
-        description: "Account created! Please check your email to verify your account.",
+        title: tc("success"),
+        description: t("registerSuccess"),
       });
       router.push("/login");
     } else {
-      toastApiError(result, "Failed to register", "An error occurred. Please try again.");
+      toastApiError(result, t("registerFailed"));
     }
   }
 
@@ -157,9 +182,9 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
             name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Username</FormLabel>
+                <FormLabel>{t("username")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your Name" {...field} disabled={isLoading} />
+                  <Input placeholder={t("usernamePlaceholder")} {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -170,9 +195,9 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t("email")}</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="name@example.com" {...field} disabled={isLoading} />
+                  <Input type="email" placeholder={t("emailPlaceholder")} {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -183,7 +208,7 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{t("password")}</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                 </FormControl>
@@ -195,7 +220,7 @@ function RegisterForm({ className, ...props }: Omit<UserAuthFormProps, 'variant'
             {isLoading && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Create Account
+            {t("createAccount")}
           </Button>
         </form>
       </Form>

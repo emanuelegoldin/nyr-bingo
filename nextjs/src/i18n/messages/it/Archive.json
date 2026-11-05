@@ -1,0 +1,17 @@
+{
+  "pageTitle": "Archivio",
+  "heading": "Partite archiviate",
+  "loadFailed": "Impossibile caricare le partite archiviate",
+  "endedBy": "{teamName} · Terminata il {date}",
+  "viewGame": "Vedi partita",
+  "empty": {
+    "title": "Nessuna partita archiviata",
+    "description": "Le partite a cui partecipi appaiono qui quando terminano."
+  },
+  "gamePage": {
+    "deleteFailed": "Impossibile eliminare la partita archiviata",
+    "deleteTitle": "Eliminare questa partita archiviata?",
+    "deleteDescription": "La partita verrà eliminata definitivamente dall'archivio per tutti i giocatori. Questa azione non può essere annullata.",
+    "cards": "Carte bingo"
+  }
+}

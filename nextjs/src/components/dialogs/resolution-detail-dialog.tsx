@@ -17,7 +17,8 @@
 "use client";
 
 import { STATE_CONFIG } from "@/components/cell/cell-state-style";
-import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import { cellSourceText } from "@/lib/shared/cell-source";
+import type { CellSourceLabel } from "@/lib/shared/types";
 import type { Subtask } from "@/lib/shared/types";
 import { CellState, ResolutionType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ import { DialogFooter } from "../ui/dialog";
 import { CellDialog } from "./cell-dialog";
 import { CompoundChecklist } from "./resolution-detail/compound-checklist";
 import { IterativeCounter } from "./resolution-detail/iterative-counter";
+import { useTranslations } from "next-intl";
 
 /* ─── Data types ─────────────────────────────────────────────────── */
 
@@ -81,7 +83,7 @@ interface ResolutionDetailDialogProps {
   /** Whether the viewer's progress changes take effect (only the leader's do on team goals) */
   canChangeProgress: boolean;
   /** Human-readable source label, e.g. "Personal", "Team Goal", or a username */
-  sourceLabel?: string;
+  sourceLabel?: CellSourceLabel;
   /** Called after a mutation so the parent can refresh the bingo card */
   onRefresh?: () => void;
   /** Replaces this dialog with a follow-up one (complete, request proof, thread or history) */
@@ -106,6 +108,8 @@ export const ResolutionDetailDialog = ({
   onOpenDialog,
   onSetState,
 }: ResolutionDetailDialogProps) => {
+  const tl = useTranslations("Labels");
+  const t = useTranslations("Cell");
   const isAutomatic = data.type === ResolutionType.COMPOUND || data.type === ResolutionType.ITERATIVE;
 
   const stateConfig = STATE_CONFIG[cell.state];
@@ -126,11 +130,11 @@ export const ResolutionDetailDialog = ({
             stateConfig.text,
           )}>
             {stateConfig.icon}
-            {stateConfig.label}
+            {tl(`cellState.${cell.state}`)}
           </span>
-          <Badge variant="outline">{RESOLUTION_TYPE_LABELS[data.type] ?? data.type}</Badge>
+          <Badge variant="outline">{tl(`resolutionType.${data.type}`)}</Badge>
           {sourceLabel && (
-            <Badge variant="secondary">{sourceLabel}</Badge>
+            <Badge variant="secondary">{cellSourceText(sourceLabel, tl)}</Badge>
           )}
         </div>
 
@@ -157,7 +161,7 @@ export const ResolutionDetailDialog = ({
         {data.type === ResolutionType.BASE && (
           <div className="py-2">
             {!data.description && (
-              <p className="text-sm text-muted-foreground italic">No description provided.</p>
+              <p className="text-sm text-muted-foreground italic">{t("detail.noDescription")}</p>
             )}
           </div>
         )}
@@ -165,41 +169,41 @@ export const ResolutionDetailDialog = ({
         {/* Action buttons */}
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => onOpenDialog('history')}>
-            <History className="h-4 w-4 mr-2" /> History
+            <History className="h-4 w-4 mr-2" /> {t("detail.history")}
           </Button>
 
           {/* Owner + pending → Mark Failed */}
           {isOwner && cell.state === CellState.PENDING && (
             <Button variant="outline" onClick={() => { setIsOpen(false); onSetState(CellState.FAILED); }}>
-              <X className="h-4 w-4 mr-2" /> Mark Failed
+              <X className="h-4 w-4 mr-2" /> {t("detail.markFailed")}
             </Button>
           )}
 
           {/* Owner + pending or failed + non-automatic → Mark Complete */}
           {isOwner && (cell.state === CellState.PENDING || cell.state === CellState.FAILED) && !isAutomatic && (
             <Button onClick={() => onOpenDialog('complete')}>
-              <Check className="h-4 w-4 mr-2" /> Mark Complete
+              <Check className="h-4 w-4 mr-2" /> {t("markComplete")}
             </Button>
           )}
 
           {/* Owner + (completed + non-automatic, or failed) → Undo */}
           {isOwner && ((cell.state === CellState.COMPLETED && !isAutomatic) || cell.state === CellState.FAILED) && (
             <Button variant="outline" onClick={() => { setIsOpen(false); onSetState(CellState.PENDING); }}>
-              <Undo2 className="h-4 w-4 mr-2" /> Undo
+              <Undo2 className="h-4 w-4 mr-2" /> {t("detail.undo")}
             </Button>
           )}
 
           {/* Non-owner + completed → Request Proof */}
           {!isOwner && cell.state === CellState.COMPLETED && (
             <Button variant="outline" onClick={() => onOpenDialog('request_proof')}>
-              <Eye className="h-4 w-4 mr-2" /> Request Proof
+              <Eye className="h-4 w-4 mr-2" /> {t("detail.requestProof")}
             </Button>
           )}
 
           {/* Any + pending_review → View Thread */}
           {cell.state === CellState.PENDING_REVIEW && (
             <Button variant="outline" onClick={() => onOpenDialog('thread')}>
-              <MessageSquare className="h-4 w-4 mr-2" /> View Thread
+              <MessageSquare className="h-4 w-4 mr-2" /> {t("detail.viewThread")}
             </Button>
           )}
         </DialogFooter>

@@ -77,6 +77,14 @@ export enum ResolutionType {
 // String form of ResolutionType, for serialized data passed to the frontend
 export type ResolutionTypeValue = `${ResolutionType}`;
 
+/**
+ * Where a cell's resolution came from, as data the browser turns into text (spec 15):
+ * a member's name, or one of the fixed sources.
+ */
+export type CellSourceLabel =
+  | { kind: 'team' | 'prepared' | 'personal' | 'formerTeammates' }
+  | { kind: 'member'; name: string };
+
 // Resolution scope (ownership context)
 // A resolution can be personal, a team-wide goal, written by one member for another, or a
 // prepared resolution copied onto a card as a fallback.
@@ -159,7 +167,7 @@ export interface ArchivedCell {
   state: CellState;
   sourceType: CellSourceType;
   sourceUserId: string | null;
-  sourceLabel: string;
+  sourceLabel: CellSourceLabel;
   subtasks: Subtask[] | null;
   numberOfRepetition: number | null;
   completedTimes: number | null;

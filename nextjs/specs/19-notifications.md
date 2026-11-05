@@ -168,5 +168,5 @@ All endpoints require authentication and act only on the caller's own notificati
 - **11 — Real-Time Updates**: defines the user room and the signal.
 - **12 — Game Tabs**: defines `first_bingo_at`.
 - **14 — Dashboard and Navigation**: hosts the bell.
-- **15 — Internationalization**: defines the dictionary section.
+- **15 — Internationalization**: defines the `Notifications` namespace.
 - **18 — Game Archive**: explains why notifications hold plain values.

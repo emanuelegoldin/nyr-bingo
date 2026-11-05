@@ -11,7 +11,6 @@ import DashboardPageShell from '@/components/dashboard/dashboard-page-shell';
 import DashboardGameCardClient from '@/components/dashboard/dashboard-game-card-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getDictionary } from '@/i18n/request';
 import { requireUser } from '@/lib/auth';
 import {
   getBingoCard,
@@ -21,6 +20,7 @@ import {
   type GameWithMembers,
 } from '@/lib/db';
 import { Loader2, Plus, Users } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { Suspense, type ReactNode } from 'react';
 
@@ -39,13 +39,13 @@ async function DashboardCardFrame({
   gameName: string;
   children: ReactNode;
 }) {
-  const t = (await getDictionary()).Dashboard;
+  const t = await getTranslations('Dashboard');
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">
-          {t.cardTitle.replace('{gameName}', gameName)}
+          {t('cardTitle', { gameName })}
         </CardTitle>
       </CardHeader>
       <CardContent>{children}</CardContent>
@@ -54,34 +54,38 @@ async function DashboardCardFrame({
 }
 
 // TODO: we could create the loading fallback through composition with a dummy empty cell
-function DashboardCardLoadingFallback({ gameName }: { gameName: string }) {
+async function DashboardCardLoadingFallback({ gameName }: { gameName: string }) {
+  const t = await getTranslations('Dashboard');
+
   return (
     <DashboardCardFrame gameName={gameName}>
       <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
-        <span>Loading card...</span>
+        <span>{t('loadingCard')}</span>
       </div>
     </DashboardCardFrame>
   );
 }
 
-function DashboardCardError({ gameName }: { gameName: string }) {
+async function DashboardCardError({ gameName }: { gameName: string }) {
+  const t = await getTranslations('Dashboard');
+
   return (
     <DashboardCardFrame gameName={gameName}>
       <p className="text-sm text-destructive">
-        Failed to load this card. Other cards are still available.
+        {t('cardLoadFailed')}
       </p>
     </DashboardCardFrame>
   );
 }
 
 async function DashboardCardMissing({ gameName }: { gameName: string }) {
-  const t = (await getDictionary()).Dashboard;
+  const t = await getTranslations('Dashboard');
 
   return (
     <DashboardCardFrame gameName={gameName}>
       <p className="text-sm text-muted-foreground">
-        {t.cardContentNoneAvailable}
+        {t('cardContentNoneAvailable')}
       </p>
     </DashboardCardFrame>
   );
@@ -94,7 +98,6 @@ async function DashboardGameCardStream({
   game: GameWithMembers;
   currentUserId: string;
 }) {
-  const t = (await getDictionary()).Dashboard;  // Get dictionary here (ServerComponent) and pass strings to CLientComponents
   try {
     // Each game card loads independently so one slow query does not block others.
     const card = await getBingoCard(game.id, currentUserId);
@@ -107,11 +110,6 @@ async function DashboardGameCardStream({
         game={game}
         currentUserId={currentUserId}
         initialCard={card}
-        // Pass translation strings to avoid issues with importing server funcitons into clients components!
-        dashboardText={{
-          cardTitle: t.cardTitle,
-          headerDescription: t.headerDescription,
-        }}
       />
     );
   } catch {
@@ -144,20 +142,20 @@ async function getStartedGamesForUser(userId: string): Promise<GameWithMembers[]
  * @returns The empty-state card.
  */
 async function DashboardEmptyState({ hasTeams }: { hasTeams: boolean }) {
-  const t = (await getDictionary()).Dashboard;
+  const t = await getTranslations('Dashboard');
 
   return (
     <div className="container mx-auto">
       <Card className="w-full max-w-2xl mx-auto">
         <CardContent className="py-16 text-center">
           <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold font-headline mb-2">{t.headerContent}</h2>
+          <h2 className="text-2xl font-bold font-headline mb-2">{t('headerContent')}</h2>
           <p className="text-muted-foreground mb-6">
-            {hasTeams ? t.headerDescriptionNoGames : t.headerDescriptionNoTeam}
+            {hasTeams ? t('headerDescriptionNoGames') : t('headerDescriptionNoTeam')}
           </p>
           <Button asChild>
             <Link href="/teams">
-              <Plus className="mr-2 h-4 w-4" /> Get Started
+              <Plus className="mr-2 h-4 w-4" /> {t('getStarted')}
             </Link>
           </Button>
         </CardContent>

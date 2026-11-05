@@ -1,0 +1,17 @@
+{
+  "title": "Notifiche",
+  "open": "Apri le notifiche",
+  "markAllRead": "Segna tutte come lette",
+  "empty": "Nessuna novità",
+  "someone": "Qualcuno",
+  "memberJoined": "Nuovo membro nel team: {actor}",
+  "gameStarted": "{actor} ha avviato la partita",
+  "gameEnded": "{actor} ha terminato la partita",
+  "gameEndedAtDeadline": "La partita ha raggiunto la scadenza",
+  "bingoScored": "{actor} ha fatto BINGO!",
+  "proofRequested": "{actor} ha chiesto una prova del tuo obiettivo",
+  "settingLabel": "Notifiche",
+  "settingDescription": "Mostra gli aggiornamenti dei tuoi team nella campanella. Quando è disattivato, gli aggiornamenti non vengono conservati.",
+  "settingError": "Impossibile aggiornare le notifiche",
+  "cardProgress": "{actor} ha completato {count, plural, one {un obiettivo} other {# obiettivi}}"
+}

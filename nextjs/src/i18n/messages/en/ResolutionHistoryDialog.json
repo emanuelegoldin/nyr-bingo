@@ -1,0 +1,14 @@
+{
+  "title": "Resolution History",
+  "description": "Timeline for \"{title}\".",
+  "addNoteTitle": "Add progress note",
+  "addNotePlaceholder": "Write what you did, learned, or completed...",
+  "addNoteButton": "Add note",
+  "loading": "Loading history...",
+  "empty": "No history yet.",
+  "close": "Close",
+  "noteLabel": "Note",
+  "progressLabel": "Progress",
+  "loadError": "Failed to load resolution history",
+  "addError": "Failed to add history entry"
+}

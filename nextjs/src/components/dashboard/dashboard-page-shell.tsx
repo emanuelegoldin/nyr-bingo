@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageTitle } from '@/hooks/AppContext';
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
 interface DashboardPageShellProps {
@@ -14,7 +15,8 @@ interface DashboardPageShellProps {
  * so hydration stays minimal.
  */
 export default function DashboardPageShell({ children }: DashboardPageShellProps) {
-  usePageTitle('Dashboard');
+  const t = useTranslations('Dashboard');
+  usePageTitle(t('title'));
 
   return <>{children}</>;
 }

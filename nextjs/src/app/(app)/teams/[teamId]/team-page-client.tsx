@@ -18,9 +18,11 @@ import type { Team } from "@/components/team/types";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import type { TeamPermission } from "@/lib/authz/permissions";
 import { Crown, LogOut, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { InviteDialog } from "./_components/InviteDialog";
@@ -35,7 +37,10 @@ interface TeamPageClientProps {
 }
 
 export default function TeamPageClient({ team, games, currentUserId, capabilities }: TeamPageClientProps) {
-  usePageTitle("Team");
+  const t = useTranslations("Teams");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
+  usePageTitle(t("detail.pageTitle"));
 
   const { toast } = useToast();
   const router = useRouter();
@@ -52,13 +57,13 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
 
     if (result.ok) {
       toast({
-        title: "Team deleted",
-        description: "The team and its related data were removed.",
+        title: t("detail.deletedTitle"),
+        description: t("detail.deletedDescription"),
       });
       router.push("/teams");
       router.refresh();
     } else {
-      toastApiError(result, "Failed to delete team");
+      toastApiError(result, t("detail.deleteFailed"));
     }
     setIsDeleting(false);
   };
@@ -69,11 +74,11 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
     const result = await apiFetch<unknown>(`/api/teams/${team.id}/leave`, { method: "POST" });
 
     if (result.ok) {
-      toast({ title: "You left the team" });
+      toast({ title: t("detail.leftTitle") });
       router.push("/teams");
       router.refresh();
     } else {
-      toastApiError(result, "Failed to leave team");
+      toastApiError(result, t("detail.leaveFailed"));
     }
     setIsLeaving(false);
   };
@@ -84,10 +89,10 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
     const result = await apiFetch<unknown>(`/api/teams/${team.id}/leaders`, { method: "POST", json: { userId } });
 
     if (result.ok) {
-      toast({ title: "Member promoted to leader" });
+      toast({ title: t("detail.promotedTitle") });
       router.refresh();
     } else {
-      toastApiError(result, "Failed to promote member");
+      toastApiError(result, t("detail.promoteFailed"));
     }
     setPromotingUserId(null);
   };
@@ -102,7 +107,7 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
               <CardTitle className="font-headline text-3xl">{team.name}</CardTitle>
               <CardDescription className="flex items-center gap-2 mt-2">
                 <Crown className="h-4 w-4 text-amber-500" />
-                Team Leaders: {formatLeaderNames(team.members)}
+                {t("detail.leaders", { names: formatLeaderNames(team.members, t("leaders.unknown")) })}
               </CardDescription>
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -112,23 +117,23 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
               {capabilities.includes('team.invite') && <InviteDialog teamId={team.id} />}
               {capabilities.includes('team.delete') && (
                 <ConfirmActionDialog
-                  triggerLabel="Delete Team"
+                  triggerLabel={t("detail.deleteTrigger")}
                   triggerIcon={Trash2}
                   triggerVariant="destructive"
-                  title="Delete this team?"
-                  description="This will permanently delete the team, its memberships, invitations and all of its games, with their resolutions, bingo cards and related gameplay data. Archived games are kept. This action cannot be undone."
-                  confirmLabel="Delete"
+                  title={t("detail.deleteTitle")}
+                  description={t("detail.deleteDescription")}
+                  confirmLabel={tc("delete")}
                   onConfirm={handleDeleteTeam}
                   isPending={isDeleting}
                 />
               )}
               <ConfirmActionDialog
-                triggerLabel="Leave Team"
+                triggerLabel={t("detail.leaveTrigger")}
                 triggerIcon={LogOut}
                 triggerVariant="outline"
-                title="Leave this team?"
-                description="You will also leave every running game of this team that you play: your bingo cards, leaderboard entries and the resolutions written for you are deleted. The resolutions you wrote for others stay on their cards. You can only come back with a new invitation. If you are the only leader, promote another member first."
-                confirmLabel="Leave Team"
+                title={t("detail.leaveTitle")}
+                description={t("detail.leaveDescription")}
+                confirmLabel={t("detail.leaveTrigger")}
                 onConfirm={handleLeaveTeam}
                 isPending={isLeaving}
               />
@@ -137,12 +142,12 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
         </Card>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold font-headline">Games</h2>
+          <h2 className="text-2xl font-bold font-headline">{t("detail.gamesHeading")}</h2>
           {games.length > 0 ? (
             <GameList games={games} />
           ) : (
             <p className="text-muted-foreground">
-              {canCreateGame ? 'No games yet. Click "New Game" to create one.' : "No games yet."}
+              {canCreateGame ? t("detail.noGamesCanCreate") : t("detail.noGames")}
             </p>
           )}
         </section>

@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppLogo } from '@/components/icons';
+import { CornerLocaleSwitcher } from '@/components/locale-switcher';
 import { Loader2, Users, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { AuthContext } from '@/app/api/utils';
 import { apiErrorMessage, apiFetch } from '@/lib/api-client';
 
@@ -15,6 +17,8 @@ import { apiErrorMessage, apiFetch } from '@/lib/api-client';
  * Spec Reference: 04-bingo-teams.md - Invitations / Joining
  */
 export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: string }>) {
+  const t = useTranslations('Teams');
+  const tc = useTranslations('Common');
   const router = useRouter();
   const [inviteCode, setInviteCode] = useState<string>('');
   const [status, setStatus] = useState<'loading' | 'joining' | 'success' | 'error'>('loading');
@@ -36,13 +40,13 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
 
     if (result.ok) {
       setStatus('success');
-      setMessage('Successfully joined the team!');
+      setMessage(t('join.joined'));
       setTimeout(() => {
         router.push(`/teams/${result.data.team.id}`);
       }, 2000);
     } else {
       setStatus('error');
-      setMessage(apiErrorMessage(result, 'Failed to join team', 'An error occurred. Please try again.'));
+      setMessage(apiErrorMessage(result, t('join.joinFailed'), tc('networkError')));
     }
   };
 
@@ -54,6 +58,7 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
+      <CornerLocaleSwitcher />
       <div className="mb-8 flex items-center gap-2">
         <AppLogo />
         <span className="text-2xl font-semibold font-headline">Resolution Bingo</span>
@@ -64,22 +69,22 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
           <div className="mx-auto mb-4">
             <Users className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="font-headline text-2xl">Join a Team</CardTitle>
+          <CardTitle className="font-headline text-2xl">{t('join.title')}</CardTitle>
           <CardDescription>
-            You've been invited to join a Resolution Bingo team!
+            {t('join.invited')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {status === 'loading' && (
             <div className="text-center space-y-4">
               <p className="text-muted-foreground">
-                Ready to join? Click the button below to accept the invitation.
+                {t('join.ready')}
               </p>
               <Button onClick={handleJoin} className="w-full" size="lg">
-                Accept Invitation
+                {t('join.accept')}
               </Button>
               <p className="text-xs text-muted-foreground">
-                You'll need to be logged in to join the team.
+                {t('join.loginNeeded')}
               </p>
             </div>
           )}
@@ -87,7 +92,7 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
           {status === 'joining' && (
             <div className="text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <p className="mt-4 text-muted-foreground">Joining team...</p>
+              <p className="mt-4 text-muted-foreground">{t('join.joining')}</p>
             </div>
           )}
 
@@ -95,7 +100,7 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
             <div className="text-center py-8">
               <CheckCircle2 className="h-12 w-12 mx-auto text-green-500" />
               <p className="mt-4 text-green-600 font-medium">{message}</p>
-              <p className="text-sm text-muted-foreground mt-2">Redirecting to team page...</p>
+              <p className="text-sm text-muted-foreground mt-2">{t('join.redirecting')}</p>
             </div>
           )}
 
@@ -105,10 +110,10 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
               <p className="text-red-600 font-medium">{message}</p>
               <div className="space-y-2">
                 <Button onClick={handleJoin} variant="outline" className="w-full">
-                  Try Again
+                  {t('join.tryAgain')}
                 </Button>
                 <Button asChild variant="ghost" className="w-full">
-                  <Link href="/login">Login to Continue</Link>
+                  <Link href="/login">{t('join.login')}</Link>
                 </Button>
               </div>
             </div>

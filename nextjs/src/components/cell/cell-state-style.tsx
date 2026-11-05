@@ -38,14 +38,13 @@ export function getCellStateIcon(state: CellVisualState, sizeClassName: string):
  * Used by the live and archived cell detail dialogs.
  */
 export const STATE_CONFIG: Record<CellState, {
-  label: string;
   icon: React.ReactNode;
   bg: string;
   text: string;
 }> = {
-  [CellState.PENDING]:        { label: "Pending",       icon: null,                                                  bg: "bg-secondary",                           text: "text-secondary-foreground" },
-  [CellState.COMPLETED]:      { label: "Completed",     icon: getCellStateIcon("completed", "h-3.5 w-3.5"),      ...CELL_STATE_COLORS.completed },
-  [CellState.PENDING_REVIEW]: { label: "Under Review",  icon: getCellStateIcon("pending_review", "h-3.5 w-3.5"), ...CELL_STATE_COLORS.pending_review },
-  [CellState.ACCOMPLISHED]:   { label: "Accomplished",  icon: getCellStateIcon("accomplished", "h-3.5 w-3.5"),   ...CELL_STATE_COLORS.accomplished },
-  [CellState.FAILED]:         { label: "Failed",        icon: getCellStateIcon("failed", "h-3.5 w-3.5"),         ...CELL_STATE_COLORS.failed },
+  [CellState.PENDING]:        { icon: null,                                                  bg: "bg-secondary",                           text: "text-secondary-foreground" },
+  [CellState.COMPLETED]:      { icon: getCellStateIcon("completed", "h-3.5 w-3.5"),      ...CELL_STATE_COLORS.completed },
+  [CellState.PENDING_REVIEW]: { icon: getCellStateIcon("pending_review", "h-3.5 w-3.5"), ...CELL_STATE_COLORS.pending_review },
+  [CellState.ACCOMPLISHED]:   { icon: getCellStateIcon("accomplished", "h-3.5 w-3.5"),   ...CELL_STATE_COLORS.accomplished },
+  [CellState.FAILED]:         { icon: getCellStateIcon("failed", "h-3.5 w-3.5"),         ...CELL_STATE_COLORS.failed },
 };

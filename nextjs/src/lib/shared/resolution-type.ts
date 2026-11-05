@@ -3,13 +3,6 @@ import type { ResolutionTypeValue } from './types';
 /** Badge variants supported by the Badge UI component for resolution types. */
 export type ResolutionTypeBadgeVariant = 'default' | 'secondary' | 'outline';
 
-/** Human-readable labels for resolution types. */
-export const RESOLUTION_TYPE_LABELS: Record<ResolutionTypeValue, string> = {
-  base: 'Common',
-  compound: 'Complex',
-  iterative: 'Iterative',
-};
-
 /**
  * The text resolutions are compared by: the description or, without one, the title,
  * ignoring case.

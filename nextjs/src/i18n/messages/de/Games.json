@@ -1,0 +1,93 @@
+{
+  "list": {
+    "pageTitle": "Spiele",
+    "heading": "Meine Spiele",
+    "loadFailed": "Spiele konnten nicht geladen werden",
+    "emptyTitle": "Noch keine Spiele",
+    "emptyDescription": "Eine Teamleitung erstellt Spiele auf der Team-Seite.",
+    "goToTeams": "Zu den Teams"
+  },
+  "detail": {
+    "pageTitle": "Spiel",
+    "leaders": "Teamleitung: {names}",
+    "lastDay": "Letzter Tag: {date}",
+    "startBingo": "Bingo starten",
+    "tabs": {
+      "cards": "Karten",
+      "members": "Mitglieder",
+      "leaderboard": "Rangliste"
+    },
+    "unknownLeader": "Unbekannt"
+  },
+  "actionsMenu": {
+    "moreActions": "Weitere Aktionen",
+    "setGoal": "Ziel festlegen",
+    "configure": "Konfigurieren",
+    "endGame": "Spiel beenden",
+    "leaveGame": "Spiel verlassen",
+    "deleteGame": "Spiel löschen",
+    "endDialog": {
+      "title": "Dieses Spiel beenden?",
+      "description": "Das Spiel endet für alle und wandert ins Archiv. Offene Überprüfungen werden mit den bisher abgegebenen Stimmen abgeschlossen, und eine Überprüfung ohne Stimmen gilt als akzeptiert. Das kann nicht rückgängig gemacht werden.",
+      "confirm": "Spiel beenden"
+    },
+    "deleteDialog": {
+      "title": "Dieses Spiel löschen?",
+      "description": "Das Spiel, sein Teamziel, die vorgeschlagenen Vorsätze, die Bingo-Karten und zugehörige Spieldaten werden dauerhaft gelöscht. Das Team und seine anderen Spiele bleiben unberührt. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirm": "Löschen"
+    },
+    "leaveDialog": {
+      "title": "Dieses Spiel verlassen?",
+      "description": "Deine Bingo-Karte, dein Eintrag in der Rangliste und die für dich geschriebenen Vorsätze in diesem Spiel werden gelöscht. Die Vorsätze, die du für andere Spieler geschrieben hast, bleiben auf deren Karten. Du kannst diesem Spiel nicht erneut beitreten. Wenn du die einzige Teamleitung bist, befördere zuerst auf der Team-Seite eine andere Person.",
+      "confirm": "Spiel verlassen"
+    }
+  },
+  "configDialog": {
+    "title": "Spiel konfigurieren",
+    "description": "Das Spiel endet automatisch nach seinem letzten Tag. Ohne Datum endet es nur, wenn du es beendest.",
+    "lastDay": "Letzter Tag (optional)",
+    "clear": "Leeren",
+    "failed": "Spiel konnte nicht konfiguriert werden"
+  },
+  "proposeDialog": {
+    "button": "Vorsätze vorschlagen",
+    "title": "Vorsätze vorschlagen",
+    "description": "Erstelle oder aktualisiere einen Vorsatz für jedes Teammitglied. Das geht jederzeit.",
+    "forMember": "Für {name}",
+    "noneYet": "Noch kein Vorsatz vorgeschlagen",
+    "edit": "Vorsatz bearbeiten",
+    "add": "Vorsatz hinzufügen"
+  },
+  "teamGoal": {
+    "none": "Noch kein Teamziel festgelegt.",
+    "setGoal": "Ziel festlegen",
+    "label": "Teamziel:",
+    "edit": "Teamziel bearbeiten",
+    "subtasks": "{done} / {total} Teilaufgaben",
+    "target": "Ziel: {count, plural, one {# Wiederholung} other {# Wiederholungen}}"
+  },
+  "cardsTab": {
+    "notStartedTitle": "Das Spiel hat noch nicht begonnen",
+    "notStartedDescription": "Die Teamleitung startet das Spiel, sobald alle Vorsätze füreinander vorgeschlagen haben.",
+    "noCards": "Noch keine Bingo-Karten verfügbar.",
+    "heading": "Bingo-Karten",
+    "noCard": "Keine Bingo-Karte verfügbar"
+  },
+  "leaderboard": {
+    "title": "Rangliste",
+    "empty": "Noch keine Ranglistendaten verfügbar.",
+    "player": "Spieler",
+    "completed": "Erledigt",
+    "firstBingo": "Erstes Bingo"
+  },
+  "actions": {
+    "started": "Bingo-Spiel gestartet!",
+    "startFailed": "Spiel konnte nicht gestartet werden",
+    "ended": "Spiel beendet",
+    "endFailed": "Spiel konnte nicht beendet werden",
+    "left": "Du hast das Spiel verlassen",
+    "leaveFailed": "Spiel konnte nicht verlassen werden",
+    "deleted": "Spiel gelöscht",
+    "deleteFailed": "Spiel konnte nicht gelöscht werden"
+  }
+}

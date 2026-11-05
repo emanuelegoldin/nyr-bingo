@@ -1,0 +1,20 @@
+{
+  "error": "Fehler",
+  "success": "Erfolg",
+  "networkError": "Ein Fehler ist aufgetreten",
+  "close": "Schließen",
+  "cancel": "Abbrechen",
+  "save": "Speichern",
+  "saving": "Wird gespeichert...",
+  "delete": "Löschen",
+  "deleting": "Wird gelöscht...",
+  "edit": "Bearbeiten",
+  "add": "Hinzufügen",
+  "create": "Erstellen",
+  "confirm": "Bestätigen",
+  "back": "Zurück",
+  "loading": "Wird geladen...",
+  "unknownUser": "Unbekannter Benutzer",
+  "toggleSidebar": "Seitenleiste umschalten",
+  "notFound": "Seite nicht gefunden"
+}

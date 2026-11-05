@@ -1,8 +1,10 @@
 "use client";
 
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import type { BingoCellWithThread } from "@/lib/db/types";
 import { CellSourceType, ResolutionType } from "@/lib/shared/types";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 /** A resolution that can replace the content of a cell. */
@@ -56,6 +58,8 @@ export const useEditCellOptions = ({
   currentUserId,
   isOpen
 }: UseEditCellOptionsParams) => {
+  const t = useTranslations("Cell");
+  const toastApiError = useApiErrorToast();
   const [isLoading, setIsLoading] = useState(false);
   const [editOptions, setEditOptions] = useState<EditOption[]>([]);
 
@@ -87,11 +91,11 @@ export const useEditCellOptions = ({
       setIsLoading(false);
 
       if (!personalResult.ok) {
-        toastApiError(personalResult, 'Failed to load personal resolutions', 'Failed to load replacement options');
+        toastApiError(personalResult, t("editDialog.loadPersonalFailed"));
         return;
       }
       if (teamResult && !teamResult.ok) {
-        toastApiError(teamResult, 'Failed to load team-provided resolutions', 'Failed to load replacement options');
+        toastApiError(teamResult, t("editDialog.loadTeamFailed"));
         return;
       }
 
@@ -128,7 +132,7 @@ export const useEditCellOptions = ({
     };
 
     loadEditOptions();
-  }, [isOpen, gameId, currentUserId, existingCells]);
+  }, [isOpen, gameId, currentUserId, existingCells, t, toastApiError]);
 
   /** Clears the loaded options and loading flag. */
   const reset = () => {

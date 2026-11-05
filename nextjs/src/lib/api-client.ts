@@ -1,5 +1,3 @@
-import { toast } from '@/hooks/use-toast';
-
 /**
  * Result of a client-side API call. Failures carry the HTTP status and the
  * `error` string of the response body (null when the body has none), so every
@@ -55,38 +53,16 @@ export const apiFetch = async <T>(url: string, init: ApiFetchInit = {}): Promise
 /** Failure details of an {@link ApiResult}. */
 export type ApiFailure = Extract<ApiResult<unknown>, { ok: false }>;
 
-/** Text shown when a request got no usable response (network failure or non-JSON body). */
-const DEFAULT_NETWORK_ERROR_MESSAGE = 'An error occurred';
-
 /**
  * Picks the user-facing text for a failed API call.
  *
  * @param result - The failure returned by {@link apiFetch}.
  * @param fallback - Text used when the response carries no `error` string.
- * @param networkMessage - Text used when there was no usable response.
+ * @param networkMessage - Text used when there was no usable response (network failure or non-JSON body).
  * @returns The message to show.
  */
 export const apiErrorMessage = (
   result: Pick<ApiFailure, 'status' | 'error'>,
   fallback: string,
-  networkMessage: string = DEFAULT_NETWORK_ERROR_MESSAGE
+  networkMessage: string
 ): string => (result.status === 0 ? networkMessage : result.error || fallback);
-
-/**
- * Shows the standard destructive error toast for a failed API call.
- *
- * @param result - The failure returned by {@link apiFetch}.
- * @param fallback - Text used when the response carries no `error` string.
- * @param networkMessage - Text used when there was no usable response.
- */
-export const toastApiError = (
-  result: Pick<ApiFailure, 'status' | 'error'>,
-  fallback: string,
-  networkMessage?: string
-): void => {
-  toast({
-    title: 'Error',
-    description: apiErrorMessage(result, fallback, networkMessage),
-    variant: 'destructive',
-  });
-};

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useReviewThread } from "@/hooks/use-review-thread";
 import { useTeamMembers } from "../team-members-context";
 import { Badge } from "../ui/badge";
@@ -30,6 +31,7 @@ export const CellThreadDialog = ({
   setIsOpen,
   onRefresh
 }: CellThreadDialogProps) => {
+  const t = useTranslations("Threads");
   const currentUsername = useTeamMembers()[currentUserId];
   const {
     thread,
@@ -51,18 +53,18 @@ export const CellThreadDialog = ({
     <CellDialog
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      title="Review Thread"
-      description={`Discussion, files, and voting for "${cell.resolutionText}".`}
+      title={t("dialog.title")}
+      description={t("dialog.description", { resolutionText: cell.resolutionText })}
     >
       <div className="space-y-4 py-4">
         {isThreadLoading ? (
-          <p className="text-sm text-muted-foreground">Loading thread…</p>
+          <p className="text-sm text-muted-foreground">{t("dialog.loading")}</p>
         ) : thread ? (
           <>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Status</p>
-                <Badge variant="outline">{thread.status}</Badge>
+                <p className="text-sm font-medium">{t("dialog.status")}</p>
+                <Badge variant="outline">{t(`dialog.statusValue.${thread.status}`)}</Badge>
               </div>
               {isOwner && thread.status === 'open' && (
                 <Button
@@ -71,7 +73,7 @@ export const CellThreadDialog = ({
                   onClick={closeThread}
                   disabled={isSubmitting}
                 >
-                  Close Thread
+                  {t("dialog.closeThread")}
                 </Button>
               )}
             </div>
@@ -106,7 +108,7 @@ export const CellThreadDialog = ({
             />
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">Thread not available.</p>
+          <p className="text-sm text-muted-foreground">{t("dialog.unavailable")}</p>
         )}
       </div>
     </CellDialog>

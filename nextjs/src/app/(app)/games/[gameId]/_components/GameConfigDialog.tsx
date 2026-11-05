@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 interface GameConfigDialogProps {
@@ -27,6 +29,9 @@ interface GameConfigDialogProps {
  * @returns The dialog.
  */
 export function GameConfigDialog({ gameId, deadline, open, onOpenChange, onSaved }: GameConfigDialogProps) {
+  const t = useTranslations("Games.configDialog");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   // An empty value means no deadline
   const [selectedDate, setSelectedDate] = useState(deadline ?? "");
   const [isSaving, setIsSaving] = useState(false);
@@ -57,7 +62,7 @@ export function GameConfigDialog({ gameId, deadline, open, onOpenChange, onSaved
       onOpenChange(false);
       onSaved();
     } else {
-      toastApiError(result, "Failed to configure game");
+      toastApiError(result, t("failed"));
     }
   };
 
@@ -65,14 +70,13 @@ export function GameConfigDialog({ gameId, deadline, open, onOpenChange, onSaved
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-headline">Configure Game</DialogTitle>
+          <DialogTitle className="font-headline">{t("title")}</DialogTitle>
           <DialogDescription>
-            The game ends automatically after its last day. Without a date, it ends only when you
-            end it.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2 py-4">
-          <Label htmlFor="gameDeadline">Last day (optional)</Label>
+          <Label htmlFor="gameDeadline">{t("lastDay")}</Label>
           <div className="flex gap-2">
             <Input
               id="gameDeadline"
@@ -82,17 +86,17 @@ export function GameConfigDialog({ gameId, deadline, open, onOpenChange, onSaved
               onChange={(event) => setSelectedDate(event.target.value)}
             />
             <Button variant="outline" onClick={() => setSelectedDate("")} disabled={!selectedDate}>
-              Clear
+              {t("clear")}
             </Button>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>
-            Cancel
+            {tc("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
+            {tc("save")}
           </Button>
         </DialogFooter>
       </DialogContent>

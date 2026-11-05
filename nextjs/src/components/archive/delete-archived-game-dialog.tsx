@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface DeleteArchivedGameDialogProps {
   open: boolean;
@@ -33,6 +34,9 @@ export function DeleteArchivedGameDialog({
   onConfirm,
   isDeleting,
 }: DeleteArchivedGameDialogProps) {
+  const t = useTranslations("Archive");
+  const tc = useTranslations("Common");
+
   return (
     <AlertDialog
       open={open}
@@ -42,27 +46,26 @@ export function DeleteArchivedGameDialog({
     >
       <AlertDialogTrigger asChild>
         <Button variant="destructive" size="sm">
-          <Trash2 className="h-4 w-4 mr-2" /> Delete
+          <Trash2 className="h-4 w-4 mr-2" /> {tc("delete")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete this archived game?</AlertDialogTitle>
+          <AlertDialogTitle>{t("gamePage.deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            This permanently deletes the game from the archive for every player. This action
-            cannot be undone.
+            {t("gamePage.deleteDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel asChild>
             <Button variant="outline" disabled={isDeleting}>
-              Cancel
+              {tc("cancel")}
             </Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button variant="destructive" onClick={onConfirm} disabled={isDeleting}>
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {tc("delete")}
             </Button>
           </AlertDialogAction>
         </AlertDialogFooter>

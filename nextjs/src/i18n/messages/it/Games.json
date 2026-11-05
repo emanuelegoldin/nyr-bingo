@@ -1,0 +1,93 @@
+{
+  "list": {
+    "pageTitle": "Partite",
+    "heading": "Le mie partite",
+    "loadFailed": "Impossibile caricare le partite",
+    "emptyTitle": "Ancora nessuna partita",
+    "emptyDescription": "Un leader del team crea le partite dalla pagina del team.",
+    "goToTeams": "Vai ai team"
+  },
+  "detail": {
+    "pageTitle": "Partita",
+    "leaders": "Leader: {names}",
+    "lastDay": "Ultimo giorno: {date}",
+    "startBingo": "Avvia il bingo",
+    "tabs": {
+      "cards": "Carte",
+      "members": "Membri",
+      "leaderboard": "Classifica"
+    },
+    "unknownLeader": "Sconosciuto"
+  },
+  "actionsMenu": {
+    "moreActions": "Altre azioni",
+    "setGoal": "Imposta obiettivo",
+    "configure": "Configura",
+    "endGame": "Termina partita",
+    "leaveGame": "Abbandona partita",
+    "deleteGame": "Elimina partita",
+    "endDialog": {
+      "title": "Terminare questa partita?",
+      "description": "La partita termina per tutti e passa all'archivio. Le revisioni aperte si chiudono con i voti espressi finora, e una revisione senza voti conta come accettata. L'azione non può essere annullata.",
+      "confirm": "Termina partita"
+    },
+    "deleteDialog": {
+      "title": "Eliminare questa partita?",
+      "description": "Verranno eliminati definitivamente la partita, il suo obiettivo del team, gli obiettivi proposti, le carte bingo e i relativi dati di gioco. Il team e le sue altre partite non sono interessati. Questa azione non può essere annullata.",
+      "confirm": "Elimina"
+    },
+    "leaveDialog": {
+      "title": "Abbandonare questa partita?",
+      "description": "La tua carta bingo, la tua voce in classifica e gli obiettivi scritti per te in questa partita verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Non potrai rientrare in questa partita. Se sei l'unico leader, promuovi prima un altro giocatore dalla pagina del team.",
+      "confirm": "Abbandona partita"
+    }
+  },
+  "configDialog": {
+    "title": "Configura partita",
+    "description": "La partita termina automaticamente dopo l'ultimo giorno. Senza una data, termina solo quando la concludi tu.",
+    "lastDay": "Ultimo giorno (facoltativo)",
+    "clear": "Cancella",
+    "failed": "Impossibile configurare la partita"
+  },
+  "proposeDialog": {
+    "button": "Proponi obiettivi",
+    "title": "Proponi obiettivi",
+    "description": "Crea o aggiorna un obiettivo per ogni membro del team. Puoi farlo in qualsiasi momento.",
+    "forMember": "Per {name}",
+    "noneYet": "Nessun obiettivo ancora proposto",
+    "edit": "Modifica obiettivo",
+    "add": "Aggiungi obiettivo"
+  },
+  "teamGoal": {
+    "none": "Nessun obiettivo del team ancora impostato.",
+    "setGoal": "Imposta obiettivo",
+    "label": "Obiettivo del team:",
+    "edit": "Modifica obiettivo del team",
+    "subtasks": "{done} / {total} sottoattività",
+    "target": "Traguardo: {count, plural, one {# ripetizione} other {# ripetizioni}}"
+  },
+  "cardsTab": {
+    "notStartedTitle": "La partita non è ancora iniziata",
+    "notStartedDescription": "Il leader del team avvierà la partita quando tutti avranno proposto obiettivi per gli altri.",
+    "noCards": "Ancora nessuna carta bingo disponibile.",
+    "heading": "Carte bingo",
+    "noCard": "Nessuna carta bingo disponibile"
+  },
+  "leaderboard": {
+    "title": "Classifica",
+    "empty": "Ancora nessun dato di classifica disponibile.",
+    "player": "Giocatore",
+    "completed": "Completati",
+    "firstBingo": "Primo bingo"
+  },
+  "actions": {
+    "started": "Partita di bingo avviata!",
+    "startFailed": "Impossibile avviare la partita",
+    "ended": "Partita terminata",
+    "endFailed": "Impossibile terminare la partita",
+    "left": "Hai abbandonato la partita",
+    "leaveFailed": "Impossibile abbandonare la partita",
+    "deleted": "Partita eliminata",
+    "deleteFailed": "Impossibile eliminare la partita"
+  }
+}

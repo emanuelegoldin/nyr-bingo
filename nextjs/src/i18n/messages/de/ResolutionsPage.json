@@ -1,0 +1,16 @@
+{
+  "title": "Deine persönlichen Vorsätze",
+  "description": "Verwalte deine persönlichen Vorsätze. Mit ihnen kannst du deine Bingo-Karten füllen.",
+  "headerTitle": "Vorsätze",
+  "viewHistoryAriaLabel": "Verlauf des Vorsatzes anzeigen",
+  "browseIdeas": "Ideen entdecken",
+  "loadError": "Vorsätze konnten nicht geladen werden",
+  "deleted": "Vorsatz gelöscht",
+  "deleteError": "Vorsatz konnte nicht gelöscht werden",
+  "addAriaLabel": "Vorsatz hinzufügen",
+  "editAriaLabel": "Vorsatz bearbeiten",
+  "deleteAriaLabel": "Vorsatz löschen",
+  "empty": "Du hast noch keine Vorsätze hinzugefügt. Klicke auf die +-Schaltfläche, um einen zu erstellen.",
+  "subtaskProgress": "{done} / {total} Teilaufgaben",
+  "repetitionProgress": "{done} / {total} Wiederholungen"
+}

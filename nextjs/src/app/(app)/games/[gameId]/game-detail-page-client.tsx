@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
 import { CalendarClock, Crown, Loader2, Swords } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from 'react';
 
@@ -57,7 +58,8 @@ export default function GameDetailPageClient({
   initialExistingResolutions,
   initialLeaderboardEntries,
 }: GameDetailPageClientProps) {
-  usePageTitle("Game");
+  const t = useTranslations("Games.detail");
+  usePageTitle(t("pageTitle"));
 
   const cards = useLastLoaded<BingoCardWithCells[]>(initialCards, []);
   const leaderboardEntries = useLastLoaded<LeaderboardEntry[]>(initialLeaderboardEntries, []);
@@ -99,12 +101,12 @@ export default function GameDetailPageClient({
             </CardDescription>
             <CardDescription className="flex items-center gap-2 mt-2">
               <Crown className="h-4 w-4 text-amber-500" />
-              Leaders: {formatLeaderNames(game.members)}
+              {t("leaders", { names: formatLeaderNames(game.members, t("unknownLeader")) })}
             </CardDescription>
             {game.deadline && (
               <CardDescription className="flex items-center gap-2 mt-2">
                 <CalendarClock className="h-4 w-4" />
-                Last day: {game.deadline}
+                {t("lastDay", { date: game.deadline })}
               </CardDescription>
             )}
             <div className="mt-2">
@@ -115,7 +117,7 @@ export default function GameDetailPageClient({
             {can('game.start') && game.status !== 'started' && (
               <Button size="sm" onClick={handleStartBingo} disabled={isStarting}>
                 {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <Swords className="h-4 w-4 mr-2" /> Start Bingo
+                <Swords className="h-4 w-4 mr-2" /> {t("startBingo")}
               </Button>
             )}
 
@@ -167,9 +169,9 @@ export default function GameDetailPageClient({
         <TeamRefreshListener />
         <Tabs defaultValue="cards">
           <TabsList>
-            <TabsTrigger value="cards">Cards</TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+            <TabsTrigger value="cards">{t("tabs.cards")}</TabsTrigger>
+            <TabsTrigger value="members">{t("tabs.members")}</TabsTrigger>
+            <TabsTrigger value="leaderboard">{t("tabs.leaderboard")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="cards" className="mt-6">

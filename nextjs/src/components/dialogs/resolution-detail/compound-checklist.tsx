@@ -4,6 +4,7 @@ import { apiFetch } from "@/lib/api-client";
 import type { Subtask } from "@/lib/shared/types";
 import { useWsRoom } from "@/hooks/use-ws-room";
 import { Check, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { Progress } from "../../ui/progress";
 
@@ -21,6 +22,7 @@ interface CompoundChecklistProps {
  * when the owner toggles subtasks from another session/device.
  */
 export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: CompoundChecklistProps) => {
+  const t = useTranslations("Cell");
   const [localSubtasks, setLocalSubtasks] = useState<Subtask[]>(subtasks);
   const [loading, setLoading] = useState<number | null>(null);
 
@@ -65,11 +67,11 @@ export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: Compound
       {/* Progress summary */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          {completedCount} / {totalCount} subtasks
+          {t("compound.progress", { completed: completedCount, total: totalCount })}
         </span>
         {allDone && (
           <span className="flex items-center gap-1 text-green-600 font-medium">
-            <Check className="h-4 w-4" /> All done!
+            <Check className="h-4 w-4" /> {t("compound.allDone")}
           </span>
         )}
       </div>
@@ -91,7 +93,7 @@ export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: Compound
                   ? "bg-green-500 border-green-500 text-white"
                   : "border-muted-foreground/40 hover:border-primary"
               } ${!isOwner ? "cursor-default opacity-70" : "cursor-pointer"}`}
-              aria-label={`Toggle subtask: ${subtask.title}`}
+              aria-label={t("compound.toggleSubtask", { title: subtask.title })}
             >
               {loading === idx ? (
                 <Loader2 className="h-3 w-3 animate-spin" />

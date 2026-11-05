@@ -1,0 +1,16 @@
+{
+  "title": "Your Personal Resolutions",
+  "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
+  "headerTitle": "Resolutions",
+  "viewHistoryAriaLabel": "View resolution history",
+  "browseIdeas": "Browse ideas",
+  "loadError": "Failed to load resolutions",
+  "deleted": "Resolution deleted",
+  "deleteError": "Failed to delete resolution",
+  "addAriaLabel": "Add resolution",
+  "editAriaLabel": "Edit resolution",
+  "deleteAriaLabel": "Delete resolution",
+  "empty": "You haven't added any resolutions yet. Click the + button to create one.",
+  "subtaskProgress": "{done} / {total} subtasks",
+  "repetitionProgress": "{done} / {total} repetitions"
+}

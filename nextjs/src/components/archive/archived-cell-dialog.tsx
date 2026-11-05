@@ -9,10 +9,11 @@
 import { STATE_CONFIG } from "@/components/cell/cell-state-style";
 import { CellDialog } from "@/components/dialogs/cell-dialog";
 import { Badge } from "@/components/ui/badge";
-import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import { cellSourceText } from "@/lib/shared/cell-source";
 import type { ArchivedCell } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ArchivedCellDialogProps {
   cell: ArchivedCell;
@@ -27,6 +28,7 @@ interface ArchivedCellDialogProps {
  */
 export function ArchivedCellDialog({ cell, onClose }: ArchivedCellDialogProps) {
   const stateConfig = STATE_CONFIG[cell.state];
+  const tl = useTranslations("Labels");
   const hasDescription = cell.resolutionText !== cell.resolutionTitle;
 
   return (
@@ -46,10 +48,10 @@ export function ArchivedCellDialog({ cell, onClose }: ArchivedCellDialogProps) {
             stateConfig.text,
           )}>
             {stateConfig.icon}
-            {stateConfig.label}
+            {tl(`cellState.${cell.state}`)}
           </span>
-          <Badge variant="outline">{RESOLUTION_TYPE_LABELS[cell.resolutionType]}</Badge>
-          <Badge variant="secondary">{cell.sourceLabel}</Badge>
+          <Badge variant="outline">{tl(`resolutionType.${cell.resolutionType}`)}</Badge>
+          <Badge variant="secondary">{cellSourceText(cell.sourceLabel, tl)}</Badge>
         </div>
 
         {cell.subtasks && (

@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import { Loader2, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -26,6 +28,9 @@ interface NewGameDialogProps {
  * @returns The button and dialog.
  */
 export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogProps) {
+  const t = useTranslations("Teams");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -57,7 +62,7 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
     if (result.ok) {
       router.push(`/games/${result.data.game.id}`);
     } else {
-      toastApiError(result, "Failed to create game");
+      toastApiError(result, t("newGameDialog.createFailed"));
       setIsCreating(false);
     }
   };
@@ -66,29 +71,29 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm">
-          <Plus className="h-4 w-4 mr-2" /> New Game
+          <Plus className="h-4 w-4 mr-2" /> {t("newGameDialog.trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-headline">New Game</DialogTitle>
+          <DialogTitle className="font-headline">{t("newGameDialog.title")}</DialogTitle>
           <DialogDescription>
-            Start a new game with this team and choose who plays. No one needs to be invited again.
+            {t("newGameDialog.description")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="gameName">Game Name</Label>
+            <Label htmlFor="gameName">{t("newGameDialog.nameLabel")}</Label>
             <Input
               id="gameName"
-              placeholder="e.g., Resolutions 2027"
+              placeholder={t("newGameDialog.namePlaceholder")}
               value={name}
               onChange={(event) => setName(event.target.value)}
               onKeyDown={(event) => event.key === "Enter" && !isCreating && handleCreateGame()}
             />
           </div>
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Players</legend>
+            <legend className="text-sm font-medium">{t("newGameDialog.players")}</legend>
             <ul className="max-h-60 space-y-2 overflow-y-auto">
               {members.map((member) => {
                 const userId = member.user.userId;
@@ -105,7 +110,7 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
                     />
                     <Label htmlFor={`player-${userId}`} className="font-normal">
                       {member.user.displayName || member.user.username}
-                      {isCreator && <span className="text-muted-foreground ml-1">(You)</span>}
+                      {isCreator && <span className="text-muted-foreground ml-1">{t("newGameDialog.you")}</span>}
                     </Label>
                   </li>
                 );
@@ -115,11 +120,11 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {tc("cancel")}
           </Button>
           <Button onClick={handleCreateGame} disabled={isCreating || !name.trim()}>
             {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Game
+            {t("newGameDialog.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

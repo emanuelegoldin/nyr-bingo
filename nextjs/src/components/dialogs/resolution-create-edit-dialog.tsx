@@ -14,8 +14,8 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
-import { RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
+import { apiFetch } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import type { ResolutionFormData, ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -39,6 +39,7 @@ import {
 import { Textarea } from "../ui/textarea";
 import { CompoundSubtaskEditor } from "./resolution-form/compound-subtask-editor";
 import { IterativeRepetitionInput } from "./resolution-form/iterative-repetition-input";
+import { useTranslations } from "next-intl";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
@@ -68,27 +69,28 @@ interface ResolutionCreateEditDialogProps {
  * @returns The title and description to show in the dialog header.
  */
 const dialogCopy = (
+  t: ReturnType<typeof useTranslations<"ResolutionForm">>,
   scope: "personal" | "team" | "member_provided",
   isEdit: boolean,
   recipientName?: string,
 ): { title: string; description: string } => {
   if (scope === "team") {
     return {
-      title: isEdit ? "Edit Team Goal" : "Set Team Goal",
-      description: "Set the team goal that will appear on everyone's bingo card.",
+      title: isEdit ? t("teamTitleEdit") : t("teamTitleNew"),
+      description: t("teamDescription"),
     };
   }
   if (scope === "member_provided") {
     return {
       title: isEdit
-        ? `Edit Resolution for ${recipientName ?? "Member"}`
-        : `New Resolution for ${recipientName ?? "Member"}`,
-      description: `Create a resolution for ${recipientName ?? "this member"}.`,
+        ? t("memberTitleEdit", { name: recipientName ?? t("defaultMember") })
+        : t("memberTitleNew", { name: recipientName ?? t("defaultMember") }),
+      description: t("memberDescription", { name: recipientName ?? t("defaultMemberLower") }),
     };
   }
   return {
-    title: isEdit ? "Edit Resolution" : "New Resolution",
-    description: isEdit ? "Update the resolution details below." : "Create a new personal resolution.",
+    title: isEdit ? t("titleEdit") : t("titleNew"),
+    description: isEdit ? t("descriptionEdit") : t("descriptionNew"),
   };
 };
 
@@ -108,6 +110,10 @@ export const ResolutionCreateEditDialog = ({
   toUserId,
   recipientName,
 }: ResolutionCreateEditDialogProps) => {
+  const tl = useTranslations("Labels");
+  const t = useTranslations("ResolutionForm");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const { toast } = useToast();
   const isEdit = Boolean(initialData?.id);
 
@@ -167,7 +173,7 @@ export const ResolutionCreateEditDialog = ({
       });
 
       if (!result.ok) {
-        toastApiError(result, "Failed to save resolution", "An error occurred while saving");
+        toastApiError(result, t("saveError"));
         return;
       }
 
@@ -175,13 +181,13 @@ export const ResolutionCreateEditDialog = ({
 
       setIsOpen(false);
       toast({
-        title: "Success",
-        description: isEdit ? "Resolution updated" : "Resolution created",
+        title: tc("success"),
+        description: isEdit ? t("updated") : t("created"),
       });
     } catch {
       toast({
-        title: "Error",
-        description: "An error occurred while saving",
+        title: tc("error"),
+        description: t("saveErrorGeneric"),
         variant: "destructive",
       });
     } finally {
@@ -190,7 +196,7 @@ export const ResolutionCreateEditDialog = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, title, text, subtasks, numberOfRepetition, isSaving, initialData, isEdit, scope, gameId, toUserId]);
 
-  const copy = dialogCopy(scope, isEdit, recipientName);
+  const copy = dialogCopy(t, scope, isEdit, recipientName);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -208,7 +214,7 @@ export const ResolutionCreateEditDialog = ({
         <div className="flex gap-2 items-start">
           <Input
             className="flex-1"
-            placeholder="Resolution title"
+            placeholder={t("titlePlaceholder")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={isSaving}
@@ -219,16 +225,16 @@ export const ResolutionCreateEditDialog = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="base">{RESOLUTION_TYPE_LABELS.base}</SelectItem>
-              <SelectItem value="compound">{RESOLUTION_TYPE_LABELS.compound}</SelectItem>
-              <SelectItem value="iterative">{RESOLUTION_TYPE_LABELS.iterative}</SelectItem>
+              <SelectItem value="base">{tl("resolutionType.base")}</SelectItem>
+              <SelectItem value="compound">{tl("resolutionType.compound")}</SelectItem>
+              <SelectItem value="iterative">{tl("resolutionType.iterative")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* ── Description ───────────────────────────────────────── */}
         <Textarea
-          placeholder="Description (optional)"
+          placeholder={t("textPlaceholder")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           disabled={isSaving}
@@ -256,13 +262,13 @@ export const ResolutionCreateEditDialog = ({
         {/* ── Footer ────────────────────────────────────────────── */}
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
-            Cancel
+            {tc("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={!canSave() || isSaving}>
             {isSaving ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : null}
-            {isEdit ? "Save" : "Add"}
+            {isEdit ? tc("save") : tc("add")}
           </Button>
         </DialogFooter>
       </DialogContent>
