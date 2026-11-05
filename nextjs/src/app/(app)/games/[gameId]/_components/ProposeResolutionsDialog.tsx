@@ -28,6 +28,7 @@ export function ProposeResolutionsDialog({
   existingResolutions,
   onReload,
 }: ProposeResolutionsDialogProps) {
+  const t = useTranslations("Games.proposeDialog");
   const [memberResolutionsOpen, setMemberResolutionsOpen] = useState(false);
   // Per-member edit dialog
   const [editingMemberUserId, setEditingMemberUserId] = useState<string | null>(null);
@@ -57,16 +58,16 @@ export function ProposeResolutionsDialog({
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => { setMemberResolutionsOpen(true); onReload(); }}>
-        <Send className="h-4 w-4 mr-2" /> Propose Resolutions
+        <Send className="h-4 w-4 mr-2" /> {t("button")}
       </Button>
 
       {/* ── Propose Resolutions Dialog ─────────────────────────── */}
       <Dialog open={memberResolutionsOpen} onOpenChange={setMemberResolutionsOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Propose Resolutions</DialogTitle>
+            <DialogTitle>{t("title")}</DialogTitle>
             <DialogDescription>
-              Create or update a resolution for each team member. You can do this at any time.
+              {t("description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-4 max-h-96 overflow-y-auto">
@@ -120,10 +121,11 @@ interface MemberResolutionRowProps {
  */
 function MemberResolutionRow({ memberName, resolution, onEdit }: MemberResolutionRowProps) {
   const tl = useTranslations("Labels");
+  const t = useTranslations("Games.proposeDialog");
   return (
     <div className="flex items-center justify-between p-2 rounded-md bg-secondary/50">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">For {memberName}</p>
+        <p className="text-sm font-medium">{t("forMember", { name: memberName })}</p>
         {resolution ? (
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-sm truncate">{resolution.title}</span>
@@ -135,7 +137,7 @@ function MemberResolutionRow({ memberName, resolution, onEdit }: MemberResolutio
             </Badge>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground mt-0.5">No resolution proposed yet</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t("noneYet")}</p>
         )}
       </div>
       <Button
@@ -143,7 +145,7 @@ function MemberResolutionRow({ memberName, resolution, onEdit }: MemberResolutio
         size="icon"
         className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0 ml-2"
         onClick={onEdit}
-        aria-label={resolution ? "Edit resolution" : "Add resolution"}
+        aria-label={resolution ? t("edit") : t("add")}
       >
         {resolution ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
       </Button>

@@ -19,13 +19,14 @@ interface TeamGoalDisplayProps {
  */
 export function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps) {
   const tl = useTranslations("Labels");
+  const t = useTranslations("Games.teamGoal");
   if (!goal) {
     return (
       <div className="flex items-center gap-2 flex-wrap">
-        <p className="text-sm text-muted-foreground">No team goal set yet.</p>
+        <p className="text-sm text-muted-foreground">{t("none")}</p>
         {isLeader && (
           <Button variant="outline" size="sm" onClick={onEdit}>
-            <Settings className="h-4 w-4 mr-2" /> Set Goal
+            <Settings className="h-4 w-4 mr-2" /> {t("setGoal")}
           </Button>
         )}
       </div>
@@ -35,7 +36,7 @@ export function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-foreground">Team Goal:</span>
+        <span className="text-sm font-semibold text-foreground">{t("label")}</span>
         <span className="text-sm font-medium">{goal.title}</span>
         <Badge variant={RESOLUTION_TYPE_BADGE_VARIANTS[goal.type]} className="text-xs">
           {tl(`resolutionType.${goal.type}`)}
@@ -46,7 +47,7 @@ export function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={onEdit}
-            aria-label="Edit team goal"
+            aria-label={t("edit")}
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -57,12 +58,12 @@ export function TeamGoalDisplay({ goal, isLeader, onEdit }: TeamGoalDisplayProps
       )}
       {goal.type === "compound" && goal.subtasks && (
         <p className="text-xs text-muted-foreground">
-          {goal.subtasks.filter(s => s.completed).length} / {goal.subtasks.length} subtasks
+          {t("subtasks", { done: goal.subtasks.filter(s => s.completed).length, total: goal.subtasks.length })}
         </p>
       )}
       {goal.type === "iterative" && goal.numberOfRepetition !== undefined && (
         <p className="text-xs text-muted-foreground">
-          Target: {goal.numberOfRepetition} repetitions
+          {t("target", { count: goal.numberOfRepetition })}
         </p>
       )}
     </div>

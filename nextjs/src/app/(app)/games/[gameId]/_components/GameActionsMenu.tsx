@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { GamePermission } from "@/lib/authz/permissions";
 import { Flag, LogOut, MoreHorizontal, Settings, SlidersHorizontal, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import type { Game } from "../types";
 import { GameConfigDialog } from "./GameConfigDialog";
@@ -52,6 +53,7 @@ export function GameActionsMenu({
   onLeaveGame,
   isLeaving,
 }: GameActionsMenuProps) {
+  const t = useTranslations("Games.actionsMenu");
   const [openDialog, setOpenDialog] = useState<GameActionDialog>(null);
 
   /**
@@ -74,36 +76,36 @@ export function GameActionsMenu({
       {/* Not modal, so the page is usable again once a dialog opened from the menu closes */}
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" aria-label="More actions">
+          <Button variant="outline" size="sm" aria-label={t("moreActions")}>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           {canSetGoal && (
             <DropdownMenuItem onSelect={onSetGoal}>
-              <Settings className="h-4 w-4 mr-2" /> Set Goal
+              <Settings className="h-4 w-4 mr-2" /> {t("setGoal")}
             </DropdownMenuItem>
           )}
           {canConfigure && (
             <DropdownMenuItem onSelect={() => setOpenDialog('configure')}>
-              <SlidersHorizontal className="h-4 w-4 mr-2" /> Configure
+              <SlidersHorizontal className="h-4 w-4 mr-2" /> {t("configure")}
             </DropdownMenuItem>
           )}
           {canEnd && (
             <DropdownMenuItem onSelect={() => setOpenDialog('end')}>
-              <Flag className="h-4 w-4 mr-2" /> End Game
+              <Flag className="h-4 w-4 mr-2" /> {t("endGame")}
             </DropdownMenuItem>
           )}
           {(canSetGoal || canConfigure || canEnd) && <DropdownMenuSeparator />}
           <DropdownMenuItem onSelect={() => setOpenDialog('leave')}>
-            <LogOut className="h-4 w-4 mr-2" /> Leave Game
+            <LogOut className="h-4 w-4 mr-2" /> {t("leaveGame")}
           </DropdownMenuItem>
           {canDelete && (
             <DropdownMenuItem
               onSelect={() => setOpenDialog('delete')}
               className="text-destructive focus:text-destructive"
             >
-              <Trash2 className="h-4 w-4 mr-2" /> Delete Game
+              <Trash2 className="h-4 w-4 mr-2" /> {t("deleteGame")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -123,9 +125,9 @@ export function GameActionsMenu({
         <ConfirmActionDialog
           open={openDialog === 'end'}
           onOpenChange={dialogOpenChange('end')}
-          title="End this game?"
-          description="The game finishes for everyone and moves to the archive. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone."
-          confirmLabel="End Game"
+          title={t("endDialog.title")}
+          description={t("endDialog.description")}
+          confirmLabel={t("endDialog.confirm")}
           onConfirm={onEndGame}
           isPending={isEnding}
         />
@@ -135,9 +137,9 @@ export function GameActionsMenu({
         <ConfirmActionDialog
           open={openDialog === 'delete'}
           onOpenChange={dialogOpenChange('delete')}
-          title="Delete this game?"
-          description="This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone."
-          confirmLabel="Delete"
+          title={t("deleteDialog.title")}
+          description={t("deleteDialog.description")}
+          confirmLabel={t("deleteDialog.confirm")}
           onConfirm={onDeleteGame}
           isPending={isDeleting}
         />
@@ -146,9 +148,9 @@ export function GameActionsMenu({
       <ConfirmActionDialog
         open={openDialog === 'leave'}
         onOpenChange={dialogOpenChange('leave')}
-        title="Leave this game?"
-        description="Your bingo card, your leaderboard entry and the resolutions written for you in this game will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only leader, promote another player on the team page first."
-        confirmLabel="Leave Game"
+        title={t("leaveDialog.title")}
+        description={t("leaveDialog.description")}
+        confirmLabel={t("leaveDialog.confirm")}
         onConfirm={onLeaveGame}
         isPending={isLeaving}
       />

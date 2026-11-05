@@ -1,1 +1,92 @@
-{}
+{
+  "list": {
+    "pageTitle": "Games",
+    "heading": "My Games",
+    "loadFailed": "Failed to load games",
+    "emptyTitle": "No Games Yet",
+    "emptyDescription": "A team leader creates games from the team page.",
+    "goToTeams": "Go to Teams"
+  },
+  "detail": {
+    "pageTitle": "Game",
+    "leaders": "Leaders: {names}",
+    "lastDay": "Last day: {date}",
+    "startBingo": "Start Bingo",
+    "tabs": {
+      "cards": "Cards",
+      "members": "Members",
+      "leaderboard": "Leaderboard"
+    }
+  },
+  "actionsMenu": {
+    "moreActions": "More actions",
+    "setGoal": "Set Goal",
+    "configure": "Configure",
+    "endGame": "End Game",
+    "leaveGame": "Leave Game",
+    "deleteGame": "Delete Game",
+    "endDialog": {
+      "title": "End this game?",
+      "description": "The game finishes for everyone and moves to the archive. Open reviews close with the votes cast so far, and a review with no votes counts as accepted. This cannot be undone.",
+      "confirm": "End Game"
+    },
+    "deleteDialog": {
+      "title": "Delete this game?",
+      "description": "This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone.",
+      "confirm": "Delete"
+    },
+    "leaveDialog": {
+      "title": "Leave this game?",
+      "description": "Your bingo card, your leaderboard entry and the resolutions written for you in this game will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only leader, promote another player on the team page first.",
+      "confirm": "Leave Game"
+    }
+  },
+  "configDialog": {
+    "title": "Configure Game",
+    "description": "The game ends automatically after its last day. Without a date, it ends only when you end it.",
+    "lastDay": "Last day (optional)",
+    "clear": "Clear",
+    "failed": "Failed to configure game"
+  },
+  "proposeDialog": {
+    "button": "Propose Resolutions",
+    "title": "Propose Resolutions",
+    "description": "Create or update a resolution for each team member. You can do this at any time.",
+    "forMember": "For {name}",
+    "noneYet": "No resolution proposed yet",
+    "edit": "Edit resolution",
+    "add": "Add resolution"
+  },
+  "teamGoal": {
+    "none": "No team goal set yet.",
+    "setGoal": "Set Goal",
+    "label": "Team Goal:",
+    "edit": "Edit team goal",
+    "subtasks": "{done} / {total} subtasks",
+    "target": "Target: {count, plural, one {# repetition} other {# repetitions}}"
+  },
+  "cardsTab": {
+    "notStartedTitle": "Game Not Started Yet",
+    "notStartedDescription": "The team leader will start the game once everyone has proposed resolutions for each other.",
+    "noCards": "No bingo cards available yet.",
+    "heading": "Bingo Cards",
+    "noCard": "No bingo card available"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "empty": "No leaderboard data available yet.",
+    "player": "Player",
+    "completed": "Completed",
+    "firstBingo": "First Bingo"
+  },
+  "actions": {
+    "started": "Bingo game started!",
+    "startFailed": "Failed to start game",
+    "ended": "Game ended",
+    "endFailed": "Failed to end game",
+    "left": "You left the game",
+    "leaveFailed": "Failed to leave game",
+    "deleted": "Game deleted",
+    "deleteFailed": "Failed to delete game"
+  }
+}
