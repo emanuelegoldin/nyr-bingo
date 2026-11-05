@@ -2,35 +2,35 @@ import { AppLogo } from '@/components/icons';
 import { LanguageSelectorDropdown } from '@/components/LanguageSelectorDropdown';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getDictionary, getLocaleFromRequest } from '@/i18n/request';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CheckCircle2, Goal, Users } from 'lucide-react';
+import { getLocale, getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 
 const version = process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0.0';
 
 export default async function Home() {
-  const locale = await getLocaleFromRequest();
-  const t = await getDictionary();
+  const locale = await getLocale();
+  const t = await getTranslations();
   const heroImageId = locale === 'it' ? 'hero-1-it' : 'hero-1';
   const heroImage = PlaceHolderImages.find((img) => img.id === heroImageId);
 
   const features = [
     {
       icon: <Goal className="h-8 w-8 text-primary" />,
-      title: t.Home.featureResolutionTitle,
-      description: t.Home.featureResolutionDescription,
+      title: t('Home.featureResolutionTitle'),
+      description: t('Home.featureResolutionDescription'),
     },
     {
       icon: <Users className="h-8 w-8 text-primary" />,
-      title: t.Home.featureTeamTitle,
-      description: t.Home.featureTeamDescription,
+      title: t('Home.featureTeamTitle'),
+      description: t('Home.featureTeamDescription'),
     },
     {
       icon: <CheckCircle2 className="h-8 w-8 text-primary" />,
-      title: t.Home.featureProgressTitle,
-      description: t.Home.featureProgressDescription,
+      title: t('Home.featureProgressTitle'),
+      description: t('Home.featureProgressDescription'),
     },
   ];
 
@@ -39,17 +39,17 @@ export default async function Home() {
       <header className="px-4 lg:px-6 min-h-16 py-2 gap-y-2 flex flex-wrap items-center shadow-sm bg-card md:h-16 md:py-0 md:flex-nowrap">
         <Link href="/" className="flex items-center justify-center gap-2">
           <AppLogo />
-          <span className="hidden sm:inline font-semibold font-headline">{t.App.name}</span>
+          <span className="hidden sm:inline font-semibold font-headline">{t('App.name')}</span>
         </Link>
         <div className="order-last w-full md:order-none md:w-auto md:ml-4">
           <LanguageSelectorDropdown />
         </div>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Button variant="ghost" asChild>
-            <Link href="/login">{t.Home.loginLink}</Link>
+            <Link href="/login">{t('Home.loginLink')}</Link>
           </Button>
           <Button asChild>
-            <Link href="/register">{t.Home.registerLink}</Link>
+            <Link href="/register">{t('Home.registerLink')}</Link>
           </Button>
         </nav>
       </header>
@@ -69,10 +69,10 @@ export default async function Home() {
             <div className="grid max-w-[1300px] mx-auto gap-4 px-4 sm:px-6 md:px-10 md:grid-cols-2 md:gap-16">
               <div className="flex flex-col justify-center space-y-4">
                 <h1 className="lg:leading-tighter text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl xl:text-[3.4rem] 2xl:text-[3.75rem] font-headline">
-                  {t.Home.title}
+                  {t('Home.title')}
                 </h1>
                 <p className="max-w-[700px] text-foreground/80 md:text-xl">
-                  {t.Home.subtitle}
+                  {t('Home.subtitle')}
                 </p>
               </div>
               {heroImage && (
@@ -95,10 +95,10 @@ export default async function Home() {
           <div className="container space-y-12 px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">{t.Home.featureTitle}</div>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">{t.Home.featureSubTitle}</h2>
+                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">{t('Home.featureTitle')}</div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">{t('Home.featureSubTitle')}</h2>
                 <p className="max-w-[900px] text-foreground/80 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  {t.Home.featureDescription}
+                  {t('Home.featureDescription')}
                 </p>
               </div>
             </div>

@@ -8,24 +8,16 @@ import { Card } from '@/components/ui/card';
 import type { BingoCardWithCells, GameWithMembers } from '@/lib/db/types';
 import { useMemo } from 'react';
 
-// Helper type for passing translation strings to avoid issues with importing server functions into client components
-type DashboardText = {
-  cardTitle: string;
-  headerDescription: string;
-};
-
 interface DashboardGameCardClientProps {
   game: GameWithMembers;
   currentUserId: string;
   initialCard: BingoCardWithCells;
-  dashboardText: DashboardText;
 }
 
 export default function DashboardGameCardClient({
   game,
   currentUserId,
   initialCard,
-  dashboardText,
 }: DashboardGameCardClientProps) {
   const membersMap = useMemo<TeamMembersMap>(() => {
     const map: TeamMembersMap = {};
@@ -48,8 +40,6 @@ export default function DashboardGameCardClient({
             currentUserId={currentUserId}
             cardUserId={currentUserId}
             gameName={game.name}
-            // Pass translation strings to avoid issues with importing server functions into client components
-            dashboardText={dashboardText}
           />
         </Card>
       </TeamMembersProvider>

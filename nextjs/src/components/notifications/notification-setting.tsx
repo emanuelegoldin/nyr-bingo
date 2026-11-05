@@ -2,17 +2,15 @@
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 /** The switch that turns the user's notifications on and off (spec 19). */
 export function NotificationSetting() {
-  const { language } = useAppContext();
   const { toast } = useToast();
-  const strings = getDictionaryForLocale(language).Notifications;
+  const t = useTranslations("Notifications");
   const [enabled, setEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -28,15 +26,15 @@ export function NotificationSetting() {
     const result = await apiFetch("/api/notifications/settings", { method: "PUT", json: { enabled: checked } });
     if (!result.ok) {
       setEnabled(!checked);
-      toast({ title: "Error", description: strings.settingError, variant: "destructive" });
+      toast({ title: "Error", description: t('settingError'), variant: "destructive" });
     }
   };
 
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="space-y-1">
-        <Label htmlFor="notificationsEnabled">{strings.settingLabel}</Label>
-        <p className="text-sm text-muted-foreground">{strings.settingDescription}</p>
+        <Label htmlFor="notificationsEnabled">{t('settingLabel')}</Label>
+        <p className="text-sm text-muted-foreground">{t('settingDescription')}</p>
       </div>
       <Switch
         id="notificationsEnabled"

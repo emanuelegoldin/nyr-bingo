@@ -21,21 +21,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAppContext, usePageTitle } from "@/hooks/AppContext";
+import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch, toastApiError } from "@/lib/api-client";
 import { unifiedToFormData } from "@/lib/shared/resolution-form";
 import { RESOLUTION_TYPE_BADGE_VARIANTS, RESOLUTION_TYPE_LABELS } from "@/lib/shared/resolution-type";
 import type { ResolutionFormData, UnifiedResolution } from "@/lib/shared/types";
 import { History, Lightbulb, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 
 /* ─── Manager Component ──────────────────────────────────────────── */
 
 interface ResolutionsManagerProps {
   initialResolutions: UnifiedResolution[];
-  t: ReturnType<typeof getDictionaryForLocale>["ResolutionsPage"];
+  t: ReturnType<typeof useTranslations<"ResolutionsPage">>;
 }
 
 function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) {
@@ -110,15 +110,15 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
           <div className="space-y-1.5">
-            <CardTitle className="font-headline">{t.title}</CardTitle>
+            <CardTitle className="font-headline">{t('title')}</CardTitle>
             <CardDescription>
-              {t.description}
+              {t('description')}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" onClick={() => setBrowseOpen(true)}>
               <Lightbulb className="h-4 w-4 mr-2" />
-              {t.browseIdeas}
+              {t('browseIdeas')}
             </Button>
             <Button size="icon" onClick={handleCreate} aria-label="Add resolution">
               <Plus className="h-4 w-4" />
@@ -169,7 +169,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() => handleViewHistory(res)}
                     disabled={deletingId === res.id}
-                    aria-label={t.viewHistoryAriaLabel}
+                    aria-label={t('viewHistoryAriaLabel')}
                   >
                     <History className="h-4 w-4" />
                   </Button>
@@ -180,7 +180,7 @@ function ResolutionsManager({ initialResolutions, t }: ResolutionsManagerProps) 
                     onClick={() => handleEdit(res)}
                     disabled={deletingId === res.id}
                     /*TODO: check label*/
-                    aria-label={t.viewHistoryAriaLabel}
+                    aria-label={t('viewHistoryAriaLabel')}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -244,10 +244,9 @@ interface ResolutionsPageClientProps {
 export default function ResolutionsPageClient({
   initialResolutions,
 }: ResolutionsPageClientProps) {
-  const { language } = useAppContext();
-  const t = getDictionaryForLocale(language).ResolutionsPage;
+  const t = useTranslations("ResolutionsPage");
 
-  usePageTitle(t.headerTitle);
+  usePageTitle(t('headerTitle'));
 
   return (
     <div className="space-y-6">

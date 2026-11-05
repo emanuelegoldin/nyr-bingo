@@ -18,9 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAppContext } from "@/hooks/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch, toastApiError } from "@/lib/api-client";
 import {
   getResolutionTextKey,
@@ -31,6 +29,7 @@ import type { PreparedResolution, UnifiedResolution } from "@/lib/shared/types";
 import { PreparedResolutionCategory } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const CATEGORIES = [
   PreparedResolutionCategory.SHORT,
@@ -38,7 +37,7 @@ const CATEGORIES = [
   PreparedResolutionCategory.LONG,
 ];
 
-type DialogStrings = ReturnType<typeof getDictionaryForLocale>["PreparedResolutionsDialog"];
+type DialogStrings = ReturnType<typeof useTranslations<"PreparedResolutionsDialog">>;
 
 interface PreparedResolutionRowProps {
   resolution: PreparedResolution;
@@ -78,7 +77,7 @@ const PreparedResolutionRow = ({
       onClick={() => onAdd(resolution)}
     >
       {isAdding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-      {isAdded ? t.added : t.add}
+      {isAdded ? t('added') : t('add')}
     </Button>
   </li>
 );
@@ -106,8 +105,7 @@ export const PreparedResolutionsDialog = ({
   setIsOpen,
   onAdded,
 }: PreparedResolutionsDialogProps) => {
-  const { language } = useAppContext();
-  const t = getDictionaryForLocale(language).PreparedResolutionsDialog;
+  const t = useTranslations("PreparedResolutionsDialog");
   const { toast } = useToast();
 
   const [pool, setPool] = useState<PreparedResolution[] | null>(null);
@@ -157,7 +155,7 @@ export const PreparedResolutionsDialog = ({
   const renderBody = () => {
     if (!pool) {
       return loadFailed ? (
-        <p className="text-sm text-center text-muted-foreground py-4">{t.loadError}</p>
+        <p className="text-sm text-center text-muted-foreground py-4">{t('loadError')}</p>
       ) : (
         <div className="flex justify-center py-4">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -169,13 +167,13 @@ export const PreparedResolutionsDialog = ({
       <Tabs defaultValue={PreparedResolutionCategory.SHORT}>
         <TabsList className="grid w-full grid-cols-3">
           {CATEGORIES.map((category) => (
-            <TabsTrigger key={category} value={category}>{t.categories[category]}</TabsTrigger>
+            <TabsTrigger key={category} value={category}>{t(`categories.${category}`)}</TabsTrigger>
           ))}
         </TabsList>
 
         {CATEGORIES.map((category) => (
           <TabsContent key={category} value={category}>
-            <p className="text-xs text-muted-foreground mb-2">{t.categoryHints[category]}</p>
+            <p className="text-xs text-muted-foreground mb-2">{t(`categoryHints.${category}`)}</p>
             <ul className="space-y-2 max-h-[50vh] overflow-y-auto">
               {pool.filter((resolution) => resolution.category === category).map((resolution) => (
                 <PreparedResolutionRow
@@ -199,8 +197,8 @@ export const PreparedResolutionsDialog = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-headline">{t.title}</DialogTitle>
-          <DialogDescription>{t.description}</DialogDescription>
+          <DialogTitle className="font-headline">{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         {renderBody()}
       </DialogContent>

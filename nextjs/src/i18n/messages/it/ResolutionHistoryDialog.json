@@ -1,0 +1,14 @@
+{
+  "title": "Cronologia degli Obiettivi",
+  "description": "Cronologia per \"{title}\".",
+  "addNoteTitle": "Commenta il tuo progresso",
+  "addNotePlaceholder": "Scrivi cosa hai fatto, imparato o completato...",
+  "addNoteButton": "Aggiungi nota",
+  "loading": "Caricamento della cronologia...",
+  "empty": "Nessuna cronologia",
+  "close": "Chiudi",
+  "noteLabel": "Nota",
+  "progressLabel": "Progresso",
+  "loadError": "Ops! Impossibile caricare la cronologia degli obiettivi",
+  "addError": "Ops! Impossibile aggiungere la nuova nota alla cronologia"
+}

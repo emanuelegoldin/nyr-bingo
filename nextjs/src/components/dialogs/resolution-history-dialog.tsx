@@ -11,14 +11,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useAppContext } from "@/hooks/AppContext";
 import { useWsRoom } from "@/hooks/use-ws-room";
 import { useToast } from "@/hooks/use-toast";
-import { getDictionaryForLocale } from "@/i18n/dictionary";
 import { apiFetch, toastApiError } from "@/lib/api-client";
 import type { ResolutionHistoryEntry } from "@/lib/db/types";
 import { History, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 /** History entry as received from the API, with its date serialized. */
 type HistoryEntry = Omit<ResolutionHistoryEntry, "createdAt"> & { createdAt: string };
@@ -36,8 +35,7 @@ export const ResolutionHistoryDialog = ({
   isOpen,
   setIsOpen,
 }: ResolutionHistoryDialogProps) => {
-  const { language } = useAppContext();
-  const t = getDictionaryForLocale(language).ResolutionHistoryDialog;
+  const t = useTranslations("ResolutionHistoryDialog");
   const { toast } = useToast();
 
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -58,7 +56,7 @@ export const ResolutionHistoryDialog = ({
       setEntries(Array.isArray(result.data.entries) ? (result.data.entries as HistoryEntry[]) : []);
       setCanWrite(Boolean(result.data.canWrite));
     } else {
-      toastApiError(result, t.loadError);
+      toastApiError(result, t('loadError'));
     }
     setLoading(false);
   }, [resolutionId, toast]);
@@ -80,7 +78,7 @@ export const ResolutionHistoryDialog = ({
         json: { content: draft.trim() },
       });
       if (!result.ok) {
-        toastApiError(result, t.addError);
+        toastApiError(result, t('addError'));
         return;
       }
 
@@ -89,7 +87,7 @@ export const ResolutionHistoryDialog = ({
     } catch {
       toast({
         title: "Error",
-        description: t.addError,
+        description: t('addError'),
         variant: "destructive",
       });
     } finally {
@@ -103,19 +101,19 @@ export const ResolutionHistoryDialog = ({
         <DialogHeader>
           <DialogTitle className="font-headline flex items-center gap-2">
             <History className="h-4 w-4" />
-            {t.title}
+            {t('title')}
           </DialogTitle>
           <DialogDescription>
-            {t.description.replace("{title}", resolutionTitle)}
+            {t("description", { title: resolutionTitle })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           {canWrite && (
             <div className="space-y-2 border rounded-md p-3 bg-secondary/20">
-              <p className="text-sm font-medium">{t.addNoteTitle}</p>
+              <p className="text-sm font-medium">{t('addNoteTitle')}</p>
               <Textarea
-                placeholder={t.addNotePlaceholder}
+                placeholder={t('addNotePlaceholder')}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 rows={3}
@@ -124,7 +122,7 @@ export const ResolutionHistoryDialog = ({
               <div className="flex justify-end">
                 <Button onClick={handleAddEntry} disabled={!canSubmit}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  {t.addNoteButton}
+                  {t('addNoteButton')}
                 </Button>
               </div>
             </div>
@@ -132,10 +130,10 @@ export const ResolutionHistoryDialog = ({
 
           <div className="space-y-2">
             {loading ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">{t.loading}</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">{t('loading')}</p>
             ) : entries.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                {t.empty}
+                {t('empty')}
               </p>
             ) : (
               <ul className="space-y-2 max-h-[45vh] overflow-y-auto">
@@ -144,7 +142,7 @@ export const ResolutionHistoryDialog = ({
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <Badge variant={entry.entryType === "manual_note" ? "secondary" : "outline"}>
-                          {entry.entryType === "manual_note" ? t.noteLabel : t.progressLabel}
+                          {entry.entryType === "manual_note" ? t('noteLabel') : t('progressLabel')}
                         </Badge>
                         <span className="text-xs text-muted-foreground truncate">
                           {entry.authorUsername}
@@ -164,7 +162,7 @@ export const ResolutionHistoryDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
-            {t.close}
+            {t('close')}
           </Button>
         </DialogFooter>
       </DialogContent>

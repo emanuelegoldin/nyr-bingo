@@ -1,0 +1,17 @@
+{
+  "title": "Idee per i tuoi obiettivi",
+  "description": "Aggiungi uno di questi obiettivi già pronti alla tua lista personale. Potrai poi modificare la tua copia.",
+  "add": "Aggiungi",
+  "added": "Aggiunto",
+  "loadError": "Impossibile caricare le idee. Chiudi questa finestra e riprova.",
+  "categories": {
+    "short": "Brevi",
+    "medium": "Medi",
+    "long": "Lunghi"
+  },
+  "categoryHints": {
+    "short": "Si completano in pochi giorni, senza preparazione.",
+    "medium": "Si completano in qualche settimana, oppure più impegnativi ma conclusi in pochi giorni.",
+    "long": "Richiedono mesi, fino a un anno intero."
+  }
+}
