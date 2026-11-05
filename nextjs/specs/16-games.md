@@ -129,8 +129,9 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 - The team goal is a resolution with `scope = team`, of any type (spec 03). It belongs to one game.
 - Only the leader can create or edit it: `POST /api/resolutions/save` with `scope = 'team'` and `gameId`.
 - A game has one goal. Saving a new goal without an `id` when one already exists updates the existing goal, keeping its stored type (spec 03).
-- The goal belongs to the leader who set it: only they edit it and record its progress. When they leave the game, it passes to another leader of the game.
-- The goal can be edited at any time, including after the game has started. Cells reference it, so edits are reflected on every card of the game.
+- The goal belongs to the leader who set it: only they edit it. When they leave the game, it passes to another leader of the game.
+- The goal is one definition row per game. Each player's goal cell has its own snapshot and its own progress, tracked by that player, not by the leader.
+- The goal can be edited at any time, including after the game has started. Cards copy it when they are generated (spec 05), so an edit after the start affects only cards generated after it, for players who join late. Existing cards are unchanged.
 - `GET /api/games/[gameId]/goal` returns it to team members.
 - The goal is shown on the game page and appears as a normal `team` cell on the cards (spec 05). It is **not** the Joker.
 
@@ -149,7 +150,7 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 #### Ongoing Updates
 
 - Team members MAY create or update their member-provided resolutions at any time, before or after game start.
-- There is at most one resolution per `(game_id, owner_user_id, to_user_id)`; saving again overwrites it, keeping its stored type unless the save is a type change (spec 03). Cells reference resolutions by id, so edits are reflected on the card.
+- There is at most one resolution per `(game_id, owner_user_id, to_user_id)`; saving again overwrites it, keeping its stored type unless the save is a type change (spec 03). Cards hold a snapshot, so an edit does not change a card that already contains the resolution.
 - A resolution created after the recipient's card was generated is not added to that card automatically. The recipient can place it through card editing (spec 09).
 
 #### New Member Effects
@@ -181,7 +182,7 @@ On start:
 A user who joins a team (spec 04) becomes a player of **every** running game of that team, and receives a card in every `started` one:
 - The game stays in `started` status.
 - The card is generated at join time under the rules of spec 05. This requires the team goal to still exist; a failure to generate a card is not reported to the user and does not affect the other games.
-- If the team goal is `compound` or `iterative`, the new member's goal cell is set to match the goal's progress.
+- The new member's goal cell is a snapshot of the goal as it is at join time, with progress at zero.
 - Existing members' cards are not regenerated.
 
 ---
@@ -203,7 +204,7 @@ Steps:
 Until it is archived, after a game has ended:
 - Its cells cannot be completed, undone, edited or put under review.
 - Automatic completion (spec 06) no longer changes its cells.
-- Its team goal and member-provided resolutions cannot be saved, deleted or progressed.
+- Its team goal and member-provided resolutions cannot be saved or deleted, and progress on its cells cannot be changed.
 - Personal resolutions on its cards remain the user's to change. This does not change the game's final cards.
 
 ---
@@ -230,7 +231,8 @@ Until it is archived, after a game has ended:
   - Removes the user from the roster
   - Deletes their bingo card, with its cells and their threads, and their leaderboard row. Stored proof files of those threads are removed too, unless another thread uses the same file.
   - Deletes the member-provided resolutions written **for** them in this game
-- Resolutions they wrote **for** other players stay, on those players' cards and in the Propose Resolutions lists. Their badge reads "Former Teammates" (spec 05). The leaver can no longer edit them.
+  - Leaves no prepared resolutions to delete, because prepared fallbacks create no resolution rows (spec 05)
+- Resolutions they wrote **for** other players stay in the Propose Resolutions lists, and their snapshots stay on those players' cards. Their badge reads "Former Teammates" (spec 05). The leaver can no longer edit them.
 - Votes they cast on other players' threads stay.
 - A user who left a game cannot return to it while they stay in the team. A user who leaves the team and joins it again is a new member (Joining After Start), with a new card.
 - Leaving a team (spec 04) leaves each of its running games the user plays.
@@ -287,6 +289,8 @@ The primary key is `(game_id, user_id)`.
 - Non-leaders cannot create, start, end or delete a game.
 - Unverified users cannot create or start a game.
 - Each game has its own goal, member-provided resolutions, cards and leaderboard.
+- Two players track the team goal independently, each on their own cell.
+- Editing the team goal after the start changes only cards generated after the edit.
 - Bingo cannot start until the team goal exists.
 - Bingo can start while member-provided resolutions are missing.
 - A leader can set, change or remove the deadline of a running game (`forming` or `started`), and not of an ended one.

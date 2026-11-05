@@ -2,10 +2,10 @@
 
 ## Purpose
 
-Define the WebSocket signaling used around bingo cards and resolutions, and the rules that keep concurrent cell mutations consistent.
+Define the WebSocket signaling used around bingo cards, and the rules that keep concurrent cell mutations consistent.
 
 This specification covers:
-- **WebSocket rooms and messages** for cards and resolutions.
+- **WebSocket rooms and messages** for cards, threads and users.
 - **Conflict resolution** when concurrent operations target the same cell.
 
 It details the mechanism behind **08 — Visibility and Updates**.
@@ -14,7 +14,7 @@ It details the mechanism behind **08 — Visibility and Updates**.
 
 ## User Stories Covered
 
-- When a resolution's progress changes, users viewing it in an open dialog see the change in real time.
+- When progress on a cell changes, users viewing that cell in an open dialog see the change in real time.
 - When a team or one of its games changes, users viewing a game page or dashboard card of that team see the change in real time.
 - When two users perform conflicting actions on the same cell concurrently, a deterministic winner is chosen to prevent inconsistent state.
 
@@ -23,7 +23,6 @@ It details the mechanism behind **08 — Visibility and Updates**.
 ## In Scope
 
 - Team-level card rooms
-- Resolution-level rooms
 - Optimistic locking (state precondition guards) on cell mutations
 - Conflict resolution rules
 
@@ -35,7 +34,7 @@ It details the mechanism behind **08 — Visibility and Updates**.
 
 - `ws-server/server.ts` is a standalone Node service listening on `WS_PORT` (default `8888`). Nginx proxies `/ws` to it.
 - It only relays signals. It never touches the database.
-- `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'resolution' | 'user', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
+- `POST /internal/notify` lets the Next.js server signal rooms. The body is a list of `{ type: 'card' | 'thread' | 'user', id }`, and the `x-ws-secret` header must match `WS_SHARED_SECRET`. Nginx only proxies `/ws`, so the endpoint is not public.
 - It refuses to start without `WS_SHARED_SECRET`.
 - It joins a socket to a room only with a valid signed token.
 - It rejects browser connections from another site's page (the `Origin` hostname must match the `Host`).
@@ -51,14 +50,13 @@ Clients connect to `ws(s)://<current-host>/ws`.
 
 | Room | Key | Joined by |
 | ---- | --- | --------- |
-| Card room | `card:<teamId>`, shared by all games of the team | `TeamWsProvider` on open |
-| Resolution room | `resolution:<resolutionId>` | Compound checklist, iterative counter and history dialog, when opened; the socket stays in the room until it closes, but their listeners are removed with the dialog |
+| Card room | `card:<teamId>`, shared by all games of the team | `TeamWsProvider` on open. The cell dialog, checklist, counter and history listen to it. |
 | Thread room (spec 07) | `thread:<threadId>` | Review thread dialog, when opened, on the same terms |
 | User room (spec 19) | `user:<userId>` | The notification bell, on its own socket, on every page of the shell |
 
 ### Joining a Room
 
-- `GET /api/ws-token?type=card|thread|resolution|user&id=<id>` returns a token for one room, valid for 5 minutes. It returns `403` unless the user may see the data behind the room: team membership for cards and threads, history access for resolutions, and being that user for user rooms. It returns `503` without `WS_SHARED_SECRET`.
+- `GET /api/ws-token?type=card|thread|user&id=<id>` returns a token for one room, valid for 5 minutes. It returns `403` unless the user may see the data behind the room: team membership for cards and threads, and being that user for user rooms. It returns `503` without `WS_SHARED_SECRET`.
 - The token is the base64url JSON `{ type, id, exp }` and its HMAC-SHA256 signature, made with `WS_SHARED_SECRET`. ws-server checks it, so it never needs the database.
 - A client that gets no token simply has no live updates for that room.
 
@@ -67,8 +65,7 @@ Clients connect to `ws(s)://<current-host>/ws`.
 | Message              | Direction        | Body                         | Purpose                                   |
 |----------------------|------------------|------------------------------|-------------------------------------------|
 | `join-room`          | client → server  | `token` (top level)          | Join the room the token grants.           |
-| `refresh-card`       | server → clients | none                         | Tell card room members to refresh the page. |
-| `refresh-resolution` | server → clients | `resolutionId` (top level)   | Tell viewers to re-fetch the resolution.  |
+| `refresh-card`       | server → clients | none                         | Tell card room members to refresh the page and any open cell dialog. |
 | `refresh-thread`     | server → clients | `threadId` (top level)       | Tell viewers to re-fetch the thread.      |
 | `refresh-notifications` | server → clients | none                      | Tell the bell to re-fetch notifications.  |
 
@@ -83,9 +80,7 @@ Every mutating API route, and the deadline sweep (spec 07), signals the rooms it
 | Cell state, undo, edit, proof request | The team's card room, and the cell's threads |
 | Thread message, file, vote that keeps it open | The thread |
 | Thread closed by vote, by the completing user or by the deadline | The thread and the team's card room |
-| Subtask or counter change, resolution saved | The resolution, and the card room of every team showing it |
-| Resolution deleted | The card room of every team that was showing it |
-| Manual history note | The resolution |
+| Subtask or counter change on a cell, manual history note on a cell | The card room of the cell's team |
 | Join, game creation, start, end or deletion, team deletion | The team's card room |
 | Profile update | The card room of each of the user's teams |
 | Notifications released (spec 19) | The user room of each recipient |
@@ -171,12 +166,12 @@ In both cases the final state is `pending`, honouring the owner's intent.
 
 ## Acceptance Criteria
 
-- Users viewing a resolution in an open dialog see subtask and counter changes without reloading.
+- Users viewing a cell in an open dialog see subtask, counter and history changes without reloading, through the card room.
 - Users on the game page or dashboard see team and game changes without reloading.
 - If two users perform conflicting operations, the system resolves the conflict deterministically (owner's action prevails).
 - Failed operations due to state conflicts return a descriptive error to the acting user.
 - No WebSocket connection is leaked on component unmount.
-- The WebSocket server isolates card, resolution, thread and user rooms through different key prefixes.
+- The WebSocket server isolates card, thread and user rooms through different key prefixes.
 
 ---
 
@@ -200,5 +195,5 @@ In both cases the final state is `pending`, honouring the owner's intent.
 - **07 — Proof and Approval**: defines thread-level real-time messaging (thread rooms).
 - **08 — Visibility and Updates**: high-level behavior of updates.
 - **09 — Bingo Card Editing**: edit operations signal the same rooms.
-- **13 — Resolution History and Progress**: uses resolution rooms.
+- **13 — Resolution History and Progress**: cell history uses card rooms.
 - **19 — Notifications**: uses user rooms.

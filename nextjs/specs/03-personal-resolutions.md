@@ -1,39 +1,38 @@
 # 03 — Personal Resolutions and Resolution Types
 
 ## Purpose
-Allow users to manage a list of personal resolutions that can be used to fill their bingo card, and define the resolution types shared by personal, team and member-provided resolutions.
+Allow users to manage a list of personal resolutions that can be used to fill their bingo card, and define the resolution types shared by personal, team and member-provided resolutions. A resolution is a definition only. Progress is tracked on the bingo cells that were generated from it (spec 06).
 
 ## User Stories Covered
 - Add, update, and delete resolutions
 - Choose between a simple, a checklist and a repeatable resolution
-- Track progress on checklist and repeatable resolutions
 
 ## In Scope
 - CRUD for a user's personal resolutions
-- Resolution types and their progress mechanics
+- Resolution types and their type-specific data
 - Resolution scopes
 
 ## Resolution Model
 All resolutions live in the `resolutions` table.
 
 ### Types
-| Type | UI label | Type-specific data | Progress |
-| ---- | -------- | ------------------ | -------- |
-| `base` | Common | none | None; completion is set manually on the card (spec 06) |
-| `compound` | Complex | `subtasks`: `{ title, description, completed }[]` | Complete when every subtask is completed |
-| `iterative` | Iterative | `numberOfRepetition`, `completedTimes` | Complete when `completedTimes >= numberOfRepetition` |
+| Type | UI label | Type-specific data | Completion on a card cell (spec 06) |
+| ---- | -------- | ------------------ | ----------------------------------- |
+| `base` | Common | none | Set manually on the card |
+| `compound` | Complex | `subtasks`: `{ title, description }[]` | Complete when every subtask of the cell is completed |
+| `iterative` | Iterative | `numberOfRepetition` | Complete when the cell's `completed_times >= numberOfRepetition` |
 
+A resolution holds no progress: it has no `completed_times` and its subtasks have no `completed` flag. The progress is stored on each bingo cell (spec 05).
 ### Scopes
 | Scope | Meaning | Owner (`ownerUserId`) | Extra fields |
 | ----- | ------- | --------------------- | ------------ |
 | `personal` | The user's own resolution | The user | none |
 | `team` | The team goal; one per game (spec 16) | The team leader | `teamId`, `gameId` |
 | `member_provided` | Written by one member for another, for one game (spec 16) | The author | `teamId`, `gameId`, `toUserId` |
-| `prepared` | A prepared resolution copied onto a card as a fallback (specs 05, 17) | The card owner | `teamId`, `gameId` |
 
 Every type is available in every scope.
 
-A `prepared` resolution is only created by card generation. It is not a personal resolution: it is not listed on `/resolutions` and cannot be used to fill or edit a card.
+Prepared fallbacks on a card (specs 05, 17) have no scope and no resolution row: they are copied straight from the prepared pool onto the cell.
 
 ## Functional Requirements
 ### Create and Update
@@ -44,37 +43,31 @@ A `prepared` resolution is only created by card generation. It is not a personal
 - `scope` defaults to `personal`.
 
 Updating without changing type:
-- `compound`: subtasks are replaced by the submitted list, including their `completed` flags.
-- `iterative`: `completedTimes` is preserved.
+- `compound`: subtasks are replaced by the submitted list.
+- `iterative`: the target is replaced by the submitted `numberOfRepetition`.
 
 Changing type (a save whose `type` differs from the stored type):
-- Title, description and the type-specific data are rewritten, and progress resets (`completedTimes = 0`).
-- `bingo_cells.resolution_type` is updated on every cell referencing the resolution.
-- Cell states are not changed.
+- Title, description and the type-specific data are rewritten.
+
+Saving a resolution never changes any bingo cell. Cells hold a snapshot of the definition taken when the card was generated or the cell was edited (specs 05, 09), so existing cards keep the old title, description, type, target and subtasks.
 
 ### Read
-- `GET /api/resolutions/all` lists the caller's personal resolutions of every type, newest first. `/resolutions` shows this list with a type badge and progress.
+- `GET /api/resolutions/all` lists the caller's personal resolutions of every type, newest first. `/resolutions` shows this list with a type badge. It shows definitions only: no progress, no subtask checking, no counter and no history.
 - `GET /api/resolutions/compound` and `GET /api/resolutions/iterative` list the caller's personal resolutions of that type.
-- With `?id=<id>` those two endpoints return a single resolution, under the visibility rules of spec 13.
+- With `?id=<id>` those two endpoints return a single resolution of the caller, as a definition only. Another user's resolution returns `404`, and so does one of another type.
 
 ### Delete
 - `DELETE /api/resolutions?id=<id>`, `DELETE /api/resolutions/compound?id=<id>` and `DELETE /api/resolutions/iterative?id=<id>`.
-- The resolution's history entries are deleted with it.
-- Bingo cells referencing it keep their source type and state but lose the reference (`resolution_id` is set to `NULL`).
+- Bingo cells generated from it are not changed: they keep their snapshot, their progress, their history and their state. Only the link to the source resolution is lost (`resolution_id` is set to `NULL`).
 
 ### Progress
-- `PATCH /api/resolutions/compound/[id]/toggle` with `{ subtaskIndex }` toggles one subtask. An index that is not an existing subtask's position returns `400`.
-- `PATCH /api/resolutions/iterative/[id]/increment` adds one to `completedTimes`. There is no upper limit, so the counter can exceed the target.
-- `PATCH /api/resolutions/iterative/[id]/decrement` subtracts one, with a floor of 0.
-- Each change logs a history event (spec 13) and updates linked bingo cells (spec 06).
-- Progress is stored on the resolution, so it is shared by every cell referencing that resolution.
+Resolutions have no progress endpoints. Subtasks and counters are changed on the bingo cell, through `/api/cells/[cellId]/...` (spec 06).
 
 ## Permissions
 - Only the owner can update or delete a resolution.
-- Progress on a `personal` or `prepared` resolution can only be changed by its owner.
-- Progress on a `member_provided` resolution can only be changed by its recipient (`toUserId`), not by its author.
+- Progress is not a permission of the resolution: it belongs to the owner of the card holding the cell (spec 06).
 - Personal resolutions are available to unverified users.
-- The team goal, member-provided and prepared resolutions of an ended game cannot be saved, deleted or progressed (spec 16).
+- The team goal and member-provided resolutions of an ended game cannot be saved or deleted (spec 16).
 
 ## Constraints
 - Title must be non-empty. It is trimmed and truncated to 255 characters.
@@ -84,10 +77,10 @@ Changing type (a save whose `type` differs from the stored type):
 
 ## Acceptance Criteria
 - User can create, edit, delete, and list their own resolutions of every type.
-- User can change the type of a resolution, which resets its progress.
-- Compound subtasks can be toggled and iterative counters can be changed.
+- User can change the type of a resolution.
+- The personal resolutions page shows definitions only, with no progress, subtask checking, counter or history.
+- Editing or deleting a resolution does not change existing cards.
 - User cannot modify someone else's resolutions.
 
 ## Known Gaps
-- Deleting a resolution that is on a bingo card leaves a blank, non-empty cell that keeps its source and has no text. A `base` cell still opens an empty dialog. A `compound` or `iterative` cell is clickable but nothing opens. The team goal and `prepared` resolutions can be deleted this way through the API, although the UI offers no such action.
-- Saving a resolution with a changed type or target does not re-evaluate its cells, so a cell can stay `completed` after its goal was raised, or `pending` after it was lowered.
+- The team goal can be deleted through the API, although the UI offers no such action. Existing cards keep their snapshot of it.

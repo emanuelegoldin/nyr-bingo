@@ -32,7 +32,7 @@ This specification focuses on **card interaction and cell state changes**, not o
 
 ## Cell States
 
-State is stored per cell (`bingo_cells.state`). The same resolution can appear in several cells, each with its own state.
+State is stored per cell (`bingo_cells.state`). So is progress (`bingo_cells.completed_times` and `bingo_cell_subtasks.completed`, spec 05). The same resolution can appear in several cells, each with its own state and progress.
 
 - `pending`
   Default state. Resolution has not been completed.
@@ -69,11 +69,11 @@ Every non-empty, non-joker cell shows its title. On `sm` screens and wider it al
 
 ### Cell Detail Dialog
 
-Outside edit mode, clicking any non-empty, non-joker cell that still references a resolution, on any card, opens a detail dialog with the title, description, state, type and source. It also offers:
+Outside edit mode, clicking any non-empty, non-joker cell, on any card, opens a detail dialog with the cell's own title, description, state, type and source, read from `GET /api/cells/[cellId]` (the snapshot, its subtasks and its progress). It also offers:
 
 | Viewer | Condition | Action |
 | ------ | --------- | ------ |
-| Anyone | Always | **History** (spec 13) |
+| Anyone | Always | **History** of the cell (spec 13) |
 | Card owner | `base`, `pending` or `failed` | **Mark Complete** |
 | Card owner | `pending`, any type | **Mark Failed** |
 | Card owner | `base`, `completed` | **Undo** |
@@ -81,9 +81,9 @@ Outside edit mode, clicking any non-empty, non-joker cell that still references 
 | Non-owner | `completed` | **Request Proof** (spec 07) |
 | Anyone | `pending_review` | **View Thread** (spec 07) |
 
-For `compound` and `iterative` cells the dialog shows the checklist or counter, with controls enabled for the card owner only. On `team` cells the controls are enabled for the team leader only, and the API returns `403` to anyone else.
+For `compound` and `iterative` cells the dialog shows the checklist or counter, with controls enabled for the card owner only, on every source including `team` cells. Everyone else sees them read-only, and the API refuses their changes (spec 21).
 
-The `base` row applies to the resolution's type, so a `base` team goal is completed manually, cell by cell, by each member.
+The `base` row applies to the cell's type, so a `base` team goal is completed manually, cell by cell, by each member.
 
 ---
 
@@ -109,14 +109,28 @@ The `base` row applies to the resolution's type, so a `base` team goal is comple
 
 ---
 
+### Progress on a Cell (compound and iterative)
+
+Progress is stored on the cell and changed only by the card owner, only while the game has not ended (spec 16):
+
+- `PATCH /api/cells/[cellId]/subtasks/[index]/toggle` toggles one subtask of a `compound` cell. An index that is not an existing subtask's position returns `400`.
+- `PATCH /api/cells/[cellId]/progress/increment` adds one to `completed_times` of an `iterative` cell. There is no upper limit, so the counter can exceed the target.
+- `PATCH /api/cells/[cellId]/progress/decrement` subtracts one, with a floor of 0.
+- A route used on a cell of the wrong type returns `400`.
+- Each change logs a history event on the cell (spec 13) and signals the cell's card room (spec 11).
+
+Refusals follow spec 21: `401` when not logged in, and the cell-route status for an unknown cell, a caller who does not own the card, or an ended game.
+
 ### Automatic Completion (compound and iterative)
 
-These types have no manual Mark Complete in the UI, and no manual Undo except from `failed`. After a subtask toggle or counter change (spec 03), every cell referencing the resolution, on any card of a game that has not ended (spec 16), is updated:
+These types have no manual Mark Complete in the UI, and no manual Undo except from `failed`. After a subtask toggle or counter change, only the cell whose progress changed is updated. No other cell is touched, even one copied from the same resolution:
 
-- Resolution complete and cell `pending` or `failed` → `completed`
-- Resolution incomplete and cell `completed` → `pending`
-- Resolution incomplete and cell `failed` is left unchanged
-- Cells in `pending_review` or `accomplished` are left unchanged
+- Progress complete and cell `pending` or `failed` → `completed`
+- Progress incomplete and cell `completed` → `pending`
+- Progress incomplete and cell `failed` is left unchanged
+- A cell in `pending_review` or `accomplished` is left unchanged
+
+Progress is complete when every subtask of the cell is completed (`compound`), or when the cell's `completed_times >= number_of_repetition` (`iterative`).
 
 ---
 
@@ -136,7 +150,7 @@ These types have no manual Mark Complete in the UI, and no manual Undo except fr
 ### Viewing Other Cards
 
 - Team members can view other users' bingo cards on the game page.
-- Team members **cannot** directly set others' cell states. Another member's cell changes only through proof review (spec 07) and through the leader's progress on a typed team goal.
+- Team members **cannot** directly set others' cell states. Another member's cell changes only through proof review (spec 07).
 
 ---
 
@@ -153,6 +167,7 @@ These types have no manual Mark Complete in the UI, and no manual Undo except fr
   - Mark a cell completed
   - Mark a cell failed
   - Undo completion or failure
+  - Change subtask and counter progress on a cell
 - Team members can:
   - View other cards
   - Initiate proof review flows (see spec 07)
@@ -164,6 +179,9 @@ These types have no manual Mark Complete in the UI, and no manual Undo except fr
 - User can mark a `base` resolution completed.
 - User can undo a completed `base` resolution.
 - `compound` and `iterative` cells complete and revert automatically with progress.
+- Progress on a cell does not change any other cell, even one copied from the same resolution.
+- Only the card owner can change progress on a cell, and not after the game has ended.
+- Two players track the same team goal independently, each on their own cell.
 - User can mark a `pending` cell of any type as failed, and undo it back to `pending`.
 - A failed `base` cell can be marked completed, and a failed `compound` or `iterative` cell completes automatically.
 - Empty and joker cells are not checkable and cannot be failed.
