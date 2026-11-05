@@ -16,7 +16,8 @@
       "cards": "Cards",
       "members": "Members",
       "leaderboard": "Leaderboard"
-    }
+    },
+    "unknownLeader": "Unknown"
   },
   "actionsMenu": {
     "moreActions": "More actions",

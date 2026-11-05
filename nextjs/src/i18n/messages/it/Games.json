@@ -16,7 +16,8 @@
       "cards": "Carte",
       "members": "Membri",
       "leaderboard": "Classifica"
-    }
+    },
+    "unknownLeader": "Sconosciuto"
   },
   "actionsMenu": {
     "moreActions": "Altre azioni",

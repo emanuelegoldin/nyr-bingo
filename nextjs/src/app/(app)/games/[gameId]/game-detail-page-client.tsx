@@ -101,7 +101,7 @@ export default function GameDetailPageClient({
             </CardDescription>
             <CardDescription className="flex items-center gap-2 mt-2">
               <Crown className="h-4 w-4 text-amber-500" />
-              {t("leaders", { names: formatLeaderNames(game.members) })}
+              {t("leaders", { names: formatLeaderNames(game.members, t("unknownLeader")) })}
             </CardDescription>
             {game.deadline && (
               <CardDescription className="flex items-center gap-2 mt-2">
