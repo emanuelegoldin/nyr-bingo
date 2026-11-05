@@ -1,1 +1,20 @@
-{}
+{
+  "error": "Errore",
+  "success": "Fatto",
+  "networkError": "Si è verificato un errore",
+  "close": "Chiudi",
+  "cancel": "Annulla",
+  "save": "Salva",
+  "saving": "Salvataggio...",
+  "delete": "Elimina",
+  "deleting": "Eliminazione...",
+  "edit": "Modifica",
+  "add": "Aggiungi",
+  "create": "Crea",
+  "confirm": "Conferma",
+  "back": "Indietro",
+  "loading": "Caricamento...",
+  "unknownUser": "Utente sconosciuto",
+  "toggleSidebar": "Mostra/nascondi barra laterale",
+  "notFound": "Pagina non trovata"
+}

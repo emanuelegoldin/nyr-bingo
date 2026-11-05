@@ -1,3 +1,15 @@
 {
-  "language": "Language"
+  "language": "Language",
+  "dashboard": "Dashboard",
+  "games": "Games",
+  "teams": "Teams",
+  "profile": "Profile",
+  "resolutions": "Resolutions",
+  "archive": "Archive",
+  "login": "Login",
+  "logout": "Logout",
+  "logoutFailed": "Failed to log out",
+  "loggedOutTitle": "Logged out",
+  "loggedOutDescription": "You have been logged out successfully.",
+  "userMenu": "User menu"
 }

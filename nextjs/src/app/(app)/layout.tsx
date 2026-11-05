@@ -2,15 +2,18 @@ import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Sidebar, SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppContextProvider } from "@/hooks/AppContext";
+import { getTranslations } from "next-intl/server";
 
 export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const t = await getTranslations("Nav");
+
   return (
     <SidebarProvider>
-      <AppContextProvider defaultTitle="Dashboard">
+      <AppContextProvider defaultTitle={t("dashboard")}>
         <Sidebar>
           <AppSidebar />
         </Sidebar>

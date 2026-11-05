@@ -1,3 +1,15 @@
 {
-  "language": "Sprache"
+  "language": "Sprache",
+  "dashboard": "Dashboard",
+  "games": "Spiele",
+  "teams": "Teams",
+  "profile": "Profil",
+  "resolutions": "Vorsätze",
+  "archive": "Archiv",
+  "login": "Anmelden",
+  "logout": "Abmelden",
+  "logoutFailed": "Abmelden fehlgeschlagen",
+  "loggedOutTitle": "Abgemeldet",
+  "loggedOutDescription": "Du wurdest erfolgreich abgemeldet.",
+  "userMenu": "Benutzermenü"
 }

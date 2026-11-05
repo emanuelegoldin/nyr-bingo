@@ -1,3 +1,15 @@
 {
-  "language": "Lingua"
+  "language": "Lingua",
+  "dashboard": "Dashboard",
+  "games": "Partite",
+  "teams": "Team",
+  "profile": "Profilo",
+  "resolutions": "Obiettivi",
+  "archive": "Archivio",
+  "login": "Accedi",
+  "logout": "Esci",
+  "logoutFailed": "Impossibile uscire",
+  "loggedOutTitle": "Disconnesso",
+  "loggedOutDescription": "Sei uscito correttamente.",
+  "userMenu": "Menu utente"
 }
