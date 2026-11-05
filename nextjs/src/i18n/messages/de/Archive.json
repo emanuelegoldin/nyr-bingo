@@ -1,1 +1,17 @@
-{}
+{
+  "pageTitle": "Archiv",
+  "heading": "Archivierte Spiele",
+  "loadFailed": "Archivierte Spiele konnten nicht geladen werden",
+  "endedBy": "{teamName} · Beendet am {date}",
+  "viewGame": "Spiel ansehen",
+  "empty": {
+    "title": "Keine archivierten Spiele",
+    "description": "Spiele, an denen du teilnimmst, erscheinen hier, sobald sie beendet sind."
+  },
+  "gamePage": {
+    "deleteFailed": "Das archivierte Spiel konnte nicht gelöscht werden",
+    "deleteTitle": "Dieses archivierte Spiel löschen?",
+    "deleteDescription": "Das Spiel wird für alle Spieler dauerhaft aus dem Archiv gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "cards": "Bingo-Karten"
+  }
+}

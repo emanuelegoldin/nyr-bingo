@@ -10,9 +10,11 @@ import { ArchivedCardView } from "@/components/archive/archived-card";
 import { formatArchiveDate } from "@/components/archive/format-archive-date";
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import { usePageTitle } from "@/hooks/AppContext";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import type { ArchivedGameDetail } from "@/lib/shared/types";
 import { Trash2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -23,7 +25,11 @@ interface ArchivedGamePageClientProps {
 }
 
 export default function ArchivedGamePageClient({ archivedGame, canDelete }: ArchivedGamePageClientProps) {
-  usePageTitle("Archive");
+  const t = useTranslations("Archive");
+  const tc = useTranslations("Common");
+  const locale = useLocale();
+  const toastApiError = useApiErrorToast();
+  usePageTitle(t("pageTitle"));
 
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -35,7 +41,7 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
     setIsDeleting(false);
 
     if (!result.ok) {
-      toastApiError(result, "Failed to delete the archived game");
+      toastApiError(result, t("gamePage.deleteFailed"));
       return;
     }
 
@@ -48,18 +54,18 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
         <div className="min-w-0">
           <h1 className="text-3xl font-bold tracking-tight font-headline">{archivedGame.name}</h1>
           <p className="text-muted-foreground mt-1">
-            {archivedGame.teamName} · Ended {formatArchiveDate(archivedGame.endedAt)}
+            {t("endedBy", { teamName: archivedGame.teamName, date: formatArchiveDate(archivedGame.endedAt, locale) })}
           </p>
         </div>
         {canDelete && (
           <div className="shrink-0">
             <ConfirmActionDialog
-              triggerLabel="Delete"
+              triggerLabel={tc("delete")}
               triggerIcon={Trash2}
               triggerVariant="destructive"
-              title="Delete this archived game?"
-              description="This permanently deletes the game from the archive for every player. This action cannot be undone."
-              confirmLabel="Delete"
+              title={t("gamePage.deleteTitle")}
+              description={t("gamePage.deleteDescription")}
+              confirmLabel={tc("delete")}
               onConfirm={handleDelete}
               isPending={isDeleting}
             />
@@ -70,7 +76,7 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
       <LeaderboardTab initialEntries={archivedGame.leaderboard} />
 
       <div className="space-y-8">
-        <h2 className="text-2xl font-bold font-headline">Bingo Cards</h2>
+        <h2 className="text-2xl font-bold font-headline">{t("gamePage.cards")}</h2>
         {archivedGame.cards.map((card) => (
           <ArchivedCardView key={card.userId} card={card} />
         ))}

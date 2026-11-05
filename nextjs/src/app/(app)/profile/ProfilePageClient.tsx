@@ -17,9 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useToast } from '@/hooks/use-toast';
-import { apiFetch, toastApiError } from '@/lib/api-client';
+import { useApiErrorToast } from '@/hooks/use-api-error-toast';
+import { apiFetch } from '@/lib/api-client';
 import type { UserProfile } from '@/lib/db/types';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface UserViewModel {
@@ -38,7 +40,10 @@ export default function ProfilePageClient({
   initialUser,
   initialProfile,
 }: ProfilePageClientProps) {
-  usePageTitle("Settings");
+  const t = useTranslations("Profile");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
+  usePageTitle(t("pageTitle"));
 
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -62,11 +67,11 @@ export default function ProfilePageClient({
 
     if (result.ok) {
       toast({
-        title: "Success",
-        description: "Profile updated successfully",
+        title: tc("success"),
+        description: t("toasts.updated"),
       });
     } else {
-      toastApiError(result, "Failed to update profile");
+      toastApiError(result, t("toasts.updateFailed"));
     }
     setIsSaving(false);
   };
@@ -79,11 +84,11 @@ export default function ProfilePageClient({
 
     if (result.ok) {
       toast({
-        title: "Success",
-        description: result.data.message || "Verification email sent successfully",
+        title: tc("success"),
+        description: result.data.message || t("toasts.verificationSent"),
       });
     } else {
-      toastApiError(result, "Failed to resend verification email");
+      toastApiError(result, t("toasts.resendFailed"));
     }
     setIsResendingVerification(false);
   };
@@ -92,14 +97,14 @@ export default function ProfilePageClient({
     <div className="space-y-6">
       <Tabs defaultValue="profile">
         <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="password">Password</TabsTrigger>
+          <TabsTrigger value="profile">{t("tabs.profile")}</TabsTrigger>
+          <TabsTrigger value="password">{t("tabs.password")}</TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline">Profile Information</CardTitle>
-              <CardDescription>Update your personal details here.</CardDescription>
+              <CardTitle className="font-headline">{t("info.title")}</CardTitle>
+              <CardDescription>{t("info.description")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
@@ -112,11 +117,11 @@ export default function ProfilePageClient({
                   <p className="font-medium">{initialUser.username}</p>
                   <p className="text-sm text-muted-foreground">{initialUser.email}</p>
                   {initialUser.emailVerified ? (
-                    <p className="text-sm text-green-600 font-medium mt-1">Verified</p>
+                    <p className="text-sm text-green-600 font-medium mt-1">{t("info.verified")}</p>
                   ) : (
                     <div className="mt-1">
-                      <p className="text-sm text-amber-600 font-medium">Not verified</p>
-                      <p className="text-xs text-muted-foreground">You need to verify your email to create or join teams.</p>
+                      <p className="text-sm text-amber-600 font-medium">{t("info.notVerified")}</p>
+                      <p className="text-xs text-muted-foreground">{t("info.verifyNeeded")}</p>
                       <Button
                         variant="link"
                         size="sm"
@@ -127,10 +132,10 @@ export default function ProfilePageClient({
                         {isResendingVerification ? (
                           <>
                             <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            Sending...
+                            {t("info.sending")}
                           </>
                         ) : (
-                          'Resend Verification Email'
+                          t("info.resend")
                         )}
                       </Button>
                     </div>
@@ -139,12 +144,12 @@ export default function ProfilePageClient({
               </div>
               <Separator />
               <div className="space-y-2">
-                <Label htmlFor="displayName">Display Name</Label>
+                <Label htmlFor="displayName">{t("info.displayName")}</Label>
                 <Input
                   id="displayName"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Your display name"
+                  placeholder={t("info.displayNamePlaceholder")}
                 />
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -153,17 +158,17 @@ export default function ProfilePageClient({
                     onCheckedChange={setDisplayNamePublic}
                   />
                   <Label htmlFor="displayNamePublic" className="text-sm text-muted-foreground">
-                    Make display name public
+                    {t("info.displayNamePublic")}
                   </Label>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
+                <Label htmlFor="bio">{t("info.bio")}</Label>
                 <Textarea
                   id="bio"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell others about yourself..."
+                  placeholder={t("info.bioPlaceholder")}
                   rows={3}
                 />
                 <div className="flex items-center space-x-2">
@@ -173,7 +178,7 @@ export default function ProfilePageClient({
                     onCheckedChange={setBioPublic}
                   />
                   <Label htmlFor="bioPublic" className="text-sm text-muted-foreground">
-                    Make bio public
+                    {t("info.bioPublic")}
                   </Label>
                 </div>
               </div>
@@ -181,7 +186,7 @@ export default function ProfilePageClient({
             <CardFooter>
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
+                {t("info.save")}
               </Button>
             </CardFooter>
           </Card>
@@ -194,25 +199,25 @@ export default function ProfilePageClient({
         <TabsContent value="password" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline">Change Password</CardTitle>
-              <CardDescription>Update your password here. It's a good idea to use a strong, unique password.</CardDescription>
+              <CardTitle className="font-headline">{t("password.title")}</CardTitle>
+              <CardDescription>{t("password.description")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
+                <Label htmlFor="current-password">{t("password.current")}</Label>
                 <Input id="current-password" type="password" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
+                <Label htmlFor="new-password">{t("password.new")}</Label>
                 <Input id="new-password" type="password" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Label htmlFor="confirm-password">{t("password.confirm")}</Label>
                 <Input id="confirm-password" type="password" />
               </div>
             </CardContent>
             <CardFooter>
-              <Button>Update Password</Button>
+              <Button>{t("password.update")}</Button>
             </CardFooter>
           </Card>
         </TabsContent>

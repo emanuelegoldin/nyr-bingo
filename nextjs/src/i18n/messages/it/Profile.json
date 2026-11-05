@@ -1,1 +1,42 @@
-{}
+{
+  "pageTitle": "Impostazioni",
+  "tabs": {
+    "profile": "Profilo",
+    "password": "Password"
+  },
+  "info": {
+    "title": "Informazioni del profilo",
+    "description": "Aggiorna qui i tuoi dati personali.",
+    "verified": "Verificata",
+    "notVerified": "Non verificata",
+    "verifyNeeded": "Devi verificare la tua email per creare o unirti a dei team.",
+    "resend": "Invia di nuovo l'email di verifica",
+    "sending": "Invio in corso...",
+    "displayName": "Nome visualizzato",
+    "displayNamePlaceholder": "Il tuo nome visualizzato",
+    "displayNamePublic": "Rendi pubblico il nome visualizzato",
+    "bio": "Bio",
+    "bioPlaceholder": "Racconta qualcosa di te agli altri...",
+    "bioPublic": "Rendi pubblica la bio",
+    "save": "Salva modifiche"
+  },
+  "toasts": {
+    "updated": "Profilo aggiornato con successo",
+    "updateFailed": "Impossibile aggiornare il profilo",
+    "verificationSent": "Email di verifica inviata con successo",
+    "resendFailed": "Impossibile inviare di nuovo l'email di verifica"
+  },
+  "password": {
+    "title": "Cambia password",
+    "description": "Aggiorna qui la tua password. È una buona idea usare una password forte e unica.",
+    "current": "Password attuale",
+    "new": "Nuova password",
+    "confirm": "Conferma nuova password",
+    "update": "Aggiorna password"
+  },
+  "publicPage": {
+    "pageTitle": "Profilo",
+    "title": "Profilo",
+    "bio": "Bio"
+  }
+}
