@@ -191,15 +191,15 @@ export async function endGame(gameId: string): Promise<boolean> {
 }
 
 /**
- * Set or clear the deadline of a game. Only a forming game can be configured.
+ * Set or clear the deadline of a game. Only a running (forming or started) game can be configured.
  * Spec: 16-games.md - Game Configuration
  * @param gameId The game
  * @param deadline The last playable day as YYYY-MM-DD, or null for no deadline
- * @returns False if the game was not in forming status
+ * @returns False if the game was not running
  */
 export async function setGameDeadline(gameId: string, deadline: string | null): Promise<boolean> {
   const result = await execute(
-    `UPDATE games SET deadline = ? WHERE id = ? AND status = 'forming'`,
+    `UPDATE games SET deadline = ? WHERE id = ? AND status IN ('forming', 'started')`,
     [deadline, gameId]
   );
   return result.affectedRows > 0;

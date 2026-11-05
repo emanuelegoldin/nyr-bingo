@@ -19,7 +19,7 @@ interface GameConfigDialogProps {
 }
 
 /**
- * Configure dialog, where the leader sets or removes the game's deadline before starting it.
+ * Configure dialog, where the leader sets, changes or removes the deadline of a running game.
  * The caller opens it, from the game's More actions menu.
  * Spec Reference: 16-games.md - Game Configuration, Game Page
  *
@@ -68,7 +68,7 @@ export function GameConfigDialog({ gameId, deadline, open, onOpenChange, onSaved
           <DialogTitle className="font-headline">Configure Game</DialogTitle>
           <DialogDescription>
             The game ends automatically after its last day. Without a date, it ends only when you
-            end it. You cannot change this after the game starts.
+            end it.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2 py-4">

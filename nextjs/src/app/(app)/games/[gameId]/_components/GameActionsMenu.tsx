@@ -65,7 +65,7 @@ export function GameActionsMenu({
   };
 
   const canSetGoal = can('game.goal.set');
-  const canConfigure = can('game.configure') && game.status === 'forming';
+  const canConfigure = can('game.configure') && game.status !== 'ended';
   const canEnd = can('game.end') && game.status === 'started';
   const canDelete = can('game.delete');
 
