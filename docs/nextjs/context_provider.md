@@ -5,8 +5,7 @@ Set the context value and provide it
 
 ```ts
 const [title, setTitle] = useState(defaultTitle);
-const [language, setLanguage] = useState<Locale>("en");
-const value = useMemo(() => ({ title, setTitle, language, setLanguage }), [title, language]);   // Avoid re-rendering too many times with new context created every time
+const value = useMemo(() => ({ title, setTitle }), [title]);   // Avoid re-rendering too many times with new context created every time
 return (
     <AppContext.Provider value={value}> // set the value
       {children}
@@ -33,13 +32,11 @@ export function useAppContext() {
 ```ts
 // For compoents defined under the context provider
 async function DashboardCardError({ gameName }: { gameName: string }) {
-  const { language } = useAppContext();
+  const { title } = useAppContext();
   // ...
 }
 ```
 
 ## Server component
 
-Server components can not use the client hooks (e.g., useContext)
-
-Hotfix: use cookie as bridge; set the cookie "locale" through the context and retrieve it on the server side through cookiesS
+Server components can not use the client hooks (e.g., useContext). For the language, use next-intl instead (see `i18n_app_routing.md`).

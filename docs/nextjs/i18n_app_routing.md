@@ -1,84 +1,71 @@
-# i18n App Routing
+# Internationalization
 
-Starting from Next.Js 15, page params are promises
+The app uses [next-intl](https://next-intl.dev) without locale routing: the locale lives in the
+`locale` cookie, not in the URL (spec 15). Supported locales are `en` (default), `de` and `it`.
 
-```ts
-export default async function Page(props: {
-  params: Promise<{ lang: Locale }>;
-}) {
-    const { lang } = await props.params;
-    // ...
+## Layout
+
+```
+src/i18n/
+  config.ts          locales, default locale, cookie name, locale names
+  request.ts         next-intl request config: reads the cookie and loads the messages
+  next-intl.d.ts     types message keys and the locale from the English messages
+  use-set-locale.ts  client hook that writes the cookie and refreshes the page
+  messages/
+    index.ts         assembles the namespaces and checks every locale has the same keys
+    en/<Namespace>.json
+    de/<Namespace>.json
+    it/<Namespace>.json
+```
+
+The language switcher is `src/components/locale-switcher.tsx`.
+
+## Using translations
+
+Client component:
+
+```tsx
+'use client';
+import { useTranslations } from 'next-intl';
+
+export function InviteButton({ teamName }: { teamName: string }) {
+  const t = useTranslations('Teams');
+  return <Button>{t('inviteDialog.open', { teamName })}</Button>;
 }
 ```
 
-## Implicitly has any type
+Server component:
 
-string can't be used to index dictionaries; that's why we need to coelasce it to a keyof with the following in accessing the proper locale:
+```tsx
+import { getTranslations } from 'next-intl/server';
 
-```ts
-type Locale = keyof typeof dicitonaries;
-
-export function isLocale(locale: string): locale is Locale {
-  return Object.keys(dicitonaries).includes(locale);
+export default async function Page() {
+  const t = await getTranslations('Dashboard');
+  return <h1>{t('title')}</h1>;
 }
 ```
 
-## Use Server != Server Only
+- Placeholders and plurals use ICU syntax: `"members": "{count, plural, one {# member} other {# members}}"`.
+- Bold or linked parts inside a sentence: `t.rich('key', { b: (chunks) => <strong>{chunks}</strong> })`.
+- Dates: `useFormatter().dateTime(date, options)` so they follow the active locale.
+- API failures: `useApiErrorToast()` from `src/hooks/use-api-error-toast.ts` shows the server's
+  message with a translated title and fallback.
+- Shared words live in `Common`; resolution types, cell states and cell sources in `Labels`.
+- Constants keep keys, not text, and are translated when rendering.
 
-'use-server' --> exported funciton shall ba async!
+## Adding a string
 
-## Pass Translations to Client Component
+1. Add the key to `messages/en/<Namespace>.json`.
+2. Add the same key to `de` and `it`. German uses "du", Italian uses "tu".
+3. Run the type check. It fails on an unknown key or when a locale's keys differ from `en`:
 
-We split most of the pages into a server-side component and a client-side component. In most cases we have a "shell" as a wrapper and then the concrete TSX component defined in a separate file.
+   ```
+   tsc --noEmit
+   ```
 
-In the `page.tsx` (**Server Component**) we can get the dicitonary based on the locale we set in the cookies.
+   `next build` ignores type errors (`ignoreBuildErrors`), so run the type check yourself.
 
-From the dicitonary we can extract the needed string and pass them down to the client components that need it.
+## Adding a namespace
 
-### Example - Dashboard Card
-
-Users can change the language throuhgh a dropdown in the sidebar.
-
-In the Dashboard Page (`app/(app)/dashboard/page.tsx`) we get the dicitonary based on the locale set by the user and pass relevant strings as porps to the client component:
-
-```ts
-async function DashboardTeamCardStream({/*...*/}) {
-  const t = (await getDictionary()).Dashboard;  // Get dictionary here
-  
-  {/*...*/}
-    
-    return (
-      <DashboardTeamCardClient
-        team={team}
-        currentUserId={currentUserId}
-        initialCard={card}
-        // Pass translation strings to client components
-        dashboardText={{
-          cardTitle: t.cardTitle,
-          headerDescription: t.headerDescription,
-        }}
-      />
-    );
-  {/*...*/}
-}
-```
-
-in DashboardTeamCardClient (`src/components/dashboard/dashboard-team-card-client.tsx`) we can then use the localized text
-
-```ts
-"use client";   // Client Component
-
-{/*...*/}
-
-export default function DashboardTeamCardClient({
-  ...,
-  dashboardText,  // get text through props from server component
-}: DashboardTeamCardClientProps) {
-  {/*...*/}
-}
-```
-
-## Resources
-
-- [GitHub | Internationalized Routing](https://github.com/vercel/next.js/tree/canary/examples/i18n-routing) (last accessed 21.07.2026)
-- [From Midde´leware to Proxy](https://nextjs.org/docs/messages/middleware-to-proxy) (last accessed 21.07.2026)
+Create `<Namespace>.json` in each locale folder, then import it and add it to the three locale
+objects in `messages/index.ts`.
