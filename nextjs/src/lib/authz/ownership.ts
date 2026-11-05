@@ -3,11 +3,9 @@
  * Spec Reference: 21-authorization.md - Resource Rules (Ownership)
  */
 
-import { isOnCardOfGamePlayedBy } from '@/lib/db/resolution-history-repository';
-import { getResolutionById } from '@/lib/db/resolution-repository';
-import { ResolutionScope } from '@/lib/shared/types';
-import type { Resolution, ResolutionHistoryAccess, ReviewThread } from '@/lib/db/types';
-import { getGameRole, getTeamRole } from './roles';
+import { getCellDetail } from '@/lib/db/cell-progress-repository';
+import type { CellAccess, Resolution, ReviewThread } from '@/lib/db/types';
+import { getGameRole } from './roles';
 
 /**
  * Whether a user owns a resolution, and so may edit or delete it.
@@ -16,22 +14,6 @@ import { getGameRole, getTeamRole } from './roles';
  * @returns True if the user is its owner
  */
 export function isResolutionOwner(resolution: Pick<Resolution, 'ownerUserId'>, userId: string): boolean {
-  return resolution.ownerUserId === userId;
-}
-
-/**
- * Whether a user may change a resolution's progress.
- * Personal resolutions belong to their owner and member-provided ones to their recipient.
- * A team goal belongs to the leader who owns it.
- * @param resolution The resolution to change
- * @param userId The user making the change
- * @returns True if the change is allowed
- */
-export function canModifyProgress(
-  resolution: Pick<Resolution, 'scope' | 'ownerUserId' | 'toUserId'>,
-  userId: string
-): boolean {
-  if (resolution.scope === 'member_provided') return resolution.toUserId === userId;
   return resolution.ownerUserId === userId;
 }
 
@@ -57,68 +39,24 @@ export function isThreadCompleter(thread: Pick<ReviewThread, 'completedByUserId'
 
 
 /**
- * Whether a user may read a resolution's history.
- * Spec: 13-resolution-history-and-progress.md - History Visibility
- * @param resolution The resolution
- * @param userId The user
- * @returns True for its owner, the players of its game (team members without a game),
- *   and, for a personal resolution, players of a game whose cards hold it
- */
-async function canViewResolutionHistory(resolution: Resolution, userId: string): Promise<boolean> {
-  if (resolution.ownerUserId === userId) {
-    return true;
-  }
-
-  if (
-    resolution.scope === ResolutionScope.TEAM ||
-    resolution.scope === ResolutionScope.MEMBER_PROVIDED ||
-    resolution.scope === ResolutionScope.PREPARED
-  ) {
-    // Spec: 13 - a game's resolutions are visible to its players
-    if (resolution.gameId) return (await getGameRole(resolution.gameId, userId)) !== null;
-    if (!resolution.teamId) return false;
-    return (await getTeamRole(resolution.teamId, userId)) !== null;
-  }
-
-  if (resolution.scope === ResolutionScope.PERSONAL) {
-    return isOnCardOfGamePlayedBy(resolution.id, userId);
-  }
-
-  return false;
-}
-
-/**
- * Load a resolution with the user's read and write access to its history.
+ * Load a cell with the user's access to it: viewing the cell and its history, and writing notes.
  * Spec: 13-resolution-history-and-progress.md - Manual Entry Creation, History Visibility
- * @param resolutionId The resolution
+ * @param cellId The cell
  * @param userId The user
- * @returns The resolution (null when it does not exist) and whether the user may view and write its history
+ * @returns The cell (null when it does not exist); the players of its game may view its history,
+ *   and only the card owner may write to it
  */
-export async function getResolutionHistoryAccess(
-  resolutionId: string,
+export async function getCellAccess(
+  cellId: string,
   userId: string,
-): Promise<ResolutionHistoryAccess> {
-  const resolution = await getResolutionById(resolutionId);
-  if (!resolution) {
-    return {
-      resolution: null,
-      canView: false,
-      canWrite: false,
-    };
+): Promise<CellAccess> {
+  const cell = await getCellDetail(cellId);
+  if (!cell) {
+    return { cell: null, canView: false, canWrite: false };
   }
 
-  // TODO: for team goals, we need a way to tell from which card the resolution is coming from in order to verify if the
-  // user is the owner of the card. If they are, then they can edit the resolution history.
+  const canWrite = isCardOwner(cell.cardUserId, userId);
+  const canView = canWrite || (await getGameRole(cell.gameId, userId)) !== null;
 
-  const canWrite =
-    (resolution.scope === ResolutionScope.PERSONAL || resolution.scope === ResolutionScope.PREPARED)
-      && resolution.ownerUserId === userId || // Owner of the resolution
-    resolution.scope === ResolutionScope.MEMBER_PROVIDED && resolution.toUserId === userId;  // Target user of a member-provided resolution
-  const canView = await canViewResolutionHistory(resolution, userId);
-
-  return {
-    resolution,
-    canView,
-    canWrite,
-  };
+  return { cell, canView, canWrite };
 }

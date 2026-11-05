@@ -1,14 +1,37 @@
 /**
  * Bingo Cell API
- * Spec Reference: 06-bingo-gameplay.md - Card State
+ * Spec Reference: 06-bingo-gameplay.md - Card State, Cell Detail Dialog
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { getCellAccess } from '@/lib/authz';
 import { announceCellChanges } from '@/lib/notifications';
 import { notifyCell } from '@/lib/team-signals';
 import { updateCellState } from '@/lib/db';
 import { requireCardOwner } from '../card-owner';
 import type { CellState } from '@/lib/db/types';
 import { errorResponse, withAuth, AuthContext } from '../../utils';
+
+/**
+ * GET /api/cells/[cellId] - The cell with its copy of the resolution and its progress
+ * Spec: 06-bingo-gameplay.md - Cell Detail Dialog. Visible to whoever can view the card.
+ * Like every cell route, refusals are 400 (spec 21 - Status Rules).
+ */
+export const GET = withAuth(async (
+  _request: NextRequest,
+  { params, currentUser }: AuthContext<{ cellId: string }>
+) => {
+  const { cellId } = await params;
+
+  const access = await getCellAccess(cellId, currentUser.id);
+  if (!access.cell) {
+    return errorResponse('Cell not found', 400);
+  }
+  if (!access.canView) {
+    return errorResponse('You are not allowed to view this cell', 400);
+  }
+
+  return NextResponse.json({ cell: access.cell });
+});
 
 /**
  * PUT /api/cells/[cellId] - Update cell state

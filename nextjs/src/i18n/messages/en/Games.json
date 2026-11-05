@@ -63,7 +63,7 @@
     "setGoal": "Set Goal",
     "label": "Team Goal:",
     "edit": "Edit team goal",
-    "subtasks": "{done} / {total} subtasks",
+    "subtasks": "{count, plural, one {# subtask} other {# subtasks}}",
     "target": "Target: {count, plural, one {# repetition} other {# repetitions}}"
   },
   "cardsTab": {

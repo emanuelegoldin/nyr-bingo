@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define in one place who may do what. Specs 04, 07, 13, 16 and 18 describe the features; this spec lists the roles, the permissions each role holds and the HTTP status of every refusal. All routes and pages ask one authorization module (`src/lib/authz/`), and repositories only read and write data.
+Define in one place who may do what. Specs 04, 06, 07, 13, 16 and 18 describe the features; this spec lists the roles, the permissions each role holds and the HTTP status of every refusal. All routes and pages ask one authorization module (`src/lib/authz/`), and repositories only read and write data.
 
 This spec does not change any rule of the other specs. Where they describe a permission, the rule here is the same one.
 
@@ -91,8 +91,8 @@ Lists of the caller's own teams, games, archived games, resolutions and notifica
 Some actions depend on who owns a record, not on a role. They apply on top of the permission table.
 
 - **Resolution edit or delete:** only its owner. A game-scoped resolution can only be edited or deleted while its owner is still a player of the game.
-- **Resolution progress** (compound subtasks, iterative counter): the owner, or the recipient for a `member_provided` resolution. A team goal's progress belongs to the leader who owns it.
-- **Resolution history:** read and write access as defined in spec 13 (History Visibility, Manual Entry Creation).
+- **Cell progress** (compound subtask toggle, iterative increment and decrement, spec 06): only the owner of the card, and only while the game has not ended. This holds for every source, including `team` cells.
+- **Cell history:** read and write access as defined in spec 13 (History Visibility, Manual Entry Creation).
 - **Cell complete, undo or edit:** only the owner of the card.
 - **Card shuffle or lock:** only the owner of the card. The routes act on the caller's own card (spec 22).
 - **Thread close, proof upload and proof delete:** only the completing user.
@@ -116,7 +116,7 @@ The HTTP status of a refusal:
 - When several checks fail, the first in this order wins: logged in, verified, resource exists, role, resource rule.
 - Team routes that look the team up first, and return `404` for a missing team: delete (`DELETE /api/teams/[teamId]`), promote (`/leaders`) and leave (`/leave`). The other team routes (read, invite, game list and game creation) return `403` for a missing team, as for a non-member.
 - Pages call not-found instead of returning `403`: a user without the permission sees the same page as for a missing resource.
-- Cell routes (`/api/cells/[cellId]` and its sub-routes) return `400` for every refusal, including a missing cell and a user who does not own the card.
+- Cell routes (`/api/cells/[cellId]` and its sub-routes, including progress, except history, which follows spec 13) return `400` for every refusal, including a missing cell and a user who does not own the card. A user who is not logged in still gets `401`.
 - Thread routes return `404` for a missing thread, cell or file, `403` for a refused permission or resource rule and `400` for any other refusal. The role and the resource rule are checked before the thread's state, so a non-player or a user other than the completing user gets `403` on a closed thread too.
 
 ---
@@ -146,7 +146,7 @@ These rules are not permissions and stay with the data they protect:
 - Verified-only permissions are refused to unverified users with `403`.
 - A missing team, game or archived game, and an ended game, give `404`.
 - Pages show not-found where the API would refuse.
-- The resource rules hold: a recipient can progress a member-provided resolution and its author cannot; only the card owner completes a cell; only the completing user closes a thread.
+- The resource rules hold: only the card owner changes progress on a cell, so neither the author of a member-provided resolution nor the team leader can; only the card owner completes a cell; only the completing user closes a thread.
 - Team and game pages show leader actions only to callers who hold the matching permission.
 - No route or page decides a role-based permission without the authorization module.
 
@@ -162,5 +162,5 @@ These rules are not permissions and stay with the data they protect:
 
 ## Known Gaps
 
-- Real-time card rooms are joined by **team** membership (spec 11), not by game role, so team members who do not play a game can receive its refresh signals (never its data). Thread and resolution rooms use the rules above.
+- Real-time card rooms are joined by **team** membership (spec 11), not by game role, so team members who do not play a game can receive its refresh signals (never its data). Thread rooms use the rules above.
 - Cell routes report refusals as `400` instead of `403` or `404`.

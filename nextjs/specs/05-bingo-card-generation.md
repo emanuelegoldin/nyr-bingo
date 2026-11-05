@@ -8,6 +8,7 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 - Joker in the middle (fixed center cell)
 - Other cells chosen from other team members' provided resolutions
 - A member who proposed nothing is replaced by an easy prepared resolution
+- Each cell holds its own copy of the resolution, so progress is tracked per cell
 - Missing resolutions filled randomly from the user's own resolution list
 - If not enough resolutions, fill with difficult prepared resolutions at game start
 - If still not enough, fill with "empty" non-checkable cells
@@ -24,11 +25,14 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 - The prepared resolutions pool (spec 17), used as fallback at game start
 
 ## Data Model Notes
-- When generated, every non-empty cell references a row of the `resolutions` table through `bingo_cells.resolution_id`, whatever its source. `bingo_cells.resolution_type` holds that resolution's type. The reference is lost if the resolution is later deleted (spec 03).
-- Storing references (instead of duplicating text) ensures that when a resolution is edited, all cards displaying it reflect the update.
+- When generated, every non-empty cell stores a snapshot (a copy) of the resolution's definition: `bingo_cells.title`, `description`, `resolution_type` and `number_of_repetition`, plus its subtasks in `bingo_cell_subtasks` (`cell_id`, `subtask_index`, `title`, `description`, `completed`).
+- The cell also holds the progress: `bingo_cells.completed_times` (the iterative counter, starting at 0) and each subtask's `completed` flag (starting false). Cell `state` is unchanged by this and starts as `pending`.
+- `bingo_cells.resolution_id` stays as a nullable link to the source resolution (ON DELETE SET NULL). It is used only to avoid duplicates during generation and card editing, never to read content. It is `NULL` for `prepared` and `empty` cells.
+- Snapshot, no propagation: editing or deleting a resolution after the card was generated does not change the cell (spec 03). A cell changes content only through card editing (spec 09).
+- Two cells generated from the same resolution, on the same or on different cards, have independent progress.
 - `source_user_id` holds the author of a `member_provided` cell and the card owner for a `personal` cell. It is `NULL` for `team`, `prepared` and `empty` cells.
-- A `prepared` cell references a copy of a pool entry, in the `resolutions` table with `scope = prepared` (spec 03). Each cell gets its own copy, because progress is stored on the resolution. The copy has the entry's type, title, description and type-specific data, and is not a personal resolution of the card owner.
-- `is_empty` is a generated column: true when `resolution_id` is `NULL` and `source_type = 'empty'`.
+- A `prepared` cell is snapshotted directly from its entry in the `prepared_resolutions` pool (spec 17). No row is created in `resolutions`, and `resolution_id` is `NULL`.
+- `is_empty` is a generated column: true when `source_type = 'empty'`.
 - The Joker is always position 12 and is not stored in the database. It is added to the card when the card is read, with id `joker:<cardId>`.
 - The Joker's displayed text is a fixed "Joker" label; it does not display team goal text.
 
@@ -66,6 +70,9 @@ Steps 3 and 6 apply only at game start. A card generated at join time uses no pr
 - At game start, a card gets one `short` prepared resolution for each other member who proposed nothing for its owner.
 - At game start, cells that would be empty get `long` prepared resolutions, then `medium` ones.
 - A card generated at join time contains no prepared resolutions.
-- Two cards using the same pool entry have independent progress.
+- Each non-empty cell stores a snapshot of the definition, with progress at zero and every subtask uncompleted.
+- Two cells copied from the same resolution or pool entry have independent progress.
+- Editing or deleting a resolution after generation does not change the generated cards.
+- Prepared cells create no `resolutions` rows.
 - A generated card contains no duplicate resolution text.
 - If insufficient content, "empty" non-checkable cells are used.

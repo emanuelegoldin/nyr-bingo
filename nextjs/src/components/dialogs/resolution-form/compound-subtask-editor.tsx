@@ -26,7 +26,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
   const handleAdd = () => {
     const trimmed = newTitle.trim();
     if (!trimmed) return;
-    onChange([...subtasks, { title: trimmed, description: "", completed: false }]);
+    onChange([...subtasks, { title: trimmed, description: "" }]);
     setNewTitle("");
   };
 

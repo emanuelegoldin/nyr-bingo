@@ -19,7 +19,7 @@ Let users view other users' bingo cards in the same competition context, and def
 
 ### Updates
 - When a user changes a cell, that user's own card reloads from the API.
-- The game page and dashboard update without a reload when the server signals a team change: cards, leaderboard, members, game status and goal (spec 11). Open review threads (spec 07) and resolution dialogs (specs 11 and 13) update the same way.
+- The game page and dashboard update without a reload when the server signals a team change: cards, leaderboard, members, game status and goal (spec 11). Open review threads (spec 07) and cell dialogs (specs 11 and 13) update the same way.
 - `/resolutions` and profile pages have no WebSocket and update on load.
 
 ## Permissions

@@ -1,17 +1,17 @@
 /**
- * Resolution History API
+ * Cell History API
  * Spec Reference: 13-resolution-history-and-progress.md
  *
- * GET  /api/resolutions/[id]/history  - list history entries
- * POST /api/resolutions/[id]/history  - add manual history entry (owner only)
+ * GET  /api/cells/[cellId]/history  - list history entries
+ * POST /api/cells/[cellId]/history  - add manual history entry (card owner only)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getResolutionHistoryAccess } from '@/lib/authz';
-import { notifyRooms } from '@/lib/ws-notify';
+import { getCellAccess } from '@/lib/authz';
+import { notifyCell } from '@/lib/team-signals';
 import {
-  createManualResolutionHistoryEntry,
-  getResolutionHistoryEntries,
+  createManualCellHistoryEntry,
+  getCellHistoryEntries,
 } from '@/lib/db';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 
@@ -41,20 +41,20 @@ function parsePaginationParam(
 }
 
 /**
- * GET /api/resolutions/[id]/history
+ * GET /api/cells/[cellId]/history
  */
 export const GET = withAuth(async (
   request: NextRequest,
-  { params, currentUser }: AuthContext<{ id: string }>,
+  { params, currentUser }: AuthContext<{ cellId: string }>,
 ) => {
-  const { id } = await params;
+  const { cellId } = await params;
 
-  const access = await getResolutionHistoryAccess(id, currentUser.id);
-  if (!access.resolution) {
-    return errorResponse('Resolution not found', 404);
+  const access = await getCellAccess(cellId, currentUser.id);
+  if (!access.cell) {
+    return errorResponse('Cell not found', 404);
   }
   if (!access.canView) {
-    return errorResponse('You are not allowed to view this resolution history', 403);
+    return errorResponse('You are not allowed to view this cell history', 403);
   }
 
   const limit = parsePaginationParam(request.nextUrl.searchParams.get('limit'), 'limit');
@@ -67,7 +67,7 @@ export const GET = withAuth(async (
     return errorResponse('offset must be an integer greater than or equal to 0', 400);
   }
 
-  const entries = await getResolutionHistoryEntries(id, limit, offset);
+  const entries = await getCellHistoryEntries(cellId, limit, offset);
 
   return NextResponse.json({
     entries,
@@ -76,20 +76,20 @@ export const GET = withAuth(async (
 });
 
 /**
- * POST /api/resolutions/[id]/history
+ * POST /api/cells/[cellId]/history
  */
 export const POST = withAuth(async (
   request: NextRequest,
-  { params, currentUser }: AuthContext<{ id: string }>,
+  { params, currentUser }: AuthContext<{ cellId: string }>,
 ) => {
-  const { id } = await params;
+  const { cellId } = await params;
 
-  const access = await getResolutionHistoryAccess(id, currentUser.id);
-  if (!access.resolution) {
-    return errorResponse('Resolution not found', 404);
+  const access = await getCellAccess(cellId, currentUser.id);
+  if (!access.cell) {
+    return errorResponse('Cell not found', 404);
   }
   if (!access.canWrite) {
-    return errorResponse('Only the resolution owner can add history entries', 403);
+    return errorResponse('Only the card owner can add history entries', 403);
   }
 
   const body = await request.json().catch(() => null);
@@ -99,7 +99,7 @@ export const POST = withAuth(async (
     return errorResponse('History content is required', 400);
   }
 
-  const entry = await createManualResolutionHistoryEntry(id, currentUser.id, content);
-  await notifyRooms([{ type: 'resolution', id }]);
+  const entry = await createManualCellHistoryEntry(cellId, currentUser.id, content);
+  await notifyCell(cellId);
   return NextResponse.json({ entry }, { status: 201 });
 });

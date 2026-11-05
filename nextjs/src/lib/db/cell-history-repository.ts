@@ -1,8 +1,9 @@
 /**
- * Resolution History Repository
+ * Cell History Repository
+ * Spec Reference: 13-resolution-history-and-progress.md
  *
- * Stores and retrieves resolution history entries (manual notes + system events)
- * and centralizes visibility/write authorization checks.
+ * Stores and retrieves the history of a bingo cell: manual notes by the card owner and
+ * system events for progress changes.
  */
 
 import type { RowDataPacket } from 'mysql2/promise';
@@ -13,9 +14,9 @@ import type {
   ResolutionHistoryEntryType,
 } from './types';
 
-interface ResolutionHistoryEntryRow extends RowDataPacket {
+interface CellHistoryEntryRow extends RowDataPacket {
   id: string;
-  resolution_id: string;
+  cell_id: string;
   author_user_id: string;
   author_username: string;
   entry_type: ResolutionHistoryEntryType;
@@ -25,6 +26,26 @@ interface ResolutionHistoryEntryRow extends RowDataPacket {
   created_at: Date;
 }
 
+const SELECT_ENTRY = `
+  SELECT
+    che.id,
+    che.cell_id,
+    che.author_user_id,
+    u.username AS author_username,
+    che.entry_type,
+    che.event_key,
+    che.content,
+    che.metadata_json,
+    che.created_at
+  FROM cell_history_entries che
+  JOIN users u ON u.id = che.author_user_id
+`;
+
+/**
+ * Read a metadata column, which the driver may return as JSON text.
+ * @param metadata The column value
+ * @returns The metadata object, or null when absent or unreadable
+ */
 function parseMetadata(metadata: string | Record<string, unknown> | null): Record<string, unknown> | null {
   if (!metadata) return null;
   if (typeof metadata === 'string') {
@@ -37,10 +58,15 @@ function parseMetadata(metadata: string | Record<string, unknown> | null): Recor
   return metadata;
 }
 
-function rowToResolutionHistoryEntry(row: ResolutionHistoryEntryRow): ResolutionHistoryEntry {
+/**
+ * Convert a database row into a history entry.
+ * @param row The row
+ * @returns The entry
+ */
+function rowToHistoryEntry(row: CellHistoryEntryRow): ResolutionHistoryEntry {
   return {
     id: row.id,
-    resolutionId: row.resolution_id,
+    cellId: row.cell_id,
     authorUserId: row.author_user_id,
     authorUsername: row.author_username,
     entryType: row.entry_type,
@@ -51,6 +77,12 @@ function rowToResolutionHistoryEntry(row: ResolutionHistoryEntryRow): Resolution
   };
 }
 
+/**
+ * Truncate a number to an integer, or use a fallback when it is not finite.
+ * @param value The number
+ * @param fallback The value to use instead of NaN or infinity
+ * @returns An integer
+ */
 function toSafeInteger(value: number, fallback: number): number {
   if (!Number.isFinite(value)) {
     return fallback;
@@ -59,61 +91,33 @@ function toSafeInteger(value: number, fallback: number): number {
 }
 
 /**
- * Whether a resolution is on a bingo card of a game the user plays.
- * Spec: 13-resolution-history-and-progress.md - History Visibility
- * @param resolutionId The resolution
- * @param userId The user
- * @returns True if any card of a game on the user's roster holds it
+ * List a cell's history, newest first.
+ * @param cellId The cell
+ * @param limit How many entries to return, between 1 and 100
+ * @param offset How many entries to skip
+ * @returns The entries
  */
-export async function isOnCardOfGamePlayedBy(
-  resolutionId: string,
-  userId: string,
-): Promise<boolean> {
-  const rows = await query<Array<{ visible: number }>>(
-    `SELECT 1 AS visible
-     FROM bingo_cells c
-     JOIN bingo_cards bc ON bc.id = c.card_id
-     JOIN game_players gp ON gp.game_id = bc.game_id
-     WHERE c.resolution_id = ? AND gp.user_id = ?
-     LIMIT 1`,
-    [resolutionId, userId],
-  );
-
-  return rows.length > 0;
-}
-
-export async function getResolutionHistoryEntries(
-  resolutionId: string,
+export async function getCellHistoryEntries(
+  cellId: string,
   limit: number = 50,
   offset: number = 0,
 ): Promise<ResolutionHistoryEntry[]> {
   const safeLimit = Math.max(1, Math.min(100, toSafeInteger(limit, 50)));
   const safeOffset = Math.max(0, toSafeInteger(offset, 0));
 
-  const rows = await query<ResolutionHistoryEntryRow[]>(
-    `SELECT
-       rhe.id,
-       rhe.resolution_id,
-       rhe.author_user_id,
-       u.username AS author_username,
-       rhe.entry_type,
-       rhe.event_key,
-       rhe.content,
-       rhe.metadata_json,
-       rhe.created_at
-     FROM resolution_history_entries rhe
-     JOIN users u ON u.id = rhe.author_user_id
-     WHERE rhe.resolution_id = ?
-     ORDER BY rhe.created_at DESC
+  const rows = await query<CellHistoryEntryRow[]>(
+    `${SELECT_ENTRY}
+     WHERE che.cell_id = ?
+     ORDER BY che.created_at DESC
      LIMIT ? OFFSET ?`,
-    [resolutionId, safeLimit, safeOffset],
+    [cellId, safeLimit, safeOffset],
   );
 
-  return rows.map(rowToResolutionHistoryEntry);
+  return rows.map(rowToHistoryEntry);
 }
 
-interface CreateResolutionHistoryEntryInput {
-  resolutionId: string;
+interface CreateCellHistoryEntryInput {
+  cellId: string;
   authorUserId: string;
   entryType: ResolutionHistoryEntryType;
   content: string;
@@ -121,8 +125,13 @@ interface CreateResolutionHistoryEntryInput {
   metadata?: Record<string, unknown> | null;
 }
 
-async function createResolutionHistoryEntry(
-  input: CreateResolutionHistoryEntryInput,
+/**
+ * Store a history entry on a cell.
+ * @param input The entry
+ * @returns The stored entry
+ */
+async function createCellHistoryEntry(
+  input: CreateCellHistoryEntryInput,
 ): Promise<ResolutionHistoryEntry> {
   const trimmedContent = input.content.trim();
   if (!trimmedContent) {
@@ -131,12 +140,12 @@ async function createResolutionHistoryEntry(
 
   const id = uuidv4();
   await query(
-    `INSERT INTO resolution_history_entries
-      (id, resolution_id, author_user_id, entry_type, event_key, content, metadata_json)
+    `INSERT INTO cell_history_entries
+      (id, cell_id, author_user_id, entry_type, event_key, content, metadata_json)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
-      input.resolutionId,
+      input.cellId,
       input.authorUserId,
       input.entryType,
       input.eventKey ?? null,
@@ -145,20 +154,9 @@ async function createResolutionHistoryEntry(
     ],
   );
 
-  const rows = await query<ResolutionHistoryEntryRow[]>(
-    `SELECT
-       rhe.id,
-       rhe.resolution_id,
-       rhe.author_user_id,
-       u.username AS author_username,
-       rhe.entry_type,
-       rhe.event_key,
-       rhe.content,
-       rhe.metadata_json,
-       rhe.created_at
-     FROM resolution_history_entries rhe
-     JOIN users u ON u.id = rhe.author_user_id
-     WHERE rhe.id = ?
+  const rows = await query<CellHistoryEntryRow[]>(
+    `${SELECT_ENTRY}
+     WHERE che.id = ?
      LIMIT 1`,
     [id],
   );
@@ -167,16 +165,23 @@ async function createResolutionHistoryEntry(
     throw new Error('Failed to create history entry');
   }
 
-  return rowToResolutionHistoryEntry(rows[0]);
+  return rowToHistoryEntry(rows[0]);
 }
 
-export async function createManualResolutionHistoryEntry(
-  resolutionId: string,
+/**
+ * Add a manual note to a cell's history. The route checks that the author owns the card.
+ * @param cellId The cell
+ * @param authorUserId The card owner
+ * @param content The note
+ * @returns The stored entry
+ */
+export async function createManualCellHistoryEntry(
+  cellId: string,
   authorUserId: string,
   content: string,
 ): Promise<ResolutionHistoryEntry> {
-  return createResolutionHistoryEntry({
-    resolutionId,
+  return createCellHistoryEntry({
+    cellId,
     authorUserId,
     entryType: 'manual_note',
     content,
@@ -184,24 +189,24 @@ export async function createManualResolutionHistoryEntry(
 }
 
 /**
- * Record a system event in a resolution's history.
+ * Record a system event in a cell's history.
  * Logging failures are swallowed so they never undo the change being recorded.
- * @param resolutionId The resolution the event belongs to
+ * @param cellId The cell the event belongs to
  * @param authorUserId The user who triggered the event
  * @param eventKey The event's identifier
  * @param content The human-readable description
  * @param metadata Optional structured details
  */
-export async function logResolutionHistoryEventSafe(
-  resolutionId: string,
+export async function logCellHistoryEventSafe(
+  cellId: string,
   authorUserId: string,
   eventKey: string,
   content: string,
   metadata?: Record<string, unknown> | null,
 ): Promise<void> {
   try {
-    await createResolutionHistoryEntry({
-      resolutionId,
+    await createCellHistoryEntry({
+      cellId,
       authorUserId,
       entryType: 'system_event',
       eventKey,

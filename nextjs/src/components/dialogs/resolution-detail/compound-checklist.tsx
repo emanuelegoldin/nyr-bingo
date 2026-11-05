@@ -1,29 +1,37 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import type { Subtask } from "@/lib/shared/types";
+import type { CellSubtask } from "@/lib/shared/types";
+import type { BingoCellDetail } from "@/lib/db/types";
 import { useWsRoom } from "@/hooks/use-ws-room";
+import { useTeamWs } from "@/components/team-ws-provider";
 import { Check, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { Progress } from "../../ui/progress";
 
 interface CompoundChecklistProps {
-  id: string;
-  subtasks: Subtask[];
+  cellId: string;
+  subtasks: CellSubtask[];
   isOwner: boolean;
   onRefresh?: () => void;
 }
 
 /**
- * Renders a list of subtasks with checkboxes.
- * Only the owner can toggle subtask completion.
- * Joins a resolution-level WS room to receive real-time updates
+ * Renders the subtasks of a cell with checkboxes.
+ * Only the card owner can toggle subtask completion.
+ * Listens on the team's card room to receive real-time updates
  * when the owner toggles subtasks from another session/device.
+ *
+ * @param cellId - The cell whose subtasks are shown.
+ * @param subtasks - The subtasks as loaded with the cell.
+ * @param isOwner - Whether the viewer may toggle subtasks.
+ * @param onRefresh - Called after a toggle so the parent can refresh the card.
  */
-export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: CompoundChecklistProps) => {
+export const CompoundChecklist = ({ cellId, subtasks, isOwner, onRefresh }: CompoundChecklistProps) => {
   const t = useTranslations("Cell");
-  const [localSubtasks, setLocalSubtasks] = useState<Subtask[]>(subtasks);
+  const { teamId } = useTeamWs();
+  const [localSubtasks, setLocalSubtasks] = useState<CellSubtask[]>(subtasks);
   const [loading, setLoading] = useState<number | null>(null);
 
   const completedCount = localSubtasks.filter((s) => s.completed).length;
@@ -31,15 +39,13 @@ export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: Compound
   const allDone = completedCount === totalCount;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  // ── Join the resolution room and listen for refresh events ────
-  useWsRoom({ type: "resolution", id }, () => {
-    // Re-fetch the resolution data from the API
-    apiFetch<{ resolution?: { subtasks?: Subtask[] } }>(`/api/resolutions/compound?id=${id}`)
-      .then((result) => {
-        if (result.ok && result.data?.resolution?.subtasks) {
-          setLocalSubtasks(result.data.resolution.subtasks);
-        }
-      });
+  // ── Listen on the card room and re-fetch the cell ─────────────
+  useWsRoom(teamId ? { type: "card", id: teamId } : null, () => {
+    apiFetch<{ cell: BingoCellDetail }>(`/api/cells/${cellId}`).then((result) => {
+      if (result.ok && result.data.cell.subtasks) {
+        setLocalSubtasks(result.data.cell.subtasks);
+      }
+    });
   });
 
   const handleToggle = useCallback(
@@ -47,19 +53,19 @@ export const CompoundChecklist = ({ id, subtasks, isOwner, onRefresh }: Compound
       if (loading !== null) return;
       setLoading(index);
       try {
-        const result = await apiFetch<{ resolution: { subtasks: Subtask[] } }>(
-          `/api/resolutions/compound/${id}/toggle`,
-          { method: "PATCH", json: { subtaskIndex: index } },
+        const result = await apiFetch<{ cell: BingoCellDetail }>(
+          `/api/cells/${cellId}/subtasks/${index}/toggle`,
+          { method: "PATCH" },
         );
         if (result.ok) {
-          setLocalSubtasks(result.data.resolution.subtasks);
+          setLocalSubtasks(result.data.cell.subtasks ?? []);
           onRefresh?.();
         }
       } finally {
         setLoading(null);
       }
     },
-    [id, loading, onRefresh]
+    [cellId, loading, onRefresh]
   );
 
   return (

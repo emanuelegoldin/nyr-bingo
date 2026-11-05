@@ -81,15 +81,6 @@ async function removePlayerFromGame(
     );
   }
 
-  // Prepared resolutions are per-cell copies, so they go with the card
-  await execute(
-    `DELETE r FROM resolutions r
-     JOIN bingo_cells c ON c.resolution_id = r.id
-     JOIN bingo_cards bc ON bc.id = c.card_id
-     WHERE bc.game_id = ? AND bc.user_id = ? AND r.scope = 'prepared'`,
-    [gameId, userId],
-    connection
-  );
   await execute(`DELETE FROM bingo_cards WHERE game_id = ? AND user_id = ?`, [gameId, userId], connection);
   await execute(`DELETE FROM team_leaderboard WHERE game_id = ? AND user_id = ?`, [gameId, userId], connection);
   await execute(

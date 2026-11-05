@@ -63,7 +63,7 @@
     "setGoal": "Imposta obiettivo",
     "label": "Obiettivo del team:",
     "edit": "Modifica obiettivo del team",
-    "subtasks": "{done} / {total} sottoattività",
+    "subtasks": "{count, plural, one {# sottoattività} other {# sottoattività}}",
     "target": "Traguardo: {count, plural, one {# ripetizione} other {# ripetizioni}}"
   },
   "cardsTab": {

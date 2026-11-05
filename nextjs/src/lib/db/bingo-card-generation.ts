@@ -13,21 +13,17 @@ import {
   CellSourceType,
   JOKER_POSITION,
   PreparedResolutionCategory,
-  ResolutionScope,
-  ResolutionType,
 } from '../shared/types';
 import { CardRow, rowToCard } from './bingo-card-rows';
-import { autoTransitionCellState } from './bingo-cell-repository';
+import { EMPTY_SNAPSHOT, insertCellSubtasks, snapshotOf, type CellSnapshot } from './cell-snapshot';
 import { execute, query, withTransaction } from './connection';
 import { getGameById, getGamePlayerIds } from './game-repository';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
-import { getRandomPreparedResolutions, preparedResolutionToContent } from './prepared-resolution-repository';
+import { getRandomPreparedResolutions } from './prepared-resolution-repository';
 import {
-  createResolution,
   getGameGoalResolution,
   getMemberProvidedResolutionsForUser,
   getRandomResolutions,
-  isProgressComplete,
 } from './resolution-repository';
 import { BingoCard, Game, GameStatus, Resolution } from './types';
 
@@ -46,11 +42,13 @@ const WRONG_STATUS_ERRORS: Record<CardGenerationStatus, string> = {
 /** The categories that replace empty cells, in the order they are used. */
 const DIFFICULT_FALLBACK_CATEGORIES = [PreparedResolutionCategory.LONG, PreparedResolutionCategory.MEDIUM];
 
+/** The content of one stored cell: where it comes from, and its copy of the definition. */
 interface CellPlan {
+  /** The resolution the cell is copied from; null for prepared and empty cells. */
   resolutionId: string | null;
   sourceType: CellSourceType;
   sourceUserId: string | null;
-  resolutionType: ResolutionType;
+  snapshot: CellSnapshot;
 }
 
 /**
@@ -141,9 +139,8 @@ async function countMissingProposals(
 }
 
 /**
- * Choose the content of a user's stored cells, in shuffled order, copying any prepared
- * resolution it uses for the card owner.
- * @param connection The card generation's transaction
+ * Choose the content of a user's stored cells, in shuffled order. Every cell gets its own
+ * copy of the definition it is filled with (spec 05).
  * @param game The game the card belongs to
  * @param userId The card owner
  * @param teamGoalResolution The team goal
@@ -151,7 +148,6 @@ async function countMissingProposals(
  * @returns One plan per stored cell
  */
 async function planCells(
-  connection: PoolConnection,
   game: Game,
   userId: string,
   teamGoalResolution: Resolution,
@@ -171,31 +167,25 @@ async function planCells(
           resolutionId: res.id,
           sourceType,
           sourceUserId: res.ownerUserId,
-          resolutionType: res.resolutionType,
+          snapshot: snapshotOf(res),
         });
         usedTexts.add(resText);
       }
     }
   };
 
-  // Each cell gets its own copy, because progress is stored on the resolution
-  const addPrepared = async (entries: PreparedResolution[]): Promise<void> => {
+  // A prepared cell is copied straight from the pool entry (spec 17)
+  const addPrepared = (entries: PreparedResolution[]): void => {
     for (const entry of entries) {
       if (plan.length >= STORED_CELLS) break;
       const text = getResolutionTextKey(entry.title, entry.description);
       if (usedTexts.has(text)) continue;
 
-      const resolutionId = await createResolution(
-        userId,
-        preparedResolutionToContent(entry),
-        { scope: ResolutionScope.PREPARED, teamId: game.teamId, gameId: game.id },
-        connection
-      );
       plan.push({
-        resolutionId,
+        resolutionId: null,
         sourceType: CellSourceType.PREPARED,
         sourceUserId: null,
-        resolutionType: entry.resolutionType,
+        snapshot: snapshotOf(entry),
       });
       usedTexts.add(text);
     }
@@ -210,7 +200,7 @@ async function planCells(
   // Spec: 05-bingo-card-generation.md - Step 3
   if (useFallbacks) {
     const missing = await countMissingProposals(game.id, userId, memberProvided);
-    await addPrepared(
+    addPrepared(
       await getRandomPreparedResolutions(PreparedResolutionCategory.SHORT, missing, Array.from(usedTexts))
     );
   }
@@ -222,7 +212,7 @@ async function planCells(
       resolutionId: teamGoalResolution.id,
       sourceType: CellSourceType.TEAM,
       sourceUserId: null,
-      resolutionType: teamGoalResolution.resolutionType,
+      snapshot: snapshotOf(teamGoalResolution),
     });
   }
 
@@ -242,7 +232,7 @@ async function planCells(
   // Spec: 05-bingo-card-generation.md - Step 6
   if (useFallbacks) {
     for (const category of DIFFICULT_FALLBACK_CATEGORIES) {
-      await addPrepared(
+      addPrepared(
         await getRandomPreparedResolutions(category, STORED_CELLS - plan.length, Array.from(usedTexts))
       );
     }
@@ -255,7 +245,7 @@ async function planCells(
       resolutionId: null,
       sourceType: CellSourceType.EMPTY,
       sourceUserId: null,
-      resolutionType: ResolutionType.BASE,
+      snapshot: EMPTY_SNAPSHOT,
     });
   }
 
@@ -291,7 +281,7 @@ async function generateCardForUser(
     [cardId, game.teamId, game.id, userId, BINGO_GRID_SIZE]
   );
 
-  const plan = await planCells(connection, game, userId, teamGoalResolution, useFallbacks);
+  const plan = await planCells(game, userId, teamGoalResolution, useFallbacks);
 
   // Insert cells into database
   // The Joker cell is implicit (always at center position) and is NOT stored in the database.
@@ -301,21 +291,27 @@ async function generateCardForUser(
 
   for (const [index, position] of positions.entries()) {
     const data = plan[index];
+    const cellId = randomUUID();
 
     await connection.execute(
       `INSERT INTO bingo_cells
-       (id, card_id, position, resolution_id, resolution_type, source_type, source_user_id, state)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+       (id, card_id, position, resolution_id, resolution_type, source_type, source_user_id, state,
+        title, description, number_of_repetition, completed_times)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, 0)`,
       [
-        randomUUID(),
+        cellId,
         cardId,
         position,
         data.resolutionId,
-        data.resolutionType,
+        data.snapshot.resolutionType,
         data.sourceType,
         data.sourceUserId,
+        data.snapshot.title,
+        data.snapshot.description,
+        data.snapshot.numberOfRepetition,
       ]
     );
+    await insertCellSubtasks(connection, cellId, data.snapshot.subtasks);
   }
 
   return {
@@ -351,15 +347,11 @@ export async function ensureBingoCardForUser(
     return { created: false, error: context.error };
   }
 
+  // The late joiner's goal cell is a fresh copy with its own progress (spec 16)
   const { game, teamGoalResolution: goal } = context;
   const card = await withTransaction((connection) =>
     generateCardForUser(connection, game, userId, goal, false)
   );
-
-  // A late joiner's goal cell must match progress the leader has already made
-  if (goal.resolutionType !== ResolutionType.BASE) {
-    await autoTransitionCellState(goal.id, goal.resolutionType, isProgressComplete(goal));
-  }
 
   await refreshLeaderboardEntry(gameId, userId);
 
