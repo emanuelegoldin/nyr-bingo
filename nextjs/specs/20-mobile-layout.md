@@ -71,6 +71,7 @@ Make the application usable on phones. The authenticated pages, their dialogs an
 
 - At 360px, tapping a link in the drawer opens that page and the drawer is closed.
 - At 360px, no page in the shell (Dashboard, Games, Game, Teams, Team, Profile, public Profile, Resolutions, Archive, archived Game) scrolls horizontally.
+- At 360px, the landing page does not scroll horizontally and its header buttons are fully visible.
 - At 360px, the title, description and actions of the Resolutions page are all fully visible, and each resolution title can be read in full.
 - At 360px, every dialog fits in the screen with a side margin, and its last button can be reached by scrolling inside it.
 - At 360px, the bingo card fits the screen and cell titles show up to three lines.
