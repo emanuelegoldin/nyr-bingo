@@ -1,9 +1,11 @@
 "use client";
 
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import { ReviewVote } from "@/lib/db/types";
 import { VoteType } from "@/lib/shared/types";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { Button } from "../ui/button";
 
@@ -50,6 +52,8 @@ export function VoteBar({
   onVoteSubmitted,
   onVoteFailed,
 }: VoteBarProps) {
+  const t = useTranslations("Threads.vote");
+  const toastApiError = useApiErrorToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Derive current user's vote from the votes array.
@@ -73,7 +77,7 @@ export function VoteBar({
           json: { vote },
         });
         if (!result.ok) {
-          toastApiError(result, "Failed to submit vote");
+          toastApiError(result, t("submitFailed"));
           onVoteFailed?.();
           return;
         }
@@ -82,7 +86,7 @@ export function VoteBar({
         setIsSubmitting(false);
       }
     },
-    [threadId, isSubmitting, threadOpen, onVoteSubmitted, onVoteFailed],
+    [threadId, isSubmitting, threadOpen, onVoteSubmitted, onVoteFailed, toastApiError, t],
   );
 
   // ── Vote buttons ────────────────────────────────────────────────
@@ -95,7 +99,7 @@ export function VoteBar({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">{canVote ? "Vote" : "Votes"}</p>
+      <p className="text-sm font-medium">{canVote ? t("vote") : t("votes")}</p>
 
       {/* Buttons — only shown when the user is allowed to vote */}
       {canVote && <div className="flex gap-2">
@@ -112,7 +116,7 @@ export function VoteBar({
               : "hover:bg-green-100 hover:text-green-800 active:bg-green-200",
           )}
         >
-          Accept
+          {t("accept")}
         </Button>
 
         <Button
@@ -128,7 +132,7 @@ export function VoteBar({
               : "hover:bg-red-100 hover:text-red-800 active:bg-red-200",
           )}
         >
-          Deny
+          {t("deny")}
         </Button>
       </div>}
 
@@ -138,8 +142,8 @@ export function VoteBar({
         role="progressbar"
         aria-label={
           totalVotes === 0
-            ? "No votes yet"
-            : `${acceptCount} accept, ${denyCount} deny`
+            ? t("noVotes")
+            : t("summary", { acceptCount, denyCount })
         }
         aria-valuenow={acceptPct}
         aria-valuemin={0}
@@ -148,7 +152,7 @@ export function VoteBar({
         {totalVotes === 0 ? (
           <div className="h-full w-full bg-gray-300 flex items-center justify-center">
             <span className="text-[10px] text-gray-500 select-none">
-              No votes yet
+              {t("noVotes")}
             </span>
           </div>
         ) : (

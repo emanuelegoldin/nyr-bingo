@@ -1,6 +1,7 @@
 "use client";
 
 import { ReviewFile } from "@/lib/db/types";
+import { useTranslations } from "next-intl";
 import { useRef } from "react";
 import { Button } from "../ui/button";
 
@@ -28,6 +29,7 @@ export const ThreadFiles = ({
   onUpload,
   onDelete
 }: ThreadFilesProps) => {
+  const t = useTranslations("Threads.files");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleUploadClick = () => {
@@ -42,7 +44,7 @@ export const ThreadFiles = ({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">Files</p>
+      <p className="text-sm font-medium">{t("title")}</p>
       {files?.length ? (
         <div className="space-y-1">
           {files.map((f: ReviewFile) => (
@@ -64,14 +66,14 @@ export const ThreadFiles = ({
                   }}
                   disabled={isSubmitting}
                 >
-                  Delete
+                  {t("delete")}
                 </Button>
               )}
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">No files yet</p>
+        <p className="text-xs text-muted-foreground">{t("empty")}</p>
       )}
 
       {canManage && (
@@ -87,12 +89,12 @@ export const ThreadFiles = ({
 
           <div className="flex items-center justify-between gap-3">
             <Button variant="outline" size="sm" onClick={handleUploadClick} disabled={isSubmitting}>
-              Choose File
+              {t("chooseFile")}
             </Button>
             {selectedFile ? (
               <p className="text-xs text-muted-foreground truncate">{selectedFile.name}</p>
             ) : (
-              <p className="text-xs text-muted-foreground">No file selected</p>
+              <p className="text-xs text-muted-foreground">{t("noFileSelected")}</p>
             )}
           </div>
           <Button
@@ -101,7 +103,7 @@ export const ThreadFiles = ({
             onClick={onUpload}
             disabled={isSubmitting || !selectedFile}
           >
-            Upload
+            {t("upload")}
           </Button>
         </>
       )}

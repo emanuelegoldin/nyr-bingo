@@ -1,1 +1,56 @@
-{}
+{
+  "dialog": {
+    "title": "Thread di revisione",
+    "description": "Discussione, file e votazione per \"{resolutionText}\".",
+    "loading": "Caricamento del thread…",
+    "status": "Stato",
+    "statusValue": {
+      "open": "aperto",
+      "closed": "chiuso"
+    },
+    "closeThread": "Chiudi thread",
+    "unavailable": "Thread non disponibile."
+  },
+  "files": {
+    "title": "File",
+    "empty": "Ancora nessun file",
+    "delete": "Elimina",
+    "chooseFile": "Scegli file",
+    "noFileSelected": "Nessun file selezionato",
+    "upload": "Carica"
+  },
+  "messages": {
+    "title": "Messaggi",
+    "empty": "Ancora nessun messaggio",
+    "placeholder": "Scrivi un messaggio…",
+    "send": "Invia",
+    "fallbackAuthor": "Utente"
+  },
+  "vote": {
+    "vote": "Vota",
+    "votes": "Voti",
+    "accept": "Accetta",
+    "deny": "Rifiuta",
+    "noVotes": "Ancora nessun voto",
+    "summary": "{acceptCount} accettati, {denyCount} rifiutati",
+    "submitFailed": "Impossibile inviare il voto"
+  },
+  "requestProof": {
+    "title": "Richiedere una prova?",
+    "description": "Richiedi una prova per \"{resolutionText}\". Verrà aperto un thread di revisione e l'obiettivo passerà in revisione.",
+    "submit": "Richiedi prova",
+    "successTitle": "Prova richiesta",
+    "successDescription": "È stato aperto un thread di revisione per questo obiettivo.",
+    "failed": "Impossibile richiedere la prova"
+  },
+  "hook": {
+    "refreshFailed": "Impossibile aggiornare il thread di revisione",
+    "loadFailed": "Impossibile caricare il thread di revisione",
+    "uploadFailed": "Impossibile caricare il file",
+    "uploadMissingInfo": "File caricato ma la risposta non contiene le informazioni sul file",
+    "postFailed": "Impossibile inviare il messaggio",
+    "deleteFailed": "Impossibile eliminare il file",
+    "closeConfirm": "Chiudere questo thread e riportare l'obiettivo in sospeso? Verranno eliminati tutti i file e i messaggi del thread.",
+    "closeFailed": "Impossibile chiudere il thread"
+  }
+}

@@ -1,1 +1,56 @@
-{}
+{
+  "dialog": {
+    "title": "Review Thread",
+    "description": "Discussion, files, and voting for \"{resolutionText}\".",
+    "loading": "Loading thread…",
+    "status": "Status",
+    "statusValue": {
+      "open": "open",
+      "closed": "closed"
+    },
+    "closeThread": "Close Thread",
+    "unavailable": "Thread not available."
+  },
+  "files": {
+    "title": "Files",
+    "empty": "No files yet",
+    "delete": "Delete",
+    "chooseFile": "Choose File",
+    "noFileSelected": "No file selected",
+    "upload": "Upload"
+  },
+  "messages": {
+    "title": "Messages",
+    "empty": "No messages yet",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "fallbackAuthor": "User"
+  },
+  "vote": {
+    "vote": "Vote",
+    "votes": "Votes",
+    "accept": "Accept",
+    "deny": "Deny",
+    "noVotes": "No votes yet",
+    "summary": "{acceptCount} accept, {denyCount} deny",
+    "submitFailed": "Failed to submit vote"
+  },
+  "requestProof": {
+    "title": "Request Proof?",
+    "description": "Request proof for \"{resolutionText}\". This will open a review thread and move the resolution into review.",
+    "submit": "Request Proof",
+    "successTitle": "Proof requested",
+    "successDescription": "A review thread has been opened for this resolution.",
+    "failed": "Failed to request proof"
+  },
+  "hook": {
+    "refreshFailed": "Failed to refresh review thread",
+    "loadFailed": "Failed to load review thread",
+    "uploadFailed": "Failed to upload file",
+    "uploadMissingInfo": "File uploaded but response is missing file info",
+    "postFailed": "Failed to post message",
+    "deleteFailed": "Failed to delete file",
+    "closeConfirm": "Close this thread and revert the resolution to pending? This will delete all thread files and messages.",
+    "closeFailed": "Failed to close thread"
+  }
+}
