@@ -1,1 +1,43 @@
-{}
+{
+  "empty": "Vuota",
+  "joker": "Jolly",
+  "markComplete": "Segna come completato",
+  "completeDialog": {
+    "title": "Segnare come completato?",
+    "description": "Stai per segnare \"{text}\" come completato."
+  },
+  "editOption": {
+    "member": "Membro"
+  },
+  "editDialog": {
+    "title": "Modifica cella",
+    "description": "Scegli un obiettivo sostitutivo per questa cella.",
+    "filterPlaceholder": "Filtra obiettivi…",
+    "loadingOptions": "Caricamento opzioni…",
+    "noOptions": "Nessuna opzione disponibile.",
+    "updateFailed": "Impossibile aggiornare la cella",
+    "updatedTitle": "Cella aggiornata",
+    "updatedDescription": "La carta bingo è stata aggiornata.",
+    "loadPersonalFailed": "Impossibile caricare gli obiettivi personali",
+    "loadTeamFailed": "Impossibile caricare gli obiettivi forniti dal team"
+  },
+  "detail": {
+    "noDescription": "Nessuna descrizione fornita.",
+    "history": "Cronologia",
+    "markFailed": "Segna come fallito",
+    "undo": "Annulla",
+    "requestProof": "Richiedi prova",
+    "viewThread": "Vedi discussione"
+  },
+  "compound": {
+    "progress": "{completed} / {total} sottoattività",
+    "allDone": "Tutto fatto!",
+    "toggleSubtask": "Attiva/disattiva sottoattività: {title}"
+  },
+  "iterative": {
+    "targetReached": "Obiettivo raggiunto!",
+    "decrement": "Diminuisci contatore",
+    "increment": "Aumenta contatore",
+    "percentComplete": "{percent}% completato"
+  }
+}

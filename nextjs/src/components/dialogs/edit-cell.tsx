@@ -1,8 +1,10 @@
 import { useEditCellOptions, type EditOption } from "@/hooks/use-edit-cell-options";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import type { BingoCellWithThread } from "@/lib/db/types";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useTeamMembers } from "../team-members-context";
 import { Input } from "../ui/input";
@@ -37,6 +39,8 @@ export const EditCellDialog = ({
   } = useEditCellOptions({ existingCells, gameId, currentUserId, isOpen });
   const usernames = useTeamMembers();
   const { toast } = useToast();
+  const t = useTranslations("Cell");
+  const toastApiError = useApiErrorToast();
 
   const handleSelectReplacement = async (opt: EditOption) => {
     if (isSubmitting) return;
@@ -52,13 +56,13 @@ export const EditCellDialog = ({
       });
 
       if (!result.ok) {
-        toastApiError(result, 'Failed to update cell');
+        toastApiError(result, t("editDialog.updateFailed"));
         return;
       }
 
       toast({
-        title: 'Cell updated',
-        description: 'The bingo card has been updated.',
+        title: t("editDialog.updatedTitle"),
+        description: t("editDialog.updatedDescription"),
       });
       // Clean before close
       resetEditOptions();
@@ -75,11 +79,11 @@ export const EditCellDialog = ({
     <CellDialog
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      title="Edit Cell"
-      description="Choose a replacement resolution for this cell.">
+      title={t("editDialog.title")}
+      description={t("editDialog.description")}>
       <div className="space-y-3 py-4">
         <Input
-          placeholder="Filter resolutions…"
+          placeholder={t("editDialog.filterPlaceholder")}
           value={editFilter}
           onChange={(e) => setEditFilter(e.target.value)}
           disabled={isSubmitting || isEditOptionsLoading}
@@ -88,7 +92,7 @@ export const EditCellDialog = ({
         {isEditOptionsLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading options…
+            {t("editDialog.loadingOptions")}
           </div>
         ) : (
           <div className="max-h-72 overflow-y-auto rounded-md border p-2 space-y-2">
@@ -108,7 +112,7 @@ export const EditCellDialog = ({
               ))}
 
             {editOptions.length === 0 && (
-              <p className="text-sm text-muted-foreground">No options available.</p>
+              <p className="text-sm text-muted-foreground">{t("editDialog.noOptions")}</p>
             )}
           </div>
         )}

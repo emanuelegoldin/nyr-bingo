@@ -30,6 +30,7 @@ export const EditOptionRow = ({
 }: EditOptionRowProps) => {
   const isMemberProvided = opt.sourceType === CellSourceType.MEMBER_PROVIDED;
   const tl = useTranslations("Labels");
+  const t = useTranslations("Cell");
   const providerName = opt.sourceUserId
     ? getProviderName(opt.sourceUserId, usernames) ?? tl("cellSource.formerTeammates")
     : null;
@@ -50,7 +51,7 @@ export const EditOptionRow = ({
             <Badge variant="secondary" className="text-xs">{typeLabel}</Badge>
           )}
           <Badge variant="outline" className="shrink-0">
-            {isMemberProvided ? (providerName ?? 'Member') : 'Personal'}
+            {isMemberProvided ? (providerName ?? t("editOption.member")) : tl("cellSource.personal")}
           </Badge>
         </div>
       </div>

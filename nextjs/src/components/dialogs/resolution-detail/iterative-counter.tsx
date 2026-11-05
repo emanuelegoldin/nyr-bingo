@@ -3,6 +3,7 @@
 import { apiFetch } from "@/lib/api-client";
 import { useWsRoom } from "@/hooks/use-ws-room";
 import { Check, Loader2, Minus, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { Button } from "../../ui/button";
 import { Progress } from "../../ui/progress";
@@ -28,6 +29,7 @@ export const IterativeCounter = ({
   isOwner,
   onRefresh,
 }: IterativeCounterProps) => {
+  const t = useTranslations("Cell");
   const [completedTimes, setCompletedTimes] = useState(initialCompleted);
   const [loading, setLoading] = useState(false);
 
@@ -80,7 +82,7 @@ export const IterativeCounter = ({
 
         {isComplete && (
           <span className="flex items-center gap-1 text-green-600 font-medium text-sm">
-            <Check className="h-4 w-4" /> Target reached!
+            <Check className="h-4 w-4" /> {t("iterative.targetReached")}
           </span>
         )}
 
@@ -92,7 +94,7 @@ export const IterativeCounter = ({
               size="icon"
               disabled={loading || completedTimes <= 0}
               onClick={() => handleAction("decrement")}
-              aria-label="Decrement counter"
+              aria-label={t("iterative.decrement")}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Minus className="h-4 w-4" />}
             </Button>
@@ -101,7 +103,7 @@ export const IterativeCounter = ({
               size="icon"
               disabled={loading}
               onClick={() => handleAction("increment")}
-              aria-label="Increment counter"
+              aria-label={t("iterative.increment")}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             </Button>
@@ -112,7 +114,7 @@ export const IterativeCounter = ({
       {/* Progress bar */}
       <div className="space-y-1">
         <Progress value={progressPercent} className="h-3" />
-        <p className="text-xs text-muted-foreground text-center">{progressPercent}% complete</p>
+        <p className="text-xs text-muted-foreground text-center">{t("iterative.percentComplete", { percent: progressPercent })}</p>
       </div>
     </div>
   );

@@ -1,1 +1,43 @@
-{}
+{
+  "empty": "Empty",
+  "joker": "Joker",
+  "markComplete": "Mark Complete",
+  "completeDialog": {
+    "title": "Mark as Completed?",
+    "description": "You are about to mark \"{text}\" as completed."
+  },
+  "editOption": {
+    "member": "Member"
+  },
+  "editDialog": {
+    "title": "Edit Cell",
+    "description": "Choose a replacement resolution for this cell.",
+    "filterPlaceholder": "Filter resolutions…",
+    "loadingOptions": "Loading options…",
+    "noOptions": "No options available.",
+    "updateFailed": "Failed to update cell",
+    "updatedTitle": "Cell updated",
+    "updatedDescription": "The bingo card has been updated.",
+    "loadPersonalFailed": "Failed to load personal resolutions",
+    "loadTeamFailed": "Failed to load team-provided resolutions"
+  },
+  "detail": {
+    "noDescription": "No description provided.",
+    "history": "History",
+    "markFailed": "Mark Failed",
+    "undo": "Undo",
+    "requestProof": "Request Proof",
+    "viewThread": "View Thread"
+  },
+  "compound": {
+    "progress": "{completed} / {total} subtasks",
+    "allDone": "All done!",
+    "toggleSubtask": "Toggle subtask: {title}"
+  },
+  "iterative": {
+    "targetReached": "Target reached!",
+    "decrement": "Decrement counter",
+    "increment": "Increment counter",
+    "percentComplete": "{percent}% complete"
+  }
+}

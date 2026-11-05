@@ -109,6 +109,7 @@ export const ResolutionDetailDialog = ({
   onSetState,
 }: ResolutionDetailDialogProps) => {
   const tl = useTranslations("Labels");
+  const t = useTranslations("Cell");
   const isAutomatic = data.type === ResolutionType.COMPOUND || data.type === ResolutionType.ITERATIVE;
 
   const stateConfig = STATE_CONFIG[cell.state];
@@ -160,7 +161,7 @@ export const ResolutionDetailDialog = ({
         {data.type === ResolutionType.BASE && (
           <div className="py-2">
             {!data.description && (
-              <p className="text-sm text-muted-foreground italic">No description provided.</p>
+              <p className="text-sm text-muted-foreground italic">{t("detail.noDescription")}</p>
             )}
           </div>
         )}
@@ -168,41 +169,41 @@ export const ResolutionDetailDialog = ({
         {/* Action buttons */}
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => onOpenDialog('history')}>
-            <History className="h-4 w-4 mr-2" /> History
+            <History className="h-4 w-4 mr-2" /> {t("detail.history")}
           </Button>
 
           {/* Owner + pending → Mark Failed */}
           {isOwner && cell.state === CellState.PENDING && (
             <Button variant="outline" onClick={() => { setIsOpen(false); onSetState(CellState.FAILED); }}>
-              <X className="h-4 w-4 mr-2" /> Mark Failed
+              <X className="h-4 w-4 mr-2" /> {t("detail.markFailed")}
             </Button>
           )}
 
           {/* Owner + pending or failed + non-automatic → Mark Complete */}
           {isOwner && (cell.state === CellState.PENDING || cell.state === CellState.FAILED) && !isAutomatic && (
             <Button onClick={() => onOpenDialog('complete')}>
-              <Check className="h-4 w-4 mr-2" /> Mark Complete
+              <Check className="h-4 w-4 mr-2" /> {t("markComplete")}
             </Button>
           )}
 
           {/* Owner + (completed + non-automatic, or failed) → Undo */}
           {isOwner && ((cell.state === CellState.COMPLETED && !isAutomatic) || cell.state === CellState.FAILED) && (
             <Button variant="outline" onClick={() => { setIsOpen(false); onSetState(CellState.PENDING); }}>
-              <Undo2 className="h-4 w-4 mr-2" /> Undo
+              <Undo2 className="h-4 w-4 mr-2" /> {t("detail.undo")}
             </Button>
           )}
 
           {/* Non-owner + completed → Request Proof */}
           {!isOwner && cell.state === CellState.COMPLETED && (
             <Button variant="outline" onClick={() => onOpenDialog('request_proof')}>
-              <Eye className="h-4 w-4 mr-2" /> Request Proof
+              <Eye className="h-4 w-4 mr-2" /> {t("detail.requestProof")}
             </Button>
           )}
 
           {/* Any + pending_review → View Thread */}
           {cell.state === CellState.PENDING_REVIEW && (
             <Button variant="outline" onClick={() => onOpenDialog('thread')}>
-              <MessageSquare className="h-4 w-4 mr-2" /> View Thread
+              <MessageSquare className="h-4 w-4 mr-2" /> {t("detail.viewThread")}
             </Button>
           )}
         </DialogFooter>
