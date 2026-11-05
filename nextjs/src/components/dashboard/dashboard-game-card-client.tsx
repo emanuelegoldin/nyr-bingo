@@ -6,6 +6,7 @@ import { TeamRefreshListener } from '@/components/team-refresh-listener';
 import { TeamWsProvider } from '@/components/team-ws-provider';
 import { Card } from '@/components/ui/card';
 import type { BingoCardWithCells, GameWithMembers } from '@/lib/db/types';
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 interface DashboardGameCardClientProps {
@@ -19,6 +20,7 @@ export default function DashboardGameCardClient({
   currentUserId,
   initialCard,
 }: DashboardGameCardClientProps) {
+  const tc = useTranslations('Common');
   const membersMap = useMemo<TeamMembersMap>(() => {
     const map: TeamMembersMap = {};
     for (const member of game.members) {
@@ -33,7 +35,7 @@ export default function DashboardGameCardClient({
       <TeamMembersProvider members={membersMap}>
         <Card className="w-full max-w-4xl mx-auto">
           <DashboardBingoCardProvider
-            user={{ id: currentUserId, username: membersMap[currentUserId] || 'Unknown User' }}
+            user={{ id: currentUserId, username: membersMap[currentUserId] || tc('unknownUser') }}
             initialCard={initialCard}
             isOwner={true}
             gameId={game.id}

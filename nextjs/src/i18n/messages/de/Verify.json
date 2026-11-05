@@ -1,1 +1,14 @@
-{}
+{
+  "verifying": "Deine E-Mail wird bestätigt...",
+  "noToken": "Ungültiger Bestätigungslink. Es wurde kein Token übergeben.",
+  "successDefault": "E-Mail erfolgreich bestätigt!",
+  "failedFallback": "E-Mail konnte nicht bestätigt werden. Der Link ist möglicherweise abgelaufen.",
+  "title": "E-Mail-Bestätigung",
+  "descLoading": "Deine Bestätigung wird verarbeitet...",
+  "descSuccess": "Deine E-Mail wurde bestätigt",
+  "descError": "Bestätigung fehlgeschlagen",
+  "goToLogin": "Zur Anmeldung",
+  "login": "Anmelden",
+  "goToProfile": "Zum Profil",
+  "expiredHint": "Wenn dein Link abgelaufen ist, kannst du auf deiner Profilseite eine neue Bestätigungs-E-Mail anfordern."
+}

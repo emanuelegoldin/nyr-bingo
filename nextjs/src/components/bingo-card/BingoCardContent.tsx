@@ -1,7 +1,9 @@
-import { apiFetch, toastApiError } from "@/lib/api-client";
+import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { apiFetch } from "@/lib/api-client";
 import type { BingoCardWithCells, BingoCell } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
+import { useTranslations } from "next-intl";
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { JokerCell } from "../cell/joker";
 import { ResolutionCell } from "../cell/resolution-cell";
@@ -29,21 +31,24 @@ export function BingoCardContent(
     }
 ) {
   const { toast } = useToast();
+  const t = useTranslations("Dashboard");
+  const tc = useTranslations("Common");
+  const toastApiError = useApiErrorToast();
   const fetchUrl = `/api/games/${gameId}/cards?userId=${cardUserId}`;
 
   const reloadCard = useCallback(async () => {
     const result = await apiFetch<{ card: BingoCardWithCells | null }>(fetchUrl);
     if (!result.ok) {
-      toastApiError(result, 'Failed to refresh cards', 'Failed to refresh card');
+      toastApiError(result, t('refreshCardFailed'));
       return;
     }
     if (!result.data.card) {
       // The player has no card in this game
-      toast({ title: 'Error', description: 'Failed to refresh cards', variant: 'destructive' });
+      toast({ title: tc('error'), description: t('refreshFailed'), variant: 'destructive' });
       return;
     }
     setCard(result.data.card);
-  }, [fetchUrl, setCard, toast]);
+  }, [fetchUrl, setCard, toast, t, tc, toastApiError]);
 
   const handleCellUpdate = useCallback(
     async (cellId: string, newState: 'pending' | 'completed' | 'failed') => {
@@ -66,11 +71,11 @@ export function BingoCardContent(
         return;
       }
 
-      toastApiError(result, 'Failed to update cell');
+      toastApiError(result, t('updateCellFailed'));
       // The card may be stale, which is a common reason for the failure
       await reloadCard();
     },
-    [reloadCard, setCard]
+    [reloadCard, setCard, t, toastApiError]
   );
 
   return (

@@ -1,1 +1,14 @@
-{}
+{
+  "verifying": "Verifying your email...",
+  "noToken": "Invalid verification link. No token provided.",
+  "successDefault": "Email verified successfully!",
+  "failedFallback": "Failed to verify email. The link may have expired.",
+  "title": "Email Verification",
+  "descLoading": "Processing your verification request...",
+  "descSuccess": "Your email has been verified",
+  "descError": "Verification failed",
+  "goToLogin": "Go to Login",
+  "login": "Login",
+  "goToProfile": "Go to Profile",
+  "expiredHint": "If your link expired, you can request a new verification email from your profile page."
+}

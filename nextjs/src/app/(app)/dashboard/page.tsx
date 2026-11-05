@@ -54,22 +54,26 @@ async function DashboardCardFrame({
 }
 
 // TODO: we could create the loading fallback through composition with a dummy empty cell
-function DashboardCardLoadingFallback({ gameName }: { gameName: string }) {
+async function DashboardCardLoadingFallback({ gameName }: { gameName: string }) {
+  const t = await getTranslations('Dashboard');
+
   return (
     <DashboardCardFrame gameName={gameName}>
       <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
-        <span>Loading card...</span>
+        <span>{t('loadingCard')}</span>
       </div>
     </DashboardCardFrame>
   );
 }
 
-function DashboardCardError({ gameName }: { gameName: string }) {
+async function DashboardCardError({ gameName }: { gameName: string }) {
+  const t = await getTranslations('Dashboard');
+
   return (
     <DashboardCardFrame gameName={gameName}>
       <p className="text-sm text-destructive">
-        Failed to load this card. Other cards are still available.
+        {t('cardLoadFailed')}
       </p>
     </DashboardCardFrame>
   );
@@ -151,7 +155,7 @@ async function DashboardEmptyState({ hasTeams }: { hasTeams: boolean }) {
           </p>
           <Button asChild>
             <Link href="/teams">
-              <Plus className="mr-2 h-4 w-4" /> Get Started
+              <Plus className="mr-2 h-4 w-4" /> {t('getStarted')}
             </Link>
           </Button>
         </CardContent>

@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback } from "@ui/avatar";
 import { CardTitle } from "@ui/card";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useContext } from "react";
 import { BingoCardContext } from "../BingoCardProvider";
@@ -11,6 +12,7 @@ import { BingoCardContext } from "../BingoCardProvider";
  * @returns The profile header.
  */
 export function ProfileInfo({ isCurrentUser }: { isCurrentUser: boolean }) {
+  const t = useTranslations("Dashboard");
   const { id, username } = useContext(BingoCardContext).user;
 
   return (
@@ -23,7 +25,7 @@ export function ProfileInfo({ isCurrentUser }: { isCurrentUser: boolean }) {
         </Avatar>
       </Link>
       <CardTitle className="font-headline text-xl">
-        <div className="text-lg font-semibold">{username} {isCurrentUser && " (You)"}</div>
+        <div className="text-lg font-semibold">{username} {isCurrentUser && ` ${t("you")}`}</div>
       </CardTitle>
     </div>
   );

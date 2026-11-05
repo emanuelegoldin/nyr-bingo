@@ -5,5 +5,21 @@
   "headerDescription": "Completa i tuoi obiettivi per ottenere un BINGO! Clicca su una cella per segnarla come completata.",
   "headerDescriptionNoTeam": "Crea o unisciti a un team per iniziare a giocare.",
   "headerDescriptionNoGames": "Nessuno dei tuoi team ha ancora iniziato una partita.",
-  "cardContentNoneAvailable": "Non hai carte disponibili in questa partita"
+  "cardContentNoneAvailable": "Non hai carte disponibili in questa partita",
+  "loadingCard": "Caricamento della carta...",
+  "cardLoadFailed": "Impossibile caricare questa carta. Le altre carte sono ancora disponibili.",
+  "getStarted": "Inizia",
+  "shuffleBlockedHint": "Una carta con celle completate non può più essere mescolata",
+  "shuffle": "Mescola",
+  "lock": "Blocca",
+  "lockTitle": "Bloccare questa carta?",
+  "lockDescription": "Una volta bloccata, la carta mantiene la disposizione attuale e non può più essere mescolata. L'azione non si può annullare.",
+  "shuffleFailed": "Impossibile mescolare la carta",
+  "lockFailed": "Impossibile bloccare la carta",
+  "editCard": "Modifica carta",
+  "done": "Fatto",
+  "refreshFailed": "Impossibile aggiornare le carte",
+  "refreshCardFailed": "Impossibile aggiornare la carta",
+  "updateCellFailed": "Impossibile aggiornare la cella",
+  "you": "(Tu)"
 }

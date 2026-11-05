@@ -1,1 +1,14 @@
-{}
+{
+  "verifying": "Verifica della tua email in corso...",
+  "noToken": "Link di verifica non valido. Nessun token fornito.",
+  "successDefault": "Email verificata con successo!",
+  "failedFallback": "Impossibile verificare l'email. Il link potrebbe essere scaduto.",
+  "title": "Verifica email",
+  "descLoading": "Elaborazione della richiesta di verifica...",
+  "descSuccess": "La tua email è stata verificata",
+  "descError": "Verifica non riuscita",
+  "goToLogin": "Vai all'accesso",
+  "login": "Accedi",
+  "goToProfile": "Vai al profilo",
+  "expiredHint": "Se il link è scaduto, puoi richiedere una nuova email di verifica dalla pagina del tuo profilo."
+}
