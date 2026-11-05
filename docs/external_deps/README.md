@@ -83,10 +83,53 @@ used in a commercial product. The obligations below are what remains.
   restricted), so it was not inspected. It is expected to reference the same
   images built from the Dockerfiles above.
 
-## Keeping it up to date
+## Maintaining this inventory
 
-Update these files whenever a dependency is added, removed, or bumped across
-a major version. Useful commands (run in `nextjs/` or `ws-server/`):
+Whenever you add, remove, upgrade (across a major version) or start using
+anything external that is not already tracked, update the matching file here
+**in the same change**. This includes:
+
+- npm packages (direct dependencies, and transitive ones with a non-permissive
+  or unusual license)
+- Docker base images and server software
+- CLI tools, GitHub Actions, release tooling
+- fonts, icons, images and other assets
+- code copied from third parties
+- external services and APIs
+
+Use the existing file for the area (see [Files](#files)). Create a new file
+only for a new area, and link it from the table above.
+
+For each entry record:
+
+- **Name**
+- **Version**: both the declared range and the resolved version from the
+  lockfile, or the image tag
+- **License**: as an SPDX identifier
+- **Purpose**: why we use it, and where (file/module)
+- **Scope**: runtime (shipped to users or in production images) vs
+  development/build only
+
+Check the license before adopting a dependency, and report it to the user if
+it:
+
+- requires payment for commercial use, or has paid editions/features (e.g.
+  Flyway Teams)
+- is copyleft (GPL, LGPL, AGPL, MPL) or source-available (SSPL, BUSL,
+  Elastic, ...)
+- requires attribution or crediting the author beyond keeping the license
+  text (e.g. CC-BY)
+- restricts use of the authors' names or trademarks
+- sends user data to a third party (privacy/GDPR, e.g. CDNs, analytics)
+- is missing or unknown
+
+Record these obligations in the entry and, if they affect publishing, in
+[Points to check before publishing](#points-to-check-before-publishing).
+
+Never add a dependency with an AGPL, SSPL, BUSL or unknown license, or one
+that requires a paid license, without explicit user approval.
+
+Useful commands (run in `nextjs/` or `ws-server/`):
 
 ```sh
 pnpm list --depth 0          # direct dependencies and resolved versions

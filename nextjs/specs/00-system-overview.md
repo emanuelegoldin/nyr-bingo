@@ -30,6 +30,8 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 | 18 | Game archive |
 | 19 | Notifications |
 | 20 | Mobile layout |
+| 21 | Authorization |
+| 22 | Card shuffle |
 
 ## Scope
 In scope:

@@ -113,31 +113,9 @@ When working on a feature, the agent MUST follow this sequence:
 
 ## External Dependencies
 
-The app may be published commercially, so every external dependency must be tracked in `docs/external_deps/`.
+The app may be published commercially, so every external dependency (npm packages, images, tools, CI actions, fonts, assets, copied code, external services) must be tracked in `docs/external_deps/`.
 
-- Whenever you add, remove, upgrade (across a major version) or start using anything external that is not already tracked, update the matching file in `docs/external_deps/` **in the same change**. This includes:
-  - npm packages (direct dependencies, and transitive ones with a non-permissive or unusual license)
-  - Docker base images and server software
-  - CLI tools, GitHub Actions, release tooling
-  - fonts, icons, images and other assets
-  - code copied from third parties
-  - external services and APIs
-- Use the existing file for the area (`nextjs-npm.md`, `ws-server-npm.md`, `container-images.md`, `tooling-ci.md`, `assets-and-services.md`). Create a new file only for a new area, and link it from `docs/external_deps/README.md`.
-- For each entry record:
-  - **Name**
-  - **Version**: both the declared range and the resolved version from the lockfile, or the image tag
-  - **License**: as an SPDX identifier
-  - **Purpose**: why we use it, and where (file/module)
-  - **Scope**: runtime (shipped to users or in production images) vs development/build only
-- Check the license before adopting a dependency, and report it to the user if it:
-  - requires payment for commercial use, or has paid editions/features (e.g. Flyway Teams)
-  - is copyleft (GPL, LGPL, AGPL, MPL) or source-available (SSPL, BUSL, Elastic, ...)
-  - requires attribution or crediting the author beyond keeping the license text (e.g. CC-BY)
-  - restricts use of the authors' names or trademarks
-  - sends user data to a third party (privacy/GDPR, e.g. CDNs, analytics)
-  - is missing or unknown
-
-  Record these obligations in the entry and, if they affect publishing, in the "Points to check before publishing" list of `docs/external_deps/README.md`.
+- Before adding, removing, upgrading across a major version, or starting to use anything external, read `docs/external_deps/README.md` ("Maintaining this inventory") and update the inventory **in the same change**.
 - Never add a dependency with an AGPL, SSPL, BUSL or unknown license, or one that requires a paid license, without explicit user approval.
 
 ---
