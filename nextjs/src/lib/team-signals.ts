@@ -24,8 +24,8 @@ const teamRooms = (teamIds: string[]): RoomNotification[] =>
   teamIds.map((id) => ({ type: 'card', id }));
 
 /**
- * List the teams showing a resolution, through linked cells or as its own team.
- * Call this before deleting the resolution, because the delete clears the cell links.
+ * List the team a resolution belongs to (a team goal or a member-provided resolution).
+ * Cards hold their own copy, so a personal resolution belongs to no team.
  *
  * @param resolutionId - The resolution.
  * @returns The team ids, or an empty list if the lookup fails.
@@ -33,12 +33,8 @@ const teamRooms = (teamIds: string[]): RoomNotification[] =>
 export async function getResolutionTeamIds(resolutionId: string): Promise<string[]> {
   try {
     const rows = await query<Array<{ team_id: string }>>(
-      `SELECT bc.team_id FROM bingo_cells c
-       JOIN bingo_cards bc ON c.card_id = bc.id
-       WHERE c.resolution_id = ?
-       UNION
-       SELECT team_id FROM resolutions WHERE id = ? AND team_id IS NOT NULL`,
-      [resolutionId, resolutionId]
+      `SELECT team_id FROM resolutions WHERE id = ? AND team_id IS NOT NULL`,
+      [resolutionId]
     );
     return rows.map((row) => row.team_id);
   } catch (error) {
@@ -106,15 +102,13 @@ export async function notifyThreadClosed(threadId: string): Promise<void> {
 }
 
 /**
- * Signal that a resolution changed: its open dialogs, and every team showing it.
+ * Signal that a resolution's definition changed to the team it belongs to, if any.
+ * Cards are not affected: they hold their own copy (spec 05).
  *
  * @param resolutionId - The resolution.
  */
 export async function notifyResolution(resolutionId: string): Promise<void> {
-  await sendSignals(async () => [
-    { type: 'resolution', id: resolutionId },
-    ...teamRooms(await getResolutionTeamIds(resolutionId)),
-  ]);
+  await sendSignals(async () => teamRooms(await getResolutionTeamIds(resolutionId)));
 }
 
 /**

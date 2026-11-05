@@ -4,9 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getResolutionHistoryAccess, isResolutionOwner } from '@/lib/authz';
+import { isResolutionOwner } from '@/lib/authz';
 import { getResolutionTeamIds, notifyTeams } from '@/lib/team-signals';
-import { deleteResolution } from '@/lib/db';
+import { deleteResolution, getResolutionById } from '@/lib/db';
 import type { Resolution } from '@/lib/db/types';
 import { ResolutionType } from '@/lib/shared/types';
 import { errorResponse, withAuth, AuthContextNoParams } from '@/app/api/utils';
@@ -36,7 +36,7 @@ export function createDeleteHandler(
       return errorResponse('You can only delete your own resolutions', 403);
     }
 
-    // Read first: the delete clears the links from cells to the resolution
+    // Read first: the row is gone after the delete. Cards keep their copy (spec 03).
     const teamIds = await getResolutionTeamIds(id);
     const deleted = await deleteResolution(id, currentUser.id);
     if (!deleted) {
@@ -52,7 +52,7 @@ export function createDeleteHandler(
 /**
  * Builds the GET handler of a type-specific resolution route.
  * Without ?id it lists the caller's resolutions of that type.
- * With ?id it returns a single resolution of that type, under the visibility rules of spec 13.
+ * With ?id it returns a single resolution of that type, to its owner only (spec 03).
  * @param type The resolution type served by the route
  * @param listByUser Lists the caller's resolutions of that type
  * @returns The route handler
@@ -65,14 +65,11 @@ export function createTypedGetHandler(
     const id = new URL(request.url).searchParams.get('id');
 
     if (id) {
-      const access = await getResolutionHistoryAccess(id, currentUser.id);
-      if (!access.resolution || access.resolution.resolutionType !== type) {
+      const resolution = await getResolutionById(id);
+      if (!resolution || resolution.resolutionType !== type || !isResolutionOwner(resolution, currentUser.id)) {
         return errorResponse('Resolution not found', 404);
       }
-      if (!access.canView) {
-        return errorResponse('You are not allowed to view this resolution', 403);
-      }
-      return NextResponse.json({ resolution: access.resolution });
+      return NextResponse.json({ resolution });
     }
 
     const resolutions = await listByUser(currentUser.id);

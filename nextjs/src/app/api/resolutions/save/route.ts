@@ -24,7 +24,6 @@ import {
   getResolutionById,
   getRunningGame,
   isResolutionFrozen,
-  logResolutionHistoryEventSafe,
   updateResolutionContent,
 } from '@/lib/db';
 import { toUnifiedResolution } from '@/lib/shared/resolution-form';
@@ -195,13 +194,6 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
 
-/** History entry logged after a successful save. */
-interface SaveEvent {
-  key: string;
-  content: string;
-  metadata: Record<string, unknown>;
-}
-
 /**
  * Update a resolution, comparing the submitted type with the stored one.
  *
@@ -214,20 +206,12 @@ async function updateExisting(existing: Resolution, userId: string, content: Res
   // Same type → simple update
   if (existing.resolutionType === content.type) {
     await updateResolutionContent(existing.id, userId, content);
-    return respondWithSaved(existing.id, userId, {
-      key: 'resolution.updated',
-      content: `Updated ${content.type} resolution`,
-      metadata: { type: content.type, title: content.title },
-    });
+    return respondWithSaved(existing.id);
   }
 
-  // Type changed → atomic update of the resolution and its cells
+  // Type changed → cells filled from it keep their copy (spec 03)
   await changeResolutionType(existing.id, userId, content);
-  return respondWithSaved(existing.id, userId, {
-    key: 'resolution.type_changed',
-    content: `Changed resolution type from ${existing.resolutionType} to ${content.type}`,
-    metadata: { oldType: existing.resolutionType, newType: content.type, title: content.title },
-  });
+  return respondWithSaved(existing.id);
 }
 
 /**
@@ -270,37 +254,23 @@ async function handleCreate(
     toUserId,
   });
 
-  return respondWithSaved(id, userId, {
-    key: 'resolution.created',
-    content: `Created ${content.type} resolution`,
-    metadata: {
-      type: content.type,
-      scope,
-      teamId: game?.teamId ?? null,
-      gameId: game?.id ?? null,
-      toUserId: toUserId || null,
-    },
-  }, 201);
+  return respondWithSaved(id, 201);
 }
 
 /**
- * Signal a saved resolution, log its history entry and return it.
+ * Signal a saved resolution and return it. Saving logs no history: history belongs to cells (spec 13).
  *
  * @param id - The saved resolution.
- * @param userId - The user who saved it.
- * @param event - The history entry to log.
  * @param status - HTTP status of the response.
  * @returns The saved resolution in the unified shape, or 500 when it cannot be read back.
  */
-async function respondWithSaved(id: string, userId: string, event: SaveEvent, status = 200) {
+async function respondWithSaved(id: string, status = 200) {
   const saved = await getResolutionById(id);
   await notifyResolution(id);
 
   if (!saved) {
     return errorResponse('Failed to save resolution', 500);
   }
-
-  await logResolutionHistoryEventSafe(id, userId, event.key, event.content, event.metadata);
 
   return NextResponse.json({ resolution: toUnifiedResolution(saved) }, { status });
 }
