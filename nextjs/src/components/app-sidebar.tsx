@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LanguageSelectorDropdown } from "./LanguageSelectorDropdown";
 
 const menuItems = [
   {
@@ -91,7 +90,6 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          <LanguageSelectorDropdown />
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter />

@@ -11,6 +11,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { CornerLocaleSwitcher } from '@/components/locale-switcher';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { apiErrorMessage, apiFetch } from '@/lib/api-client';
 
@@ -53,6 +54,7 @@ function VerifyContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <CornerLocaleSwitcher />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="font-headline text-2xl">Email Verification</CardTitle>

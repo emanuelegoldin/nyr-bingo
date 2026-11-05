@@ -1,5 +1,5 @@
 import { AppLogo } from '@/components/icons';
-import { LanguageSelectorDropdown } from '@/components/LanguageSelectorDropdown';
+import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -36,15 +36,13 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-4 lg:px-6 min-h-16 py-2 gap-y-2 flex flex-wrap items-center shadow-sm bg-card md:h-16 md:py-0 md:flex-nowrap">
+      <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm bg-card">
         <Link href="/" className="flex items-center justify-center gap-2">
           <AppLogo />
           <span className="hidden sm:inline font-semibold font-headline">{t('App.name')}</span>
         </Link>
-        <div className="order-last w-full md:order-none md:w-auto md:ml-4">
-          <LanguageSelectorDropdown />
-        </div>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
+        <nav className="ml-auto flex items-center gap-2 sm:gap-4">
+          <LocaleSwitcher />
           <Button variant="ghost" asChild>
             <Link href="/login">{t('Home.loginLink')}</Link>
           </Button>

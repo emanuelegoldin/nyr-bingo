@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppLogo } from '@/components/icons';
+import { CornerLocaleSwitcher } from '@/components/locale-switcher';
 import { Loader2, Users, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { AuthContext } from '@/app/api/utils';
@@ -54,6 +55,7 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
+      <CornerLocaleSwitcher />
       <div className="mb-8 flex items-center gap-2">
         <AppLogo />
         <span className="text-2xl font-semibold font-headline">Resolution Bingo</span>
