@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 export function NotificationSetting() {
   const { toast } = useToast();
   const t = useTranslations("Notifications");
+  const tc = useTranslations("Common");
   const [enabled, setEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export function NotificationSetting() {
     const result = await apiFetch("/api/notifications/settings", { method: "PUT", json: { enabled: checked } });
     if (!result.ok) {
       setEnabled(!checked);
-      toast({ title: "Error", description: t('settingError'), variant: "destructive" });
+      toast({ title: tc("error"), description: t('settingError'), variant: "destructive" });
     }
   };
 

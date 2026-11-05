@@ -5,7 +5,7 @@ export function AppLogo() {
     <div style={{borderRadius: '50px', overflow: 'hidden'}}>
       <Image
         src="/media/logo.webp"
-        alt="App Logo"
+        alt="Resolution Bingo"
         width={48}
         height={48}
       />
