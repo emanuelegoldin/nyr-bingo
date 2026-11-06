@@ -16,5 +16,6 @@
   "loading": "Loading...",
   "unknownUser": "Unknown User",
   "toggleSidebar": "Toggle Sidebar",
-  "notFound": "Page Not Found"
+  "notFound": "Page Not Found",
+  "moreActions": "More actions"
 }

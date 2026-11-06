@@ -67,6 +67,11 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 - The **Invite** dialog and **Delete Team**, for leaders
 - **Leave Team**, for every member
 
+The header keeps only the most used actions visible, as on the game page (spec 16):
+- **New Game** and **Invite** are buttons, for leaders.
+- The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Leave Team and Delete Team, which is styled as destructive and listed for leaders only.
+- Choosing a menu item opens the action's confirmation.
+
 ---
 
 ### Team Deletion
@@ -148,3 +153,4 @@ The role-to-permission table and the status of every refusal are defined in spec
 - A team leader can promote a member; a team can have several leaders.
 - A member can leave a team after confirming; this leaves all of its running games they play.
 - The only leader cannot leave until another member is promoted.
+- A leader's team header shows at most two action buttons plus the More actions menu, and every Team Page action can be reached from the header or the menu.

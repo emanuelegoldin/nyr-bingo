@@ -16,5 +16,6 @@
   "loading": "Caricamento...",
   "unknownUser": "Utente sconosciuto",
   "toggleSidebar": "Mostra/nascondi barra laterale",
-  "notFound": "Pagina non trovata"
+  "notFound": "Pagina non trovata",
+  "moreActions": "Altre azioni"
 }

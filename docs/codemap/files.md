@@ -79,6 +79,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `InviteDialog.tsx`
 - `NewGameDialog.tsx`
+- `TeamActionsMenu.tsx` — More actions menu of the team header, with the confirmations its items open.
 
 ## app/(auth)
 
@@ -321,6 +322,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## components
 
+- `actions-menu.tsx` — More actions menu: a "⋯" button that opens a menu of the less used actions of a page header.
 - `app-header.tsx`
 - `app-sidebar.tsx`
 - `confetti.ts` — Bingo confetti effect.

@@ -20,7 +20,6 @@
     "unknownLeader": "Unknown"
   },
   "actionsMenu": {
-    "moreActions": "More actions",
     "setGoal": "Set Goal",
     "configure": "Configure",
     "endGame": "End Game",

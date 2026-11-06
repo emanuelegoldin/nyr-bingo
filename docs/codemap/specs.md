@@ -49,6 +49,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 
 ## 04-bingo-teams.md — Bingo Teams
 
+- `app/(app)/teams/[teamId]/_components/TeamActionsMenu.tsx` — More actions menu of the team header, with the confirmations its items open. [Team Page]
 - `app/(app)/teams/[teamId]/page.tsx` — Team Page [Team Page]
 - `app/(app)/teams/[teamId]/team-page-client.tsx` — Team Page [Team Page]
 - `app/(app)/teams/page.tsx` — Teams Page
@@ -180,6 +181,7 @@ _No file references this spec._
 - `app/api/join/route.ts` — Team Join API (via invite code) [Joining After Start]
 - `app/api/resolutions/save/route.ts` — Unified Resolution Save API
 - `app/api/teams/[teamId]/games/route.ts` — Team Games API [Game Creation]
+- `components/actions-menu.tsx` — More actions menu: a "⋯" button that opens a menu of the less used actions of a page header. [Game Page]
 - `components/team/game-list.tsx` — Grid of running games with a link to each game page. [Game Page]
 - `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game [Joining After Start; Start Conditions]
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells [Ending a Game]

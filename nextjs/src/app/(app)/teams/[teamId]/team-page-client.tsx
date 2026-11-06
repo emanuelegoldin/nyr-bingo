@@ -8,7 +8,6 @@
  * user plays, its members and the leaders' actions.
  */
 
-import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
 import { GameList, type GameListItem } from "@/components/team/game-list";
@@ -21,12 +20,13 @@ import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
 import type { TeamPermission } from "@/lib/authz/permissions";
-import { Crown, LogOut, Trash2 } from "lucide-react";
+import { Crown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { InviteDialog } from "./_components/InviteDialog";
 import { NewGameDialog } from "./_components/NewGameDialog";
+import { TeamActionsMenu } from "./_components/TeamActionsMenu";
 
 interface TeamPageClientProps {
   team: Team;
@@ -38,7 +38,6 @@ interface TeamPageClientProps {
 
 export default function TeamPageClient({ team, games, currentUserId, capabilities }: TeamPageClientProps) {
   const t = useTranslations("Teams");
-  const tc = useTranslations("Common");
   const toastApiError = useApiErrorToast();
   usePageTitle(t("detail.pageTitle"));
 
@@ -115,27 +114,12 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
                 <NewGameDialog teamId={team.id} members={team.members} currentUserId={currentUserId} />
               )}
               {capabilities.includes('team.invite') && <InviteDialog teamId={team.id} />}
-              {capabilities.includes('team.delete') && (
-                <ConfirmActionDialog
-                  triggerLabel={t("detail.deleteTrigger")}
-                  triggerIcon={Trash2}
-                  triggerVariant="destructive"
-                  title={t("detail.deleteTitle")}
-                  description={t("detail.deleteDescription")}
-                  confirmLabel={tc("delete")}
-                  onConfirm={handleDeleteTeam}
-                  isPending={isDeleting}
-                />
-              )}
-              <ConfirmActionDialog
-                triggerLabel={t("detail.leaveTrigger")}
-                triggerIcon={LogOut}
-                triggerVariant="outline"
-                title={t("detail.leaveTitle")}
-                description={t("detail.leaveDescription")}
-                confirmLabel={t("detail.leaveTrigger")}
-                onConfirm={handleLeaveTeam}
-                isPending={isLeaving}
+              <TeamActionsMenu
+                canDelete={capabilities.includes('team.delete')}
+                onLeaveTeam={handleLeaveTeam}
+                isLeaving={isLeaving}
+                onDeleteTeam={handleDeleteTeam}
+                isDeleting={isDeleting}
               />
             </div>
           </CardHeader>
