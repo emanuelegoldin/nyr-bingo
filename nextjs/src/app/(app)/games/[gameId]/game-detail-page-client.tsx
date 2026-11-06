@@ -4,17 +4,15 @@
  * Game Page
  * Spec Reference: 16-games.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md
  *
- * The page is organised into three tabs:
+ * The page is organised into two tabs:
  *   1. Cards   — bingo cards for every member (existing functionality)
- *   2. Members — simple member list with clickable avatars
- *   3. Leaderboard — ranked table of first-bingo times
+ *   2. Leaderboard — ranked table of first-bingo times
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
 import { GameStatusBadge } from "@/components/team/game-status-badge";
-import { MembersTab } from "@/components/team/members-tab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -170,7 +168,6 @@ export default function GameDetailPageClient({
         <Tabs defaultValue="cards">
           <TabsList>
             <TabsTrigger value="cards">{t("tabs.cards")}</TabsTrigger>
-            <TabsTrigger value="members">{t("tabs.members")}</TabsTrigger>
             <TabsTrigger value="leaderboard">{t("tabs.leaderboard")}</TabsTrigger>
           </TabsList>
 
@@ -180,10 +177,6 @@ export default function GameDetailPageClient({
               initialCards={cards}
               currentUserId={initialCurrentUserId}
             />
-          </TabsContent>
-
-          <TabsContent value="members" className="mt-6">
-            <MembersTab members={game.members} currentUserId={initialCurrentUserId} />
           </TabsContent>
 
           <TabsContent value="leaderboard" className="mt-6">

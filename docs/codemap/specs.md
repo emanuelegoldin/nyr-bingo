@@ -61,6 +61,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/api/teams/route.ts` — Teams API
 - `app/join/[inviteCode]/page.tsx` [Invitations / Joining]
 - `components/team/leaders.ts` — Helpers for the leaders of a team or game: the members whose role is leader. [Leaders]
+- `components/team/members-list.tsx` — Members list of the team page. [Team Page]
 - `components/team/types.ts` — Shared types for the team page, the game page and their components.
 - `lib/db/leave-repository.ts` — Leave Repository - Leaving a game or a team [Leaving a Team]
 - `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions
@@ -137,13 +138,12 @@ _No file references this spec._
 - `components/team-refresh-listener.tsx`
 - `lib/ws-client.ts` — Browser WebSocket client shared by the team socket and the notification socket:
 
-## 12-team-tabs.md — Game Tabs, Members List & Leaderboard
+## 12-team-tabs.md — Game Tabs & Leaderboard
 
 - `app/(app)/games/[gameId]/game-detail-page-client.tsx` — Game Page
 - `app/(app)/games/[gameId]/leaderboard-tab.tsx` — Leaderboard Tab — Game Page
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
 - `components/team-refresh-listener.tsx`
-- `components/team/members-tab.tsx` — Members list, shown as a tab of the game page and on the team page.
 - `lib/db/leaderboard-repository.ts` — Leaderboard Repository – persisted game leaderboard data
 
 ## 13-resolution-history-and-progress.md — Resolution History and Progress

@@ -413,7 +413,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `game-list.tsx` — Grid of running games with a link to each game page.
 - `game-status-badge.tsx`
 - `leaders.ts` — Helpers for the leaders of a team or game: the members whose role is leader.
-- `members-tab.tsx` — Members list, shown as a tab of the game page and on the team page.
+- `members-list.tsx` — Members list of the team page.
 - `types.ts` — Shared types for the team page, the game page and their components.
 
 ## components/ui

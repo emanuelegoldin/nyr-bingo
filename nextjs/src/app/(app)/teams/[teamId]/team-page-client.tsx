@@ -12,7 +12,7 @@ import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
 import { GameList, type GameListItem } from "@/components/team/game-list";
 import { formatLeaderNames } from "@/components/team/leaders";
-import { MembersTab } from "@/components/team/members-tab";
+import { MembersList } from "@/components/team/members-list";
 import type { Team } from "@/components/team/types";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePageTitle } from "@/hooks/AppContext";
@@ -136,7 +136,7 @@ export default function TeamPageClient({ team, games, currentUserId, capabilitie
           )}
         </section>
 
-        <MembersTab
+        <MembersList
           members={team.members}
           currentUserId={currentUserId}
           canPromote={capabilities.includes('team.promote')}

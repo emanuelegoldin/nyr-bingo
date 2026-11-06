@@ -63,9 +63,17 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 
 - The team's running games that the caller plays (spec 16), each linking to its game page
 - A **New Game** dialog, for leaders
-- The members list, as defined for the game page's Members tab (spec 12), with **Make Leader** for leaders
+- The members list (see below), with **Make Leader** for leaders
 - The **Invite** dialog and **Delete Team**, for leaders
 - **Leave Team**, for every member
+
+The members list is a simple list of all team members. The game page has no members list (spec 12).
+- Each row contains:
+  - **Avatar** on the left (clickable → navigates to the member's profile).
+  - **Display name**, or the username when no public display name exists.
+  - A "Leader" badge for every team leader.
+  - A **Make Leader** button for leaders on each non-leader row, after confirmation (see Leaders).
+- The current user's entry is annotated with "(You)".
 
 The header keeps only the most used actions visible, as on the game page (spec 16):
 - **New Game** and **Invite** are buttons, for leaders.
