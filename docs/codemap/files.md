@@ -374,7 +374,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `cell-face.tsx`
 - `cell-hourglass.tsx` — Yellow hourglass drawn over a cell whose proof was requested, with an optional settling animation.
-- `cell-reactions.tsx` — Teammates' reactions drawn over a stamped cell, each at its stored spot.
+- `cell-reactions.tsx` — Teammates' reactions drawn over a stamped cell, each at its stored spot, tilt and size.
 - `cell-stamp.tsx` — Round check stamp drawn over a completed or accomplished cell, with an optional stamping animation.
 - `cell-state-style.tsx`
 - `cell.tsx`

@@ -1,5 +1,5 @@
 /**
- * Teammates' reactions drawn over a stamped cell, each at its stored spot.
+ * Teammates' reactions drawn over a stamped cell, each at its stored spot, tilt and size.
  * Spec Reference: 24-cell-reactions.md - Card Display
  */
 
@@ -26,8 +26,13 @@ export const CellReactions = ({ reactions }: CellReactionsProps) => {
         <ReactionIcon
           key={index}
           reaction={mark.reaction}
-          className="absolute w-[24%] h-[24%] -translate-x-1/2 -translate-y-1/2 drop-shadow-sm"
-          style={{ left: `${mark.x}%`, top: `${mark.y}%` }}
+          className="absolute w-[24%] h-[24%] drop-shadow-sm"
+          style={{
+            left: `${mark.x}%`,
+            top: `${mark.y}%`,
+            // Center on the spot, then tilt and size around that center
+            transform: `translate(-50%, -50%) rotate(${mark.rotation}deg) scale(${mark.scale / 100})`,
+          }}
         />
       ))}
     </div>
