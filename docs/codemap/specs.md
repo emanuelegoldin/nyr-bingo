@@ -74,6 +74,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
 - `app/api/games/[gameId]/cards/route.ts` — Game Bingo Cards API
 - `app/api/games/[gameId]/start/route.ts` — Game Start Bingo API
+- `components/cell/joker.tsx` — The Joker at the center of a card: a plain cell with a purple outline star. [Assumptions]
 - `hooks/use-edit-cell-options.ts`
 - `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game
 - `lib/db/bingo-card-repository.ts` — Bingo Card Repository - Reading bingo cards
@@ -102,6 +103,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/api/games/[gameId]/cards/route.ts` — Game Bingo Cards API
 - `components/cell/cell-hourglass.tsx` — Yellow hourglass drawn over a cell whose proof was requested, with an optional settling animation. [Card Display Rules]
 - `components/cell/cell-stamp.tsx` — Round check stamp drawn over a completed or accomplished cell, with an optional stamping animation. [Card Display Rules]
+- `components/cell/cell.tsx` — The button that every bingo cell is drawn as, and the layout classes the cells share. [Card Display Rules]
 - `components/cell/resolution-cell.tsx` [Cell Detail Dialog]
 - `lib/db/bingo-card-repository.ts` — Bingo Card Repository - Reading bingo cards
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
@@ -301,7 +303,7 @@ _No file references this spec._
 - `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads
 - `lib/shared/reactions.ts` — The reaction pool and the shapes of a reaction on a cell, shared by the server and the client. [Reaction Pool]
 
-## Unmapped files (95)
+## Unmapped files (93)
 
 No spec reference in the file. See `files.md` for their purpose.
 
@@ -334,9 +336,7 @@ No spec reference in the file. See `files.md` for their purpose.
 - `components/bingo-card/team-page/ProfileInfo.tsx`
 - `components/cell/cell-face.tsx`
 - `components/cell/cell-state-style.tsx`
-- `components/cell/cell.tsx`
 - `components/cell/empty.tsx`
-- `components/cell/joker.tsx`
 - `components/confetti.ts`
 - `components/dashboard/dashboard-game-card-client.tsx`
 - `components/dashboard/dashboard-page-shell.tsx`

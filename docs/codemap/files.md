@@ -377,9 +377,9 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `cell-reactions.tsx` — Teammates' reactions drawn over a stamped cell, each at its stored spot, tilt and size.
 - `cell-stamp.tsx` — Round check stamp drawn over a completed or accomplished cell, with an optional stamping animation.
 - `cell-state-style.tsx`
-- `cell.tsx`
+- `cell.tsx` — The button that every bingo cell is drawn as, and the layout classes the cells share.
 - `empty.tsx`
-- `joker.tsx`
+- `joker.tsx` — The Joker at the center of a card: a plain cell with a purple outline star.
 - `reaction-icon.tsx` — The drawing of each reaction in the pool, as a small inline SVG.
 - `reaction-picker.tsx` — The React row of the cell detail dialog: one button per reaction, to add, change or remove the
 - `resolution-cell.tsx`
