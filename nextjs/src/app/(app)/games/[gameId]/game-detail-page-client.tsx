@@ -17,12 +17,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
-import { CalendarClock, Crown, Loader2, Swords } from "lucide-react";
+import { CalendarClock, Loader2, Swords } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from 'react';
 
-import { formatLeaderNames } from "@/components/team/leaders";
 import type { GamePermission } from "@/lib/authz/permissions";
 import { BingoCardWithCells } from "@/lib/db/types";
 import type { LeaderboardEntry, ResolutionFormData } from "@/lib/shared/types";
@@ -96,10 +95,6 @@ export default function GameDetailPageClient({
             <CardTitle className="font-headline text-3xl">{game.name}</CardTitle>
             <CardDescription className="mt-2">
               <Link href={`/teams/${game.teamId}`} className="hover:underline">{game.teamName}</Link>
-            </CardDescription>
-            <CardDescription className="flex items-center gap-2 mt-2">
-              <Crown className="h-4 w-4 text-amber-500" />
-              {t("leaders", { names: formatLeaderNames(game.members, t("unknownLeader")) })}
             </CardDescription>
             {game.deadline && (
               <CardDescription className="flex items-center gap-2 mt-2">

@@ -9,14 +9,12 @@
   },
   "detail": {
     "pageTitle": "Game",
-    "leaders": "Leaders: {names}",
     "lastDay": "Last day: {date}",
     "startBingo": "Start Bingo",
     "tabs": {
       "cards": "Cards",
       "leaderboard": "Leaderboard"
-    },
-    "unknownLeader": "Unknown"
+    }
   },
   "actionsMenu": {
     "setGoal": "Set Goal",

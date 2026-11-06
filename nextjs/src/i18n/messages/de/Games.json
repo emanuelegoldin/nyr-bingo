@@ -9,14 +9,12 @@
   },
   "detail": {
     "pageTitle": "Spiel",
-    "leaders": "Teamleitung: {names}",
     "lastDay": "Letzter Tag: {date}",
     "startBingo": "Bingo starten",
     "tabs": {
       "cards": "Karten",
       "leaderboard": "Rangliste"
-    },
-    "unknownLeader": "Unbekannt"
+    }
   },
   "actionsMenu": {
     "setGoal": "Ziel festlegen",

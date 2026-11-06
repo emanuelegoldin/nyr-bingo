@@ -9,14 +9,12 @@
   },
   "detail": {
     "pageTitle": "Partita",
-    "leaders": "Leader: {names}",
     "lastDay": "Ultimo giorno: {date}",
     "startBingo": "Avvia il bingo",
     "tabs": {
       "cards": "Carte",
       "leaderboard": "Classifica"
-    },
-    "unknownLeader": "Sconosciuto"
+    }
   },
   "actionsMenu": {
     "setGoal": "Imposta obiettivo",
