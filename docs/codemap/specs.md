@@ -290,8 +290,12 @@ _No file references this spec._
 
 ## 24-cell-reactions.md — Cell Reactions
 
+- `app/api/cells/[cellId]/reaction/route.ts` — Cell Reaction API [Backend Rules]
+- `lib/db/archived-reaction-repository.ts` — Archived Reaction Repository - The cell reactions kept in an archived game [Ended and Archived Games]
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
+- `lib/db/cell-reaction-repository.ts` — Cell Reaction Repository - Teammates' emoji reactions on stamped cells [Clearing]
 - `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads
+- `lib/shared/reactions.ts` — The reaction pool and the shapes of a reaction on a cell, shared by the server and the client. [Reaction Pool]
 
 ## Unmapped files (95)
 

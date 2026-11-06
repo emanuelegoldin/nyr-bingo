@@ -158,6 +158,10 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `route.ts` — Increment Iterative Cell API
 
+## app/api/cells/[cellId]/reaction
+
+- `route.ts` — Cell Reaction API
+
 ## app/api/cells/[cellId]/request-proof
 
 - `route.ts` — Request Proof API
@@ -495,6 +499,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 
 - `archived-game-repository.ts` — Archived Game Repository - Read-only snapshots of finished games
 - `archived-progress-repository.ts` — Archived Progress Repository - The progress points kept in an archived game
+- `archived-reaction-repository.ts` — Archived Reaction Repository - The cell reactions kept in an archived game
 - `archived-thread-repository.ts` — Archived Thread Repository - The review threads kept in an archived game
 - `archived-thread-rows.ts` — Row types and the mapper that turn closed threads, live or archived, into the shared shape.
 - `bingo-card-arrangement.ts` — Bingo Card Arrangement - Shuffling and locking a card
@@ -504,6 +509,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
 - `cell-history-repository.ts` — Cell History Repository
 - `cell-progress-repository.ts` — Cell Progress Repository - The progress a compound or iterative cell holds
+- `cell-reaction-repository.ts` — Cell Reaction Repository - Teammates' emoji reactions on stamped cells
 - `cell-snapshot.ts` — Cell Snapshot - The copy of a resolution's definition that a bingo cell holds
 - `closed-thread-repository.ts` — Closed Thread Repository - The archived threads of a running game: reading and deleting them
 - `connection.ts` — MariaDB Database Connection
@@ -534,6 +540,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `bingo-lines.ts`
 - `cell-source.ts`
 - `dates.ts` — Date helpers usable from server and client code.
+- `reactions.ts` — The reaction pool and the shapes of a reaction on a cell, shared by the server and the client.
 - `resolution-form.ts` — Mappers that build ResolutionFormData for the resolution create/edit dialog.
 - `resolution-type.ts`
 - `shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.

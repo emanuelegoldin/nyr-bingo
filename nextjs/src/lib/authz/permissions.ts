@@ -41,6 +41,7 @@ export type GamePermission =
   | 'thread.vote'
   | 'thread.delete'
   | 'card.arrange'
+  | 'cell.react'
   | 'game.configure'
   | 'game.start'
   | 'game.end'
@@ -74,6 +75,7 @@ export const GAME_ROLE_PERMISSIONS: Record<GameScopeRole, readonly GamePermissio
     'thread.vote',
     'thread.delete',
     'card.arrange',
+    'cell.react',
     'game.configure',
     'game.start',
     'game.end',
@@ -89,6 +91,7 @@ export const GAME_ROLE_PERMISSIONS: Record<GameScopeRole, readonly GamePermissio
     'thread.message',
     'thread.vote',
     'card.arrange',
+    'cell.react',
   ],
 };
 
