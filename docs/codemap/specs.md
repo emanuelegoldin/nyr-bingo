@@ -182,7 +182,7 @@ _No file references this spec._
 - `app/api/resolutions/save/route.ts` — Unified Resolution Save API
 - `app/api/teams/[teamId]/games/route.ts` — Team Games API [Game Creation]
 - `components/actions-menu.tsx` — More actions menu: a "⋯" button that opens a menu of the less used actions of a page header. [Game Page]
-- `components/team/game-list.tsx` — Grid of running games with a link to each game page. [Game Page]
+- `components/team/game-list.tsx` — Grid of running games; each card links to its game page. [Game Page]
 - `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game [Joining After Start; Start Conditions]
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells [Ending a Game]
 - `lib/db/game-repository.ts` — Game Repository - Database operations for games [Deleting a Game; Ending a Game; Game Configuration; Game Creation; Joining After Start; Listing and Reading Games; Member-Provided Resolutions; Start Conditions]

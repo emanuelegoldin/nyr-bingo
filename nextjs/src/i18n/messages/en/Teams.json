@@ -68,9 +68,6 @@
     "teamLeader": "Team Leader",
     "leader": "Leader"
   },
-  "gameList": {
-    "viewGame": "View Game"
-  },
   "gameStatus": {
     "started": "Game Started",
     "forming": "Forming"

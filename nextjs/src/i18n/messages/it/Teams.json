@@ -68,9 +68,6 @@
     "teamLeader": "Leader del team",
     "leader": "Leader"
   },
-  "gameList": {
-    "viewGame": "Vai alla partita"
-  },
   "gameStatus": {
     "started": "Partita iniziata",
     "forming": "In formazione"

@@ -106,7 +106,7 @@ The header keeps only the most used actions visible, so it stays readable for le
 - Choosing a menu item opens the same dialog or confirmation as the action's button did.
 - While no goal is set, a leader also sees a **Set Goal** button in the goal area. Once a goal is set, the goal area has no button: the goal is changed through **Set Goal** in the More actions menu.
 
-`/games` lists the caller's running games with their name, team, status and a link to the game page. New games are created from the team page (spec 04).
+`/games` lists the caller's running games as cards with their name, team and status. The whole card is a link to the game page; it has no separate button. The team page lists its games the same way (spec 04). New games are created from the team page (spec 04).
 
 ---
 
