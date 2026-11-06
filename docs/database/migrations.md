@@ -479,3 +479,28 @@ None: the defaults give existing and archived games their 5×5 size.
 ### Idempotency
 
 `Create_Column` does nothing when the column already exists, so the migration can run again.
+
+## 5.11.0 - Archived Threads
+
+Closing a review thread keeps its messages and files: the thread becomes a read-only archived thread
+(spec 07), and archived games keep their threads (spec 18).
+
+### Schema changes
+
+- `review_threads.outcome` (`ENUM('accomplished', 'pending')`, nullable) is the state the thread's cell
+  took when it closed.
+- `archived_threads` holds a game's closed threads once it is archived. Its `id` is the thread's former
+  id, and `(archived_game_id, user_id, position)` references the archived cell, `ON DELETE CASCADE`. It
+  keeps `created_at`, `closed_at`, `outcome` and the `accept_votes` and `deny_votes` counts.
+- `archived_thread_messages` keeps each message's `author_name`, `content` and `created_at`.
+- `archived_thread_files` keeps each file's `file_path`, `file_name`, `file_size`, `mime_type` and
+  `created_at`. Both cascade from `archived_threads`.
+- The archive tables have no foreign key to `users`, `games` or `review_threads` (spec 18 Independence).
+
+### Data migration
+
+None. Threads closed before this migration have a `NULL` outcome and no messages or files left.
+
+### Idempotency
+
+`Create_Column` and `CREATE TABLE IF NOT EXISTS` do nothing on a second run.
