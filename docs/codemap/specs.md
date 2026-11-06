@@ -100,6 +100,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/api/cells/card-owner.ts` — Ownership check shared by the cell routes.
 - `app/api/cells/cell-progress.ts` — Checks and follow-up shared by the cell progress routes.
 - `app/api/games/[gameId]/cards/route.ts` — Game Bingo Cards API
+- `components/cell/cell-hourglass.tsx` — Yellow hourglass drawn over a cell whose proof was requested, with an optional settling animation. [Card Display Rules]
 - `components/cell/cell-stamp.tsx` — Round check stamp drawn over a completed or accomplished cell, with an optional stamping animation. [Card Display Rules]
 - `components/cell/resolution-cell.tsx` [Cell Detail Dialog]
 - `lib/db/bingo-card-repository.ts` — Bingo Card Repository - Reading bingo cards

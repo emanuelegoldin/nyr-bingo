@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
 import { CellReactions } from "./cell-reactions";
+import { CellHourglass } from "./cell-hourglass";
 import { CellStamp, type CellStampMotion } from "./cell-stamp";
 import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
 import { EmptyCell } from "./empty";
@@ -22,15 +23,15 @@ interface CellFaceProps {
     onClick: () => void,
     /** Teammates' reactions on the cell (spec 24); none by default. */
     reactions?: CellReactionMark[],
-    /** How the stamp of a completed or accomplished cell appears; defaults to `still`. */
-    stampMotion?: CellStampMotion,
-    /** Called when the stamping animation has finished. */
-    onStampAnimationEnd?: () => void,
+    /** How the stamp or hourglass of the cell appears; defaults to `still`. */
+    markMotion?: CellStampMotion,
+    /** Called when the stamp or hourglass animation has finished. */
+    onMarkAnimationEnd?: () => void,
 }
 
 /**
  * Renders what the grid shows for a cell: the empty slot, or the button with
- * the resolution title, state icon or stamp, and source badge.
+ * the resolution title, state icon, stamp or hourglass, and source badge.
  * The visual state follows the cell state, overridden by the proof status.
  *
  * @param cell - The cell to display.
@@ -38,8 +39,8 @@ interface CellFaceProps {
  * @param sourceLabel - Label of the cell source, shown in the badge.
  * @param onClick - Click handler of the cell.
  * @param reactions - Teammates' reactions, drawn above the stamp and below the title.
- * @param stampMotion - Whether the stamp is at rest, waiting to be stamped, or stamping.
- * @param onStampAnimationEnd - Called when the stamping animation has finished.
+ * @param markMotion - Whether the stamp or hourglass is at rest, waiting to appear, or animating in.
+ * @param onMarkAnimationEnd - Called when the stamp or hourglass animation has finished.
  * @returns The cell face.
  */
 export const CellFace = ({
@@ -48,15 +49,16 @@ export const CellFace = ({
     sourceLabel,
     onClick,
     reactions = [],
-    stampMotion = "still",
-    onStampAnimationEnd
+    markMotion = "still",
+    onMarkAnimationEnd
 }: CellFaceProps) => {
     const tl = useTranslations("Labels");
     const stateConfig = {
         pending: { icon: null, color: "bg-card hover:bg-secondary/50", text: "text-card-foreground" },
         // Spec 06 - Card Display Rules: completed and accomplished cells show a stamp instead of a colour
         completed: { icon: null, color: "bg-card", text: "text-card-foreground" },
-        pending_review: { icon: getCellStateIcon("pending_review", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.pending_review.bg, text: CELL_STATE_COLORS.pending_review.text },
+        // Spec 06 - Card Display Rules: a cell under review shows a yellow hourglass instead of a colour
+        pending_review: { icon: null, color: "bg-card", text: "text-card-foreground" },
         accomplished: { icon: null, color: "bg-card", text: "text-card-foreground line-through" },
         failed: { icon: getCellStateIcon("failed", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.failed.bg, text: CELL_STATE_COLORS.failed.text },
     };
@@ -82,12 +84,17 @@ export const CellFace = ({
             isDisabled={!canInteract}
             onClick={onClick}>
 
-            {/* Drawn first, so the title paints over the stamp and stays readable */}
+            {/* Drawn first, so the title paints over the stamp or hourglass and stays readable */}
             {(cell.state === 'completed' || cell.state === 'accomplished') &&
                 <CellStamp
                     variant={cell.state}
-                    motion={stampMotion}
-                    onAnimationEnd={onStampAnimationEnd} />
+                    motion={markMotion}
+                    onAnimationEnd={onMarkAnimationEnd} />
+            }
+            {cell.state === 'pending_review' &&
+                <CellHourglass
+                    motion={markMotion}
+                    onAnimationEnd={onMarkAnimationEnd} />
             }
             {/* Spec 24 - Card Display: above the stamp, below the title */}
             <CellReactions reactions={reactions} />
