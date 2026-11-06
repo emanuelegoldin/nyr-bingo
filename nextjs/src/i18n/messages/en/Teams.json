@@ -14,7 +14,6 @@
     "ledBy": "Led by {names}",
     "membersLabel": "Team Members:",
     "memberCount": "{count, plural, one {# member} other {# members}}",
-    "viewTeam": "View Team",
     "emptyTitle": "No Teams Yet",
     "emptyText": "You're not part of any team. Create one to get started!",
     "createFirst": "Create Your First Team"

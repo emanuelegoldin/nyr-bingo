@@ -55,6 +55,8 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 
 `GET /api/teams` lists the caller's teams. `GET /api/teams/[teamId]` returns one team to its members only (`403` otherwise).
 
+`/teams` shows the caller's teams as cards with the team name, its leaders and its members, and a button to create a team. The whole card is a link to the team page; it has no separate button.
+
 ---
 
 ### Team Page

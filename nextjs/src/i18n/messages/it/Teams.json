@@ -14,7 +14,6 @@
     "ledBy": "Guidato da {names}",
     "membersLabel": "Membri del team:",
     "memberCount": "{count, plural, one {# membro} other {# membri}}",
-    "viewTeam": "Vai al team",
     "emptyTitle": "Ancora nessun team",
     "emptyText": "Non fai parte di nessun team. Creane uno per iniziare!",
     "createFirst": "Crea il tuo primo team"
