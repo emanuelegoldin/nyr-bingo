@@ -54,10 +54,17 @@ Run once at Node startup:
 - An hourly sweep that ends expired games (`lib/game-ending.ts`, which also archives them) and closes review threads past their deadline.
 - A loop every few seconds that releases due notifications.
 
+## Review thread lifecycle (specs 07, 18)
+
+- Open threads live in `review_threads`, with messages, files and votes (`lib/db/review-thread-repository.ts`, `review-file-repository.ts`). Closing one, by votes, the completing user, undo or the deadline, keeps everything and sets `outcome`: the thread is now an archived thread.
+- `lib/db/closed-thread-repository.ts` reads a running game's closed threads and deletes one (files from disk first). `lib/db/archived-thread-repository.ts` copies them into `archived_thread*` tables when `archiveGame` runs, and reads and deletes them there. Both map to `ArchivedThread` through `archived-thread-rows.ts`.
+- A proof file on disk is content-addressed and can be named by `review_files` and `archived_thread_files` rows; `deleteStoredFileUnlessShared` removes it only when no other row in either table names it.
+- Both game pages load the threads on the server and render `components/threads/archived-threads-tab.tsx`.
+
 ## UI structure
 
 - `app/(app)/*` holds the pages behind login, and `app/(auth)/*` holds login and register. Each route has a server `page.tsx` and a `*-client.tsx` component. Pieces used by only one route go in that route's `_components/`.
-- Reusable components are in `components/`, grouped by area (cell, bingo-card, dialogs, team, archive, notifications). Primitives come from `components/ui/` (shadcn/ui), so reuse them.
+- Reusable components are in `components/`, grouped by area (cell, bingo-card, dialogs, team, archive, threads, notifications). Primitives come from `components/ui/` (shadcn/ui), so reuse them.
 - The page title and other app state come from `hooks/AppContext.tsx` (see `docs/nextjs/context_provider.md`).
 
 ## i18n (spec 15)

@@ -109,10 +109,18 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 
 ## 07-proof-and-approval.md — Proof and Approval
 
+- `app/api/threads/[threadId]/close/route.ts` — Review Thread Close API [Closure by the Completing User]
+- `app/api/threads/[threadId]/route.ts` — Review Thread API [Deleting an Archived Thread; Review Thread Model]
 - `app/api/threads/thread-access.ts` — Access checks shared by the review thread routes.
+- `components/threads/archived-thread-dialog.tsx` — Read-only view of an archived thread: its result, messages and file links. [Archived Threads]
+- `components/threads/archived-threads-tab.tsx` — Threads tab: the archived threads of a running or an archived game, opened read-only. [Archived Threads]
+- `components/threads/thread-outcome-badge.tsx` — The final result of an archived thread: the state its cell took, and the vote counts. [Archived Threads]
 - `instrumentation.ts` — Server startup hook, called once by Next.js. [Closure by Deadline]
-- `lib/db/review-file-repository.ts` — Review File Repository - Proof files attached to review threads [Proof Submission]
-- `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads [Closure by the Completing User; Eligible Voters]
+- `lib/db/archived-thread-rows.ts` — Row types and the mapper that turn closed threads, live or archived, into the shared shape. [Archived Threads]
+- `lib/db/closed-thread-repository.ts` — Closed Thread Repository - The archived threads of a running game: reading and deleting them [Archived Threads; Deleting an Archived Thread]
+- `lib/db/review-file-repository.ts` — Review File Repository - Proof files attached to review threads [Deleting an Archived Thread; Proof Submission]
+- `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads [Closure by the Completing User; Eligible Voters; Thread Closure]
+- `lib/shared/types.ts` [Archived Threads]
 
 ## 08-visibility-and-updates.md — Visibility and Updates
 
@@ -204,14 +212,16 @@ _No file references this spec._
 
 ## 18-game-archive.md — Game Archive
 
-- `app/(app)/archive/[archivedGameId]/archived-game-page-client.tsx` — Archived Game Page content: header, final leaderboard and read-only cards. [Archived Game Page]
+- `app/(app)/archive/[archivedGameId]/archived-game-page-client.tsx` — Archived Game Page content: header, then tabs with read-only cards, leaderboard and threads. [Archived Game Page]
 - `app/(app)/archive/[archivedGameId]/page.tsx` — Archived Game Page [Archived Game Page]
 - `app/(app)/archive/page.tsx` — Archive Page - the finished games the caller took part in [Archive Page]
 - `app/api/archived-games/[archivedGameId]/route.ts` — Archived Game Detail API
+- `app/api/archived-games/[archivedGameId]/threads/[threadId]/route.ts` — Archived Thread API [Deleting an Archived Thread]
 - `app/api/archived-games/route.ts` — Archived Games API
 - `components/archive/archived-card.tsx` — One player's card in an archived game. It reads no live data: cells only open their details. [Archived Game Page]
 - `components/archive/archived-cell-dialog.tsx` — Read-only details of an archived cell, as plain text. [Archived Game Page]
-- `lib/db/archived-game-repository.ts` — Archived Game Repository - Read-only snapshots of finished games [Archiving a Game]
+- `lib/db/archived-game-repository.ts` — Archived Game Repository - Read-only snapshots of finished games [Archiving a Game; Deleting an Archived Game]
+- `lib/db/archived-thread-repository.ts` — Archived Thread Repository - The review threads kept in an archived game [Archiving a Game; Deleting an Archived Thread]
 - `lib/db/game-repository.ts` — Game Repository - Database operations for games [Archiving a Game]
 - `lib/shared/types.ts`
 
@@ -261,7 +271,7 @@ _No file references this spec._
 - `lib/shared/shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
 - `lib/shared/types.ts`
 
-## Unmapped files (96)
+## Unmapped files (95)
 
 No spec reference in the file. See `files.md` for their purpose.
 
@@ -279,7 +289,6 @@ No spec reference in the file. See `files.md` for their purpose.
 - `app/api/resolutions/all/route.ts`
 - `app/api/threads/[threadId]/files/route.ts`
 - `app/api/threads/[threadId]/messages/route.ts`
-- `app/api/threads/[threadId]/route.ts`
 - `app/api/threads/[threadId]/vote/route.ts`
 - `app/api/utils.ts`
 - `app/layout.tsx`

@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * Archived Game Page content: header, then the read-only cards, final leaderboard and archived
- * threads in the game page's tabs.
+ * Archived Game Page content: header, then tabs with read-only cards, leaderboard and threads.
  * Spec Reference: 18-game-archive.md - Archived Game Page
  */
 
