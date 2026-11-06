@@ -1,14 +1,12 @@
 /**
- * Grid of running games with a link to each game page.
+ * Grid of running games; each card links to its game page.
  * Spec Reference: 16-games.md - Game Page
  */
 
 import { GameStatusBadge } from "@/components/team/game-status-badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { GameStatus } from "@/lib/shared/types";
 import { Swords } from "lucide-react";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 /** The game fields this list needs. */
@@ -26,33 +24,33 @@ interface GameListProps {
 }
 
 /**
- * Shows one card per game.
+ * Shows one card per game. The whole card is a link to the game page.
  *
  * @param props - The games, and whether to show their team's name.
  * @returns The grid of games.
  */
 export function GameList({ games, showTeamName = false }: GameListProps) {
-  const t = useTranslations("Teams");
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {games.map((game) => (
-        <Card key={game.id} className="flex flex-col">
-          <CardHeader className="flex-grow">
-            <CardTitle className="font-headline flex items-center gap-2">
-              <Swords className="h-5 w-5 text-primary" />
-              {game.name}
-            </CardTitle>
-            {showTeamName && <CardDescription>{game.teamName}</CardDescription>}
-            <div className="mt-2">
-              <GameStatusBadge status={game.status} />
-            </div>
-          </CardHeader>
-          <CardFooter>
-            <Button asChild className="w-full">
-              <Link href={`/games/${game.id}`}>{t("gameList.viewGame")}</Link>
-            </Button>
-          </CardFooter>
-        </Card>
+        <Link
+          key={game.id}
+          href={`/games/${game.id}`}
+          className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Card className="h-full transition-colors hover:border-primary hover:bg-accent/50">
+            <CardHeader>
+              <CardTitle className="font-headline flex items-center gap-2">
+                <Swords className="h-5 w-5 text-primary" />
+                {game.name}
+              </CardTitle>
+              {showTeamName && <CardDescription>{game.teamName}</CardDescription>}
+              <div className="mt-2">
+                <GameStatusBadge status={game.status} />
+              </div>
+            </CardHeader>
+          </Card>
+        </Link>
       ))}
     </div>
   );

@@ -58,7 +58,7 @@ The timeline supports:
 
 ### 2) Manual Entry Creation
 
-Only the owner of the card holding the cell can write, whatever the cell's source (`personal`, `member_provided`, `team` or `prepared`). Other players, including the author of a member-provided resolution and the team leader, cannot.
+Only the owner of the card holding the cell can write, whatever the cell's source (`personal`, `member_provided`, `team` or `prepared`). Other players, including the author of a member-provided resolution and the Team Admin, cannot.
 
 Manual entry content must be non-empty text.
 
@@ -153,7 +153,7 @@ The former table `resolution_history_entries` (migration `V3_3_0`) is removed. T
 ## Acceptance Criteria
 
 - [ ] The card owner can add manual history entries to a cell on their card.
-- [ ] Other users, including the author of a member-provided resolution and the team leader, cannot create manual history entries.
+- [ ] Other users, including the author of a member-provided resolution and the Team Admin, cannot create manual history entries.
 - [ ] A player of the game can view the history of any cell on a card of that game.
 - [ ] Non-players cannot view history.
 - [ ] A cell's history is separate from the history of other cells copied from the same resolution.

@@ -9,7 +9,6 @@ import { EMPTY_SNAPSHOT, replaceCellSnapshot, snapshotOf } from './cell-snapshot
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import { getResolutionById } from './resolution-repository';
-import { removeThreadFiles } from './review-file-repository';
 import { BingoCell, Resolution } from './types';
 
 interface CardCellRow {
@@ -92,11 +91,6 @@ async function loadCardCell(cellId: string): Promise<{ cell: CardCellRow } | { e
 
   if (rows.length === 0) {
     return { error: 'Cell not found' };
-  }
-
-  // Spec: 16-games.md - Ending a Game
-  if (rows[0].game_status === GameStatus.ENDED) {
-    return { error: 'This game has ended' };
   }
 
   // Spec: 16-games.md - Ending a Game
@@ -297,43 +291,14 @@ export async function undoCompletion(
     return { success: false, error: 'Cell is not completed' };
   }
 
-  // Storage cannot roll back, so files go first, as in every other thread closure
-  const openThreads = await query<Array<{ id: string }>>(
-    `SELECT id FROM review_threads WHERE cell_id = ? AND status = 'open'`,
-    [cellId]
-  );
-  if (openThreads.length > 0 && !(await removeThreadFiles(openThreads[0].id))) {
-    return { success: false, error: 'Failed to delete uploaded files from storage' };
-  }
-
   const reverted = await withTransaction(async (connection) => {
-    // Check for open review thread
-    const threadRows = await query<Array<{ id: string; status: string }>>(
-      `SELECT id, status FROM review_threads WHERE cell_id = ? AND status = 'open'`,
-      [cellId],
-      connection
+    // Close any open review thread. It keeps its messages and files as an archived thread
+    // (spec 07 - Thread Closure).
+    await connection.execute(
+      `UPDATE review_threads SET status = 'closed', closed_at = NOW(), outcome = 'pending'
+       WHERE cell_id = ? AND status = 'open'`,
+      [cellId]
     );
-
-    if (threadRows.length > 0) {
-      const threadId = threadRows[0].id;
-
-      // Delete messages, and any files uploaded since the removal above
-      await connection.execute(
-        `DELETE FROM review_messages WHERE thread_id = ?`,
-        [threadId]
-      );
-
-      await connection.execute(
-        `DELETE FROM review_files WHERE thread_id = ?`,
-        [threadId]
-      );
-
-      // Close the thread
-      await connection.execute(
-        `UPDATE review_threads SET status = 'closed', closed_at = NOW() WHERE id = ?`,
-        [threadId]
-      );
-    }
 
     // Optimistic lock: only transition if cell is still in a valid
     // "completable" state.  Owner actions prevail over concurrent

@@ -3,10 +3,11 @@
  * Spec Reference: 05-bingo-card-generation.md, 06-bingo-gameplay.md
  */
 
-import { CellSourceType, CellState, JOKER_POSITION, ResolutionType } from '../shared/types';
+import { CellSourceType, CellState, getJokerPosition, ResolutionType } from '../shared/types';
 import { CardRow, CellRow, rowToCard, rowToCell, SELECT_CELL_WITH_RESOLVED_TEXT } from './bingo-card-rows';
 import { query } from './connection';
 import {
+  BingoCard,
   BingoCardWithCells,
   BingoCellWithThread,
 } from './types';
@@ -14,13 +15,14 @@ import {
 /**
  * Build the implicit Joker cell, which is not stored in the DB.
  * @param cardId The card the Joker belongs to
+ * @param gridSize The side length of the card
  * @returns The cell to show at the center of the grid
  */
-function makeJokerCell(cardId: string): BingoCellWithThread {
+function makeJokerCell(cardId: string, gridSize: number): BingoCellWithThread {
   return {
     id: `joker:${cardId}`,
     cardId,
-    position: JOKER_POSITION,
+    position: getJokerPosition(gridSize),
     resolutionId: null,
     resolutionType: ResolutionType.BASE,
     resolutionText: 'Joker',
@@ -86,13 +88,14 @@ async function getCellsWithThreadsByCard(filter: CellFilter): Promise<Map<string
 
 /**
  * Complete a card's cells with the implicit Joker cell and sort them by position.
- * @param cardId The card
+ * @param card The card, whose size places the Joker
  * @param cells Its stored cells, if any
  * @returns The full grid
  */
-function withJoker(cardId: string, cells: BingoCellWithThread[] = []): BingoCellWithThread[] {
-  if (!cells.some((c) => c.position === JOKER_POSITION)) {
-    cells.push(makeJokerCell(cardId));
+function withJoker(card: BingoCard, cells: BingoCellWithThread[] = []): BingoCellWithThread[] {
+  const jokerPosition = getJokerPosition(card.gridSize);
+  if (!cells.some((c) => c.position === jokerPosition)) {
+    cells.push(makeJokerCell(card.id, card.gridSize));
   }
   return cells.sort((a, b) => a.position - b.position);
 }
@@ -116,7 +119,7 @@ export async function getBingoCard(
 
   return {
     ...card,
-    cells: withJoker(card.id, cellsByCard.get(card.id)),
+    cells: withJoker(card, cellsByCard.get(card.id)),
   };
 }
 
@@ -138,6 +141,6 @@ export async function getGameBingoCards(gameId: string): Promise<BingoCardWithCe
 
   return cardRows.map((row) => {
     const card = rowToCard(row);
-    return { ...card, cells: withJoker(card.id, cellsByCard.get(card.id)) };
+    return { ...card, cells: withJoker(card, cellsByCard.get(card.id)) };
   });
 }

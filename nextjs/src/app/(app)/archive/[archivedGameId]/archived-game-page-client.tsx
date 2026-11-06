@@ -1,14 +1,17 @@
 "use client";
 
 /**
- * Archived Game Page content: header, final leaderboard and read-only cards.
- * Spec Reference: 18-game-archive.md - Archived Game Page
+ * Archived Game Page content: header, then tabs with read-only cards, leaderboard, threads and progress.
+ * Spec Reference: 18-game-archive.md - Archived Game Page, 23-progress-chart.md
  */
 
 import { LeaderboardTab } from "@/app/(app)/games/[gameId]/leaderboard-tab";
 import { ArchivedCardView } from "@/components/archive/archived-card";
 import { formatArchiveDate } from "@/components/archive/format-archive-date";
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
+import { ProgressTab } from "@/components/progress/progress-tab";
+import { ArchivedThreadsTab } from "@/components/threads/archived-threads-tab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { apiFetch } from "@/lib/api-client";
@@ -22,11 +25,14 @@ interface ArchivedGamePageClientProps {
   archivedGame: ArchivedGameDetail;
   /** Whether the viewer is the leader who ran the game. */
   canDelete: boolean;
+  /** Whether the viewer may delete the game's archived threads. */
+  canDeleteThreads: boolean;
 }
 
-export default function ArchivedGamePageClient({ archivedGame, canDelete }: ArchivedGamePageClientProps) {
+export default function ArchivedGamePageClient({ archivedGame, canDelete, canDeleteThreads }: ArchivedGamePageClientProps) {
   const t = useTranslations("Archive");
   const tc = useTranslations("Common");
+  const tt = useTranslations("Games.detail.tabs");
   const locale = useLocale();
   const toastApiError = useApiErrorToast();
   usePageTitle(t("pageTitle"));
@@ -73,14 +79,43 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
         )}
       </div>
 
-      <LeaderboardTab initialEntries={archivedGame.leaderboard} />
+      <Tabs defaultValue="cards">
+        <TabsList>
+          <TabsTrigger value="cards">{tt("cards")}</TabsTrigger>
+          <TabsTrigger value="leaderboard">{tt("leaderboard")}</TabsTrigger>
+          <TabsTrigger value="threads">{tt("threads")}</TabsTrigger>
+          <TabsTrigger value="progress">{tt("progress")}</TabsTrigger>
+        </TabsList>
 
-      <div className="space-y-8">
-        <h2 className="text-2xl font-bold font-headline">{t("gamePage.cards")}</h2>
-        {archivedGame.cards.map((card) => (
-          <ArchivedCardView key={card.userId} card={card} />
-        ))}
-      </div>
+        <TabsContent value="cards" className="mt-6 space-y-8">
+          {archivedGame.cards.map((card) => (
+            <ArchivedCardView key={card.userId} card={card} gridSize={archivedGame.gridSize} />
+          ))}
+        </TabsContent>
+
+        <TabsContent value="leaderboard" className="mt-6">
+          <LeaderboardTab initialEntries={archivedGame.leaderboard} />
+        </TabsContent>
+
+        <TabsContent value="threads" className="mt-6">
+          <ArchivedThreadsTab
+            threads={archivedGame.threads}
+            getDeleteUrl={canDeleteThreads
+              ? (threadId) => `/api/archived-games/${archivedGame.id}/threads/${threadId}`
+              : undefined}
+          />
+        </TabsContent>
+
+        <TabsContent value="progress" className="mt-6">
+          <ProgressTab
+            started
+            leaderboard={archivedGame.leaderboard}
+            points={archivedGame.progress}
+            startedAt={archivedGame.startedAt}
+            endedAt={archivedGame.endedAt}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

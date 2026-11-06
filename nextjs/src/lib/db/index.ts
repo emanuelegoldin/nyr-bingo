@@ -11,6 +11,7 @@ export * from './types';
 
 // Repositories
 export * from './archived-game-repository';
+export { deleteArchivedThread } from './archived-thread-repository';
 export * from './bingo-card-arrangement';
 export * from './bingo-card-generation';
 export * from './bingo-card-repository';
@@ -21,6 +22,7 @@ export * from './leave-repository';
 export * from './prepared-resolution-repository';
 export * from './cell-history-repository';
 export * from './cell-progress-repository';
+export * from './closed-thread-repository';
 export * from './resolution-repository';
 export { deleteThreadFile, getFileUploadError, uploadFile } from './review-file-repository';
 export * from './review-thread-repository';

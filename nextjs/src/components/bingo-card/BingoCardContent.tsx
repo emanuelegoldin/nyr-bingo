@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { JokerCell } from "../cell/joker";
 import { ResolutionCell } from "../cell/resolution-cell";
+import { CardGrid } from "./card-grid";
 import { ConfettiLayer } from "./ConfettiLayer";
 
 export function BingoCardContent(
@@ -80,8 +81,8 @@ export function BingoCardContent(
 
   return (
     <CardContent className="px-3 sm:px-6">
-      <ConfettiLayer cells={card.cells} />
-      <div className="grid grid-cols-5 grid-rows-5 gap-1 sm:gap-2 md:gap-4">
+      <ConfettiLayer cells={card.cells} gridSize={card.gridSize} />
+      <CardGrid gridSize={card.gridSize}>
         {card.cells.map((cell) => (
           cell.isJoker ?
             <JokerCell key={cell.id} />
@@ -97,7 +98,7 @@ export function BingoCardContent(
               onUpdate={isOwner ? handleCellUpdate : undefined}
               onRefresh={reloadCard} />
         ))}
-      </div>
+      </CardGrid>
     </CardContent>
   )
 }

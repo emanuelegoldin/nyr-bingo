@@ -14,9 +14,10 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 - If still not enough, fill with "empty" non-checkable cells
 
 ## Assumptions
-- Card is a 5x5 grid.
-- Cell positions are numbered 0–24, left to right, top to bottom.
-- The center cell is position 12.
+- Card is an N×N grid, where N is the game's grid size (spec 16): 3, 5 or 9. Every card of a game has the game's size.
+- Cell positions are numbered 0 to N²−1, left to right, top to bottom.
+- The center cell is position (N²−1)/2: 4 on a 3×3 card, 12 on a 5×5 card, 40 on a 9×9 card.
+- A card has N²−1 stored cells: 8, 24 or 80.
 
 ## Inputs
 - The game's team goal resolution (`scope = team`)
@@ -33,23 +34,23 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 - `source_user_id` holds the author of a `member_provided` cell and the card owner for a `personal` cell. It is `NULL` for `team`, `prepared` and `empty` cells.
 - A `prepared` cell is snapshotted directly from its entry in the `prepared_resolutions` pool (spec 17). No row is created in `resolutions`, and `resolution_id` is `NULL`.
 - `is_empty` is a generated column: true when `source_type = 'empty'`.
-- The Joker is always position 12 and is not stored in the database. It is added to the card when the card is read, with id `joker:<cardId>`.
+- The Joker is always the center position and is not stored in the database. It is added to the card when the card is read, with id `joker:<cardId>`.
 - The Joker's displayed text is a fixed "Joker" label; it does not display team goal text.
 
 ## Generation Rules
-1. Create a 5x5 grid with the Joker in the center, leaving 24 cells to fill.
-2. Add the member-provided resolutions targeted to the owner.
-3. For each other player who has no member-provided resolution for the owner, add one random `short` prepared resolution.
-4. If there is still space, add the team goal as a normal, checkable `team` cell.
+1. Create an N×N grid with the Joker in the center, leaving N²−1 cells to fill.
+2. Add the team goal as a normal, checkable `team` cell. It always gets a cell.
+3. Add the member-provided resolutions targeted to the owner, in random order. When they do not all fit, the ones that fit are picked at random and the rest are left out.
+4. For each other player who has no member-provided resolution for the owner, add one random `short` prepared resolution, while cells are left.
 5. Fill remaining cells by randomly selecting from the owner's personal resolutions.
 6. Fill remaining cells with random `long` prepared resolutions and, once those run out, `medium` ones.
 7. Fill anything still remaining with `empty` cells.
-8. Shuffle the 24 cells across the non-center positions.
+8. Shuffle the N²−1 cells across the non-center positions.
 9. Every stored cell starts in state `pending`.
 
 Generation runs in a transaction. Cards are generated once: at game start for all players, and at join time for a member joining a team, in each of its started games. A user has at most one card per game, and cards are never regenerated.
 
-Steps 3 and 6 apply only at game start. A card generated at join time uses no prepared resolutions, so it can contain `empty` cells; its owner can fill them through card editing (spec 09).
+Steps 4 and 6 apply only at game start. A card generated at join time uses no prepared resolutions, so it can contain `empty` cells; its owner can fill them through card editing (spec 09).
 
 ## Duplicate Handling
 - Generation rejects duplicates by text. A resolution's text is its description or, without one, its title, compared case-insensitively.
@@ -65,7 +66,10 @@ Steps 3 and 6 apply only at game start. A card generated at join time uses no pr
 ## Acceptance Criteria
 - Starting the game generates a card for each player.
 - Joining a team generates a card for the new member in each of its started games.
+- A card has the grid size of its game: 3×3, 5×5 or 9×9.
 - Center cell is the Joker.
+- The team goal is on every card, whatever its size.
+- When the member-provided resolutions for a card do not all fit, the ones on the card are picked at random.
 - Remaining cells follow selection and fallback rules.
 - At game start, a card gets one `short` prepared resolution for each other member who proposed nothing for its owner.
 - At game start, cells that would be empty get `long` prepared resolutions, then `medium` ones.

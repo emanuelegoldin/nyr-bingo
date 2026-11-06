@@ -1,12 +1,12 @@
 /**
  * Review Thread API
- * Spec Reference: Resolution Review & Proof Workflow - Review Thread
+ * Spec Reference: 07-proof-and-approval.md - Review Thread Model, Archived Threads
  */
 
-import { authorizeThreadAction, authorizeThreadCompleter } from '@/app/api/threads/thread-access';
+import { authorizeThreadAction } from '@/app/api/threads/thread-access';
 import { NextRequest, NextResponse } from 'next/server';
-import { notifyThreadClosed } from '@/lib/team-signals';
-import { closeThread, getThreadDetails } from '@/lib/db';
+import { notifyCell } from '@/lib/team-signals';
+import { deleteClosedThread, getThreadDetails } from '@/lib/db';
 import { errorResponse, withAuth, AuthContext } from '@/app/api/utils';
 
 /**
@@ -25,21 +25,23 @@ export const GET = withAuth(async (request: NextRequest, { params, currentUser }
 });
 
 /**
- * DELETE /api/threads/[threadId] - Close a review thread
- * Only the completing user can close an open thread
+ * DELETE /api/threads/[threadId] - Delete a closed (archived) thread with its messages and files.
+ * Only an admin of the game can delete it; an open thread cannot be deleted.
+ * Spec: 07-proof-and-approval.md - Deleting an Archived Thread
  */
 export const DELETE = withAuth(async (
   _request: NextRequest,
   { params, currentUser }: AuthContext<{ threadId: string }>
 ) => {
   const { threadId } = await params;
-  const access = await authorizeThreadCompleter(currentUser, threadId, 'Only the completing user can close the thread');
+  const access = await authorizeThreadAction(currentUser, 'thread.delete', threadId);
   if ('response' in access) return access.response;
 
-  const result = await closeThread(threadId);
+  const result = await deleteClosedThread(threadId);
   if (!result.success) {
     return errorResponse(result.error, result.status);
   }
-  await notifyThreadClosed(threadId);
+  // The cell is still there: signal its team so open game pages drop the thread
+  await notifyCell(access.thread.cellId);
   return NextResponse.json({ success: true });
 });

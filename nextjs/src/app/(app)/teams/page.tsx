@@ -6,11 +6,10 @@
  */
 
 import { PageSpinner } from "@/components/page-spinner";
-import { formatLeaderNames } from "@/components/team/leaders";
 import type { Team } from "@/components/team/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -132,39 +131,37 @@ export default function TeamsPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map(team => {
             return (
-              <Card key={team.id} className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="font-headline flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    {team.name}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("list.ledBy", { names: formatLeaderNames(team.members, t("leaders.unknown")) })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm font-medium mb-2">{t("list.membersLabel")}</p>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex -space-x-2 overflow-hidden">
-                      {team.members.map(member => (
-                        <Avatar key={member.user.userId} className="inline-block h-8 w-8 rounded-full border-2 border-card">
-                          <AvatarFallback>
-                            {(member.user.displayName || member.user.username)?.charAt(0) || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
+              <Link
+                key={team.id}
+                href={`/teams/${team.id}`}
+                className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Card className="flex h-full flex-col transition-colors hover:border-primary hover:bg-accent/50">
+                  <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      {team.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-sm font-medium mb-2">{t("list.membersLabel")}</p>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex -space-x-2 overflow-hidden">
+                        {team.members.map(member => (
+                          <Avatar key={member.user.userId} className="inline-block h-8 w-8 rounded-full border-2 border-card">
+                            <AvatarFallback>
+                              {(member.user.displayName || member.user.username)?.charAt(0) || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {t("list.memberCount", { count: team.members.length })}
+                      </span>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {t("list.memberCount", { count: team.members.length })}
-                    </span>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button asChild className="w-full">
-                    <Link href={`/teams/${team.id}`}>{t("list.viewTeam")}</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

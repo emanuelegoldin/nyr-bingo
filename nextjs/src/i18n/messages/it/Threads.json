@@ -50,7 +50,14 @@
     "uploadMissingInfo": "File caricato ma la risposta non contiene le informazioni sul file",
     "postFailed": "Impossibile inviare il messaggio",
     "deleteFailed": "Impossibile eliminare il file",
-    "closeConfirm": "Chiudere questo thread e riportare l'obiettivo in sospeso? Verranno eliminati tutti i file e i messaggi del thread.",
+    "closeConfirm": "Chiudere questo thread e riportare l'obiettivo in sospeso? Il thread resterà consultabile nella scheda Thread della partita.",
     "closeFailed": "Impossibile chiudere il thread"
+  },
+  "archived": {
+    "empty": "Ancora nessun thread chiuso.",
+    "ownerClosed": "{owner} · chiuso il {date}",
+    "deleteTitle": "Eliminare questo thread?",
+    "deleteDescription": "Il thread verrà eliminato definitivamente con i suoi messaggi e file. L'obiettivo mantiene il suo stato. Questa azione non può essere annullata.",
+    "deleteFailed": "Impossibile eliminare il thread"
   }
 }

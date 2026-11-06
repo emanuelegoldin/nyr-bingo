@@ -8,7 +8,7 @@ import { getSourceLabel } from '../shared/cell-source';
 import {
   CellSourceType,
   CellState,
-  JOKER_POSITION,
+  getJokerPosition,
   ResolutionType,
   TeamRole,
   type ArchivedCard,
@@ -18,10 +18,18 @@ import {
   type CellSourceLabel,
   type CellSubtask,
 } from '../shared/types';
+import { getArchivedProgress, saveProgressSnapshot } from './archived-progress-repository';
 import { getBingoCard } from './bingo-card-repository';
+import {
+  buildThreadSnapshots,
+  getArchivedGameThreadFiles,
+  getArchivedThreads,
+  saveThreadSnapshots,
+} from './archived-thread-repository';
 import { execute, query, withTransaction } from './connection';
 import { getGamePlayerIds } from './game-repository';
 import { getGameLeaderboard } from './leaderboard-repository';
+import { removeOrphanedFiles } from './review-file-repository';
 import { getTeamWithMembers } from './team-repository';
 import type { BingoCellWithThread, Game } from './types';
 
@@ -68,7 +76,9 @@ interface ArchivedGameRow extends RowDataPacket {
   id: string;
   name: string;
   team_name: string;
+  started_at: Date | null;
   ended_at: Date;
+  grid_size: number;
 }
 
 interface ArchivedPlayerRow extends RowDataPacket {
@@ -296,7 +306,7 @@ async function buildPlayerSnapshots(game: Game): Promise<PlayerSnapshot[]> {
 /**
  * Save a snapshot of an ended game, then delete the game and everything that cascades from it.
  * Both happen in one transaction, so a failure leaves the game to be archived again.
- * Proof files need no cleanup: closing a thread already removes them (spec 07).
+ * The game's closed threads are copied with it; their proof files stay on disk (spec 07).
  * Spec: 18-game-archive.md - Archiving a Game
  * @param game The ended game
  * @returns False if the game still has open threads and must wait
@@ -306,12 +316,16 @@ export async function archiveGame(game: Game): Promise<boolean> {
 
   // Safe outside the transaction: nothing can change a game once it has ended
   const players = await buildPlayerSnapshots(game);
+  const archivedCellKeys = new Set(
+    players.flatMap((player) => player.cells.map((cell) => cellKey(player.userId, cell.position)))
+  );
+  const threads = await buildThreadSnapshots(game.id, archivedCellKeys);
 
   await withTransaction(async (connection) => {
     await execute(
-      `INSERT INTO archived_games (id, name, team_name, ended_at)
-       VALUES (?, ?, ?, ?)`,
-      [game.id, game.name, game.teamName, game.endedAt ?? game.updatedAt],
+      `INSERT INTO archived_games (id, name, team_name, started_at, ended_at, grid_size)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [game.id, game.name, game.teamName, game.startedAt, game.endedAt ?? game.updatedAt, game.gridSize],
       connection
     );
 
@@ -368,6 +382,9 @@ export async function archiveGame(game: Game): Promise<boolean> {
       }
     }
 
+    await saveThreadSnapshots(game.id, threads, connection);
+    await saveProgressSnapshot(game.id, connection);
+
     const deleted = await execute(
       `DELETE FROM games WHERE id = ? AND status = 'ended'`,
       [game.id],
@@ -412,9 +429,14 @@ export async function getArchivedGameSummary(id: string): Promise<ArchivedGameSu
  * Load the cards of an archived game, in player order.
  * @param id The archived game
  * @param players The game's players
+ * @param gridSize The side length of the game's cards, which places the Joker
  * @returns One card per player, with the implicit Joker added
  */
-async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promise<ArchivedCard[]> {
+async function getArchivedCards(
+  id: string,
+  players: ArchivedPlayerRow[],
+  gridSize: number
+): Promise<ArchivedCard[]> {
   const cellRows = await query<ArchivedCellRow[]>(
     `SELECT * FROM archived_cells WHERE archived_game_id = ? ORDER BY position ASC`,
     [id]
@@ -453,7 +475,7 @@ async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promi
       }));
 
     cells.push({
-      position: JOKER_POSITION,
+      position: getJokerPosition(gridSize),
       isJoker: true,
       isEmpty: false,
       resolutionTitle: 'Joker',
@@ -479,8 +501,9 @@ async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promi
  * @returns The archived game, or null if it does not exist
  */
 export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | null> {
-  const summary = await getArchivedGameSummary(id);
-  if (!summary) return null;
+  const gameRows = await query<ArchivedGameRow[]>(`SELECT * FROM archived_games WHERE id = ?`, [id]);
+  if (gameRows.length === 0) return null;
+  const gridSize = gameRows[0].grid_size;
 
   const players = await query<ArchivedPlayerRow[]>(
     `SELECT * FROM archived_game_players
@@ -490,7 +513,9 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
   );
 
   return {
-    ...summary,
+    ...rowToSummary(gameRows[0]),
+    gridSize,
+    startedAt: gameRows[0].started_at ? gameRows[0].started_at.toISOString() : null,
     leaderboard: players
       .filter((player) => player.leaderboard_rank !== null)
       .map((player) => ({
@@ -500,14 +525,23 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
         firstBingoAt: player.first_bingo_at ? player.first_bingo_at.toISOString() : null,
         completedTasks: player.completed_tasks,
       })),
-    cards: await getArchivedCards(id, players),
+    cards: await getArchivedCards(id, players, gridSize),
+    threads: await getArchivedThreads(id),
+    progress: await getArchivedProgress(id),
   };
 }
 
 /**
- * Delete an archived game. Its players, cells and subtasks cascade with it.
+ * Delete an archived game. Its players, cells, subtasks and threads cascade with it, then the
+ * threads' files are removed from disk unless another thread shares them.
+ * Spec: 18-game-archive.md - Deleting an Archived Game
  * @param id The archived game
  */
 export async function deleteArchivedGame(id: string): Promise<void> {
+  // Collected first: the cascade below removes the rows that name these files
+  const threadFiles = await getArchivedGameThreadFiles(id);
+
   await execute(`DELETE FROM archived_games WHERE id = ?`, [id]);
+
+  await removeOrphanedFiles(threadFiles);
 }

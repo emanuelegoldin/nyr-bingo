@@ -460,3 +460,77 @@ A resolution becomes a definition only, and every card cell holds a copy of it w
 - `Create_Column`, `CREATE TABLE IF NOT EXISTS`, `Drop_Column` and `Drop_Table` do nothing on a second
   run. Rebuilding the subtask lists gives the same lists again.
 - The migration can therefore run again, including after a partial failure.
+
+## 5.10.0 - Game Grid Size
+
+Lets the admin choose a 3×3, 5×5 or 9×9 card size when creating a game (spec 16).
+
+### Schema changes
+
+- `games.grid_size` (`TINYINT`, not null, default `5`) is the size of every card of the game. It is set
+  at creation and never changed. The route that creates games accepts only `3`, `5` and `9`.
+- `archived_games.grid_size` (`TINYINT`, not null, default `5`) keeps the size in the archive (spec 18).
+- `bingo_cards.grid_size` already existed; a card now takes its game's size instead of always `5`.
+
+### Data migration
+
+None: the defaults give existing and archived games their 5×5 size.
+
+### Idempotency
+
+`Create_Column` does nothing when the column already exists, so the migration can run again.
+
+## 5.11.0 - Archived Threads
+
+Closing a review thread keeps its messages and files: the thread becomes a read-only archived thread
+(spec 07), and archived games keep their threads (spec 18).
+
+### Schema changes
+
+- `review_threads.outcome` (`ENUM('accomplished', 'pending')`, nullable) is the state the thread's cell
+  took when it closed.
+- `archived_threads` holds a game's closed threads once it is archived. Its `id` is the thread's former
+  id, and `(archived_game_id, user_id, position)` references the archived cell, `ON DELETE CASCADE`. It
+  keeps `created_at`, `closed_at`, `outcome` and the `accept_votes` and `deny_votes` counts.
+- `archived_thread_messages` keeps each message's `author_name`, `content` and `created_at`.
+- `archived_thread_files` keeps each file's `file_path`, `file_name`, `file_size`, `mime_type` and
+  `created_at`. Both cascade from `archived_threads`.
+- The archive tables have no foreign key to `users`, `games` or `review_threads` (spec 18 Independence).
+
+### Data migration
+
+None. Threads closed before this migration have a `NULL` outcome and no messages or files left.
+
+### Idempotency
+
+`Create_Column` and `CREATE TABLE IF NOT EXISTS` do nothing on a second run.
+
+## 5.12.0 - Leaderboard Progress
+
+Games record when bingo started, and every change of a player's completed count is logged, so the
+Progress tab can chart it over time (spec 23). Archived games keep both (spec 18).
+
+### Schema changes
+
+- `games.started_at` (`DATETIME`, nullable) is set when bingo starts (spec 16).
+- `archived_games.started_at` (`DATETIME`, nullable) is copied from the game when it is archived.
+- `leaderboard_progress` holds one row per change of a player's completed count: `game_id`
+  (FK → `games`), `user_id` (FK → `users`), `recorded_at` and `completed_tasks`, both foreign keys
+  `ON DELETE CASCADE`, with an index on `(game_id, recorded_at)`.
+- `archived_progress` holds the same values for an archived game. `(archived_game_id, user_id)`
+  references `archived_game_players`, `ON DELETE CASCADE`.
+
+### Data migration
+
+- `games.started_at` of every `started` or `ended` game is set to the creation time of its earliest
+  bingo card.
+- Every leaderboard row of a `started` or `ended` game gets a `0` point at the creation time of the
+  player's card, then one point per cell now `completed` or `accomplished`, ordered by the cell's
+  `updated_at`, holding the running count. Completions that were later undone are not recovered.
+- Games already archived get no `started_at` and no progress points.
+
+### Idempotency
+
+`Create_Column` and `CREATE TABLE IF NOT EXISTS` do nothing on a second run. `started_at` is only
+set where it is `NULL`, the `0` points only for players with no point, and the running counts only
+for players whose only point is that `0`.

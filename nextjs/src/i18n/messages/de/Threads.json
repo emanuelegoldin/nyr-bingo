@@ -50,7 +50,14 @@
     "uploadMissingInfo": "Datei hochgeladen, aber die Antwort enthält keine Dateiinformationen",
     "postFailed": "Nachricht konnte nicht gesendet werden",
     "deleteFailed": "Datei konnte nicht gelöscht werden",
-    "closeConfirm": "Diesen Thread schließen und den Vorsatz auf ausstehend zurücksetzen? Dabei werden alle Dateien und Nachrichten des Threads gelöscht.",
+    "closeConfirm": "Diesen Thread schließen und den Vorsatz auf ausstehend zurücksetzen? Der Thread bleibt im Tab „Threads“ des Spiels lesbar.",
     "closeFailed": "Thread konnte nicht geschlossen werden"
+  },
+  "archived": {
+    "empty": "Noch keine geschlossenen Threads.",
+    "ownerClosed": "{owner} · geschlossen am {date}",
+    "deleteTitle": "Diesen Thread löschen?",
+    "deleteDescription": "Der Thread wird mit seinen Nachrichten und Dateien dauerhaft gelöscht. Der Vorsatz behält seinen Status. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "deleteFailed": "Der Thread konnte nicht gelöscht werden"
   }
 }

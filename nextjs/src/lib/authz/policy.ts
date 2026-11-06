@@ -60,16 +60,16 @@ const VERIFIED_ACTIONS: Partial<Record<Permission, string>> = {
 
 /** Error when a role lacks a leader permission. */
 const LEADER_ONLY_ERRORS: Partial<Record<Permission, string>> = {
-  'team.invite': 'Only a team leader can invite users',
-  'team.promote': 'Only a team leader can promote members',
-  'team.delete': 'Only a team leader can delete the team',
-  'game.create': 'Only a team leader can create a game',
-  'game.configure': 'Only a leader of the game can configure it',
-  'game.start': 'Only a leader of the game can start it',
-  'game.end': 'Only a leader of the game can end it',
-  'game.delete': 'Only a leader of the game can delete it',
-  'game.goal.set': 'Only a leader of the game can set the team goal',
-  'archive.delete': 'Only a leader of the game can delete it',
+  'team.invite': 'Only a Team Admin can invite users',
+  'team.promote': 'Only a Team Admin can promote members',
+  'team.delete': 'Only a Team Admin can delete the team',
+  'game.create': 'Only a Team Admin can create a game',
+  'game.configure': 'Only a Team Admin playing the game can configure it',
+  'game.start': 'Only a Team Admin playing the game can start it',
+  'game.end': 'Only a Team Admin playing the game can end it',
+  'game.delete': 'Only a Team Admin playing the game can delete it',
+  'game.goal.set': 'Only a Team Admin playing the game can set the team goal',
+  'archive.delete': 'Only a Team Admin playing the game can delete it',
 };
 
 /** Error when the user has no role in the target's scope. */

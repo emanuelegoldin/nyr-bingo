@@ -201,8 +201,8 @@ export const useReviewThread = (
 
     setIsSubmitting(true);
     try {
-      const result = await apiFetch<unknown>(`/api/threads/${threadId}`, {
-        method: 'DELETE',
+      const result = await apiFetch<unknown>(`/api/threads/${threadId}/close`, {
+        method: 'POST',
       });
       if (!result.ok) {
         toastApiError(result, t("closeFailed"));

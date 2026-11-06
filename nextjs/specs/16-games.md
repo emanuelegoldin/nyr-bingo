@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Separate a bingo game from the group of people playing it. A **team** (spec 04) is a list of users with one or more leaders. A **game** is one instance of bingo played by members of that team. A team can run several games at the same time, and playing again does not require a new team or new invitations.
+Separate a bingo game from the group of people playing it. A **team** (spec 04) is a list of users with one or more admins. A **game** is one instance of bingo played by members of that team. A team can run several games at the same time, and playing again does not require a new team or new invitations.
 
 ---
 
@@ -42,9 +42,10 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 - A game belongs to one team and has a non-empty name.
 - `status` is `forming`, `started` or `ended`.
 - `deadline` is optional. It is the last playable day of the game. A game without one only ends manually.
+- `grid_size` is the size of every card of the game: `3` (3×3), `5` (5×5) or `9` (9×9). It is chosen when the game is created and cannot be changed afterwards, in any status.
 - The players of a game are its **roster**, stored in `game_players`. Every player is a member of the game's team.
-- The leaders of a game are the team leaders (spec 04) who are players of the game. Everything this spec reserves to "the leader" is open to any of them.
-- A game always has at least one leader among its players: a leader cannot leave while they are the only one.
+- The admins of a game are the Team Admins (spec 04) who are players of the game. Everything this spec reserves to "the admin" is open to any of them.
+- A game always has at least one admin among its players: an admin cannot leave while they are the only one.
 - The team goal, member-provided resolutions, bingo cards and leaderboard rows belong to one game. Nothing carries over between games.
 
 ---
@@ -65,10 +66,12 @@ A **running** game is one in `forming` or `started`.
 
 `POST /api/teams/[teamId]/games`
 
-- Only a leader of the team can create a game (`403` otherwise), and the leader must be verified (`403` otherwise).
+- Only an admin of the team can create a game (`403` otherwise), and the admin must be verified (`403` otherwise).
 - The body has a non-empty `name` (`400` otherwise).
 - The body MAY have `playerIds`, the team members who play the game. Without it, every member plays. Each id must belong to a team member (`400` otherwise). The creator is always a player, whether or not they are listed.
+- The body MAY have `gridSize`, one of `3`, `5` or `9` (`400` otherwise). Without it, the game is 5×5.
 - The **New Game** dialog lists the team members with a checkbox each, all checked. The creator's box is checked and cannot be cleared.
+- The **New Game** dialog has a **Card size** choice with 3×3, 5×5 and 9×9. 5×5 is selected by default.
 - The game starts in `forming` status with no goal and no resolutions.
 - A team can have any number of running games.
 
@@ -88,25 +91,25 @@ A **running** game is one in `forming` or `started`.
 
 `/games/[gameId]` shows a running game to its players; others get a not-found page, as they do for an ended game.
 
-The header holds the game name, the team name linking to the team page, the leaders, the deadline if one is set, the status, the team goal and the actions. The tabs below it are defined in spec 12.
+The header holds the game name, the team name as plain text (it does not link to the team page, which is reached from the sidebar and the Teams page), the deadline if one is set, the status and the actions. It does not show the team goal, which is on every card's goal cell (spec 05). It does not list the admins: they are marked in the team page's members list (spec 04). The tabs below it are defined in spec 12.
 
 | Action | Who | When |
 | ------ | --- | ---- |
-| **Set Goal** | Leader | Always |
-| **Configure** | Leader | Running (`forming` or `started`) |
-| **Start Bingo** | Leader | `forming` |
-| **End Game** | Leader | `started`, after confirmation |
-| **Delete Game** | Leader | Always, after confirmation |
+| **Set Goal** | Admin | Always |
+| **Configure** | Admin | Running (`forming` or `started`) |
+| **Start Bingo** | Admin | `forming` |
+| **End Game** | Admin | `started`, after confirmation |
+| **Delete Game** | Admin | Always, after confirmation |
 | **Propose Resolutions** | Any member | Always |
 | **Leave Game** | Any player | Always, after confirmation |
 
-The header keeps only the most used actions visible, so it stays readable for leaders:
+The header keeps only the most used actions visible, so it stays readable for admins:
 - **Start Bingo** (when the caller can use it) and **Propose Resolutions** are buttons.
 - The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Set Goal, Configure, End Game, a separator, Leave Game and Delete Game, which is styled as destructive. The menu lists only the actions the caller can use in the current state, as in the table above.
 - Choosing a menu item opens the same dialog or confirmation as the action's button did.
-- While no goal is set, a leader also sees a **Set Goal** button in the goal area. Once a goal is set, the goal area has an edit button instead.
+- While no goal is set, the header says so, and an admin also sees a **Set Goal** button next to that notice. Once a goal is set, the notice and its button go away: the goal is changed through **Set Goal** in the More actions menu.
 
-`/games` lists the caller's running games with their name, team, status and a link to the game page. New games are created from the team page (spec 04).
+`/games` lists the caller's running games as cards with their name, team and status. The whole card is a link to the game page; it has no separate button. The team page lists its games the same way (spec 04). New games are created from the team page (spec 04).
 
 ---
 
@@ -114,7 +117,9 @@ The header keeps only the most used actions visible, so it stays readable for le
 
 `PATCH /api/games/[gameId]` with `deadline`, a date as `YYYY-MM-DD` or `null` for no deadline.
 
-- Only the leader can configure a game (`403` otherwise), and it must be running: `forming` or `started` (`400` otherwise).
+- The grid size is not configurable: the route ignores any other field, and the **Configure** dialog does not offer it.
+
+- Only the admin can configure a game (`403` otherwise), and it must be running: `forming` or `started` (`400` otherwise).
 - `deadline` must be a real date that is not before today (`400` otherwise). `null` removes the deadline.
 - A new game has no deadline. Setting one is optional.
 - The deadline of a started game can also be set, changed or removed, under the same rules. The new deadline applies from the next deadline sweep (Ending a Game); removing it means the game only ends manually.
@@ -127,10 +132,10 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 ### Team Goal
 
 - The team goal is a resolution with `scope = team`, of any type (spec 03). It belongs to one game.
-- Only the leader can create or edit it: `POST /api/resolutions/save` with `scope = 'team'` and `gameId`.
+- Only the admin can create or edit it: `POST /api/resolutions/save` with `scope = 'team'` and `gameId`.
 - A game has one goal. Saving a new goal without an `id` when one already exists updates the existing goal, keeping its stored type (spec 03).
-- The goal belongs to the leader who set it: only they edit it. When they leave the game, it passes to another leader of the game.
-- The goal is one definition row per game. Each player's goal cell has its own snapshot and its own progress, tracked by that player, not by the leader.
+- The goal belongs to the admin who set it: only they edit it. When they leave the game, it passes to another admin of the game.
+- The goal is one definition row per game. Each player's goal cell has its own snapshot and its own progress, tracked by that player, not by the admin.
 - The goal can be edited at any time, including after the game has started. Cards copy it when they are generated (spec 05), so an edit after the start affects only cards generated after it, for players who join late. Existing cards are unchanged.
 - `GET /api/games/[gameId]/goal` returns it to team members.
 - The goal is shown on the game page and appears as a normal `team` cell on the cards (spec 05). It is **not** the Joker.
@@ -163,8 +168,8 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 
 `POST /api/games/[gameId]/start`
 
-The leader may start bingo only when:
-- The leader is verified
+The admin may start bingo only when:
+- The admin is verified
 - The game is in `forming` status
 - The deadline, if any, is not over
 - The team goal is set
@@ -172,7 +177,7 @@ The leader may start bingo only when:
 Other members are verified because joining requires it.
 
 On start:
-- The game's status becomes `started` and a bingo card is generated for every player (spec 05), in one transaction: if generation fails, the game stays `forming` with no cards
+- The game's status becomes `started`, its `started_at` is set to the current time, and a bingo card is generated for every player (spec 05), in one transaction: if generation fails, the game stays `forming` with no cards, and `started_at` stays `NULL`
 - A leaderboard row is created for every player (spec 12)
 
 ---
@@ -191,7 +196,7 @@ A user who joins a team (spec 04) becomes a player of **every** running game of 
 
 A game ends in one of two ways, and both follow the same steps:
 
-- **Manually:** `POST /api/games/[gameId]/end`. Only the leader can end a game (`403` otherwise), and it must be `started` (`400` otherwise). This is allowed at any time, whether or not the game has a deadline.
+- **Manually:** `POST /api/games/[gameId]/end`. Only the admin can end a game (`403` otherwise), and it must be `started` (`400` otherwise). This is allowed at any time, whether or not the game has a deadline.
 - **At the deadline:** every `started` game whose deadline is over is ended by `finishExpiredGames`, which runs in the same sweep as the thread deadline (spec 07): at server startup and then every hour. A game can therefore end up to an hour after its last day. A `forming` game is never ended this way.
 
 Steps:
@@ -213,7 +218,7 @@ Until it is archived, after a game has ended:
 
 `DELETE /api/games/[gameId]`
 
-- Only the leader can delete a game (`403` otherwise).
+- Only the admin can delete a game (`403` otherwise).
 - The UI asks for confirmation.
 - Deletion is a **hard delete**. Stored proof files of the game's threads are removed too, unless another thread uses the same file.
 - Due to database `ON DELETE CASCADE` constraints, deleting a game also deletes its roster, team goal, member-provided resolutions, leaderboard rows, bingo cards and all dependent gameplay and review records.
@@ -225,7 +230,7 @@ Until it is archived, after a game has ended:
 `POST /api/games/[gameId]/leave`
 
 - Only a player can leave (`403` otherwise). The game must be running (`404` otherwise, as for every game route).
-- A leader cannot leave while no other player of the game is a team leader (`400` otherwise). They promote another player first (spec 04).
+- An admin cannot leave while no other player of the game is a Team Admin (`400` otherwise). They promote another player first (spec 04).
 - The UI asks for confirmation and then returns the user to `/games`.
 - In one transaction, leaving:
   - Removes the user from the roster
@@ -244,8 +249,8 @@ Until it is archived, after a game has ended:
 The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
 
 - Only verified users can create or start games.
-- Only a team leader can create a game.
-- Only a leader of the game (a team leader who plays it) can:
+- Only a Team Admin can create a game.
+- Only an admin of the game (a Team Admin who plays it) can:
   - Configure, start, end and delete a game
   - Define the team goal
 - Players can:
@@ -264,8 +269,10 @@ The role-to-permission table and the status of every refusal are defined in spec
 | `name` | VARCHAR(255) | Required |
 | `status` | ENUM | `forming`, `started`, `ended` |
 | `created_at`, `updated_at` | DATETIME | |
+| `started_at` | DATETIME | NULL until bingo starts |
 | `ended_at` | DATETIME | NULL until the game ends |
 | `deadline` | DATE | Last playable day. NULL when the game only ends manually |
+| `grid_size` | TINYINT | `3`, `5` or `9`. Set at creation, never changed. Default `5` |
 
 ### `game_players`
 
@@ -279,36 +286,38 @@ The primary key is `(game_id, user_id)`.
 
 `bingo_cards`, `team_leaderboard` and `resolutions` carry both `game_id` and `team_id`. `resolutions.game_id` is `NULL` for personal resolutions. Each of those tables is unique per game, not per team.
 
-**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games. `V5_6_0__game_players.sql` adds `game_players`, with every existing game's team members as its players.
+**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games. `V5_6_0__game_players.sql` adds `game_players`, with every existing game's team members as its players. `V5_10_0__game_grid_size.sql` adds `grid_size`, which is `5` for existing games. `V5_12_0__leaderboard_progress.sql` adds `started_at`; for a game already `started` or `ended`, it is set to the creation time of the game's earliest bingo card.
 
 ---
 
 ## Acceptance Criteria
 
-- A team leader can create several games for one team without inviting anyone again.
-- Non-leaders cannot create, start, end or delete a game.
+- A Team Admin can create several games for one team without inviting anyone again.
+- Non-admins cannot create, start, end or delete a game.
 - Unverified users cannot create or start a game.
 - Each game has its own goal, member-provided resolutions, cards and leaderboard.
 - Two players track the team goal independently, each on their own cell.
 - Editing the team goal after the start changes only cards generated after the edit.
 - Bingo cannot start until the team goal exists.
 - Bingo can start while member-provided resolutions are missing.
-- A leader can set, change or remove the deadline of a running game (`forming` or `started`), and not of an ended one.
+- An admin can set, change or remove the deadline of a running game (`forming` or `started`), and not of an ended one.
 - Changing the deadline of a started game changes when it ends automatically.
 - A game with no deadline only ends manually.
 - A started game is ended automatically once its deadline is over, the same way as a manual end.
-- A leader can end a started game before its deadline.
+- An admin can end a started game before its deadline.
 - Bingo cannot start after the deadline is over.
 - `/games` lists the caller's running games.
 - A member joining a team receives a card in each of its started games.
 - Ending a game closes its open review threads, archives it and removes it from every list of running games.
 - An ended game cannot be changed and its routes return `404`.
 - Deleting a game leaves its team and sibling games intact.
-- A leader can choose which team members play a new game; all are selected by default.
+- An admin can choose which team members play a new game; all are selected by default.
+- An admin chooses a 3×3, 5×5 or 9×9 card size when creating a game; 5×5 is selected by default.
+- The card size of a game cannot be changed once it is created, and every card of the game has that size.
 - Only players can see and play a game.
 - A player can leave a game after confirming. Their card, leaderboard row and the resolutions written for them are removed; resolutions they wrote for others stay, tagged "Former Teammates".
-- The only leader of a game cannot leave it until another player is promoted.
-- A leader's game header shows at most two action buttons plus the More actions menu, and every action in the Game Page table can be reached from the header or the menu.
+- The only admin of a game cannot leave it until another player is promoted.
+- An admin's game header shows at most two action buttons plus the More actions menu, and every action in the Game Page table can be reached from the header or the menu.
 
 ---
 

@@ -31,12 +31,25 @@ This project is a web application that allows users to create and manage resolut
 - `docs/`: Contains documentation for the project.
   - `database/`: Contains descriptions of the migration files (`migrations.md`).
   - `external_deps/`: Inventory of every external dependency (npm packages, container images, tools, CI actions, fonts, assets, external services) with version, purpose and license. See [External Dependencies](#external-dependencies).
+  - `codemap/`: Map of the codebase for agents. See [Navigating the Codebase](#navigating-the-codebase).
+- `scripts/codemap.py`: Generates the files in `docs/codemap/`.
 - `docker-compose.yml`: Contains the Docker Compose configuration for the project, which defines how the different services (Next.js application, database, etc.) are orchestrated together. Used for local development and testing. The Dockerfiles in the `docker/` directory are used to build the individual images for each service.
 
 ### Libraries and Frameworks
 
 - Next.js for the main application (React + Typescript).
 - Node.js for the websocket server.
+
+---
+
+## Navigating the Codebase
+
+Use the map in `docs/codemap/` instead of searching the whole repo:
+
+- Before searching, open the map file that answers your question: `specs.md` (spec → files), `api.md` (route → handler), `files.md` (directory → file purposes) or `ARCHITECTURE.md` (how the parts connect and where new code goes). Then read only the files it lists.
+- Search only when the map doesn't answer the question.
+- After adding, moving or deleting files, or changing a file's header, run `python3 scripts/codemap.py` and commit the regenerated map in the same change. When the wiring changes, update `docs/codemap/ARCHITECTURE.md` by hand.
+- Start new source files with a header docblock (a purpose line plus `Spec Reference: NN-name.md - Section`) so the map picks them up.
 
 ---
 

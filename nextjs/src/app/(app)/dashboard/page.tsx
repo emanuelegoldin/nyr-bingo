@@ -9,6 +9,7 @@
 
 import DashboardPageShell from '@/components/dashboard/dashboard-page-shell';
 import DashboardGameCardClient from '@/components/dashboard/dashboard-game-card-client';
+import { GameTag } from '@/components/dashboard/game-tag';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { requireUser } from '@/lib/auth';
@@ -24,19 +25,22 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { Suspense, type ReactNode } from 'react';
 
+/** The game fields a dashboard card placeholder shows. */
+type DashboardGameRef = Pick<GameWithMembers, 'id' | 'name'>;
+
 /**
  * Shared frame for the dashboard card placeholders (loading, error, missing).
- * Renders the card with the localized game title and the given body.
+ * Renders the card with the localized title, the tag linking to the game and the given body.
  *
- * @param gameName - Name of the game shown in the card title.
+ * @param game - The game the card belongs to, shown as a tag.
  * @param children - Body content rendered inside the card.
  * @returns The placeholder card.
  */
 async function DashboardCardFrame({
-  gameName,
+  game,
   children,
 }: {
-  gameName: string;
+  game: DashboardGameRef;
   children: ReactNode;
 }) {
   const t = await getTranslations('Dashboard');
@@ -45,8 +49,11 @@ async function DashboardCardFrame({
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">
-          {t('cardTitle', { gameName })}
+          {t('cardTitle')}
         </CardTitle>
+        <div className="mt-2">
+          <GameTag gameId={game.id} gameName={game.name} label={t('openGame', { gameName: game.name })} />
+        </div>
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
@@ -54,11 +61,11 @@ async function DashboardCardFrame({
 }
 
 // TODO: we could create the loading fallback through composition with a dummy empty cell
-async function DashboardCardLoadingFallback({ gameName }: { gameName: string }) {
+async function DashboardCardLoadingFallback({ game }: { game: DashboardGameRef }) {
   const t = await getTranslations('Dashboard');
 
   return (
-    <DashboardCardFrame gameName={gameName}>
+    <DashboardCardFrame game={game}>
       <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span>{t('loadingCard')}</span>
@@ -67,11 +74,11 @@ async function DashboardCardLoadingFallback({ gameName }: { gameName: string }) 
   );
 }
 
-async function DashboardCardError({ gameName }: { gameName: string }) {
+async function DashboardCardError({ game }: { game: DashboardGameRef }) {
   const t = await getTranslations('Dashboard');
 
   return (
-    <DashboardCardFrame gameName={gameName}>
+    <DashboardCardFrame game={game}>
       <p className="text-sm text-destructive">
         {t('cardLoadFailed')}
       </p>
@@ -79,11 +86,11 @@ async function DashboardCardError({ gameName }: { gameName: string }) {
   );
 }
 
-async function DashboardCardMissing({ gameName }: { gameName: string }) {
+async function DashboardCardMissing({ game }: { game: DashboardGameRef }) {
   const t = await getTranslations('Dashboard');
 
   return (
-    <DashboardCardFrame gameName={gameName}>
+    <DashboardCardFrame game={game}>
       <p className="text-sm text-muted-foreground">
         {t('cardContentNoneAvailable')}
       </p>
@@ -102,7 +109,7 @@ async function DashboardGameCardStream({
     // Each game card loads independently so one slow query does not block others.
     const card = await getBingoCard(game.id, currentUserId);
     if (!card) {
-      return <DashboardCardMissing gameName={game.name} />;
+      return <DashboardCardMissing game={game} />;
     }
 
     return (
@@ -114,7 +121,7 @@ async function DashboardGameCardStream({
     );
   } catch {
     // Isolated error handling keeps the rest of the dashboard usable.
-    return <DashboardCardError gameName={game.name} />;
+    return <DashboardCardError game={game} />;
   }
 }
 
@@ -182,7 +189,7 @@ DashboardPage.Content = ({
       {games.map((game) => (
         <Suspense
           key={game.id}
-          fallback={<DashboardCardLoadingFallback gameName={game.name} />}
+          fallback={<DashboardCardLoadingFallback game={game} />}
         >
           <DashboardGameCardStream game={game} currentUserId={currentUserId} />
         </Suspense>

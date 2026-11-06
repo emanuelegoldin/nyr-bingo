@@ -53,6 +53,7 @@ output). Code that runs in the browser is also sent to users.
 | `tailwindcss-animate` | ^1.0.7 | 1.0.7 | MIT | Tailwind plugin for animation utilities. Only used at build time, despite being listed under `dependencies`. |
 | `lucide-react` | ^0.475.0 | 0.475.0 | ISC | Icon set (configured as the shadcn `iconLibrary`). Some icons come from Feather Icons (MIT); both notices are in the package's `LICENSE`. |
 | `canvas-confetti` | 1.9.3 | 1.9.3 | ISC | Confetti animation on bingo (`src/components/confetti.ts`). |
+| `recharts` | ^3.10.1 | 3.10.1 | MIT | Line chart of the game's Progress tab (`src/components/progress/`, spec 23). Brings in MIT/ISC/BSD-3-Clause transitive packages: `d3-*` and `internmap` (ISC; `d3-ease` BSD-3-Clause), `victory-vendor` (MIT AND ISC AND BSD-3-Clause), `@reduxjs/toolkit`, `react-redux`, `redux`, `redux-thunk`, `reselect`, `immer`, `es-toolkit`, `decimal.js-light`, `eventemitter3`, `tiny-invariant` (MIT). |
 
 ## Development dependencies (`devDependencies`)
 

@@ -34,10 +34,32 @@ export enum CellSourceType {
 
 // Cell state
 // Spec: 06-bingo-gameplay.md, Resolution Review & Proof Workflow
-// Bingo cards are a fixed 5x5 grid whose center is the implicit Joker.
-// Spec: 00-system-overview.md, 05-bingo-card-generation.md
-export const BINGO_GRID_SIZE = 5;
-export const JOKER_POSITION = 12;
+// Bingo cards are an N x N grid whose center is the implicit Joker. N is chosen per game.
+// Spec: 05-bingo-card-generation.md - Assumptions, 16-games.md - Game Model
+/** The card sizes a game can be created with. */
+export const GRID_SIZES = [3, 5, 9] as const;
+/** The side length of a game's cards: 3, 5 or 9. */
+export type GridSize = (typeof GRID_SIZES)[number];
+/** The size of a game created without one. */
+export const DEFAULT_GRID_SIZE: GridSize = 5;
+
+/**
+ * Whether a value is one of the allowed card sizes.
+ * @param value The value to check, for example a request field
+ * @returns True for 3, 5 or 9
+ */
+export function isGridSize(value: unknown): value is GridSize {
+  return GRID_SIZES.some((size) => size === value);
+}
+
+/**
+ * The position of the Joker, the center cell of the grid.
+ * @param gridSize The side length of the card
+ * @returns 4 for 3x3, 12 for 5x5, 40 for 9x9
+ */
+export function getJokerPosition(gridSize: number): number {
+  return (gridSize * gridSize - 1) / 2;
+}
 
 export enum CellState {
   PENDING = 'pending',
@@ -195,6 +217,17 @@ export interface LeaderboardEntry {
   completedTasks: number;
 }
 
+/**
+ * One stored value of a player's completed count, live or archived.
+ * Spec: 23-progress-chart.md - Recording Progress
+ */
+export interface ProgressPoint {
+  userId: string;
+  /** ISO datetime from which the count held this value. */
+  recordedAt: string;
+  completedTasks: number;
+}
+
 /** An archived game as listed on the archive page. */
 export interface ArchivedGameSummary {
   id: string;
@@ -203,8 +236,56 @@ export interface ArchivedGameSummary {
   endedAt: string;
 }
 
-/** An archived game with its leaderboard and cards. */
+/** An archived game with its leaderboard, cards and archived threads. */
 export interface ArchivedGameDetail extends ArchivedGameSummary {
+  /** The side length of every card of the game. */
+  gridSize: number;
+  /** ISO datetime bingo started, or null for games archived before it was recorded. */
+  startedAt: string | null;
   leaderboard: LeaderboardEntry[];
   cards: ArchivedCard[];
+  threads: ArchivedThread[];
+  /** The players' progress points, oldest first (spec 23). */
+  progress: ProgressPoint[];
+}
+
+// Archived threads: closed review threads, read-only, of a running or an archived game
+// Spec: 07-proof-and-approval.md - Archived Threads, 18-game-archive.md
+
+/** The state a thread's cell took when the thread closed. */
+export type ThreadOutcome = 'accomplished' | 'pending';
+
+/** One message of an archived thread. */
+export interface ArchivedThreadMessage {
+  id: string;
+  authorName: string;
+  content: string;
+  createdAt: string;
+}
+
+/** One proof file of an archived thread, as a link. */
+export interface ArchivedThreadFile {
+  id: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string | null;
+}
+
+/** A closed review thread with everything it keeps. */
+export interface ArchivedThread {
+  id: string;
+  /** The card owner, who is also the completing user. */
+  cardOwnerId: string;
+  cardOwnerName: string;
+  cellPosition: number;
+  cellTitle: string;
+  createdAt: string;
+  closedAt: string | null;
+  /** Null for threads closed before the outcome was recorded. */
+  outcome: ThreadOutcome | null;
+  acceptVotes: number;
+  denyVotes: number;
+  messages: ArchivedThreadMessage[];
+  files: ArchivedThreadFile[];
 }

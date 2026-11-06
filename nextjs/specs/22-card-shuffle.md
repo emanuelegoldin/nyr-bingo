@@ -41,7 +41,7 @@ Let a card owner rearrange the cells of their bingo card at random until they ar
 
 ### Shuffle
 
-- A shuffle gives the 24 stored cells of the card a new random arrangement over the non-center positions. The Joker stays at position 12.
+- A shuffle gives the stored cells of the card (N²−1 on an N×N card, spec 05) a new random arrangement over the non-center positions. The Joker stays at the center.
 - Every stored cell takes part in the shuffle, including the team goal cell, empty cells and `failed` cells. A cell may land on its old position.
 - A cell keeps its id, content, state, review threads and `updated_at`. Only its `position` changes.
 - A card can be shuffled any number of times while it is unlocked and has no done cell. Bingo lines depend on positions (spec 12), so a done cell must not be moved into a line.
@@ -97,7 +97,7 @@ The card read by the API carries it as `lockedAt` (`null` when unlocked).
 ## Acceptance Criteria
 
 - The card owner can shuffle an unlocked card with no done cell from the dashboard, any number of times.
-- A shuffle keeps the Joker at the center and moves the other 24 cells, team goal included, with their content and state.
+- A shuffle keeps the Joker at the center and moves the other cells, team goal included, with their content and state.
 - A card with a done cell cannot be shuffled (UI disables the button, API returns `400`).
 - The card owner can lock their card after confirming; a locked card cannot be shuffled (UI hides the buttons, API returns `400`).
 - Locking does not change gameplay, proof review or card editing.

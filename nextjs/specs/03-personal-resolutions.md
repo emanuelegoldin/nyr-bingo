@@ -27,7 +27,7 @@ A resolution holds no progress: it has no `completed_times` and its subtasks hav
 | Scope | Meaning | Owner (`ownerUserId`) | Extra fields |
 | ----- | ------- | --------------------- | ------------ |
 | `personal` | The user's own resolution | The user | none |
-| `team` | The team goal; one per game (spec 16) | The team leader | `teamId`, `gameId` |
+| `team` | The team goal; one per game (spec 16) | The Team Admin | `teamId`, `gameId` |
 | `member_provided` | Written by one member for another, for one game (spec 16) | The author | `teamId`, `gameId`, `toUserId` |
 
 Every type is available in every scope.

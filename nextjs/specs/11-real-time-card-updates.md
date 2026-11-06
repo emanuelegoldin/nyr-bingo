@@ -80,6 +80,7 @@ Every mutating API route, and the deadline sweep (spec 07), signals the rooms it
 | Cell state, undo, edit, proof request | The team's card room, and the cell's threads |
 | Thread message, file, vote that keeps it open | The thread |
 | Thread closed by vote, by the completing user or by the deadline | The thread and the team's card room |
+| Archived thread deleted (spec 07) | The team's card room |
 | Subtask or counter change on a cell, manual history note on a cell | The card room of the cell's team |
 | Join, game creation, start, end or deletion, team deletion | The team's card room |
 | Profile update | The card room of each of the user's teams |
@@ -120,7 +121,7 @@ The mutations of `bingo_cells.state` in this table include a `WHERE state ...` g
 If `affectedRows === 0`, the cell was already transitioned by another operation and the API returns `400` with a message, for example "Cell state has changed — please refresh and try again". Automatic completion does not report this; it simply leaves the cell alone.
 
 Other mutations are not guarded on cell state:
-- Thread closure (votes, the completing user or the deadline) is guarded on the thread instead: `WHERE status = 'open'`. If the thread was already closed, the transaction rolls back messages and cell state; proof files removed before the transaction stay removed.
+- Thread closure (votes, the completing user or the deadline) is guarded on the thread instead: `WHERE status = 'open'`. If the thread was already closed, the transaction rolls back the cell state.
 - Cell edits (spec 09) are guarded against `pending_review`.
 
 ### Owner-Prevails Rule

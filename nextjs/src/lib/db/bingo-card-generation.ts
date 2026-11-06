@@ -9,9 +9,8 @@ import { getResolutionTextKey } from '../shared/resolution-type';
 import { shuffleArray } from '../shared/shuffle';
 import type { PreparedResolution } from '../shared/types';
 import {
-  BINGO_GRID_SIZE,
   CellSourceType,
-  JOKER_POSITION,
+  getJokerPosition,
   PreparedResolutionCategory,
 } from '../shared/types';
 import { CardRow, rowToCard } from './bingo-card-rows';
@@ -26,10 +25,6 @@ import {
   getRandomResolutions,
 } from './resolution-repository';
 import { BingoCard, Game, GameStatus, Resolution } from './types';
-
-const TOTAL_CELLS = BINGO_GRID_SIZE * BINGO_GRID_SIZE;
-/** The Joker takes one position and is not stored. */
-const STORED_CELLS = TOTAL_CELLS - 1;
 
 /** The statuses in which a game can receive cards. */
 type CardGenerationStatus = GameStatus.FORMING | GameStatus.STARTED;
@@ -103,7 +98,7 @@ export async function startGameWithCards(gameId: string): Promise<{ success: boo
   return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
     // The status guard stops two concurrent starts from generating cards twice.
     const statusUpdate = await execute(
-      `UPDATE games SET status = 'started' WHERE id = ? AND status = 'forming'`,
+      `UPDATE games SET status = 'started', started_at = NOW() WHERE id = ? AND status = 'forming'`,
       [gameId],
       connection
     );
@@ -154,13 +149,24 @@ async function planCells(
   useFallbacks: boolean
 ): Promise<CellPlan[]> {
   const plan: CellPlan[] = [];
+  // The Joker takes the center position and is not stored
+  const storedCells = game.gridSize * game.gridSize - 1;
 
   const usedTexts = new Set<string>();
   usedTexts.add(getResolutionTextKey(teamGoalResolution.title, teamGoalResolution.description));
 
+  // The team goal always gets a cell, whatever the card size
+  // Spec: 05-bingo-card-generation.md - Step 2
+  plan.push({
+    resolutionId: teamGoalResolution.id,
+    sourceType: CellSourceType.TEAM,
+    sourceUserId: null,
+    snapshot: snapshotOf(teamGoalResolution),
+  });
+
   const addUnique = (resolutions: Resolution[], sourceType: CellSourceType): void => {
     for (const res of resolutions) {
-      if (plan.length >= STORED_CELLS) break; // Leave room for joker
+      if (plan.length >= storedCells) break; // Leave room for joker
       const resText = getResolutionTextKey(res.title, res.description);
       if (!usedTexts.has(resText)) {
         plan.push({
@@ -177,7 +183,7 @@ async function planCells(
   // A prepared cell is copied straight from the pool entry (spec 17)
   const addPrepared = (entries: PreparedResolution[]): void => {
     for (const entry of entries) {
-      if (plan.length >= STORED_CELLS) break;
+      if (plan.length >= storedCells) break;
       const text = getResolutionTextKey(entry.title, entry.description);
       if (usedTexts.has(text)) continue;
 
@@ -191,13 +197,15 @@ async function planCells(
     }
   };
 
-  // Add member-provided resolutions (highest priority)
-  // Spec: 05-bingo-card-generation.md - Step 2
-  const memberProvided = await getMemberProvidedResolutionsForUser(game.id, userId);
-  addUnique(memberProvided, CellSourceType.MEMBER_PROVIDED);
-
-  // Replace every missing proposal with an easy prepared resolution
+  // Add member-provided resolutions in random order, so the ones that fit a small card are a random pick
   // Spec: 05-bingo-card-generation.md - Step 3
+  const memberProvided = await getMemberProvidedResolutionsForUser(game.id, userId);
+  const memberProvidedInRandomOrder = [...memberProvided];
+  shuffleArray(memberProvidedInRandomOrder);
+  addUnique(memberProvidedInRandomOrder, CellSourceType.MEMBER_PROVIDED);
+
+  // Replace every missing proposal with an easy prepared resolution, while cells are left
+  // Spec: 05-bingo-card-generation.md - Step 4
   if (useFallbacks) {
     const missing = await countMissingProposals(game.id, userId, memberProvided);
     addPrepared(
@@ -205,20 +213,9 @@ async function planCells(
     );
   }
 
-  // Add team resolution as a completable cell
-  // Spec: 05-bingo-card-generation.md - Step 4
-  if (plan.length < STORED_CELLS) {
-    plan.push({
-      resolutionId: teamGoalResolution.id,
-      sourceType: CellSourceType.TEAM,
-      sourceUserId: null,
-      snapshot: snapshotOf(teamGoalResolution),
-    });
-  }
-
   // Fill remaining with personal resolutions
   // Spec: 05-bingo-card-generation.md - Step 5
-  const neededPersonal = STORED_CELLS - plan.length;
+  const neededPersonal = storedCells - plan.length;
   if (neededPersonal > 0) {
     const personalResolutions = await getRandomResolutions(
       userId,
@@ -233,14 +230,14 @@ async function planCells(
   if (useFallbacks) {
     for (const category of DIFFICULT_FALLBACK_CATEGORIES) {
       addPrepared(
-        await getRandomPreparedResolutions(category, STORED_CELLS - plan.length, Array.from(usedTexts))
+        await getRandomPreparedResolutions(category, storedCells - plan.length, Array.from(usedTexts))
       );
     }
   }
 
   // Fill any remaining with empty cells
   // Spec: 05-bingo-card-generation.md - Step 7
-  while (plan.length < STORED_CELLS) {
+  while (plan.length < storedCells) {
     plan.push({
       resolutionId: null,
       sourceType: CellSourceType.EMPTY,
@@ -278,7 +275,7 @@ async function generateCardForUser(
   const cardId = randomUUID();
   await connection.execute(
     `INSERT INTO bingo_cards (id, team_id, game_id, user_id, grid_size) VALUES (?, ?, ?, ?, ?)`,
-    [cardId, game.teamId, game.id, userId, BINGO_GRID_SIZE]
+    [cardId, game.teamId, game.id, userId, game.gridSize]
   );
 
   const plan = await planCells(game, userId, teamGoalResolution, useFallbacks);
@@ -286,8 +283,9 @@ async function generateCardForUser(
   // Insert cells into database
   // The Joker cell is implicit (always at center position) and is NOT stored in the database.
   // Spec (updated): 05-bingo-card-generation.md
-  const positions = Array.from({ length: TOTAL_CELLS }, (_, position) => position)
-    .filter((position) => position !== JOKER_POSITION);
+  const jokerPosition = getJokerPosition(game.gridSize);
+  const positions = Array.from({ length: game.gridSize * game.gridSize }, (_, position) => position)
+    .filter((position) => position !== jokerPosition);
 
   for (const [index, position] of positions.entries()) {
     const data = plan[index];
@@ -319,7 +317,7 @@ async function generateCardForUser(
     gameId: game.id,
     teamId: game.teamId,
     userId,
-    gridSize: BINGO_GRID_SIZE,
+    gridSize: game.gridSize,
     createdAt: new Date(),
     lockedAt: null,
   };
