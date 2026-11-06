@@ -8,7 +8,7 @@ import { getSourceLabel } from '../shared/cell-source';
 import {
   CellSourceType,
   CellState,
-  JOKER_POSITION,
+  getJokerPosition,
   ResolutionType,
   TeamRole,
   type ArchivedCard,
@@ -69,6 +69,7 @@ interface ArchivedGameRow extends RowDataPacket {
   name: string;
   team_name: string;
   ended_at: Date;
+  grid_size: number;
 }
 
 interface ArchivedPlayerRow extends RowDataPacket {
@@ -309,9 +310,9 @@ export async function archiveGame(game: Game): Promise<boolean> {
 
   await withTransaction(async (connection) => {
     await execute(
-      `INSERT INTO archived_games (id, name, team_name, ended_at)
-       VALUES (?, ?, ?, ?)`,
-      [game.id, game.name, game.teamName, game.endedAt ?? game.updatedAt],
+      `INSERT INTO archived_games (id, name, team_name, ended_at, grid_size)
+       VALUES (?, ?, ?, ?, ?)`,
+      [game.id, game.name, game.teamName, game.endedAt ?? game.updatedAt, game.gridSize],
       connection
     );
 
@@ -412,9 +413,14 @@ export async function getArchivedGameSummary(id: string): Promise<ArchivedGameSu
  * Load the cards of an archived game, in player order.
  * @param id The archived game
  * @param players The game's players
+ * @param gridSize The side length of the game's cards, which places the Joker
  * @returns One card per player, with the implicit Joker added
  */
-async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promise<ArchivedCard[]> {
+async function getArchivedCards(
+  id: string,
+  players: ArchivedPlayerRow[],
+  gridSize: number
+): Promise<ArchivedCard[]> {
   const cellRows = await query<ArchivedCellRow[]>(
     `SELECT * FROM archived_cells WHERE archived_game_id = ? ORDER BY position ASC`,
     [id]
@@ -453,7 +459,7 @@ async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promi
       }));
 
     cells.push({
-      position: JOKER_POSITION,
+      position: getJokerPosition(gridSize),
       isJoker: true,
       isEmpty: false,
       resolutionTitle: 'Joker',
@@ -479,8 +485,9 @@ async function getArchivedCards(id: string, players: ArchivedPlayerRow[]): Promi
  * @returns The archived game, or null if it does not exist
  */
 export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | null> {
-  const summary = await getArchivedGameSummary(id);
-  if (!summary) return null;
+  const gameRows = await query<ArchivedGameRow[]>(`SELECT * FROM archived_games WHERE id = ?`, [id]);
+  if (gameRows.length === 0) return null;
+  const gridSize = gameRows[0].grid_size;
 
   const players = await query<ArchivedPlayerRow[]>(
     `SELECT * FROM archived_game_players
@@ -490,7 +497,8 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
   );
 
   return {
-    ...summary,
+    ...rowToSummary(gameRows[0]),
+    gridSize,
     leaderboard: players
       .filter((player) => player.leaderboard_rank !== null)
       .map((player) => ({
@@ -500,7 +508,7 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
         firstBingoAt: player.first_bingo_at ? player.first_bingo_at.toISOString() : null,
         completedTasks: player.completed_tasks,
       })),
-    cards: await getArchivedCards(id, players),
+    cards: await getArchivedCards(id, players, gridSize),
   };
 }
 

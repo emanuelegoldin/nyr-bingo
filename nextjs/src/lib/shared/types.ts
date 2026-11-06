@@ -34,10 +34,32 @@ export enum CellSourceType {
 
 // Cell state
 // Spec: 06-bingo-gameplay.md, Resolution Review & Proof Workflow
-// Bingo cards are a fixed 5x5 grid whose center is the implicit Joker.
-// Spec: 00-system-overview.md, 05-bingo-card-generation.md
-export const BINGO_GRID_SIZE = 5;
-export const JOKER_POSITION = 12;
+// Bingo cards are an N x N grid whose center is the implicit Joker. N is chosen per game.
+// Spec: 05-bingo-card-generation.md - Assumptions, 16-games.md - Game Model
+/** The card sizes a game can be created with. */
+export const GRID_SIZES = [3, 5, 9] as const;
+/** The side length of a game's cards: 3, 5 or 9. */
+export type GridSize = (typeof GRID_SIZES)[number];
+/** The size of a game created without one. */
+export const DEFAULT_GRID_SIZE: GridSize = 5;
+
+/**
+ * Whether a value is one of the allowed card sizes.
+ * @param value The value to check, for example a request field
+ * @returns True for 3, 5 or 9
+ */
+export function isGridSize(value: unknown): value is GridSize {
+  return GRID_SIZES.some((size) => size === value);
+}
+
+/**
+ * The position of the Joker, the center cell of the grid.
+ * @param gridSize The side length of the card
+ * @returns 4 for 3x3, 12 for 5x5, 40 for 9x9
+ */
+export function getJokerPosition(gridSize: number): number {
+  return (gridSize * gridSize - 1) / 2;
+}
 
 export enum CellState {
   PENDING = 'pending',
@@ -205,6 +227,8 @@ export interface ArchivedGameSummary {
 
 /** An archived game with its leaderboard and cards. */
 export interface ArchivedGameDetail extends ArchivedGameSummary {
+  /** The side length of every card of the game. */
+  gridSize: number;
   leaderboard: LeaderboardEntry[];
   cards: ArchivedCard[];
 }

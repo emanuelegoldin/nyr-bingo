@@ -1,31 +1,49 @@
-import { BINGO_GRID_SIZE, JOKER_POSITION } from './types';
+import { getJokerPosition } from './types';
 
 /**
- * Build the positions of every row, column and diagonal of the grid.
+ * Build the positions of every row, column and diagonal of an N x N grid.
  *
+ * @param gridSize - The side length of the card.
  * @returns One array of positions per line.
  */
-function buildLines(): number[][] {
-  const positions = Array.from({ length: BINGO_GRID_SIZE }, (_, index) => index);
+function buildLines(gridSize: number): number[][] {
+  const positions = Array.from({ length: gridSize }, (_, index) => index);
   return [
-    ...positions.map((row) => positions.map((col) => row * BINGO_GRID_SIZE + col)),
-    ...positions.map((col) => positions.map((row) => row * BINGO_GRID_SIZE + col)),
-    positions.map((index) => index * BINGO_GRID_SIZE + index),
-    positions.map((index) => index * BINGO_GRID_SIZE + (BINGO_GRID_SIZE - 1 - index)),
+    ...positions.map((row) => positions.map((col) => row * gridSize + col)),
+    ...positions.map((col) => positions.map((row) => row * gridSize + col)),
+    positions.map((index) => index * gridSize + index),
+    positions.map((index) => index * gridSize + (gridSize - 1 - index)),
   ];
 }
 
-/** Every line that scores a bingo (spec 12). */
-export const BINGO_LINES: readonly number[][] = buildLines();
+/** The lines of each grid size, built on first use. */
+const linesBySize = new Map<number, readonly number[][]>();
+
+/**
+ * Every line that scores a bingo on a card of the given size (spec 12).
+ *
+ * @param gridSize - The side length of the card.
+ * @returns One array of positions per row, column and diagonal.
+ */
+export function getBingoLines(gridSize: number): readonly number[][] {
+  let lines = linesBySize.get(gridSize);
+  if (!lines) {
+    lines = buildLines(gridSize);
+    linesBySize.set(gridSize, lines);
+  }
+  return lines;
+}
 
 /**
  * Whether the done positions complete at least one line. The Joker always counts as done.
  *
+ * @param gridSize - The side length of the card.
  * @param donePositions - The positions of the cells that are done.
  * @returns True if a bingo line is complete.
  */
-export function hasBingoLine(donePositions: ReadonlySet<number>): boolean {
-  return BINGO_LINES.some((line) =>
-    line.every((position) => position === JOKER_POSITION || donePositions.has(position))
+export function hasBingoLine(gridSize: number, donePositions: ReadonlySet<number>): boolean {
+  const jokerPosition = getJokerPosition(gridSize);
+  return getBingoLines(gridSize).some((line) =>
+    line.every((position) => position === jokerPosition || donePositions.has(position))
   );
 }
