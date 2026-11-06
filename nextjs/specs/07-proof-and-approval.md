@@ -16,6 +16,8 @@ This specification governs **proof, review, and approval workflows**, not basic 
 - Vote to accept or deny proof
 - Close my own review thread and revert my resolution
 - See resolution automatically finalized or reverted based on votes or a deadline
+- Read a closed thread later, with its messages, files and final result
+- Delete a closed thread, as an admin
 
 ---
 
@@ -26,7 +28,7 @@ This specification governs **proof, review, and approval workflows**, not basic 
 - Messaging and file uploads
 - Voting and automatic state transitions
 - Deadline-based closure
-- Cleanup of review data upon completion or cancellation
+- Archived (closed) threads and their deletion
 
 ---
 
@@ -57,7 +59,7 @@ A cell's `reviewThreadId` is only set while a thread is open. Once a thread clos
 ### Thread Status
 
 - `open`
-- `closed`
+- `closed`: the thread is **archived**. It is read-only and keeps its messages, files and votes (see Archived Threads).
 
 `GET /api/threads/[threadId]` returns the thread with its messages, files and votes.
 
@@ -138,7 +140,7 @@ The API responds with the vote and a `threadClosed` flag.
 
 ## Closure by the Completing User
 
-`DELETE /api/threads/[threadId]`
+`POST /api/threads/[threadId]/close`
 
 - Only the completing user can close an open thread, from the **Close Thread** button after a confirmation.
 - The cell returns to `pending`.
@@ -156,20 +158,53 @@ The API responds with the vote and a `threadClosed` flag.
 
 ---
 
-## Thread Closure & Cleanup
+## Thread Closure
 
 | | All votes in | Completing user closes | Undo completion | Deadline |
 | - | - | - | - | - |
 | Thread status | `closed` | `closed` | `closed` | `closed` |
 | `closed_at` set | Yes | Yes | Yes | Yes |
 | Cell state | `accomplished` or `pending` | `pending` | `pending` | `accomplished` or `pending` |
-| Messages deleted | Yes | Yes | Yes | Yes |
-| File rows deleted | Yes | Yes | Yes | Yes |
-| Files deleted from disk | Yes | Yes | Yes | Yes |
+| `outcome` | The new cell state | `pending` | `pending` | The new cell state |
 
-The thread row and its votes are kept in every case.
+Closing a thread deletes nothing: its messages, files and votes are kept, and it becomes an archived thread.
 
-If a file cannot be removed from disk during any closure, the closure fails and the thread stays open. A deadline closure is tried again at the next run.
+---
+
+## Archived Threads
+
+A closed thread is an **archived thread**. It is read-only: it accepts no messages, files or votes.
+
+### What It Keeps
+
+- The cell and card it refers to: the card owner (the completing user) and the cell's position and title.
+- When it was opened and closed.
+- Its messages, with their author and time.
+- Links to its proof files.
+- Its final result: the number of accept and deny votes, and `outcome`, the state its cell took when it closed. Threads closed before archived threads existed have no messages, files or `outcome`; they show their vote counts only.
+
+### Threads Tab
+
+The game page has a **Threads** tab (spec 12) that lists the game's archived threads, most recently closed first. Each row shows the card owner, the cell, the closing date, the outcome and the vote counts. Selecting one opens it read-only: its messages, file links and result. The same tab is used on the archived game page (spec 18).
+
+The list and its contents are loaded with the page, so the tab is updated when the page re-renders on `refresh-card` (specs 11 and 12).
+
+### Deleting an Archived Thread
+
+`DELETE /api/threads/[threadId]`
+
+- Only an admin of the game (role `leader`) can delete an archived thread, from the Threads tab, after a confirmation.
+- An open thread cannot be deleted (`400`).
+- Its files are removed from disk first, then the thread is deleted with its messages, file rows and votes. A file shared with another thread or archived thread stays on disk.
+- If a file cannot be removed from disk, the deletion fails and the thread is kept.
+- The cell is not changed.
+- It signals the team's card room (spec 11).
+
+Deleting a game, a team, or a player's card also deletes the archived threads of its cells and removes their files.
+
+### When the Game Ends
+
+When the game is archived, its archived threads are copied into the archive with it (spec 18), and their files stay on disk until the archived game, or the archived thread, is deleted.
 
 ---
 
@@ -182,6 +217,7 @@ The role-to-permission table and the status of every refusal are defined in spec
 - Completing user is blocked from voting.
 - Duplicate votes per user are prevented by a unique key on `(thread_id, voter_user_id)`.
 - Closed threads accept no messages, files or votes.
+- Only an admin of the game can delete an archived thread.
 
 ---
 
@@ -192,7 +228,10 @@ The role-to-permission table and the status of every refusal are defined in spec
 - Other team members can vote and discuss.
 - Votes can be changed before closure.
 - Cell state updates correctly based on voting outcome.
-- Messages and file records are deleted when threads close.
+- A closed thread keeps its messages, files, votes and outcome, and accepts no changes.
+- The game page's Threads tab lists the game's archived threads and opens them read-only.
+- Only an admin of the game can delete an archived thread; its files are removed from disk unless another thread shares them.
+- An open thread cannot be deleted.
 
 ---
 

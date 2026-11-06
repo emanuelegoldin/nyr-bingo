@@ -65,6 +65,7 @@ Every role is listed with the full set of permissions it holds; there is no inhe
 | `thread.view` | game | `leader`, `player` | – |
 | `thread.message` | game | `leader`, `player` | – |
 | `thread.vote` | game | `leader`, `player` | – |
+| `thread.delete` | game | `leader` | – |
 | `card.arrange` | game | `leader`, `player` | – |
 | `game.configure` | game | `leader` | – |
 | `game.start` | game | `leader` | yes |
@@ -73,6 +74,7 @@ Every role is listed with the full set of permissions it holds; there is no inhe
 | `game.goal.set` | game | `leader` | – |
 | `archive.view` | archive | `leader`, `player` | – |
 | `archive.delete` | archive | `leader` | – |
+| `archive.thread.delete` | archive | `leader` | – |
 
 Where they are used:
 
@@ -82,6 +84,8 @@ Where they are used:
 - `thread.*`: a cell's or thread's game is resolved first, and the role is the caller's role in that game (spec 07). The game is resolved whatever its status; what an ended game's cells and threads allow is a game status rule (spec 16).
 - `game.goal.set`: saving the team goal of a game (spec 16).
 - `card.arrange`: shuffling and locking the caller's own card (spec 22).
+- `thread.delete`: deleting a closed (archived) thread of a running game (spec 07).
+- `archive.view`: reading an archived game, with its archived threads (spec 18). `archive.delete` deletes it and `archive.thread.delete` deletes one of its archived threads.
 
 Lists of the caller's own teams, games, archived games, resolutions and notifications (`GET /api/teams`, `/api/games`, `/api/archived-games`, the dashboard) only return the caller's own data and need no permission.
 
@@ -96,7 +100,7 @@ Some actions depend on who owns a record, not on a role. They apply on top of th
 - **Cell history:** read and write access as defined in spec 13 (History Visibility, Manual Entry Creation).
 - **Cell complete, undo or edit:** only the owner of the card.
 - **Card shuffle or lock:** only the owner of the card. The routes act on the caller's own card (spec 22).
-- **Thread close, proof upload and proof delete:** only the completing user.
+- **Thread close (`POST /api/threads/[threadId]/close`), proof upload and proof delete:** only the completing user.
 - **Self-scoped data:** profile and notifications routes (`/api/profile`, `/api/notifications`) only read and change the caller's own data.
 
 ---
@@ -128,7 +132,7 @@ These rules are not permissions and stay with the data they protect:
 
 - The last admin cannot leave a team or game (specs 04 and 16).
 - Game status rules: what a `forming`, `started` or `ended` game allows (spec 16).
-- A completing user cannot vote on their own proof, and closed threads accept no messages, files or votes (spec 07).
+- A completing user cannot vote on their own proof, closed threads accept no messages, files or votes, and an open thread cannot be deleted (spec 07).
 - The SQL guards on owner columns in `UPDATE` and `DELETE` statements are kept as atomic protection.
 
 ---
