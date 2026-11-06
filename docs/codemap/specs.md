@@ -100,6 +100,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/api/cells/card-owner.ts` — Ownership check shared by the cell routes.
 - `app/api/cells/cell-progress.ts` — Checks and follow-up shared by the cell progress routes.
 - `app/api/games/[gameId]/cards/route.ts` — Game Bingo Cards API
+- `components/cell/cell-stamp.tsx` — Round check stamp drawn over a completed or accomplished cell, with an optional stamping animation. [Card Display Rules]
 - `components/cell/resolution-cell.tsx` [Cell Detail Dialog]
 - `lib/db/bingo-card-repository.ts` — Bingo Card Repository - Reading bingo cards
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
@@ -286,6 +287,10 @@ _No file references this spec._
 - `lib/db/archived-progress-repository.ts` — Archived Progress Repository - The progress points kept in an archived game
 - `lib/db/leaderboard-repository.ts` — Leaderboard Repository – persisted game leaderboard data
 - `lib/shared/types.ts`
+
+## 24-cell-reactions.md — Cell Reactions
+
+_No file references this spec._
 
 ## Unmapped files (95)
 
