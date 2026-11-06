@@ -460,3 +460,22 @@ A resolution becomes a definition only, and every card cell holds a copy of it w
 - `Create_Column`, `CREATE TABLE IF NOT EXISTS`, `Drop_Column` and `Drop_Table` do nothing on a second
   run. Rebuilding the subtask lists gives the same lists again.
 - The migration can therefore run again, including after a partial failure.
+
+## 5.10.0 - Game Grid Size
+
+Lets the admin choose a 3×3, 5×5 or 9×9 card size when creating a game (spec 16).
+
+### Schema changes
+
+- `games.grid_size` (`TINYINT`, not null, default `5`) is the size of every card of the game. It is set
+  at creation and never changed. The route that creates games accepts only `3`, `5` and `9`.
+- `archived_games.grid_size` (`TINYINT`, not null, default `5`) keeps the size in the archive (spec 18).
+- `bingo_cards.grid_size` already existed; a card now takes its game's size instead of always `5`.
+
+### Data migration
+
+None: the defaults give existing and archived games their 5×5 size.
+
+### Idempotency
+
+`Create_Column` does nothing when the column already exists, so the migration can run again.
