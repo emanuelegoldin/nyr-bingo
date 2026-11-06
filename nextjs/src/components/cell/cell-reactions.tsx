@@ -12,7 +12,8 @@ interface CellReactionsProps {
 
 /**
  * Renders the reactions over their parent cell, which must be positioned. Like the stamp, they
- * come before the title in the markup so the title paints over them.
+ * come before the title in the markup so the title paints over them. The overlay clips them to
+ * the cell's shape, so a tilted or enlarged reaction near an edge never sticks out.
  *
  * @param reactions - The reactions, drawn in order so later ones are on top.
  * @returns The reaction overlay, or nothing when there is no reaction.
@@ -21,7 +22,7 @@ export const CellReactions = ({ reactions }: CellReactionsProps) => {
   if (reactions.length === 0) return null;
 
   return (
-    <div aria-hidden className="absolute inset-0 pointer-events-none">
+    <div aria-hidden className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
       {reactions.map((mark, index) => (
         <ReactionIcon
           key={index}

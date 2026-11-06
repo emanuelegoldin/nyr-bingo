@@ -86,6 +86,7 @@ When a player leaves a game (spec 16), their cells are deleted with their reacti
 - The spot is stored as the position of the reaction's center, in percent of the cell's width and height, between 15 and 85, so the reaction stays inside the cell.
 - The tilt is stored as a rotation around the reaction's center, in whole degrees between −45 and 45.
 - The size is stored as a scale, in whole percent between 75 and 125 of the base reaction size.
+- Reactions are clipped to the cell, so a tilted or enlarged reaction near an edge never sticks out of it.
 - Reactions show on every view of a card: the game page, the dashboard and archived games.
 - Reactions appear without animation.
 
