@@ -38,8 +38,12 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `cards-tab.tsx` — Cards Tab — Game Page
 - `game-detail-page-client.tsx` — Game Page
+- `leaderboard-podium.tsx` — Leaderboard Podium — positions 1–3 as cards in a triangle (1 on top, 2 and 3 below).
+- `leaderboard-rank.ts` — Leaderboard rank colours — gold / silver / bronze accents for positions 1–3.
 - `leaderboard-tab.tsx` — Leaderboard Tab — Game Page
+- `leaderboard-table.tsx` — Leaderboard Table — positions 4 and below, under the podium.
 - `page.tsx` — Game Page
+- `trophy-icon.tsx` — Trophy Icon — simple decorative trophy shown on the first-place podium card.
 - `types.ts` — Shared types for the game page and its tab components.
 
 ## app/(app)/games/[gameId]/_components

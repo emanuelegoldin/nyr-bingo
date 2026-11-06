@@ -23,7 +23,7 @@ the team page only (spec 04): it is also reachable from the game's leaderboard.
 ## In Scope
 
 - Game page tab structure
-- Leaderboard table backed by the `team_leaderboard` DB table
+- Leaderboard podium and table backed by the `team_leaderboard` DB table
 - Clickable user avatars linking to profile pages
 - Clickable source-user badges in bingo card cells
 - Confetti celebration animation on bingo completion
@@ -63,15 +63,23 @@ members only; others get a not-found page.
 
 ### 2. Leaderboard Tab
 
-- A table with four columns:
-  1. **#** — Position number (1-indexed). Position 1 is gold-coloured, 2 is
-     silver, 3 is bronze.
+- **Podium:** positions 1–3 are shown as cards above the table.
+  - Position 1 is centred at the top and shows a trophy icon. Positions 2
+    (left) and 3 (right) sit side by side below it, forming a triangle.
+  - Each card shows the position number, the player's avatar (clickable) and
+    name (as in the Player column below), the completed count and the
+    first-bingo datetime, or "—" if not yet scored.
+  - Card accents are gold for position 1, silver for 2 and bronze for 3.
+  - With fewer than three players, only the existing positions are shown.
+- **Table:** positions 4 and below are listed in a table with four columns:
+  1. **#** — Position number (1-indexed, so the first row is 4).
   2. **Player** — Avatar (clickable) + display name, if `displayNamePublic` is
      true, otherwise username.
   3. **Completed** — The number of completed resolutions (cells with state
      `completed` or `accomplished`).
   4. **First Bingo** — The datetime when the player first completed a bingo
      line, or "—" if not yet scored.
+  The table is not shown when there are three players or fewer.
 - A placeholder message is shown when there are no rows.
 - **Sorting rules (applied in order):**
   1. Users who have scored a bingo appear before those who have not.
@@ -163,16 +171,19 @@ Persists per-user, per-game leaderboard data for efficient retrieval.
       it has no Members tab.
 - [ ] Threads tab lists the game's archived threads (spec 07).
 - [ ] Cards tab contains the bingo-card layout.
-- [ ] Leaderboard tab shows a ranked table with first-bingo datetime.
-- [ ] Leaderboard tab shows a "Completed" column counting cells with state
-      `completed` or `accomplished`.
+- [ ] Leaderboard tab shows positions 1–3 as podium cards: 1 at the top with
+      a trophy, 2 and 3 side by side below it.
+- [ ] Leaderboard tab lists positions 4 and below in a table with
+      first-bingo datetime, shown only when there are more than three players.
+- [ ] Podium cards and table rows show the completed count, counting cells
+      with state `completed` or `accomplished`.
 - [ ] Leaderboard sorts by: bingo-holders first (earliest bingo), then by
       completed tasks descending, then alphabetically.
 - [ ] A completed line through the center (the middle row, the middle column
       or either diagonal) sets the first-bingo datetime, on every card size.
 - [ ] The leaderboard updates without a page reload, for the acting player and
       for teammates, when a card change is signalled.
-- [ ] Positions 1 / 2 / 3 are coloured gold / silver / bronze.
+- [ ] Podium cards 1 / 2 / 3 are accented gold / silver / bronze.
 - [ ] Clicking any avatar on the game page navigates to the member's profile.
 - [ ] Clicking a source-user badge in a bingo cell navigates to the profile.
 - [ ] Confetti animation plays when a card gains a bingo line, using the same
