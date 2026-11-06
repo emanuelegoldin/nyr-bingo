@@ -92,11 +92,6 @@ export async function requestProof(
     return { success: false, error: 'This game has ended' };
   }
 
-  // Spec: 16-games.md - Ending a Game
-  if (cellInfo.game_status === GameStatus.ENDED) {
-    return { success: false, error: 'This game has ended' };
-  }
-
   // Cannot request proof for own cell
   if (cellInfo.card_user_id === requestingUserId) {
     return { success: false, error: 'Cannot request proof for your own resolution' };
