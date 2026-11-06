@@ -56,10 +56,20 @@ State is stored per cell (`bingo_cells.state`). So is progress (`bingo_cells.com
 | State | Cell | Marker |
 | ----- | ---- | ------ |
 | `pending` | Default | None |
-| `completed` | Green | Check |
-| `pending_review` | Amber | Hourglass |
-| `accomplished` | Green, text struck through | Thumbs up |
+| `completed` | Default | Green check stamp |
+| `pending_review` | Default | Yellow hourglass |
+| `accomplished` | Default, text struck through | Blue check stamp |
 | `failed` | Red | X |
+
+A check stamp is a round stamp with a checkmark inside, drawn over the cell so the title stays readable. The hourglass is a simple upright hourglass drawn over the centre of the cell in the same way; it is not a stamp (spec 24). The state badge in the cell detail dialog keeps its colours and icons.
+
+**Stamp animation.** When a cell becomes `completed` or `accomplished` while the card is shown, for any reason (the owner's action, progress, a live update or a review result), its stamp fades in and presses onto the cell. If one of the cell's dialogs is open, the animation plays after the dialog closes. It does not play for cells that are already stamped when the card loads, or when the user prefers reduced motion. The animation is short and subtle, because it repeats often.
+
+**Hourglass animation.** When a cell becomes `pending_review` while the card is shown, its hourglass fades in, shakes briefly left and right, and settles centred on the cell. The same rules as the stamp animation apply: it waits for an open dialog of the cell to close, and does not play on load or when the user prefers reduced motion.
+
+**Card grid.** The cells form a ruled grid, like a printed bingo card: square cells touch each other and are separated by thin lines in the primary colour, inside a thicker frame of the same colour. This applies to live and archived cards. A clickable cell shows a background highlight on hover.
+
+**Reactions.** Teammates can put small emoji reactions on a stamped cell. They are drawn above the stamp and below the title (spec 24).
 
 Every non-empty, non-joker cell shows its title. On `sm` screens and wider it also shows a source badge: "Team Goal", the provider's username, or "Personal". A member-provided cell whose provider is no longer a player of the game (spec 16, Leaving a Game) shows "Former Teammates", without a profile link.
 
@@ -79,6 +89,7 @@ Outside edit mode, clicking any non-empty, non-joker cell, on any card, opens a 
 | Card owner | `base`, `completed` | **Undo** |
 | Card owner | `failed`, any type | **Undo** |
 | Non-owner | `completed` | **Request Proof** (spec 07) |
+| Non-owner | `completed` or `accomplished` | **React** row (spec 24) |
 | Anyone | `pending_review` | **View Thread** (spec 07) |
 
 For `compound` and `iterative` cells the dialog shows the checklist or counter, with controls enabled for the card owner only, on every source including `team` cells. Everyone else sees them read-only, and the API refuses their changes (spec 21).
@@ -186,6 +197,10 @@ Progress is complete when every subtask of the cell is completed (`compound`), o
 - A failed `base` cell can be marked completed, and a failed `compound` or `iterative` cell completes automatically.
 - Empty and joker cells are not checkable and cannot be failed.
 - Cell states are accurately reflected on the bingo card.
+- `completed` and `accomplished` cells show a green or blue check stamp instead of a coloured background.
+- A cell that becomes stamped while the card is shown plays the stamp animation once, after any open dialog of that cell closes. Cells stamped on load, and users who prefer reduced motion, see no animation.
+- `pending_review` cells show a yellow hourglass instead of an amber background.
+- A cell that becomes `pending_review` while the card is shown plays the hourglass animation once, under the same conditions as the stamp animation.
 - Review-related states do not break card interaction.
 
 ---

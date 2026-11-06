@@ -74,6 +74,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
 - `app/api/games/[gameId]/cards/route.ts` — Game Bingo Cards API
 - `app/api/games/[gameId]/start/route.ts` — Game Start Bingo API
+- `components/cell/joker.tsx` — The Joker at the center of a card: a plain cell with a purple outline star. [Assumptions]
 - `hooks/use-edit-cell-options.ts`
 - `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game
 - `lib/db/bingo-card-repository.ts` — Bingo Card Repository - Reading bingo cards
@@ -100,6 +101,9 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/api/cells/card-owner.ts` — Ownership check shared by the cell routes.
 - `app/api/cells/cell-progress.ts` — Checks and follow-up shared by the cell progress routes.
 - `app/api/games/[gameId]/cards/route.ts` — Game Bingo Cards API
+- `components/cell/cell-hourglass.tsx` — Yellow hourglass drawn over a cell whose proof was requested, with an optional settling animation. [Card Display Rules]
+- `components/cell/cell-stamp.tsx` — Round check stamp drawn over a completed or accomplished cell, with an optional stamping animation. [Card Display Rules]
+- `components/cell/cell.tsx` — The button that every bingo cell is drawn as, and the layout classes the cells share. [Card Display Rules]
 - `components/cell/resolution-cell.tsx` [Cell Detail Dialog]
 - `lib/db/bingo-card-repository.ts` — Bingo Card Repository - Reading bingo cards
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
@@ -274,11 +278,32 @@ _No file references this spec._
 ## 23-progress-chart.md — Progress Chart
 
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
+- `components/progress/bucket-progress.ts` — Turn progress points into one row per calendar day or month, in the viewer's time zone.
+- `components/progress/build-progress-data.ts` — Assemble the progress data of a live or archived game for the Progress tab. [Definitions]
+- `components/progress/progress-legend.tsx` — Legend under the progress chart: each player's colour and name, clickable to highlight them.
+- `components/progress/progress-line-chart.tsx` — Progress view: a step line per player of their completed count, by day or month, with a
+- `components/progress/progress-tab.tsx` — Progress tab of the game page and the archived game page.
+- `components/progress/progress-tooltip.tsx` — Tooltip of the progress chart: the day or month and each player's value, highest first.
+- `components/progress/series-style.ts` — Colour and dash of each player's series in the progress views.
+- `components/progress/types.ts` — Shared contract of the Progress tab: the data every progress view reads, and the shape of a view.
+- `components/progress/views.ts` — The progress views the Progress tab offers, in order. Add a view here to make it available.
 - `lib/db/archived-progress-repository.ts` — Archived Progress Repository - The progress points kept in an archived game
 - `lib/db/leaderboard-repository.ts` — Leaderboard Repository – persisted game leaderboard data
 - `lib/shared/types.ts`
 
-## Unmapped files (95)
+## 24-cell-reactions.md — Cell Reactions
+
+- `app/api/cells/[cellId]/reaction/route.ts` — Cell Reaction API [Backend Rules]
+- `components/cell/cell-reactions.tsx` — Teammates' reactions drawn over a stamped cell, each at its stored spot, tilt and size. [Card Display]
+- `components/cell/reaction-icon.tsx` — The drawing of each reaction in the pool, as a small inline SVG. [Reaction Pool]
+- `components/cell/reaction-picker.tsx` — The React row of the cell detail dialog: one button per reaction, to add, change or remove the [Reacting in the Cell Detail Dialog]
+- `lib/db/archived-reaction-repository.ts` — Archived Reaction Repository - The cell reactions kept in an archived game [Ended and Archived Games]
+- `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
+- `lib/db/cell-reaction-repository.ts` — Cell Reaction Repository - Teammates' emoji reactions on stamped cells [Clearing]
+- `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads
+- `lib/shared/reactions.ts` — The reaction pool and the shapes of a reaction on a cell, shared by the server and the client. [Reaction Pool]
+
+## Unmapped files (93)
 
 No spec reference in the file. See `files.md` for their purpose.
 
@@ -311,9 +336,7 @@ No spec reference in the file. See `files.md` for their purpose.
 - `components/bingo-card/team-page/ProfileInfo.tsx`
 - `components/cell/cell-face.tsx`
 - `components/cell/cell-state-style.tsx`
-- `components/cell/cell.tsx`
 - `components/cell/empty.tsx`
-- `components/cell/joker.tsx`
 - `components/confetti.ts`
 - `components/dashboard/dashboard-game-card-client.tsx`
 - `components/dashboard/dashboard-page-shell.tsx`

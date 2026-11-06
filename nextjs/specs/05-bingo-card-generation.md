@@ -35,7 +35,7 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 - A `prepared` cell is snapshotted directly from its entry in the `prepared_resolutions` pool (spec 17). No row is created in `resolutions`, and `resolution_id` is `NULL`.
 - `is_empty` is a generated column: true when `source_type = 'empty'`.
 - The Joker is always the center position and is not stored in the database. It is added to the card when the card is read, with id `joker:<cardId>`.
-- The Joker's displayed text is a fixed "Joker" label; it does not display team goal text.
+- The Joker is shown as a plain cell with a purple outline star in its centre and no visible text. Its accessible name is "Joker". It does not display team goal text.
 
 ## Generation Rules
 1. Create an N×N grid with the Joker in the center, leaving N²−1 cells to fill.

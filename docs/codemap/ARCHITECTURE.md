@@ -66,6 +66,12 @@ Run once at Node startup:
 - `refreshLeaderboardEntry` (`lib/db/leaderboard-repository.ts`) logs a `leaderboard_progress` row whenever a player's completed count changes; `initializeGameLeaderboard` writes the `0` points at game start. `archiveGame` copies them into `archived_progress` through `lib/db/archived-progress-repository.ts`.
 - Both game pages load the points on the server and render `components/progress/progress-tab.tsx`, which builds one `ProgressData` and renders the views listed in `components/progress/views.ts`. A new progress view is a component taking `ProgressViewProps` plus one entry there.
 
+## Cell reactions (spec 24)
+
+- Reactions live in `cell_reactions` (`lib/db/cell-reaction-repository.ts`) and are read with the cards in `bingo-card-repository.ts`. The pool is `lib/shared/reactions.ts`, and each id has an SVG in `components/cell/reaction-icon.tsx`.
+- Every write that can move a cell out of `completed` or `accomplished` calls `clearUnstampedCellReactions` after its `UPDATE`. A new state transition must call it too.
+- `archiveGame` copies them into `archived_cell_reactions` with `saveReactionSnapshot`.
+
 ## UI structure
 
 - `app/(app)/*` holds the pages behind login, and `app/(auth)/*` holds login and register. Each route has a server `page.tsx` and a `*-client.tsx` component. Pieces used by only one route go in that route's `_components/`.

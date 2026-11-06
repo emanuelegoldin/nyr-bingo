@@ -22,6 +22,7 @@ export * from './leave-repository';
 export * from './prepared-resolution-repository';
 export * from './cell-history-repository';
 export * from './cell-progress-repository';
+export * from './cell-reaction-repository';
 export * from './closed-thread-repository';
 export * from './resolution-repository';
 export { deleteThreadFile, getFileUploadError, uploadFile } from './review-file-repository';

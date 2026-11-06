@@ -39,5 +39,17 @@
     "decrement": "Diminuisci contatore",
     "increment": "Aumenta contatore",
     "percentComplete": "{percent}% completato"
+  },
+  "reactions": {
+    "label": "Reagisci",
+    "failed": "Impossibile aggiornare la tua reazione",
+    "names": {
+      "heart": "Cuore",
+      "thumbs_up": "Pollice in su",
+      "fire": "Fuoco",
+      "star": "Stella",
+      "smile": "Sorriso",
+      "party": "Festa"
+    }
   }
 }

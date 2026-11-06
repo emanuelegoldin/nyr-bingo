@@ -17,6 +17,7 @@ Paths are under `nextjs/src/app`. Helpers shared by routes live next to them (se
 | GET POST | `/api/cells/:cellId/history` | Cell History API |
 | PATCH | `/api/cells/:cellId/progress/decrement` | Decrement Iterative Cell API |
 | PATCH | `/api/cells/:cellId/progress/increment` | Increment Iterative Cell API |
+| PUT DELETE | `/api/cells/:cellId/reaction` | Cell Reaction API |
 | POST | `/api/cells/:cellId/request-proof` | Request Proof API |
 | GET PUT | `/api/cells/:cellId` | Bingo Cell API |
 | PATCH | `/api/cells/:cellId/subtasks/:index/toggle` | Compound Cell Subtask Toggle API |

@@ -1,5 +1,6 @@
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { apiFetch } from "@/lib/api-client";
+import { REACTABLE_CELL_STATES } from "@/lib/shared/reactions";
 import type { BingoCardWithCells, BingoCell } from "@/lib/db/types";
 import { useToast } from "@hooks/use-toast";
 import { CardContent } from "@ui/card";
@@ -67,7 +68,10 @@ export function BingoCardContent(
         const updated = result.data.cell;
         setCard((current) => ({
           ...current,
-          cells: current.cells.map((cell) => (cell.id === updated.id ? { ...cell, ...updated } : cell)),
+          cells: current.cells.map((cell) => (cell.id === updated.id
+            // Spec 24 - Losing Reactions: a cell that is no longer stamped has none
+            ? { ...cell, ...updated, reactions: REACTABLE_CELL_STATES.includes(updated.state) ? cell.reactions : [] }
+            : cell)),
         }));
         return;
       }

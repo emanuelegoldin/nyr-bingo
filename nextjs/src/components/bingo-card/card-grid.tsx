@@ -1,16 +1,22 @@
 /**
  * The N x N grid that lays out the cells of a live or archived bingo card.
- * Spec Reference: 16-games.md - Game Model, 20-mobile-layout.md - Bingo Card
+ * Spec Reference: 16-games.md - Game Model, 20-mobile-layout.md - Bingo Card, 06-bingo-gameplay.md - Card Display Rules
  */
 
 import type { ReactNode } from "react";
 
 /** Grid classes per card size, written out in full so Tailwind generates them. */
 const GRID_CLASSES: Record<number, string> = {
-  3: "grid-cols-3 grid-rows-3 gap-2 md:gap-4",
-  5: "grid-cols-5 grid-rows-5 gap-1 sm:gap-2 md:gap-4",
-  9: "grid-cols-9 grid-rows-9 gap-0.5 sm:gap-1 md:gap-2",
+  3: "grid-cols-3 grid-rows-3",
+  5: "grid-cols-5 grid-rows-5",
+  9: "grid-cols-9 grid-rows-9",
 };
+
+/**
+ * Ruled look of a printed bingo card (spec 06 - Card Grid): the cells cover the primary-coloured
+ * background, which shows only through the 1px gaps and as the thicker frame.
+ */
+const RULED_GRID_CLASSES = "gap-px bg-primary border-2 md:border-4 border-primary rounded-md overflow-hidden";
 
 interface CardGridProps {
   /** The side length of the card: 3, 5 or 9. */
@@ -28,7 +34,7 @@ interface CardGridProps {
  */
 export function CardGrid({ gridSize, children }: CardGridProps) {
   return (
-    <div data-size={gridSize} className={`group/card grid ${GRID_CLASSES[gridSize] ?? GRID_CLASSES[5]}`}>
+    <div data-size={gridSize} className={`group/card grid ${RULED_GRID_CLASSES} ${GRID_CLASSES[gridSize] ?? GRID_CLASSES[5]}`}>
       {children}
     </div>
   );

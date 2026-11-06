@@ -5,6 +5,7 @@
 
 import { randomUUID } from 'crypto';
 import { GameStatus, VoteType, type ThreadOutcome } from '../shared/types';
+import { clearUnstampedCellReactions } from './cell-reaction-repository';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
 import {
@@ -131,6 +132,8 @@ export async function requestProof(
       [cellId],
       connection
     );
+    // Spec: 24-cell-reactions.md - a proof request makes the cell lose its reactions
+    await clearUnstampedCellReactions(cellId, connection);
     return updateResult.affectedRows > 0;
   }, (didMove) => didMove);
 

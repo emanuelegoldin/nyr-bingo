@@ -4,6 +4,7 @@
  */
 
 import { CellSourceType, CellState, CellSubtask, GameStatus, GridSize, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, ThreadStatus, VoteType } from "../shared/types";
+import type { CellReaction } from "../shared/reactions";
 
 // Re-export shared enums/types so consumers can import from db/types
 export { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, ThreadStatus, VoteType };
@@ -214,6 +215,8 @@ export interface BingoCardWithCells extends BingoCard {
 
 export interface BingoCellWithThread extends BingoCell {
   reviewThreadId?: string | null;
+  /** Teammates' reactions on the cell, empty unless it is stamped (spec 24). */
+  reactions: CellReaction[];
 }
 
 /**
