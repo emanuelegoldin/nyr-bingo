@@ -4,7 +4,9 @@
  */
 
 import { CellSourceType, CellState, getJokerPosition, ResolutionType } from '../shared/types';
+import type { CellReaction } from '../shared/reactions';
 import { CardRow, CellRow, rowToCard, rowToCell, SELECT_CELL_WITH_RESOLVED_TEXT } from './bingo-card-rows';
+import { rowToReaction, type CellReactionRow } from './cell-reaction-repository';
 import { query } from './connection';
 import {
   BingoCard,
@@ -35,6 +37,7 @@ function makeJokerCell(cardId: string, gridSize: number): BingoCellWithThread {
     createdAt: new Date(),
     updatedAt: new Date(),
     reviewThreadId: null,
+    reactions: [],
   };
 }
 
@@ -42,8 +45,8 @@ function makeJokerCell(cardId: string, gridSize: number): BingoCellWithThread {
 type CellFilter = { cardId: string } | { gameId: string };
 
 /**
- * Load the cells of one card or of every card of a game, each with its open review thread,
- * in two queries run in parallel.
+ * Load the cells of one card or of every card of a game, each with its open review thread and
+ * its reactions (spec 24), in three queries run in parallel.
  * @param filter The card, or the game whose cards are loaded
  * @returns The cells of each card, keyed by card id, sorted by position with the Joker added
  */
@@ -52,7 +55,7 @@ async function getCellsWithThreadsByCard(filter: CellFilter): Promise<Map<string
     ? ['c.card_id = ?', filter.cardId]
     : ['bc.game_id = ?', filter.gameId];
 
-  const [cellRows, threadRows] = await Promise.all([
+  const [cellRows, threadRows, reactionRows] = await Promise.all([
     query<CellRow[]>(
       `${SELECT_CELL_WITH_RESOLVED_TEXT}
        WHERE ${where}
@@ -68,6 +71,15 @@ async function getCellsWithThreadsByCard(filter: CellFilter): Promise<Map<string
        ORDER BY rt.created_at DESC`,
       [param]
     ),
+    query<CellReactionRow[]>(
+      `SELECT r.cell_id, r.user_id, r.reaction, r.pos_x, r.pos_y
+       FROM cell_reactions r
+       JOIN bingo_cells c ON r.cell_id = c.id
+       JOIN bingo_cards bc ON c.card_id = bc.id
+       WHERE ${where}
+       ORDER BY r.created_at ASC`,
+      [param]
+    ),
   ]);
 
   // Newest open thread per cell (rows are newest first)
@@ -76,11 +88,21 @@ async function getCellsWithThreadsByCard(filter: CellFilter): Promise<Map<string
     if (!openThreadByCell.has(row.cell_id)) openThreadByCell.set(row.cell_id, row.id);
   }
 
+  // Oldest first, so later reactions are drawn on top
+  const reactionsByCell = new Map<string, CellReaction[]>();
+  for (const row of reactionRows) {
+    reactionsByCell.set(row.cell_id, [...(reactionsByCell.get(row.cell_id) ?? []), rowToReaction(row)]);
+  }
+
   const cellsByCard = new Map<string, BingoCellWithThread[]>();
   for (const row of cellRows) {
     const cell = rowToCell(row);
     const cells = cellsByCard.get(cell.cardId) ?? [];
-    cells.push({ ...cell, reviewThreadId: openThreadByCell.get(cell.id) ?? null });
+    cells.push({
+      ...cell,
+      reviewThreadId: openThreadByCell.get(cell.id) ?? null,
+      reactions: reactionsByCell.get(cell.id) ?? [],
+    });
     cellsByCard.set(cell.cardId, cells);
   }
   return cellsByCard;

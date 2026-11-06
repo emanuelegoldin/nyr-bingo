@@ -290,7 +290,8 @@ _No file references this spec._
 
 ## 24-cell-reactions.md — Cell Reactions
 
-_No file references this spec._
+- `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
+- `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads
 
 ## Unmapped files (95)
 
