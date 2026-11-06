@@ -65,6 +65,8 @@ A check stamp is a round stamp with a checkmark inside, drawn over the cell so t
 
 **Stamp animation.** When a cell becomes `completed` or `accomplished` while the card is shown, for any reason (the owner's action, progress, a live update or a review result), its stamp fades in and presses onto the cell. If one of the cell's dialogs is open, the animation plays after the dialog closes. It does not play for cells that are already stamped when the card loads, or when the user prefers reduced motion. The animation is short and subtle, because it repeats often.
 
+**Reactions.** Teammates can put small emoji reactions on a stamped cell. They are drawn above the stamp and below the title (spec 24).
+
 Every non-empty, non-joker cell shows its title. On `sm` screens and wider it also shows a source badge: "Team Goal", the provider's username, or "Personal". A member-provided cell whose provider is no longer a player of the game (spec 16, Leaving a Game) shows "Former Teammates", without a profile link.
 
 ---
@@ -83,6 +85,7 @@ Outside edit mode, clicking any non-empty, non-joker cell, on any card, opens a 
 | Card owner | `base`, `completed` | **Undo** |
 | Card owner | `failed`, any type | **Undo** |
 | Non-owner | `completed` | **Request Proof** (spec 07) |
+| Non-owner | `completed` or `accomplished` | **React** row (spec 24) |
 | Anyone | `pending_review` | **View Thread** (spec 07) |
 
 For `compound` and `iterative` cells the dialog shows the checklist or counter, with controls enabled for the card owner only, on every source including `team` cells. Everyone else sees them read-only, and the API refuses their changes (spec 21).

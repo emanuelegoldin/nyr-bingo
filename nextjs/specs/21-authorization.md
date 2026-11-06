@@ -67,6 +67,7 @@ Every role is listed with the full set of permissions it holds; there is no inhe
 | `thread.vote` | game | `leader`, `player` | – |
 | `thread.delete` | game | `leader` | – |
 | `card.arrange` | game | `leader`, `player` | – |
+| `cell.react` | game | `leader`, `player` | – |
 | `game.configure` | game | `leader` | – |
 | `game.start` | game | `leader` | yes |
 | `game.end` | game | `leader` | – |
@@ -84,6 +85,7 @@ Where they are used:
 - `thread.*`: a cell's or thread's game is resolved first, and the role is the caller's role in that game (spec 07). The game is resolved whatever its status; what an ended game's cells and threads allow is a game status rule (spec 16).
 - `game.goal.set`: saving the team goal of a game (spec 16).
 - `card.arrange`: shuffling and locking the caller's own card (spec 22).
+- `cell.react`: adding, changing or removing the caller's reaction on a teammate's cell (spec 24).
 - `thread.delete`: deleting a closed (archived) thread of a running game (spec 07).
 - `archive.view`: reading an archived game, with its archived threads (spec 18). `archive.delete` deletes it and `archive.thread.delete` deletes one of its archived threads.
 
@@ -100,6 +102,7 @@ Some actions depend on who owns a record, not on a role. They apply on top of th
 - **Cell history:** read and write access as defined in spec 13 (History Visibility, Manual Entry Creation).
 - **Cell complete, undo or edit:** only the owner of the card.
 - **Card shuffle or lock:** only the owner of the card. The routes act on the caller's own card (spec 22).
+- **Cell reaction:** never on the caller's own card (spec 24).
 - **Thread close (`POST /api/threads/[threadId]/close`), proof upload and proof delete:** only the completing user.
 - **Self-scoped data:** profile and notifications routes (`/api/profile`, `/api/notifications`) only read and change the caller's own data.
 

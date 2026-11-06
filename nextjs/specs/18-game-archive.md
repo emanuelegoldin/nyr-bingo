@@ -37,6 +37,7 @@ Every game that ends is archived, whether it ended manually or at its deadline (
   - The card of every player
   - The game's archived review threads (spec 07)
   - The progress history of its players (spec 23)
+  - The reactions on its cells, with their emoji and spot (spec 24)
 - The **players** of an archived game are the game's players (spec 16) who had a card in it. A member without a card has no access.
 - A member-provided cell whose provider was no longer a player is labelled "Former Teammates".
 - A cell keeps its position, title, description, type, state, source and source label. The snapshot is taken from the cell's own columns and from `bingo_cell_subtasks` (spec 05) when the game ends. A `compound` cell also keeps its subtasks and an `iterative` cell its counters.
@@ -113,6 +114,7 @@ The role-to-permission table and the status of every refusal are defined in spec
 | `archived_game_players` | `archived_game_id`, `user_id` | `player_name`, `is_leader`, `leaderboard_rank`, `completed_tasks`, `first_bingo_at` |
 | `archived_cells` | `archived_game_id`, `user_id`, `position` | `title`, `description`, `resolution_type`, `state`, `source_type`, `source_user_id`, `source_label`, `is_empty`, `number_of_repetition`, `completed_times` |
 | `archived_cell_subtasks` | `archived_game_id`, `user_id`, `position`, `subtask_index` | `title`, `description`, `completed` |
+| `archived_cell_reactions` | `archived_game_id`, `user_id`, `position`, `reactor_user_id` | `reaction`, `pos_x`, `pos_y` (spec 24) |
 | `archived_threads` | `id`, the thread's former id | `archived_game_id`, `user_id`, `position` (the cell), `created_at`, `closed_at`, `outcome`, `accept_votes`, `deny_votes` |
 | `archived_thread_messages` | `id` | `archived_thread_id`, `author_name`, `content`, `created_at` |
 | `archived_thread_files` | `id` | `archived_thread_id`, `file_path`, `file_name`, `file_size`, `mime_type`, `created_at` |
@@ -120,7 +122,7 @@ The role-to-permission table and the status of every refusal are defined in spec
 
 Each table cascades from the one above it; `archived_threads` cascades from `archived_cells`, and `archived_progress` from `archived_game_players`. `archived_game_players.user_id` references `users.id` ON DELETE CASCADE. `leaderboard_rank` is `NULL` for a player who had no leaderboard row, who is left out of the leaderboard. The Joker is implicit, as on a live card (spec 05).
 
-**Migration:** `V5_4_0__game_archive.sql`. `V5_11_0__archived_threads.sql` adds the thread tables. `V5_12_0__leaderboard_progress.sql` adds `archived_progress` and `archived_games.started_at`, which is `NULL` for games archived before it. `V5_7_0__multiple_team_leaders.sql` replaces `archived_games.leader_user_id` with `archived_game_players.is_leader`.
+**Migration:** `V5_4_0__game_archive.sql`. `V5_11_0__archived_threads.sql` adds the thread tables. `V5_12_0__leaderboard_progress.sql` adds `archived_progress` and `archived_games.started_at`, which is `NULL` for games archived before it. `V5_13_0__cell_reactions.sql` adds `archived_cell_reactions`. `V5_7_0__multiple_team_leaders.sql` replaces `archived_games.leader_user_id` with `archived_game_players.is_leader`.
 
 ---
 
