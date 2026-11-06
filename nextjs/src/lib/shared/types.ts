@@ -232,3 +232,44 @@ export interface ArchivedGameDetail extends ArchivedGameSummary {
   leaderboard: LeaderboardEntry[];
   cards: ArchivedCard[];
 }
+
+// Archived threads: closed review threads, read-only, of a running or an archived game
+// Spec: 07-proof-and-approval.md - Archived Threads, 18-game-archive.md
+
+/** The state a thread's cell took when the thread closed. */
+export type ThreadOutcome = 'accomplished' | 'pending';
+
+/** One message of an archived thread. */
+export interface ArchivedThreadMessage {
+  id: string;
+  authorName: string;
+  content: string;
+  createdAt: string;
+}
+
+/** One proof file of an archived thread, as a link. */
+export interface ArchivedThreadFile {
+  id: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string | null;
+}
+
+/** A closed review thread with everything it keeps. */
+export interface ArchivedThread {
+  id: string;
+  /** The card owner, who is also the completing user. */
+  cardOwnerId: string;
+  cardOwnerName: string;
+  cellPosition: number;
+  cellTitle: string;
+  createdAt: string;
+  closedAt: string | null;
+  /** Null for threads closed before the outcome was recorded. */
+  outcome: ThreadOutcome | null;
+  acceptVotes: number;
+  denyVotes: number;
+  messages: ArchivedThreadMessage[];
+  files: ArchivedThreadFile[];
+}

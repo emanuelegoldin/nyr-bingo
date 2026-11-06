@@ -39,6 +39,7 @@ export type GamePermission =
   | 'thread.view'
   | 'thread.message'
   | 'thread.vote'
+  | 'thread.delete'
   | 'card.arrange'
   | 'game.configure'
   | 'game.start'
@@ -71,6 +72,7 @@ export const GAME_ROLE_PERMISSIONS: Record<GameScopeRole, readonly GamePermissio
     'thread.view',
     'thread.message',
     'thread.vote',
+    'thread.delete',
     'card.arrange',
     'game.configure',
     'game.start',
