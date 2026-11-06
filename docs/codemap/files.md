@@ -47,8 +47,8 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `GameActionDialog.tsx`
 - `GameActionsMenu.tsx`
 - `GameConfigDialog.tsx`
+- `MissingTeamGoalNotice.tsx`
 - `ProposeResolutionsDialog.tsx`
-- `TeamGoalDisplay.tsx`
 - `use-game-actions.ts`
 - `use-last-loaded.ts`
 

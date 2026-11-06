@@ -56,10 +56,7 @@
   },
   "teamGoal": {
     "none": "Noch kein Teamziel festgelegt.",
-    "setGoal": "Ziel festlegen",
-    "label": "Teamziel:",
-    "subtasks": "{count, plural, one {# Teilaufgabe} other {# Teilaufgaben}}",
-    "target": "Ziel: {count, plural, one {# Wiederholung} other {# Wiederholungen}}"
+    "setGoal": "Ziel festlegen"
   },
   "cardsTab": {
     "notStartedTitle": "Das Spiel hat noch nicht begonnen",

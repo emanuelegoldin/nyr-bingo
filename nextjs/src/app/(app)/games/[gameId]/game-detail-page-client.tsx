@@ -26,7 +26,7 @@ import { BingoCardWithCells } from "@/lib/db/types";
 import type { LeaderboardEntry, ResolutionFormData } from "@/lib/shared/types";
 import { GameActionsMenu } from "./_components/GameActionsMenu";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
-import { TeamGoalDisplay } from "./_components/TeamGoalDisplay";
+import { MissingTeamGoalNotice } from "./_components/MissingTeamGoalNotice";
 import { useGameActions } from "./_components/use-game-actions";
 import { useLastLoaded } from "./_components/use-last-loaded";
 import { CardsTab } from "./cards-tab";
@@ -135,14 +135,15 @@ export default function GameDetailPageClient({
           </div>
         </CardHeader>
 
-        {/* ── Team Goal Display ─────────────────────────────────── */}
-        <CardContent>
-          <TeamGoalDisplay
-            goal={teamGoal}
-            isLeader={can('game.goal.set')}
-            onSetGoal={() => setGoalDialogOpen(true)}
-          />
-        </CardContent>
+        {/* ── Missing Team Goal Notice ──────────────────────────── */}
+        {!teamGoal && (
+          <CardContent>
+            <MissingTeamGoalNotice
+              isLeader={can('game.goal.set')}
+              onSetGoal={() => setGoalDialogOpen(true)}
+            />
+          </CardContent>
+        )}
       </Card>
 
       {/* ── Team Goal Resolution Dialog ────────────────────────── */}

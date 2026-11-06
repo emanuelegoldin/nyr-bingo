@@ -88,7 +88,7 @@ A **running** game is one in `forming` or `started`.
 
 `/games/[gameId]` shows a running game to its players; others get a not-found page, as they do for an ended game.
 
-The header holds the game name, the team name as plain text (it does not link to the team page, which is reached from the sidebar and the Teams page), the deadline if one is set, the status, the team goal and the actions. It does not list the admins: they are marked in the team page's members list (spec 04). The tabs below it are defined in spec 12.
+The header holds the game name, the team name as plain text (it does not link to the team page, which is reached from the sidebar and the Teams page), the deadline if one is set, the status and the actions. It does not show the team goal, which is on every card's goal cell (spec 05). It does not list the admins: they are marked in the team page's members list (spec 04). The tabs below it are defined in spec 12.
 
 | Action | Who | When |
 | ------ | --- | ---- |
@@ -104,7 +104,7 @@ The header keeps only the most used actions visible, so it stays readable for ad
 - **Start Bingo** (when the caller can use it) and **Propose Resolutions** are buttons.
 - The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Set Goal, Configure, End Game, a separator, Leave Game and Delete Game, which is styled as destructive. The menu lists only the actions the caller can use in the current state, as in the table above.
 - Choosing a menu item opens the same dialog or confirmation as the action's button did.
-- While no goal is set, an admin also sees a **Set Goal** button in the goal area. Once a goal is set, the goal area has no button: the goal is changed through **Set Goal** in the More actions menu.
+- While no goal is set, the header says so, and an admin also sees a **Set Goal** button next to that notice. Once a goal is set, the notice and its button go away: the goal is changed through **Set Goal** in the More actions menu.
 
 `/games` lists the caller's running games as cards with their name, team and status. The whole card is a link to the game page; it has no separate button. The team page lists its games the same way (spec 04). New games are created from the team page (spec 04).
 

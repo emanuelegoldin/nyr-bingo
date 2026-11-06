@@ -165,7 +165,7 @@ _No file references this spec._
 
 - `app/(app)/games/[gameId]/_components/GameActionsMenu.tsx` [Game Page]
 - `app/(app)/games/[gameId]/_components/GameConfigDialog.tsx` [Game Configuration]
-- `app/(app)/games/[gameId]/_components/TeamGoalDisplay.tsx` [Game Page]
+- `app/(app)/games/[gameId]/_components/MissingTeamGoalNotice.tsx` [Game Page]
 - `app/(app)/games/[gameId]/game-detail-page-client.tsx` — Game Page
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
 - `app/(app)/games/[gameId]/types.ts` — Shared types for the game page and its tab components.

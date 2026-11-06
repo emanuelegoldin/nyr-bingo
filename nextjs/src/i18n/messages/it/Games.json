@@ -56,10 +56,7 @@
   },
   "teamGoal": {
     "none": "Nessun obiettivo del team ancora impostato.",
-    "setGoal": "Imposta obiettivo",
-    "label": "Obiettivo del team:",
-    "subtasks": "{count, plural, one {# sottoattività} other {# sottoattività}}",
-    "target": "Traguardo: {count, plural, one {# ripetizione} other {# ripetizioni}}"
+    "setGoal": "Imposta obiettivo"
   },
   "cardsTab": {
     "notStartedTitle": "La partita non è ancora iniziata",

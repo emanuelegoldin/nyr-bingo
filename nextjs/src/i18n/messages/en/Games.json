@@ -56,10 +56,7 @@
   },
   "teamGoal": {
     "none": "No team goal set yet.",
-    "setGoal": "Set Goal",
-    "label": "Team Goal:",
-    "subtasks": "{count, plural, one {# subtask} other {# subtasks}}",
-    "target": "Target: {count, plural, one {# repetition} other {# repetitions}}"
+    "setGoal": "Set Goal"
   },
   "cardsTab": {
     "notStartedTitle": "Game Not Started Yet",
