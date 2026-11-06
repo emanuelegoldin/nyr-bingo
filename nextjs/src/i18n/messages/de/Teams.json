@@ -53,6 +53,9 @@
     "description": "Starte ein neues Spiel mit diesem Team und wähle, wer mitspielt. Niemand muss erneut eingeladen werden.",
     "nameLabel": "Spielname",
     "namePlaceholder": "z. B. Vorsätze 2027",
+    "cardSize": "Kartengröße",
+    "cardSizeOption": "{size}×{size}",
+    "cardSizeHint": "Sie kann nach dem Erstellen des Spiels nicht mehr geändert werden.",
     "players": "Spieler",
     "you": "(Du)",
     "submit": "Spiel erstellen"

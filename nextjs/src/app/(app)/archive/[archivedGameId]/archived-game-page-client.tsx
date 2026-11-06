@@ -78,7 +78,7 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete }: Arch
       <div className="space-y-8">
         <h2 className="text-2xl font-bold font-headline">{t("gamePage.cards")}</h2>
         {archivedGame.cards.map((card) => (
-          <ArchivedCardView key={card.userId} card={card} />
+          <ArchivedCardView key={card.userId} card={card} gridSize={archivedGame.gridSize} />
         ))}
       </div>
     </div>

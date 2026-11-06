@@ -53,6 +53,9 @@
     "description": "Start a new game with this team and choose who plays. No one needs to be invited again.",
     "nameLabel": "Game Name",
     "namePlaceholder": "e.g., Resolutions 2027",
+    "cardSize": "Card Size",
+    "cardSizeOption": "{size}×{size}",
+    "cardSizeHint": "It cannot be changed once the game is created.",
     "players": "Players",
     "you": "(You)",
     "submit": "Create Game"

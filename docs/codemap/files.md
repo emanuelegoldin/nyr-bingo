@@ -347,6 +347,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `BingoCardContent.tsx`
 - `BingoCardProvider.tsx`
 - `ConfettiLayer.tsx`
+- `card-grid.tsx` — The N x N grid that lays out the cells of a live or archived bingo card.
 
 ## components/bingo-card/dashboard-page
 

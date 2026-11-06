@@ -8,7 +8,6 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/(app)/dashboard/page.tsx` — Dashboard Page [Primary Flows]
 - `lib/db/connection.ts` — MariaDB Database Connection
 - `lib/db/types.ts` — TypeScript Types for Database Entities
-- `lib/shared/types.ts`
 
 ## 01-authentication.md — Authentication
 
@@ -85,7 +84,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions
 - `lib/db/types.ts` — TypeScript Types for Database Entities
 - `lib/shared/shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
-- `lib/shared/types.ts`
+- `lib/shared/types.ts` [Assumptions]
 
 ## 06-bingo-gameplay.md — Bingo Gameplay
 
@@ -182,6 +181,7 @@ _No file references this spec._
 - `app/api/resolutions/save/route.ts` — Unified Resolution Save API
 - `app/api/teams/[teamId]/games/route.ts` — Team Games API [Game Creation]
 - `components/actions-menu.tsx` — More actions menu: a "⋯" button that opens a menu of the less used actions of a page header. [Game Page]
+- `components/bingo-card/card-grid.tsx` — The N x N grid that lays out the cells of a live or archived bingo card. [Game Model]
 - `components/team/game-list.tsx` — Grid of running games; each card links to its game page. [Game Page]
 - `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game [Joining After Start; Start Conditions]
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells [Ending a Game]

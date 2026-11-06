@@ -21,13 +21,13 @@ export const EmptyCell = ({
   return (
     <Cell
       cellClassName={cn(
-        "relative flex flex-col items-center justify-center aspect-square p-1 sm:p-2 rounded-lg border shadow-sm text-center transition-all duration-300",
+        "relative flex flex-col items-center justify-center aspect-square p-1 sm:p-2 max-md:group-data-[size=9]/card:p-0.5 rounded-lg border shadow-sm text-center transition-all duration-300",
         "bg-muted hover:bg-secondary/50",
         canInteract ? "cursor-pointer hover:scale-105 hover:shadow-md" : "cursor-default"
       )}
       isDisabled={!canInteract}
       onClick={onClick}>
-      <p className="text-[10px] sm:text-xs md:text-sm font-medium text-card-foreground">
+      <p className="text-[10px] sm:text-xs md:text-sm max-md:group-data-[size=9]/card:text-[8px] font-medium text-card-foreground">
         {t("empty")}
       </p>
     </Cell>

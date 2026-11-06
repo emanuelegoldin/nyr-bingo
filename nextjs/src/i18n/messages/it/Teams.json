@@ -53,6 +53,9 @@
     "description": "Avvia una nuova partita con questo team e scegli chi gioca. Nessuno deve essere invitato di nuovo.",
     "nameLabel": "Nome della partita",
     "namePlaceholder": "es. Obiettivi 2027",
+    "cardSize": "Dimensione della carta",
+    "cardSizeOption": "{size}×{size}",
+    "cardSizeHint": "Non può essere modificata dopo la creazione della partita.",
     "players": "Giocatori",
     "you": "(Tu)",
     "submit": "Crea partita"

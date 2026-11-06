@@ -6,6 +6,7 @@
  */
 
 import { CellFace } from "@/components/cell/cell-face";
+import { CardGrid } from "@/components/bingo-card/card-grid";
 import { JokerCell } from "@/components/cell/joker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ArchivedCard, ArchivedCell } from "@/lib/shared/types";
@@ -14,15 +15,17 @@ import { ArchivedCellDialog } from "./archived-cell-dialog";
 
 interface ArchivedCardViewProps {
   card: ArchivedCard;
+  /** The side length of the game's cards. */
+  gridSize: number;
 }
 
 /**
- * Shows a read-only 5×5 grid and the details of the selected cell.
+ * Shows a read-only N×N grid and the details of the selected cell.
  *
- * @param props - The archived card.
+ * @param props - The archived card and its size.
  * @returns The card.
  */
-export function ArchivedCardView({ card }: ArchivedCardViewProps) {
+export function ArchivedCardView({ card, gridSize }: ArchivedCardViewProps) {
   const [selectedCell, setSelectedCell] = useState<ArchivedCell | null>(null);
 
   return (
@@ -31,7 +34,7 @@ export function ArchivedCardView({ card }: ArchivedCardViewProps) {
         <CardTitle className="font-headline">{card.playerName}</CardTitle>
       </CardHeader>
       <CardContent className="px-3 sm:px-6">
-        <div className="grid grid-cols-5 grid-rows-5 gap-1 sm:gap-2 md:gap-4">
+        <CardGrid gridSize={gridSize}>
           {card.cells.map((cell) => (
             cell.isJoker ? (
               <JokerCell key={cell.position} />
@@ -45,7 +48,7 @@ export function ArchivedCardView({ card }: ArchivedCardViewProps) {
               />
             )
           ))}
-        </div>
+        </CardGrid>
       </CardContent>
       {selectedCell && (
         <ArchivedCellDialog cell={selectedCell} onClose={() => setSelectedCell(null)} />
