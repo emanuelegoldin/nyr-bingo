@@ -1,5 +1,9 @@
 {
   "language": "Sprache",
+  "theme": "Design",
+  "themeLight": "Hell",
+  "themeDark": "Dunkel",
+  "themeSystem": "System",
   "dashboard": "Dashboard",
   "games": "Spiele",
   "teams": "Teams",

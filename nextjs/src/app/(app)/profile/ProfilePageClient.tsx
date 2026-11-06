@@ -117,10 +117,10 @@ export default function ProfilePageClient({
                   <p className="font-medium">{initialUser.username}</p>
                   <p className="text-sm text-muted-foreground">{initialUser.email}</p>
                   {initialUser.emailVerified ? (
-                    <p className="text-sm text-green-600 font-medium mt-1">{t("info.verified")}</p>
+                    <p className="text-sm text-success font-medium mt-1">{t("info.verified")}</p>
                   ) : (
                     <div className="mt-1">
-                      <p className="text-sm text-amber-600 font-medium">{t("info.notVerified")}</p>
+                      <p className="text-sm text-warning font-medium">{t("info.notVerified")}</p>
                       <p className="text-xs text-muted-foreground">{t("info.verifyNeeded")}</p>
                       <Button
                         variant="link"
