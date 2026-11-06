@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
+import { CellStamp, type CellStampMotion } from "./cell-stamp";
 import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
 import { EmptyCell } from "./empty";
 
@@ -17,31 +18,40 @@ interface CellFaceProps {
     canInteract: boolean,
     sourceLabel: CellSourceLabel,
     onClick: () => void,
+    /** How the stamp of a completed or accomplished cell appears; defaults to `still`. */
+    stampMotion?: CellStampMotion,
+    /** Called when the stamping animation has finished. */
+    onStampAnimationEnd?: () => void,
 }
 
 /**
  * Renders what the grid shows for a cell: the empty slot, or the button with
- * the resolution title, state icon and source badge.
+ * the resolution title, state icon or stamp, and source badge.
  * The visual state follows the cell state, overridden by the proof status.
  *
  * @param cell - The cell to display.
  * @param canInteract - Whether the cell can be clicked.
  * @param sourceLabel - Label of the cell source, shown in the badge.
  * @param onClick - Click handler of the cell.
+ * @param stampMotion - Whether the stamp is at rest, waiting to be stamped, or stamping.
+ * @param onStampAnimationEnd - Called when the stamping animation has finished.
  * @returns The cell face.
  */
 export const CellFace = ({
     cell,
     canInteract,
     sourceLabel,
-    onClick
+    onClick,
+    stampMotion = "still",
+    onStampAnimationEnd
 }: CellFaceProps) => {
     const tl = useTranslations("Labels");
     const stateConfig = {
         pending: { icon: null, color: "bg-card hover:bg-secondary/50", text: "text-card-foreground" },
-        completed: { icon: getCellStateIcon("completed", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.completed.bg, text: CELL_STATE_COLORS.completed.text },
+        // Spec 06 - Card Display Rules: completed and accomplished cells show a stamp instead of a colour
+        completed: { icon: null, color: "bg-card", text: "text-card-foreground" },
         pending_review: { icon: getCellStateIcon("pending_review", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.pending_review.bg, text: CELL_STATE_COLORS.pending_review.text },
-        accomplished: { icon: getCellStateIcon("accomplished", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.accomplished.bg, text: `${CELL_STATE_COLORS.accomplished.text} line-through` },
+        accomplished: { icon: null, color: "bg-card", text: "text-card-foreground line-through" },
         failed: { icon: getCellStateIcon("failed", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.failed.bg, text: CELL_STATE_COLORS.failed.text },
     };
     const config = stateConfig[cell.state];
@@ -66,7 +76,14 @@ export const CellFace = ({
             isDisabled={!canInteract}
             onClick={onClick}>
 
-            <p className={cn("text-[10px] leading-tight sm:text-xs md:text-sm font-medium break-words line-clamp-3 md:line-clamp-none md:truncate max-w-full max-md:group-data-[size=9]/card:text-[8px] max-md:group-data-[size=9]/card:line-clamp-2", config.text)}>
+            {/* Drawn first, so the title paints over the stamp and stays readable */}
+            {(cell.state === 'completed' || cell.state === 'accomplished') &&
+                <CellStamp
+                    variant={cell.state}
+                    motion={stampMotion}
+                    onAnimationEnd={onStampAnimationEnd} />
+            }
+            <p className={cn("relative text-[10px] leading-tight sm:text-xs md:text-sm font-medium break-words line-clamp-3 md:line-clamp-none md:truncate max-w-full max-md:group-data-[size=9]/card:text-[8px] max-md:group-data-[size=9]/card:line-clamp-2", config.text)}>
                 {displayTitle}
             </p>
             <div className="absolute top-1 right-1">

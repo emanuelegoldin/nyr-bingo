@@ -88,10 +88,19 @@ export default {
             height: '0',
           },
         },
+        // Spec 06 - Card Display Rules: the check stamp fades in above the cell, presses down and settles
+        'stamp-in': {
+          '0%': { opacity: '0', transform: 'rotate(-12deg) scale(1.5)' },
+          '45%': { opacity: '0.45', transform: 'rotate(-12deg) scale(1.35)' },
+          '70%': { opacity: '0.7', transform: 'rotate(-12deg) scale(0.94)' },
+          '85%': { opacity: '0.6', transform: 'rotate(-12deg) scale(1.03)' },
+          '100%': { opacity: '0.6', transform: 'rotate(-12deg) scale(1)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'stamp-in': 'stamp-in 550ms cubic-bezier(.2,.8,.3,1) 150ms both',
       },
     },
   },

@@ -274,6 +274,15 @@ _No file references this spec._
 ## 23-progress-chart.md — Progress Chart
 
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
+- `components/progress/bucket-progress.ts` — Turn progress points into one row per calendar day or month, in the viewer's time zone.
+- `components/progress/build-progress-data.ts` — Assemble the progress data of a live or archived game for the Progress tab. [Definitions]
+- `components/progress/progress-legend.tsx` — Legend under the progress chart: each player's colour and name, clickable to highlight them.
+- `components/progress/progress-line-chart.tsx` — Progress view: a step line per player of their completed count, by day or month, with a
+- `components/progress/progress-tab.tsx` — Progress tab of the game page and the archived game page.
+- `components/progress/progress-tooltip.tsx` — Tooltip of the progress chart: the day or month and each player's value, highest first.
+- `components/progress/series-style.ts` — Colour and dash of each player's series in the progress views.
+- `components/progress/types.ts` — Shared contract of the Progress tab: the data every progress view reads, and the shape of a view.
+- `components/progress/views.ts` — The progress views the Progress tab offers, in order. Add a view here to make it available.
 - `lib/db/archived-progress-repository.ts` — Archived Progress Repository - The progress points kept in an archived game
 - `lib/db/leaderboard-repository.ts` — Leaderboard Repository – persisted game leaderboard data
 - `lib/shared/types.ts`

@@ -418,6 +418,18 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `public-profile-page-shell.tsx`
 
+## components/progress
+
+- `bucket-progress.ts` — Turn progress points into one row per calendar day or month, in the viewer's time zone.
+- `build-progress-data.ts` — Assemble the progress data of a live or archived game for the Progress tab.
+- `progress-legend.tsx` — Legend under the progress chart: each player's colour and name, clickable to highlight them.
+- `progress-line-chart.tsx` — Progress view: a step line per player of their completed count, by day or month, with a
+- `progress-tab.tsx` — Progress tab of the game page and the archived game page.
+- `progress-tooltip.tsx` — Tooltip of the progress chart: the day or month and each player's value, highest first.
+- `series-style.ts` — Colour and dash of each player's series in the progress views.
+- `types.ts` — Shared contract of the Progress tab: the data every progress view reads, and the shape of a view.
+- `views.ts` — The progress views the Progress tab offers, in order. Add a view here to make it available.
+
 ## components/team
 
 - `game-list.tsx` — Grid of running games; each card links to its game page.
