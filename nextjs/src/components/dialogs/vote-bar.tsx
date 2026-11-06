@@ -112,8 +112,8 @@ export function VoteBar({
             // Green on hover / active / selected
             "transition-colors",
             acceptSelected
-              ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
-              : "hover:bg-green-100 hover:text-green-800 active:bg-green-200",
+              ? "bg-success text-success-foreground border-success hover:bg-success/90 hover:text-success-foreground"
+              : "hover:bg-success/15 hover:text-success active:bg-success/25",
           )}
         >
           {t("accept")}
@@ -128,8 +128,8 @@ export function VoteBar({
             // Red on hover / active / selected
             "transition-colors",
             denySelected
-              ? "bg-red-600 text-white border-red-600 hover:bg-red-700"
-              : "hover:bg-red-100 hover:text-red-800 active:bg-red-200",
+              ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90 hover:text-destructive-foreground"
+              : "hover:bg-destructive/15 hover:text-destructive active:bg-destructive/25",
           )}
         >
           {t("deny")}
@@ -150,26 +150,26 @@ export function VoteBar({
         aria-valuemax={100}
       >
         {totalVotes === 0 ? (
-          <div className="h-full w-full bg-gray-300 flex items-center justify-center">
-            <span className="text-[10px] text-gray-500 select-none">
+          <div className="h-full w-full bg-muted flex items-center justify-center">
+            <span className="text-[10px] text-muted-foreground select-none">
               {t("noVotes")}
             </span>
           </div>
         ) : (
           <div className="flex h-full w-full">
             <div
-              className="bg-green-500 flex items-center justify-center transition-all duration-300"
+              className="bg-success flex items-center justify-center transition-all duration-300"
               style={{ width: `${acceptPct}%`, minWidth: acceptCount > 0 ? "1.5rem" : 0 }}
             >
-              <span className="text-[10px] text-white font-medium select-none">
+              <span className="text-[10px] text-success-foreground font-medium select-none">
                 {Math.round(acceptPct)}%
               </span>
             </div>
             <div
-              className="bg-red-500 flex items-center justify-center transition-all duration-300"
+              className="bg-destructive flex items-center justify-center transition-all duration-300"
               style={{ width: `${denyPct}%`, minWidth: denyCount > 0 ? "1.5rem" : 0 }}
             >
-              <span className="text-[10px] text-white font-medium select-none">
+              <span className="text-[10px] text-destructive-foreground font-medium select-none">
                 {Math.round(denyPct)}%
               </span>
             </div>

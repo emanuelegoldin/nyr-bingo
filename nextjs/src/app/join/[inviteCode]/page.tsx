@@ -98,16 +98,16 @@ export default function JoinTeamPage({ params }: AuthContext<{ inviteCode: strin
 
           {status === 'success' && (
             <div className="text-center py-8">
-              <CheckCircle2 className="h-12 w-12 mx-auto text-green-500" />
-              <p className="mt-4 text-green-600 font-medium">{message}</p>
+              <CheckCircle2 className="h-12 w-12 mx-auto text-success" />
+              <p className="mt-4 text-success font-medium">{message}</p>
               <p className="text-sm text-muted-foreground mt-2">{t('join.redirecting')}</p>
             </div>
           )}
 
           {status === 'error' && (
             <div className="text-center py-8 space-y-4">
-              <XCircle className="h-12 w-12 mx-auto text-red-500" />
-              <p className="text-red-600 font-medium">{message}</p>
+              <XCircle className="h-12 w-12 mx-auto text-destructive" />
+              <p className="text-destructive font-medium">{message}</p>
               <div className="space-y-2">
                 <Button onClick={handleJoin} variant="outline" className="w-full">
                   {t('join.tryAgain')}

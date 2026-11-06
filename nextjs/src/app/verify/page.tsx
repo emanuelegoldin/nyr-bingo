@@ -76,7 +76,7 @@ function VerifyContent() {
 
           {status === 'success' && (
             <>
-              <CheckCircle2 className="h-16 w-16 text-green-600" />
+              <CheckCircle2 className="h-16 w-16 text-success" />
               <p className="text-center text-muted-foreground">{message}</p>
               <Button
                 onClick={() => router.push('/login')}

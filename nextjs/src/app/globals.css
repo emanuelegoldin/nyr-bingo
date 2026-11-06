@@ -24,6 +24,11 @@ body {
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+    /* Semantic status tokens (spec 25), readable as text on the card and as a fill */
+    --success: 142 72% 29%;
+    --success-foreground: 0 0% 100%;
+    --warning: 26 90% 37%;
+    --warning-foreground: 0 0% 100%;
     --border: 285 20% 88%;
     --input: 285 20% 88%;
     --ring: 285 41% 53%;
@@ -66,8 +71,13 @@ body {
     --muted-foreground: 285 10% 60%;
     --accent: 330 48% 53%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    /* Light fills with dark text keep status colours readable on the dark card (spec 25) */
+    --destructive: 0 91% 71%;
+    --destructive-foreground: 0 85% 10%;
+    --success: 142 69% 58%;
+    --success-foreground: 144 61% 10%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 26 83% 14%;
     --border: 285 20% 20%;
     --input: 285 20% 20%;
     --ring: 285 41% 53%;
