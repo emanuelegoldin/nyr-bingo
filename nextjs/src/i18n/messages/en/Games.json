@@ -4,7 +4,7 @@
     "heading": "My Games",
     "loadFailed": "Failed to load games",
     "emptyTitle": "No Games Yet",
-    "emptyDescription": "A team leader creates games from the team page.",
+    "emptyDescription": "A Team Admin creates games from the team page.",
     "goToTeams": "Go to Teams"
   },
   "detail": {
@@ -34,7 +34,7 @@
     },
     "leaveDialog": {
       "title": "Leave this game?",
-      "description": "Your bingo card, your leaderboard entry and the resolutions written for you in this game will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only leader, promote another player on the team page first.",
+      "description": "Your bingo card, your leaderboard entry and the resolutions written for you in this game will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only Team Admin, promote another player on the team page first.",
       "confirm": "Leave Game"
     }
   },
@@ -63,7 +63,7 @@
   },
   "cardsTab": {
     "notStartedTitle": "Game Not Started Yet",
-    "notStartedDescription": "The team leader will start the game once everyone has proposed resolutions for each other.",
+    "notStartedDescription": "A Team Admin will start the game once everyone has proposed resolutions for each other.",
     "noCards": "No bingo cards available yet.",
     "heading": "Bingo Cards",
     "noCard": "No bingo card available"

@@ -55,17 +55,17 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/(app)/teams/page.tsx` — Teams Page
 - `app/api/join/route.ts` — Team Join API (via invite code) [Invitations / Joining; Verification Requirement]
 - `app/api/teams/[teamId]/invite/route.ts` — Team Invitation API [Invitations / Joining]
-- `app/api/teams/[teamId]/leaders/route.ts` — Team Leaders API [Leaders]
+- `app/api/teams/[teamId]/leaders/route.ts` — Team Admins API (the route keeps the stored role name, leader) [Admins]
 - `app/api/teams/[teamId]/leave/route.ts` — Leave Team API [Leaving a Team]
 - `app/api/teams/[teamId]/route.ts` — Team Detail API
 - `app/api/teams/route.ts` — Teams API
 - `app/join/[inviteCode]/page.tsx` [Invitations / Joining]
-- `components/team/leaders.ts` — Helpers for the leaders of a team or game: the members whose role is leader. [Leaders]
+- `components/team/leaders.ts` — Helpers for the Team Admins of a team or game: the members whose stored role is leader. [Admins]
 - `components/team/members-list.tsx` — Members list of the team page. [Team Page]
 - `components/team/types.ts` — Shared types for the team page, the game page and their components.
 - `lib/db/leave-repository.ts` — Leave Repository - Leaving a game or a team [Leaving a Team]
 - `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions
-- `lib/db/team-repository.ts` — Team Repository - Database operations for teams [Invitations / Joining; Leaders; Team Creation; Team Deletion]
+- `lib/db/team-repository.ts` — Team Repository - Database operations for teams [Admins; Invitations / Joining; Team Creation; Team Deletion]
 - `lib/db/types.ts` — TypeScript Types for Database Entities
 - `lib/shared/types.ts`
 

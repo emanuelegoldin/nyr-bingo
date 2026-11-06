@@ -5,7 +5,7 @@
  * Displays a simple list of team members. Each row shows the
  * member's avatar on the left (clickable → profile) and their
  * username in the center. On the team page, leaders get a Make Leader action
- * on every non-leader row (spec 04 - Leaders).
+ * on every non-leader row (spec 04 - Admins).
  */
 
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";

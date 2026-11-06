@@ -11,7 +11,7 @@ Keep a read-only record of every finished game. An archived game is a snapshot o
 - Browse the finished games I took part in
 - See the final standings of a game
 - Look at each player's final card and open the details of a cell
-- Delete a game from the archive, as a leader who ran it
+- Delete a game from the archive, as an admin who ran it
 
 ---
 
@@ -30,7 +30,7 @@ Keep a read-only record of every finished game. An archived game is a snapshot o
 Every game that ends is archived, whether it ended manually or at its deadline (spec 16).
 
 - The archive holds, as they were when the game ended:
-  - The game name, the team name, the end date and the leaders who ran the game: its players who were team leaders when it was archived
+  - The game name, the team name, the end date and the admins who ran the game: its players who were Team Admins when it was archived
   - The leaderboard
   - The card of every player
 - The **players** of an archived game are the game's players (spec 16) who had a card in it. A member without a card has no access.
@@ -38,7 +38,7 @@ Every game that ends is archived, whether it ended manually or at its deadline (
 - A cell keeps its position, title, description, type, state, source and source label. The snapshot is taken from the cell's own columns and from `bingo_cell_subtasks` (spec 05) when the game ends. A `compound` cell also keeps its subtasks and an `iterative` cell its counters.
 - A game is archived only once it has no open review thread, so every cell is final.
 - Saving the archive and deleting the game happen in one transaction. The game's cards, cells, leaderboard rows, closed threads, team goal and member-provided resolutions, and the cells' subtasks and history, are deleted with it.
-- A game that could not be archived stays `ended`. The hourly sweep (spec 16) closes its open threads and archives it, so a failure is not reported to the leader. The same step archives games that ended before the archive existed. For those without a stored end date, the game's last update is used.
+- A game that could not be archived stays `ended`. The hourly sweep (spec 16) closes its open threads and archives it, so a failure is not reported to the admin. The same step archives games that ended before the archive existed. For those without a stored end date, the game's last update is used.
 
 ### Independence
 
@@ -64,7 +64,7 @@ An archived game has no reference to `games`, `teams` or `resolutions`.
 
 From top to bottom:
 
-- The game name, team name and end date, and a **Delete** button for the leaders who ran the game
+- The game name, team name and end date, and a **Delete** button for the admins who ran the game
 - The final leaderboard, with the columns and order of spec 12
 - The card of every player, in leaderboard order
 
@@ -74,7 +74,7 @@ Cards are read-only. They have no edit mode, real-time updates, confetti, proof 
 
 `DELETE /api/archived-games/[archivedGameId]`
 
-- Only a leader who ran the game can delete it (`403` otherwise; `404` when it does not exist).
+- Only an admin who ran the game can delete it (`403` otherwise; `404` when it does not exist).
 - The UI asks for confirmation.
 - Deletion is a **hard delete** and removes the game from the archive of every player.
 
@@ -85,7 +85,7 @@ Cards are read-only. They have no edit mode, real-time updates, confetti, proof 
 The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
 
 - Only the players of an archived game can view it.
-- Only a leader who ran the game can delete it.
+- Only an admin who ran the game can delete it.
 - Archived games cannot be edited by anyone.
 
 ---
@@ -117,4 +117,4 @@ Each table cascades from the one above it. `archived_game_players.user_id` refer
 - Cells cannot be changed, and selecting one shows its details as plain text.
 - Editing or deleting a resolution, or deleting the team, does not change an archived game.
 - Non-players cannot view an archived game.
-- Only a leader who ran the game can delete it, and deletion removes it for every player.
+- Only an admin who ran the game can delete it, and deletion removes it for every player.

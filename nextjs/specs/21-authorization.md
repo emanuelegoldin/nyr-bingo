@@ -11,7 +11,7 @@ This spec does not change any rule of the other specs. Where they describe a per
 ## User Stories Covered
 
 - As a player, I can only see and act on the teams, games and archived games I belong to
-- As a leader, I hold every leader action on my team and on the games I play
+- As an admin, I hold every admin action on my team and on the games I play
 - As a maintainer of the code, I can find every rule in one table and add a role without touching every route
 
 ---
@@ -33,11 +33,12 @@ A role is held by a user **in a scope**. A user has at most one role per scope i
 | Scope | Instance | Roles | Source |
 | ----- | -------- | ----- | ------ |
 | `team` | A team | `leader`, `member` | `team_memberships.role` |
-| `game` | A running game | `leader`, `player` | `game_players`: a player who is a leader of the game's team is `leader`, any other player is `player` (spec 16) |
+| `game` | A running game | `leader`, `player` | `game_players`: a player who is an admin of the game's team is `leader`, any other player is `player` (spec 16) |
 | `archive` | An archived game | `leader`, `player` | `archived_game_players`: `is_leader` gives `leader` (spec 18) |
 
+- The role identifier `leader` is the **Team Admin** role (spec 04). Only its displayed name changed; the stored value and identifiers keep `leader`.
 - The `game` scope covers running games only. A missing or ended game is not found (`404`), before any role is looked at.
-- A team leader who does not play a game has no role in it.
+- A Team Admin who does not play a game has no role in it.
 - Some permissions need no scope: they are open to any logged-in user.
 - **Reserved:** an `app` scope for app-wide roles (such as a `maintainer`) is not implemented. It needs its own spec before it is added.
 
@@ -125,7 +126,7 @@ The HTTP status of a refusal:
 
 These rules are not permissions and stay with the data they protect:
 
-- The last leader cannot leave a team or game (specs 04 and 16).
+- The last admin cannot leave a team or game (specs 04 and 16).
 - Game status rules: what a `forming`, `started` or `ended` game allows (spec 16).
 - A completing user cannot vote on their own proof, and closed threads accept no messages, files or votes (spec 07).
 - The SQL guards on owner columns in `UPDATE` and `DELETE` statements are kept as atomic protection.
@@ -135,7 +136,7 @@ These rules are not permissions and stay with the data they protect:
 ## Client Gating
 
 - Team and game pages receive the list of permissions the caller holds in that team or game, computed on the server by the same module, and show an action only when its permission is in the list.
-- The members list shows **Make Leader** only when the caller holds `team.promote`.
+- The members list shows **Make Admin** only when the caller holds `team.promote`.
 - Client gating is for display only. Every action is checked again by the API.
 
 ---
@@ -146,8 +147,8 @@ These rules are not permissions and stay with the data they protect:
 - Verified-only permissions are refused to unverified users with `403`.
 - A missing team, game or archived game, and an ended game, give `404`.
 - Pages show not-found where the API would refuse.
-- The resource rules hold: only the card owner changes progress on a cell, so neither the author of a member-provided resolution nor the team leader can; only the card owner completes a cell; only the completing user closes a thread.
-- Team and game pages show leader actions only to callers who hold the matching permission.
+- The resource rules hold: only the card owner changes progress on a cell, so neither the author of a member-provided resolution nor the Team Admin can; only the card owner completes a cell; only the completing user closes a thread.
+- Team and game pages show admin actions only to callers who hold the matching permission.
 - No route or page decides a role-based permission without the authorization module.
 
 ---

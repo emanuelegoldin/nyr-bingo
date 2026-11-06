@@ -4,7 +4,7 @@
     "heading": "Meine Spiele",
     "loadFailed": "Spiele konnten nicht geladen werden",
     "emptyTitle": "Noch keine Spiele",
-    "emptyDescription": "Eine Teamleitung erstellt Spiele auf der Team-Seite.",
+    "emptyDescription": "Ein Team-Admin erstellt Spiele auf der Team-Seite.",
     "goToTeams": "Zu den Teams"
   },
   "detail": {
@@ -34,7 +34,7 @@
     },
     "leaveDialog": {
       "title": "Dieses Spiel verlassen?",
-      "description": "Deine Bingo-Karte, dein Eintrag in der Rangliste und die für dich geschriebenen Vorsätze in diesem Spiel werden gelöscht. Die Vorsätze, die du für andere Spieler geschrieben hast, bleiben auf deren Karten. Du kannst diesem Spiel nicht erneut beitreten. Wenn du die einzige Teamleitung bist, befördere zuerst auf der Team-Seite eine andere Person.",
+      "description": "Deine Bingo-Karte, dein Eintrag in der Rangliste und die für dich geschriebenen Vorsätze in diesem Spiel werden gelöscht. Die Vorsätze, die du für andere Spieler geschrieben hast, bleiben auf deren Karten. Du kannst diesem Spiel nicht erneut beitreten. Wenn du der einzige Team-Admin bist, befördere zuerst auf der Team-Seite eine andere Person.",
       "confirm": "Spiel verlassen"
     }
   },
@@ -63,7 +63,7 @@
   },
   "cardsTab": {
     "notStartedTitle": "Das Spiel hat noch nicht begonnen",
-    "notStartedDescription": "Die Teamleitung startet das Spiel, sobald alle Vorsätze füreinander vorgeschlagen haben.",
+    "notStartedDescription": "Ein Team-Admin startet das Spiel, sobald alle Vorsätze füreinander vorgeschlagen haben.",
     "noCards": "Noch keine Bingo-Karten verfügbar.",
     "heading": "Bingo-Karten",
     "noCard": "Keine Bingo-Karte verfügbar"

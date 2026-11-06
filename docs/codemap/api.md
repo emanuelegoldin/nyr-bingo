@@ -45,7 +45,7 @@ Paths are under `nextjs/src/app`. Helpers shared by routes live next to them (se
 | POST | `/api/resolutions/save` | Unified Resolution Save API |
 | GET POST | `/api/teams/:teamId/games` | Team Games API |
 | POST | `/api/teams/:teamId/invite` | Team Invitation API |
-| POST | `/api/teams/:teamId/leaders` | Team Leaders API |
+| POST | `/api/teams/:teamId/leaders` | Team Admins API (the route keeps the stored role name, leader) |
 | POST | `/api/teams/:teamId/leave` | Leave Team API |
 | GET DELETE | `/api/teams/:teamId` | Team Detail API |
 | GET POST | `/api/teams` | Teams API |

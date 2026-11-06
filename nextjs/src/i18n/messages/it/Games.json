@@ -4,7 +4,7 @@
     "heading": "Le mie partite",
     "loadFailed": "Impossibile caricare le partite",
     "emptyTitle": "Ancora nessuna partita",
-    "emptyDescription": "Un leader del team crea le partite dalla pagina del team.",
+    "emptyDescription": "Un admin del team crea le partite dalla pagina del team.",
     "goToTeams": "Vai ai team"
   },
   "detail": {
@@ -34,7 +34,7 @@
     },
     "leaveDialog": {
       "title": "Abbandonare questa partita?",
-      "description": "La tua carta bingo, la tua voce in classifica e gli obiettivi scritti per te in questa partita verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Non potrai rientrare in questa partita. Se sei l'unico leader, promuovi prima un altro giocatore dalla pagina del team.",
+      "description": "La tua carta bingo, la tua voce in classifica e gli obiettivi scritti per te in questa partita verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Non potrai rientrare in questa partita. Se sei l'unico admin del team, promuovi prima un altro giocatore dalla pagina del team.",
       "confirm": "Abbandona partita"
     }
   },
@@ -63,7 +63,7 @@
   },
   "cardsTab": {
     "notStartedTitle": "La partita non è ancora iniziata",
-    "notStartedDescription": "Il leader del team avvierà la partita quando tutti avranno proposto obiettivi per gli altri.",
+    "notStartedDescription": "Un admin del team avvierà la partita quando tutti avranno proposto obiettivi per gli altri.",
     "noCards": "Ancora nessuna carta bingo disponibile.",
     "heading": "Carte bingo",
     "noCard": "Nessuna carta bingo disponibile"

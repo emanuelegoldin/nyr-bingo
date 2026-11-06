@@ -1,6 +1,6 @@
 /**
- * Helpers for the leaders of a team or game: the members whose role is leader.
- * Spec Reference: 04-bingo-teams.md - Leaders, 16-games.md - Game Model
+ * Helpers for the Team Admins of a team or game: the members whose stored role is leader.
+ * Spec Reference: 04-bingo-teams.md - Admins, 16-games.md - Game Model
  */
 
 import type { TeamMember } from "./types";

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Support groups of users who play bingo together, with invitations and membership, **restricted to verified users only**. A team is a list of users with one or more leaders; the games it plays are defined in spec 16.
+Support groups of users who play bingo together, with invitations and membership, **restricted to verified users only**. A team is a list of users with one or more admins; the games it plays are defined in spec 16.
 
 ---
 
@@ -10,10 +10,10 @@ Support groups of users who play bingo together, with invitations and membership
 
 - Create a team and invite other users
 - Join a team when invited
-- Delete a team as leader
+- Delete a team as admin
 - Start a new game for a team
 - Join a team even after its games have started
-- Promote another member to leader
+- Promote another member to admin
 - Leave a team
 
 ---
@@ -24,7 +24,7 @@ Support groups of users who play bingo together, with invitations and membership
 - Team deletion
 - Invitations and joining
 - Team membership and roles
-- Promotion to leader
+- Promotion to admin
 - Leaving a team
 - Team page
 - Verification-based access restrictions
@@ -50,36 +50,36 @@ These checks are server-side (see spec 01). Team pages do not hide these actions
 `POST /api/teams`
 
 - A verified user can create a team by providing a non-empty name.
-- The creator becomes a team leader.
+- The creator becomes a Team Admin.
 - A new team has no games.
 
 `GET /api/teams` lists the caller's teams. `GET /api/teams/[teamId]` returns one team to its members only (`403` otherwise).
 
-`/teams` shows the caller's teams as cards with the team name, its leaders and its members, and a button to create a team. The whole card is a link to the team page; it has no separate button.
+`/teams` shows the caller's teams as cards with the team name, its admins and its members, and a button to create a team. The whole card is a link to the team page; it has no separate button.
 
 ---
 
 ### Team Page
 
-`/teams/[teamId]` is available to team members only; others get a not-found page. It shows the team name and its leaders, and:
+`/teams/[teamId]` is available to team members only; others get a not-found page. It shows the team name and its admins, and:
 
 - The team's running games that the caller plays (spec 16), each linking to its game page
-- A **New Game** dialog, for leaders
-- The members list (see below), with **Make Leader** for leaders
-- The **Invite** dialog and **Delete Team**, for leaders
+- A **New Game** dialog, for admins
+- The members list (see below), with **Make Admin** for admins
+- The **Invite** dialog and **Delete Team**, for admins
 - **Leave Team**, for every member
 
 The members list is a simple list of all team members. The game page has no members list (spec 12).
 - Each row contains:
   - **Avatar** on the left (clickable → navigates to the member's profile).
   - **Display name**, or the username when no public display name exists.
-  - A "Leader" badge for every team leader.
-  - A **Make Leader** button for leaders on each non-leader row, after confirmation (see Leaders).
+  - An "Admin" badge for every Team Admin.
+  - A **Make Admin** button for admins on each non-admin row, after confirmation (see Admins).
 - The current user's entry is annotated with "(You)".
 
 The header keeps only the most used actions visible, as on the game page (spec 16):
-- **New Game** and **Invite** are buttons, for leaders.
-- The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Leave Team and Delete Team, which is styled as destructive and listed for leaders only.
+- **New Game** and **Invite** are buttons, for admins.
+- The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Leave Team and Delete Team, which is styled as destructive and listed for admins only.
 - Choosing a menu item opens the action's confirmation.
 
 ---
@@ -88,7 +88,7 @@ The header keeps only the most used actions visible, as on the game page (spec 1
 
 `DELETE /api/teams/[teamId]`
 
-- Only a team leader can delete a team (`403` otherwise; `404` when the team does not exist).
+- Only a Team Admin can delete a team (`403` otherwise; `404` when the team does not exist).
 - The UI asks for confirmation.
 - Deletion is a **hard delete**. Stored proof files of the threads of all its games are removed too, unless another thread uses the same file.
 - Due to database `ON DELETE CASCADE` constraints, deleting a team also deletes associated data, including:
@@ -101,7 +101,7 @@ The header keeps only the most used actions visible, as on the game page (spec 1
 
 ### Invitations / Joining
 
-- Only a team leader can create invitations: `POST /api/teams/[teamId]/invite`.
+- Only a Team Admin can create invitations: `POST /api/teams/[teamId]/invite`.
 - An invitation is a shareable link, `/join/<inviteCode>`:
   - It is created on demand from the **Invite** dialog.
   - It expires after **7 days**.
@@ -114,14 +114,15 @@ The header keeps only the most used actions visible, as on the game page (spec 1
 
 ---
 
-### Leaders
+### Admins
 
-- A team has one or more leaders: the members whose membership `role` is `leader`. Every leader holds every leader permission.
-- `POST /api/teams/[teamId]/leaders` with `{ userId }` makes a member a leader.
-  - Only a team leader can promote (`403` otherwise; `404` when the team does not exist).
-  - The target must be a member who is not already a leader (`400` otherwise).
-- The members list of the team page shows **Make Leader** on every non-leader row, for leaders. The UI asks for confirmation.
-- Promotion cannot be undone: a leader stops being one only by leaving the team.
+- A team has one or more admins: the members whose membership `role` is `leader`. Every admin holds every admin permission.
+- The role is shown to users as **Team Admin** (badge: "Admin", action: **Make Admin**). It used to be called "leader": the stored role value `leader`, the `/leaders` route and the code identifiers keep that name, and no data changes.
+- `POST /api/teams/[teamId]/leaders` with `{ userId }` makes a member an admin.
+  - Only a Team Admin can promote (`403` otherwise; `404` when the team does not exist).
+  - The target must be a member who is not already an admin (`400` otherwise).
+- The members list of the team page shows **Make Admin** on every non-admin row, for admins. The UI asks for confirmation.
+- Promotion cannot be undone: an admin stops being one only by leaving the team.
 
 ---
 
@@ -130,7 +131,7 @@ The header keeps only the most used actions visible, as on the game page (spec 1
 `POST /api/teams/[teamId]/leave`
 
 - Only a member can leave (`403` otherwise; `404` when the team does not exist).
-- A leader cannot leave while they are the team's only leader, or the only leader among the players of a running game they play (`400` otherwise). They promote another member first.
+- An admin cannot leave while they are the team's only admin, or the only admin among the players of a running game they play (`400` otherwise). They promote another member first.
 - Leaving a team leaves each of its running games the user plays, with the effects of spec 16 (Leaving a Game), then removes the membership.
 - Resolutions the user wrote for other players stay on their cards, tagged "Former Teammates" (spec 05).
 - The UI asks for confirmation and then returns the user to `/teams`.
@@ -143,10 +144,10 @@ The header keeps only the most used actions visible, as on the game page (spec 1
 The role-to-permission table and the status of every refusal are defined in spec 21 (Authorization).
 
 - Only verified users can participate in teams.
-- Only a team leader can:
+- Only a Team Admin can:
   - Invite users
-  - Promote members to leader
-  - Create games, and everything spec 16 reserves to the leader
+  - Promote members to admin
+  - Create games, and everything spec 16 reserves to the admin
   - Delete the team
 - Every member can leave the team, under the rules above.
 
@@ -158,9 +159,9 @@ The role-to-permission table and the status of every refusal are defined in spec
 - Verified invited users can join, before or after a game starts.
 - Unverified users cannot create or join teams.
 - A team stays usable for new games without new invitations.
-- Team leader can delete their team.
-- Non-leaders cannot delete teams.
-- A team leader can promote a member; a team can have several leaders.
+- Team Admin can delete their team.
+- Non-admins cannot delete teams.
+- A Team Admin can promote a member; a team can have several admins.
 - A member can leave a team after confirming; this leaves all of its running games they play.
-- The only leader cannot leave until another member is promoted.
-- A leader's team header shows at most two action buttons plus the More actions menu, and every Team Page action can be reached from the header or the menu.
+- The only admin cannot leave until another member is promoted.
+- An admin's team header shows at most two action buttons plus the More actions menu, and every Team Page action can be reached from the header or the menu.

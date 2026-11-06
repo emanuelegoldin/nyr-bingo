@@ -53,7 +53,7 @@ async function checkCanLeaveGame(
   }
   const successor = await findOtherGameLeader(gameId, userId);
   if (!successor) {
-    return { error: `You are the only leader of "${gameName}". Promote another player to leader first.` };
+    return { error: `You are the only Team Admin playing "${gameName}". Promote another player to Team Admin first.` };
   }
   return { successor };
 }
@@ -130,7 +130,7 @@ export async function leaveTeam(teamId: string, userId: string, isLeader: boolea
       [teamId, userId]
     );
     if (otherLeaders.length === 0) {
-      return { success: false, status: 400, error: 'You are the only leader of this team. Promote another member to leader first.' };
+      return { success: false, status: 400, error: 'You are the only Team Admin of this team. Promote another member to Team Admin first.' };
     }
   }
 

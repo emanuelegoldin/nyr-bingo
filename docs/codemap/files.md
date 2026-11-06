@@ -282,7 +282,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/api/teams/[teamId]/leaders
 
-- `route.ts` — Team Leaders API
+- `route.ts` — Team Admins API (the route keeps the stored role name, leader)
 
 ## app/api/teams/[teamId]/leave
 
@@ -413,7 +413,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `game-list.tsx` — Grid of running games; each card links to its game page.
 - `game-status-badge.tsx`
-- `leaders.ts` — Helpers for the leaders of a team or game: the members whose role is leader.
+- `leaders.ts` — Helpers for the Team Admins of a team or game: the members whose stored role is leader.
 - `members-list.tsx` — Members list of the team page.
 - `types.ts` — Shared types for the team page, the game page and their components.
 
