@@ -19,7 +19,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
 import { CalendarClock, Loader2, Swords } from "lucide-react";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import { useState } from 'react';
 
 import type { GamePermission } from "@/lib/authz/permissions";
@@ -94,7 +93,7 @@ export default function GameDetailPageClient({
           <div>
             <CardTitle className="font-headline text-3xl">{game.name}</CardTitle>
             <CardDescription className="mt-2">
-              <Link href={`/teams/${game.teamId}`} className="hover:underline">{game.teamName}</Link>
+              {game.teamName}
             </CardDescription>
             {game.deadline && (
               <CardDescription className="flex items-center gap-2 mt-2">

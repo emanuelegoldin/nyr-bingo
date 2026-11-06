@@ -88,7 +88,7 @@ A **running** game is one in `forming` or `started`.
 
 `/games/[gameId]` shows a running game to its players; others get a not-found page, as they do for an ended game.
 
-The header holds the game name, the team name linking to the team page, the deadline if one is set, the status, the team goal and the actions. It does not list the leaders: they are marked in the team page's members list (spec 04). The tabs below it are defined in spec 12.
+The header holds the game name, the team name as plain text (it does not link to the team page, which is reached from the sidebar and the Teams page), the deadline if one is set, the status, the team goal and the actions. It does not list the leaders: they are marked in the team page's members list (spec 04). The tabs below it are defined in spec 12.
 
 | Action | Who | When |
 | ------ | --- | ---- |
