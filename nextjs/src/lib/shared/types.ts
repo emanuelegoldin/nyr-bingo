@@ -217,6 +217,17 @@ export interface LeaderboardEntry {
   completedTasks: number;
 }
 
+/**
+ * One stored value of a player's completed count, live or archived.
+ * Spec: 23-progress-chart.md - Recording Progress
+ */
+export interface ProgressPoint {
+  userId: string;
+  /** ISO datetime from which the count held this value. */
+  recordedAt: string;
+  completedTasks: number;
+}
+
 /** An archived game as listed on the archive page. */
 export interface ArchivedGameSummary {
   id: string;
@@ -229,9 +240,13 @@ export interface ArchivedGameSummary {
 export interface ArchivedGameDetail extends ArchivedGameSummary {
   /** The side length of every card of the game. */
   gridSize: number;
+  /** ISO datetime bingo started, or null for games archived before it was recorded. */
+  startedAt: string | null;
   leaderboard: LeaderboardEntry[];
   cards: ArchivedCard[];
   threads: ArchivedThread[];
+  /** The players' progress points, oldest first (spec 23). */
+  progress: ProgressPoint[];
 }
 
 // Archived threads: closed review threads, read-only, of a running or an archived game

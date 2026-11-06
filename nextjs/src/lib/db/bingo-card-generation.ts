@@ -98,7 +98,7 @@ export async function startGameWithCards(gameId: string): Promise<{ success: boo
   return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
     // The status guard stops two concurrent starts from generating cards twice.
     const statusUpdate = await execute(
-      `UPDATE games SET status = 'started' WHERE id = ? AND status = 'forming'`,
+      `UPDATE games SET status = 'started', started_at = NOW() WHERE id = ? AND status = 'forming'`,
       [gameId],
       connection
     );

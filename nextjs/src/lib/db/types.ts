@@ -129,6 +129,8 @@ export interface Game {
   status: GameStatus;
   createdAt: Date;
   updatedAt: Date;
+  /** When bingo started, or null while the game is forming (spec 16). */
+  startedAt: Date | null;
   endedAt: Date | null;
   /** Last playable day as YYYY-MM-DD, or null when the game only ends manually. */
   deadline: string | null;

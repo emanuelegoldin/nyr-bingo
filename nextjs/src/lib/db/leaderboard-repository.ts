@@ -8,11 +8,14 @@
  *
  * Rows are upserted whenever a cell state changes (updateCellState,
  * undoCompletion, vote resolution) and bulk-initialized when a game starts.
+ *
+ * Each change of `completed_tasks` is also logged in `leaderboard_progress`
+ * (spec 23-progress-chart.md - Recording Progress).
  */
 
 import { notifications } from '../notifications';
 import { getBingoLines } from '../shared/bingo-lines';
-import { CellState, getJokerPosition, type LeaderboardEntry } from '../shared/types';
+import { CellState, getJokerPosition, type LeaderboardEntry, type ProgressPoint } from '../shared/types';
 import { query } from './connection';
 import type { Game } from './types';
 
@@ -128,6 +131,47 @@ export async function getGameLeaderboard(gameId: string): Promise<LeaderboardEnt
 }
 
 /**
+ * Log one value of a player's completed count, from now on.
+ * Spec: 23-progress-chart.md - Recording Progress
+ * @param gameId The game
+ * @param userId The player
+ * @param completedTasks The player's new completed count
+ */
+async function recordProgressPoint(
+  gameId: string,
+  userId: string,
+  completedTasks: number
+): Promise<void> {
+  await query(
+    `INSERT INTO leaderboard_progress (game_id, user_id, recorded_at, completed_tasks)
+     VALUES (?, ?, NOW(), ?)`,
+    [gameId, userId, completedTasks]
+  );
+}
+
+/**
+ * Get the progress points of a game, oldest first.
+ * Spec: 23-progress-chart.md - Progress Tab
+ * @param gameId The game
+ * @returns Every stored value of every player's completed count
+ */
+export async function getGameProgress(gameId: string): Promise<ProgressPoint[]> {
+  const rows = await query<Array<{ user_id: string; recorded_at: Date; completed_tasks: number }>>(
+    `SELECT user_id, recorded_at, completed_tasks
+     FROM leaderboard_progress
+     WHERE game_id = ?
+     ORDER BY recorded_at ASC, id ASC`,
+    [gameId]
+  );
+
+  return rows.map((row) => ({
+    userId: row.user_id,
+    recordedAt: row.recorded_at.toISOString(),
+    completedTasks: row.completed_tasks,
+  }));
+}
+
+/**
  * Recalculate and upsert the leaderboard entry for a specific user in a game.
  * Call this after any cell state change.
  *
@@ -157,8 +201,8 @@ export async function refreshLeaderboardEntry(
   // Every cell of a card carries the card's size; a user without cells has no bingo either way
   const firstBingoAt = cells.length > 0 ? computeFirstBingoAt(cells, cells[0].grid_size) : null;
 
-  const previous = await query<Array<{ first_bingo_at: Date | null }>>(
-    `SELECT first_bingo_at FROM team_leaderboard WHERE game_id = ? AND user_id = ?`,
+  const previous = await query<Array<{ first_bingo_at: Date | null; completed_tasks: number }>>(
+    `SELECT first_bingo_at, completed_tasks FROM team_leaderboard WHERE game_id = ? AND user_id = ?`,
     [gameId, userId]
   );
   const hadBingo = Boolean(previous[0]?.first_bingo_at);
@@ -171,6 +215,11 @@ export async function refreshLeaderboardEntry(
        completed_tasks = VALUES(completed_tasks)`,
     [userId, firstBingoAt, completedTasks, gameId]
   );
+
+  // A point only when the count changed, or for a player's first row (spec 23)
+  if (previous.length === 0 || previous[0].completed_tasks !== completedTasks) {
+    await recordProgressPoint(gameId, userId, completedTasks);
+  }
 
   if (firstBingoAt && !hadBingo) {
     await notifications.publish({ type: 'bingo_scored', gameId, actorUserId: userId });
@@ -197,5 +246,21 @@ export async function initializeGameLeaderboard(
      VALUES ${placeholders}
      ON DUPLICATE KEY UPDATE completed_tasks = completed_tasks`,
     params
+  );
+
+  // Every player's progress starts at 0 when bingo starts (spec 23); a player who already
+  // has a point keeps it, so a repeated call adds nothing.
+  const playerList = userIds.map(() => 'SELECT ? AS user_id').join(' UNION ALL ');
+  await query(
+    `INSERT INTO leaderboard_progress (game_id, user_id, recorded_at, completed_tasks)
+     SELECT g.id, p.user_id, COALESCE(g.started_at, NOW()), 0
+     FROM games g
+     JOIN (${playerList}) p
+     WHERE g.id = ?
+       AND NOT EXISTS (
+         SELECT 1 FROM leaderboard_progress lp
+         WHERE lp.game_id = g.id AND lp.user_id = p.user_id
+       )`,
+    [...userIds, game.id]
   );
 }

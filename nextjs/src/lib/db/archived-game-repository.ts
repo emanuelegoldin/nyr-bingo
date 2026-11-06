@@ -18,6 +18,7 @@ import {
   type CellSourceLabel,
   type CellSubtask,
 } from '../shared/types';
+import { getArchivedProgress, saveProgressSnapshot } from './archived-progress-repository';
 import { getBingoCard } from './bingo-card-repository';
 import {
   buildThreadSnapshots,
@@ -75,6 +76,7 @@ interface ArchivedGameRow extends RowDataPacket {
   id: string;
   name: string;
   team_name: string;
+  started_at: Date | null;
   ended_at: Date;
   grid_size: number;
 }
@@ -321,9 +323,9 @@ export async function archiveGame(game: Game): Promise<boolean> {
 
   await withTransaction(async (connection) => {
     await execute(
-      `INSERT INTO archived_games (id, name, team_name, ended_at, grid_size)
-       VALUES (?, ?, ?, ?, ?)`,
-      [game.id, game.name, game.teamName, game.endedAt ?? game.updatedAt, game.gridSize],
+      `INSERT INTO archived_games (id, name, team_name, started_at, ended_at, grid_size)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [game.id, game.name, game.teamName, game.startedAt, game.endedAt ?? game.updatedAt, game.gridSize],
       connection
     );
 
@@ -381,6 +383,7 @@ export async function archiveGame(game: Game): Promise<boolean> {
     }
 
     await saveThreadSnapshots(game.id, threads, connection);
+    await saveProgressSnapshot(game.id, connection);
 
     const deleted = await execute(
       `DELETE FROM games WHERE id = ? AND status = 'ended'`,
@@ -512,6 +515,7 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
   return {
     ...rowToSummary(gameRows[0]),
     gridSize,
+    startedAt: gameRows[0].started_at ? gameRows[0].started_at.toISOString() : null,
     leaderboard: players
       .filter((player) => player.leaderboard_rank !== null)
       .map((player) => ({
@@ -523,6 +527,7 @@ export async function getArchivedGame(id: string): Promise<ArchivedGameDetail | 
       })),
     cards: await getArchivedCards(id, players, gridSize),
     threads: await getArchivedThreads(id),
+    progress: await getArchivedProgress(id),
   };
 }
 

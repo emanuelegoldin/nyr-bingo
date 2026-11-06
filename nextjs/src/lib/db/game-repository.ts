@@ -19,6 +19,7 @@ interface GameRow extends RowDataPacket {
   status: GameStatus;
   created_at: Date;
   updated_at: Date;
+  started_at: Date | null;
   ended_at: Date | null;
   // The deadline as text: a DATE read as a Date object can shift a day when serialized
   deadline_date: string | null;
@@ -47,6 +48,7 @@ function rowToGame(row: GameRow): Game {
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    startedAt: row.started_at,
     endedAt: row.ended_at,
     deadline: row.deadline_date,
     gridSize: row.grid_size,

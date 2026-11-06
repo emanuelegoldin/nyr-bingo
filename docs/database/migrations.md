@@ -504,3 +504,33 @@ None. Threads closed before this migration have a `NULL` outcome and no messages
 ### Idempotency
 
 `Create_Column` and `CREATE TABLE IF NOT EXISTS` do nothing on a second run.
+
+## 5.12.0 - Leaderboard Progress
+
+Games record when bingo started, and every change of a player's completed count is logged, so the
+Progress tab can chart it over time (spec 23). Archived games keep both (spec 18).
+
+### Schema changes
+
+- `games.started_at` (`DATETIME`, nullable) is set when bingo starts (spec 16).
+- `archived_games.started_at` (`DATETIME`, nullable) is copied from the game when it is archived.
+- `leaderboard_progress` holds one row per change of a player's completed count: `game_id`
+  (FK → `games`), `user_id` (FK → `users`), `recorded_at` and `completed_tasks`, both foreign keys
+  `ON DELETE CASCADE`, with an index on `(game_id, recorded_at)`.
+- `archived_progress` holds the same values for an archived game. `(archived_game_id, user_id)`
+  references `archived_game_players`, `ON DELETE CASCADE`.
+
+### Data migration
+
+- `games.started_at` of every `started` or `ended` game is set to the creation time of its earliest
+  bingo card.
+- Every leaderboard row of a `started` or `ended` game gets a `0` point at the creation time of the
+  player's card, then one point per cell now `completed` or `accomplished`, ordered by the cell's
+  `updated_at`, holding the running count. Completions that were later undone are not recovered.
+- Games already archived get no `started_at` and no progress points.
+
+### Idempotency
+
+`Create_Column` and `CREATE TABLE IF NOT EXISTS` do nothing on a second run. `started_at` is only
+set where it is `NULL`, the `0` points only for players with no point, and the running counts only
+for players whose only point is that `0`.
