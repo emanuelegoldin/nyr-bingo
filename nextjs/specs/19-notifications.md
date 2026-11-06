@@ -43,9 +43,9 @@ Let users see what happened in their teams since they last looked: after logging
 | ---- | ------------ | ----- | ---------- |
 | `card_progress` | A cell reaches `completed`, manually or by automatic completion (spec 06) | The card owner | The game's players |
 | `member_joined` | A user joins the team (spec 04) | The new member | The team |
-| `game_started` | The leader starts a game (spec 16) | The leader | The game's players |
+| `game_started` | The admin starts a game (spec 16) | The admin | The game's players |
 | `bingo_scored` | A player's `first_bingo_at` (spec 12) goes from empty to set | The player | The game's players |
-| `game_ended` | A game ends (spec 16) | The leader, or nobody at the deadline | The game's players |
+| `game_ended` | A game ends (spec 16) | The admin, or nobody at the deadline | The game's players |
 | `proof_requested` | A member requests proof on a cell (spec 07) | The requester | The card owner |
 
 - The team means its members when the notification is released. The game's players means its roster (spec 16) when the notification is released, or the players of its archive (spec 18) once the game has been archived.

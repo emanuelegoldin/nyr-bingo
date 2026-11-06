@@ -11,10 +11,8 @@
     "nameLabel": "Team Name",
     "namePlaceholder": "e.g., Goal Getters 2025",
     "submit": "Create Team",
-    "ledBy": "Led by {names}",
     "membersLabel": "Team Members:",
     "memberCount": "{count, plural, one {# member} other {# members}}",
-    "viewTeam": "View Team",
     "emptyTitle": "No Teams Yet",
     "emptyText": "You're not part of any team. Create one to get started!",
     "createFirst": "Create Your First Team"
@@ -26,15 +24,15 @@
     "deleteFailed": "Failed to delete team",
     "leftTitle": "You left the team",
     "leaveFailed": "Failed to leave team",
-    "promotedTitle": "Member promoted to leader",
+    "promotedTitle": "Member promoted to Team Admin",
     "promoteFailed": "Failed to promote member",
-    "leaders": "Team Leaders: {names}",
+    "leaders": "Team Admins: {names}",
     "deleteTrigger": "Delete Team",
     "deleteTitle": "Delete this team?",
     "deleteDescription": "This will permanently delete the team, its memberships, invitations and all of its games, with their resolutions, bingo cards and related gameplay data. Archived games are kept. This action cannot be undone.",
     "leaveTrigger": "Leave Team",
     "leaveTitle": "Leave this team?",
-    "leaveDescription": "You will also leave every running game of this team that you play: your bingo cards, leaderboard entries and the resolutions written for you are deleted. The resolutions you wrote for others stay on their cards. You can only come back with a new invitation. If you are the only leader, promote another member first.",
+    "leaveDescription": "You will also leave every running game of this team that you play: your bingo cards, leaderboard entries and the resolutions written for you are deleted. The resolutions you wrote for others stay on their cards. You can only come back with a new invitation. If you are the only Team Admin, promote another member first.",
     "gamesHeading": "Games",
     "noGamesCanCreate": "No games yet. Click \"New Game\" to create one.",
     "noGames": "No games yet."
@@ -55,21 +53,21 @@
     "description": "Start a new game with this team and choose who plays. No one needs to be invited again.",
     "nameLabel": "Game Name",
     "namePlaceholder": "e.g., Resolutions 2027",
+    "cardSize": "Card Size",
+    "cardSizeOption": "{size}×{size}",
+    "cardSizeHint": "It cannot be changed once the game is created.",
     "players": "Players",
     "you": "(You)",
     "submit": "Create Game"
   },
-  "membersTab": {
+  "membersList": {
     "title": "Team Members",
     "you": "(You)",
-    "makeLeader": "Make Leader",
-    "makeLeaderTitle": "Make {name} a leader?",
-    "makeLeaderDescription": "Leaders can invite members, create, start, end and delete games, promote other members and delete the team. This cannot be undone.",
-    "teamLeader": "Team Leader",
-    "leader": "Leader"
-  },
-  "gameList": {
-    "viewGame": "View Game"
+    "makeLeader": "Make Admin",
+    "makeLeaderTitle": "Make {name} a Team Admin?",
+    "makeLeaderDescription": "Team Admins can invite members, create, start, end and delete games, promote other members and delete the team. This cannot be undone.",
+    "teamLeader": "Team Admin",
+    "leader": "Admin"
   },
   "gameStatus": {
     "started": "Game Started",

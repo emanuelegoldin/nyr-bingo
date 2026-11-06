@@ -10,7 +10,7 @@ import { query } from './connection';
 import { FileRow, loadOpenThread, rowToFile, ThreadFailure } from './review-thread-rows';
 import type { ReviewFile } from './types';
 
-interface ThreadFilePathRow {
+export interface ThreadFilePathRow {
   id: string;
   file_path: string;
 }
@@ -210,14 +210,18 @@ export async function removeOrphanedFiles(files: ThreadFilePathRow[]): Promise<v
 }
 
 /**
- * Remove a file from storage unless another row still references it.
- * Names are content-addressed, so identical uploads share one stored file.
+ * Remove a file from storage unless another row, of a thread or of an archived thread, still
+ * references it. Names are content-addressed, so identical uploads share one stored file.
+ * Spec: 07-proof-and-approval.md - Deleting an Archived Thread
  * @param file The file row being deleted
  */
-async function deleteStoredFileUnlessShared(file: ThreadFilePathRow): Promise<void> {
+export async function deleteStoredFileUnlessShared(file: ThreadFilePathRow): Promise<void> {
   const otherReferences = await query<Array<{ id: string }>>(
-    `SELECT id FROM review_files WHERE file_path = ? AND id != ? LIMIT 1`,
-    [file.file_path, file.id]
+    `SELECT id FROM review_files WHERE file_path = ? AND id != ?
+     UNION ALL
+     SELECT id FROM archived_thread_files WHERE file_path = ? AND id != ?
+     LIMIT 1`,
+    [file.file_path, file.id, file.file_path, file.id]
   );
 
   if (otherReferences.length === 0) {

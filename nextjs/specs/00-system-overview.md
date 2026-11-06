@@ -40,7 +40,7 @@ In scope:
 - Resolutions: personal CRUD of definitions; `base`, `compound` and `iterative` types; a pool of prepared resolutions to copy from
 - Cell progress and history: progress and the history timeline live on each bingo cell
 - Bingo teams: create team, invite/join
-- Bingo games: the leader creates any number of games for a team; each has one team goal, members create resolutions for each other, and the leader starts and ends it
+- Bingo games: the admin creates any number of games for a team; each has one team goal, members create resolutions for each other, and the admin starts and ends it
 - Bingo card generation (joker in the center, text de-duplication, personal and prepared fallbacks, empty filler cells)
 - Gameplay marking (complete / undo), automatic completion for typed resolutions, viewing other members' cards
 - Card editing by the card owner
@@ -60,8 +60,8 @@ Out of scope (not implemented):
 
 ## Key Roles
 - **User**: owns a profile, manages personal resolutions, participates in teams.
-- **Team leader**: the user who created the team; can invite users, delete the team, create, start, end and delete its games, set their team goals, and delete the archived games they ran.
-- **Team member**: a user who joined through an invitation; can create resolutions for other members, request proof and vote on reviews. The leader is also a team member.
+- **Team Admin**: the user who created the team; can invite users, delete the team, create, start, end and delete its games, set their team goals, and delete the archived games they ran.
+- **Team member**: a user who joined through an invitation; can create resolutions for other members, request proof and vote on reviews. The admin is also a team member.
 
 ## Core Concepts / Data (logical)
 - **User**
@@ -90,9 +90,9 @@ Out of scope (not implemented):
 - **TeamInvitation**
   - teamId, inviteCode, invitedEmail, invitedUserId, status, expiresAt
 - **BingoCard** (one per game per user)
-  - id, gameId, teamId, userId, gridSize (always 5)
-- **BingoCell** (24 stored cells; the center Joker is not stored)
-  - id, cardId, position (0–24)
+  - id, gameId, teamId, userId, gridSize (the game's size: 3, 5 or 9)
+- **BingoCell** (N²−1 stored cells on an N×N card; the center Joker is not stored)
+  - id, cardId, position (0 to N²−1)
   - resolutionId (nullable link to the source resolution, used only to avoid duplicates during generation; `NULL` for `prepared` and `empty` cells)
   - A snapshot of the definition: title, description, resolutionType, numberOfRepetition, and its subtasks in `bingo_cell_subtasks` (cellId, subtaskIndex, title, description, completed)
   - Progress: completedTimes (iterative counter, starts at 0) and each subtask's `completed` flag (starts false)
@@ -113,7 +113,7 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
   - their own personal resolutions
   - their own bingo card (mark complete/undo, edit content, upload proof to threads about their cells)
 - Other members' actions can still change a cell's state: a proof request moves a cell to review, votes decide its outcome, and progress on a typed cell moves that cell only (spec 06).
-- Team leader can:
+- Team Admin can:
   - invite, delete the team, create, start, end and delete games, set their team goals
 - Any team member can:
   - view other team members' bingo cards
@@ -125,7 +125,7 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
 2. Create/update profile + choose public fields
 3. Personal resolutions: add/update/delete definitions. Progress and history belong to the cells of a card
 4. Team lifecycle: create team → invite/join members
-   Game lifecycle: leader creates a game → sets its team goal → members provide resolutions for each other → leader starts bingo → leader ends it, which archives it, and can create the next one with the same team
+   Game lifecycle: admin creates a game → sets its team goal → members provide resolutions for each other → admin starts bingo → admin ends it, which archives it, and can create the next one with the same team
 5. Card gameplay: mark completed / undo, or complete automatically through typed progress
 6. Proof review: a teammate requests proof → the owner uploads proof → members discuss and vote → the cell becomes `accomplished` or returns to `pending`
 7. Visibility: view others' cards and the team leaderboard

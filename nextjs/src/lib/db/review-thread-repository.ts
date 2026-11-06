@@ -4,10 +4,9 @@
  */
 
 import { randomUUID } from 'crypto';
-import { GameStatus, VoteType } from '../shared/types';
+import { GameStatus, VoteType, type ThreadOutcome } from '../shared/types';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
-import { removeThreadFiles } from './review-file-repository';
 import {
   FileRow,
   getCellInfo,
@@ -62,7 +61,7 @@ const GROUP_THREAD_TALLY = `GROUP BY rt.id, rt.cell_id, rt.completed_by_user_id,
  * @param eligibleVoters How many team members may vote
  * @returns The cell's next state, or null while votes are missing or nobody can vote
  */
-function decideOutcome(votes: VoteRow[], eligibleVoterIds: Set<string>): 'accomplished' | 'pending' | null {
+function decideOutcome(votes: VoteRow[], eligibleVoterIds: Set<string>): ThreadOutcome | null {
   // Note: Handle edge case where there are no eligible voters (single-player game)
   // Spec: 07-proof-and-approval.md - votes of players who left count, but are not waited for
   const eligibleVotes = votes.filter((v) => eligibleVoterIds.has(v.voter_user_id)).length;
@@ -86,11 +85,6 @@ export async function requestProof(
   const cellInfo = await getCellInfo(cellId);
   if (!cellInfo) {
     return { success: false, error: 'Cell not found' };
-  }
-
-  // Spec: 16-games.md - Ending a Game
-  if (cellInfo.game_status === GameStatus.ENDED) {
-    return { success: false, error: 'This game has ended' };
   }
 
   // Spec: 16-games.md - Ending a Game
@@ -404,30 +398,30 @@ async function closeThreadsByTally(threads: ThreadTallyRow[], kind: 'expired' | 
   return closedThreadIds;
 }
 
+/**
+ * Close an open thread and move its cell. The thread keeps its messages, files and votes:
+ * it becomes an archived thread.
+ * Spec: 07-proof-and-approval.md - Thread Closure
+ * @param threadId The thread
+ * @param cellId The thread's cell
+ * @param nextCellState The cell's new state, also recorded as the thread's outcome
+ * @returns Success, or the error when the thread was already closed
+ */
 async function finalizeThreadClosure(
   threadId: string,
   cellId: string,
-  nextCellState: 'pending' | 'accomplished'
+  nextCellState: ThreadOutcome
 ): Promise<{ success: boolean; error?: string }> {
-  const filesRemoved = await removeThreadFiles(threadId);
-  if (!filesRemoved) {
-    return { success: false, error: 'Failed to delete uploaded files from storage' };
-  }
-
   return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
-    await connection.execute(
-      `DELETE FROM review_messages WHERE thread_id = ?`,
-      [threadId]
-    );
-
     await connection.execute(
       `UPDATE bingo_cells SET state = ? WHERE id = ? AND state = 'pending_review'`,
       [nextCellState, cellId]
     );
 
     const updateResult = await execute(
-      `UPDATE review_threads SET status = 'closed', closed_at = NOW() WHERE id = ? AND status = 'open'`,
-      [threadId],
+      `UPDATE review_threads SET status = 'closed', closed_at = NOW(), outcome = ?
+       WHERE id = ? AND status = 'open'`,
+      [nextCellState, threadId],
       connection
     );
 

@@ -16,5 +16,6 @@
   "loading": "Wird geladen...",
   "unknownUser": "Unbekannter Benutzer",
   "toggleSidebar": "Seitenleiste umschalten",
-  "notFound": "Seite nicht gefunden"
+  "notFound": "Seite nicht gefunden",
+  "moreActions": "Weitere Aktionen"
 }

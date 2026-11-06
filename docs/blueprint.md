@@ -4,7 +4,7 @@
 
 - User Authentication: Register, login, and manage user profiles with email verification.
 - Team Creation and Invitation: Create a team, invite users, and manage team settings for New Year's Resolution Bingo.
-- Resolution Management: Add, update, and delete personal resolutions, and define team resolutions as a team leader.
+- Resolution Management: Add, update, and delete personal resolutions, and define team resolutions as a Team Admin.
 - Team Bingo Setup: Create team bingo cards, including generating resolutions for others
 - AI Bingo Card Generator: Upon starting the teambingo and based on team resolutions and the team member resolution proposals, an AI tool will automatically generate bingo cards for each team member.
 - Resolution Approval and Verification: Upload proof for completed resolutions and manage the approval process within the team.

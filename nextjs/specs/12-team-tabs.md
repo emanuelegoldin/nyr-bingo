@@ -1,27 +1,27 @@
-# 12 — Game Tabs, Members List & Leaderboard
+# 12 — Game Tabs & Leaderboard
 
 ## Purpose
 
 Organise the game page (spec 16) into distinct tabs for better navigation and
-separation of concerns: **Cards**, **Members**, and **Leaderboard**.
+separation of concerns: **Cards**, **Leaderboard** and **Threads**. The members list is on
+the team page only (spec 04): it is also reachable from the game's leaderboard.
 
 ---
 
 ## User Stories Covered
 
 - View all bingo cards of a game in a dedicated "Cards" tab.
-- View a simple list of team members in a "Members" tab.
 - View a leaderboard of bingo results in a "Leaderboard" tab.
 - Click on any member's avatar to view their profile.
 - See a confetti animation when a bingo line is completed.
 - See how many resolutions each player has accomplished in the leaderboard.
+- Read the game's closed review threads in a "Threads" tab.
 
 ---
 
 ## In Scope
 
 - Game page tab structure
-- Members list UI
 - Leaderboard table backed by the `team_leaderboard` DB table
 - Clickable user avatars linking to profile pages
 - Clickable source-user badges in bingo card cells
@@ -60,17 +60,7 @@ members only; others get a not-found page.
   user's profile page. A provider who is no longer a player shows as
   "Former Teammates", without a link.
 
-### 2. Members Tab
-
-- A simple list of the game's players (spec 16). The team page uses the same list for all team members (spec 04).
-- Each row contains:
-  - **Avatar** on the left (clickable → navigates to the member's profile).
-  - **Display name**, or the username when no public display name exists.
-  - A "Leader" badge for every team leader.
-  - On the team page only, a **Make Leader** button for leaders on each non-leader row, after confirmation (spec 04).
-- The current user's entry is annotated with "(You)".
-
-### 3. Leaderboard Tab
+### 2. Leaderboard Tab
 
 - A table with four columns:
   1. **#** — Position number (1-indexed). Position 1 is gold-coloured, 2 is
@@ -95,12 +85,18 @@ members only; others get a not-found page.
   tab, when it receives `refresh-card` or catches up (spec 11). This applies on
   every tab of the page.
 
+### 3. Threads Tab
+
+- Lists the game's archived review threads and opens them read-only, as
+  defined in spec 07 (Archived Threads). Admins of the game can delete one.
+- It is one component, shared with the archived game page (spec 18).
+
 ---
 
 ## Clickable Avatars & Public Profile
 
-- Clicking a member's avatar anywhere in the game page (Cards, Members,
-  Leaderboard tabs) or the team page navigates to `/profile/[userId]`.
+- Clicking a member's avatar anywhere in the game page (Cards and Leaderboard
+  tabs) or the team page navigates to `/profile/[userId]`.
 - Clicking the source-user badge on a bingo card cell (for `member_provided`
   resolutions) also navigates to `/profile/[userId]`.
 - The public profile page is defined in spec 02.
@@ -144,9 +140,9 @@ Persists per-user, per-game leaderboard data for efficient retrieval.
 
 #### Bingo detection logic
 
-- A "bingo" is a complete row, column, or diagonal on the 5×5 grid.
+- A "bingo" is a complete row, column, or diagonal on the card's N×N grid (spec 05). A line has N cells.
 - A cell counts as "done" when its state is `completed` or `accomplished`.
-- Position 12 (the Joker) always counts as done, whether or not a row exists
+- The center position (the Joker) always counts as done, whether or not a row exists
   for it, and adds no timestamp to its line.
 - The first-bingo time equals the latest `updated_at` among the cells of the
   earliest completed line.
@@ -157,16 +153,17 @@ Persists per-user, per-game leaderboard data for efficient retrieval.
 
 ## Acceptance Criteria
 
-- [ ] Game page renders three tabs: Cards, Members, Leaderboard.
+- [ ] Game page renders three tabs: Cards, Leaderboard and Threads; it has no
+      Members tab.
+- [ ] Threads tab lists the game's archived threads (spec 07).
 - [ ] Cards tab contains the bingo-card layout.
-- [ ] Members tab lists all team members with avatar and name.
 - [ ] Leaderboard tab shows a ranked table with first-bingo datetime.
 - [ ] Leaderboard tab shows a "Completed" column counting cells with state
       `completed` or `accomplished`.
 - [ ] Leaderboard sorts by: bingo-holders first (earliest bingo), then by
       completed tasks descending, then alphabetically.
-- [ ] A completed line through the center (row 3, column 3 or either diagonal)
-      sets the first-bingo datetime.
+- [ ] A completed line through the center (the middle row, the middle column
+      or either diagonal) sets the first-bingo datetime, on every card size.
 - [ ] The leaderboard updates without a page reload, for the acting player and
       for teammates, when a card change is signalled.
 - [ ] Positions 1 / 2 / 3 are coloured gold / silver / bronze.

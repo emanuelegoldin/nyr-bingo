@@ -5,7 +5,7 @@
 
 import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { GameStatus } from '../shared/types';
+import { GameStatus, type GridSize } from '../shared/types';
 import { execute, query, withTransaction } from './connection';
 import { getGameGoalResolution } from './resolution-repository';
 import { getGameReviewFiles, removeOrphanedFiles } from './review-file-repository';
@@ -22,6 +22,7 @@ interface GameRow extends RowDataPacket {
   ended_at: Date | null;
   // The deadline as text: a DATE read as a Date object can shift a day when serialized
   deadline_date: string | null;
+  grid_size: GridSize;
   // Derived from the JOIN with teams
   team_name: string;
   // Derived from LEFT JOIN with resolutions (scope='team')
@@ -48,6 +49,7 @@ function rowToGame(row: GameRow): Game {
     updatedAt: row.updated_at,
     endedAt: row.ended_at,
     deadline: row.deadline_date,
+    gridSize: row.grid_size,
   };
 }
 
@@ -57,14 +59,20 @@ function rowToGame(row: GameRow): Game {
  * @param teamId The team that will play it
  * @param name The game's name
  * @param playerIds The team members who play it. The caller validates them.
+ * @param gridSize The side length of its cards, fixed for the life of the game
  * @returns The new game
  */
-export async function createGame(teamId: string, name: string, playerIds: string[]): Promise<Game> {
+export async function createGame(
+  teamId: string,
+  name: string,
+  playerIds: string[],
+  gridSize: GridSize
+): Promise<Game> {
   const id = uuidv4();
   await withTransaction(async (connection) => {
     await execute(
-      `INSERT INTO games (id, team_id, name, status) VALUES (?, ?, ?, 'forming')`,
-      [id, teamId, name],
+      `INSERT INTO games (id, team_id, name, status, grid_size) VALUES (?, ?, ?, 'forming', ?)`,
+      [id, teamId, name, gridSize],
       connection
     );
     for (const playerId of new Set(playerIds)) {

@@ -11,10 +11,8 @@
     "nameLabel": "Teamname",
     "namePlaceholder": "z. B. Zielstrebige 2025",
     "submit": "Team erstellen",
-    "ledBy": "Geleitet von {names}",
     "membersLabel": "Teammitglieder:",
     "memberCount": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
-    "viewTeam": "Team ansehen",
     "emptyTitle": "Noch keine Teams",
     "emptyText": "Du bist noch in keinem Team. Erstelle eines, um loszulegen!",
     "createFirst": "Erstelle dein erstes Team"
@@ -26,15 +24,15 @@
     "deleteFailed": "Team konnte nicht gelöscht werden",
     "leftTitle": "Du hast das Team verlassen",
     "leaveFailed": "Team konnte nicht verlassen werden",
-    "promotedTitle": "Mitglied zur Teamleitung befördert",
+    "promotedTitle": "Mitglied zum Team-Admin befördert",
     "promoteFailed": "Mitglied konnte nicht befördert werden",
-    "leaders": "Teamleitung: {names}",
+    "leaders": "Team-Admins: {names}",
     "deleteTrigger": "Team löschen",
     "deleteTitle": "Dieses Team löschen?",
     "deleteDescription": "Damit werden das Team, seine Mitgliedschaften, Einladungen und alle Spiele samt Vorsätzen, Bingo-Karten und zugehörigen Spieldaten endgültig gelöscht. Archivierte Spiele bleiben erhalten. Das kann nicht rückgängig gemacht werden.",
     "leaveTrigger": "Team verlassen",
     "leaveTitle": "Dieses Team verlassen?",
-    "leaveDescription": "Du verlässt dabei auch jedes laufende Spiel dieses Teams, an dem du teilnimmst: Deine Bingo-Karten, Ranglisteneinträge und die für dich geschriebenen Vorsätze werden gelöscht. Die Vorsätze, die du für andere geschrieben hast, bleiben auf deren Karten. Du kannst nur mit einer neuen Einladung zurückkehren. Wenn du die einzige Teamleitung bist, befördere zuerst ein anderes Mitglied.",
+    "leaveDescription": "Du verlässt dabei auch jedes laufende Spiel dieses Teams, an dem du teilnimmst: Deine Bingo-Karten, Ranglisteneinträge und die für dich geschriebenen Vorsätze werden gelöscht. Die Vorsätze, die du für andere geschrieben hast, bleiben auf deren Karten. Du kannst nur mit einer neuen Einladung zurückkehren. Wenn du der einzige Team-Admin bist, befördere zuerst ein anderes Mitglied.",
     "gamesHeading": "Spiele",
     "noGamesCanCreate": "Noch keine Spiele. Klicke auf „Neues Spiel“, um eines zu erstellen.",
     "noGames": "Noch keine Spiele."
@@ -55,21 +53,21 @@
     "description": "Starte ein neues Spiel mit diesem Team und wähle, wer mitspielt. Niemand muss erneut eingeladen werden.",
     "nameLabel": "Spielname",
     "namePlaceholder": "z. B. Vorsätze 2027",
+    "cardSize": "Kartengröße",
+    "cardSizeOption": "{size}×{size}",
+    "cardSizeHint": "Sie kann nach dem Erstellen des Spiels nicht mehr geändert werden.",
     "players": "Spieler",
     "you": "(Du)",
     "submit": "Spiel erstellen"
   },
-  "membersTab": {
+  "membersList": {
     "title": "Teammitglieder",
     "you": "(Du)",
-    "makeLeader": "Zur Teamleitung machen",
-    "makeLeaderTitle": "{name} zur Teamleitung machen?",
-    "makeLeaderDescription": "Die Teamleitung kann Mitglieder einladen, Spiele erstellen, starten, beenden und löschen, andere Mitglieder befördern und das Team löschen. Das kann nicht rückgängig gemacht werden.",
-    "teamLeader": "Teamleitung",
-    "leader": "Teamleitung"
-  },
-  "gameList": {
-    "viewGame": "Spiel ansehen"
+    "makeLeader": "Zum Admin machen",
+    "makeLeaderTitle": "{name} zum Team-Admin machen?",
+    "makeLeaderDescription": "Team-Admins können Mitglieder einladen, Spiele erstellen, starten, beenden und löschen, andere Mitglieder befördern und das Team löschen. Das kann nicht rückgängig gemacht werden.",
+    "teamLeader": "Team-Admin",
+    "leader": "Admin"
   },
   "gameStatus": {
     "started": "Spiel gestartet",

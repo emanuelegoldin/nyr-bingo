@@ -8,7 +8,6 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/(app)/dashboard/page.tsx` — Dashboard Page [Primary Flows]
 - `lib/db/connection.ts` — MariaDB Database Connection
 - `lib/db/types.ts` — TypeScript Types for Database Entities
-- `lib/shared/types.ts`
 
 ## 01-authentication.md — Authentication
 
@@ -49,21 +48,23 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 
 ## 04-bingo-teams.md — Bingo Teams
 
+- `app/(app)/teams/[teamId]/_components/TeamActionsMenu.tsx` — More actions menu of the team header, with the confirmations its items open. [Team Page]
 - `app/(app)/teams/[teamId]/page.tsx` — Team Page [Team Page]
 - `app/(app)/teams/[teamId]/team-page-client.tsx` — Team Page [Team Page]
 - `app/(app)/teams/page.tsx` — Teams Page
 - `app/api/join/route.ts` — Team Join API (via invite code) [Invitations / Joining; Verification Requirement]
 - `app/api/teams/[teamId]/invite/route.ts` — Team Invitation API [Invitations / Joining]
-- `app/api/teams/[teamId]/leaders/route.ts` — Team Leaders API [Leaders]
+- `app/api/teams/[teamId]/leaders/route.ts` — Team Admins API (the route keeps the stored role name, leader) [Admins]
 - `app/api/teams/[teamId]/leave/route.ts` — Leave Team API [Leaving a Team]
 - `app/api/teams/[teamId]/route.ts` — Team Detail API
 - `app/api/teams/route.ts` — Teams API
 - `app/join/[inviteCode]/page.tsx` [Invitations / Joining]
-- `components/team/leaders.ts` — Helpers for the leaders of a team or game: the members whose role is leader. [Leaders]
+- `components/team/leaders.ts` — Helpers for the Team Admins of a team or game: the members whose stored role is leader. [Admins]
+- `components/team/members-list.tsx` — Members list of the team page. [Team Page]
 - `components/team/types.ts` — Shared types for the team page, the game page and their components.
 - `lib/db/leave-repository.ts` — Leave Repository - Leaving a game or a team [Leaving a Team]
 - `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions
-- `lib/db/team-repository.ts` — Team Repository - Database operations for teams [Invitations / Joining; Leaders; Team Creation; Team Deletion]
+- `lib/db/team-repository.ts` — Team Repository - Database operations for teams [Admins; Invitations / Joining; Team Creation; Team Deletion]
 - `lib/db/types.ts` — TypeScript Types for Database Entities
 - `lib/shared/types.ts`
 
@@ -83,7 +84,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions
 - `lib/db/types.ts` — TypeScript Types for Database Entities
 - `lib/shared/shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
-- `lib/shared/types.ts`
+- `lib/shared/types.ts` [Assumptions]
 
 ## 06-bingo-gameplay.md — Bingo Gameplay
 
@@ -108,10 +109,18 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 
 ## 07-proof-and-approval.md — Proof and Approval
 
+- `app/api/threads/[threadId]/close/route.ts` — Review Thread Close API [Closure by the Completing User]
+- `app/api/threads/[threadId]/route.ts` — Review Thread API [Deleting an Archived Thread; Review Thread Model]
 - `app/api/threads/thread-access.ts` — Access checks shared by the review thread routes.
+- `components/threads/archived-thread-dialog.tsx` — Read-only view of an archived thread: its result, messages and file links. [Archived Threads]
+- `components/threads/archived-threads-tab.tsx` — Threads tab: the archived threads of a running or an archived game, opened read-only. [Archived Threads]
+- `components/threads/thread-outcome-badge.tsx` — The final result of an archived thread: the state its cell took, and the vote counts. [Archived Threads]
 - `instrumentation.ts` — Server startup hook, called once by Next.js. [Closure by Deadline]
-- `lib/db/review-file-repository.ts` — Review File Repository - Proof files attached to review threads [Proof Submission]
-- `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads [Closure by the Completing User; Eligible Voters]
+- `lib/db/archived-thread-rows.ts` — Row types and the mapper that turn closed threads, live or archived, into the shared shape. [Archived Threads]
+- `lib/db/closed-thread-repository.ts` — Closed Thread Repository - The archived threads of a running game: reading and deleting them [Archived Threads; Deleting an Archived Thread]
+- `lib/db/review-file-repository.ts` — Review File Repository - Proof files attached to review threads [Deleting an Archived Thread; Proof Submission]
+- `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads [Closure by the Completing User; Eligible Voters; Thread Closure]
+- `lib/shared/types.ts` [Archived Threads]
 
 ## 08-visibility-and-updates.md — Visibility and Updates
 
@@ -136,13 +145,12 @@ _No file references this spec._
 - `components/team-refresh-listener.tsx`
 - `lib/ws-client.ts` — Browser WebSocket client shared by the team socket and the notification socket:
 
-## 12-team-tabs.md — Game Tabs, Members List & Leaderboard
+## 12-team-tabs.md — Game Tabs & Leaderboard
 
 - `app/(app)/games/[gameId]/game-detail-page-client.tsx` — Game Page
 - `app/(app)/games/[gameId]/leaderboard-tab.tsx` — Leaderboard Tab — Game Page
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
 - `components/team-refresh-listener.tsx`
-- `components/team/members-tab.tsx` — Members list, shown as a tab of the game page and on the team page.
 - `lib/db/leaderboard-repository.ts` — Leaderboard Repository – persisted game leaderboard data
 
 ## 13-resolution-history-and-progress.md — Resolution History and Progress
@@ -154,7 +162,7 @@ _No file references this spec._
 
 ## 14-dashboard-and-navigation.md — Dashboard and Navigation
 
-_No file references this spec._
+- `components/dashboard/game-tag.tsx` — Clickable tag naming the game a dashboard card belongs to; it opens the game page. [Dashboard]
 
 ## 15-internationalization.md — Internationalization
 
@@ -164,7 +172,7 @@ _No file references this spec._
 
 - `app/(app)/games/[gameId]/_components/GameActionsMenu.tsx` [Game Page]
 - `app/(app)/games/[gameId]/_components/GameConfigDialog.tsx` [Game Configuration]
-- `app/(app)/games/[gameId]/_components/TeamGoalDisplay.tsx` [Game Page]
+- `app/(app)/games/[gameId]/_components/MissingTeamGoalNotice.tsx` [Game Page]
 - `app/(app)/games/[gameId]/game-detail-page-client.tsx` — Game Page
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
 - `app/(app)/games/[gameId]/types.ts` — Shared types for the game page and its tab components.
@@ -180,7 +188,9 @@ _No file references this spec._
 - `app/api/join/route.ts` — Team Join API (via invite code) [Joining After Start]
 - `app/api/resolutions/save/route.ts` — Unified Resolution Save API
 - `app/api/teams/[teamId]/games/route.ts` — Team Games API [Game Creation]
-- `components/team/game-list.tsx` — Grid of running games with a link to each game page. [Game Page]
+- `components/actions-menu.tsx` — More actions menu: a "⋯" button that opens a menu of the less used actions of a page header. [Game Page]
+- `components/bingo-card/card-grid.tsx` — The N x N grid that lays out the cells of a live or archived bingo card. [Game Model]
+- `components/team/game-list.tsx` — Grid of running games; each card links to its game page. [Game Page]
 - `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game [Joining After Start; Start Conditions]
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells [Ending a Game]
 - `lib/db/game-repository.ts` — Game Repository - Database operations for games [Deleting a Game; Ending a Game; Game Configuration; Game Creation; Joining After Start; Listing and Reading Games; Member-Provided Resolutions; Start Conditions]
@@ -202,14 +212,16 @@ _No file references this spec._
 
 ## 18-game-archive.md — Game Archive
 
-- `app/(app)/archive/[archivedGameId]/archived-game-page-client.tsx` — Archived Game Page content: header, final leaderboard and read-only cards. [Archived Game Page]
+- `app/(app)/archive/[archivedGameId]/archived-game-page-client.tsx` — Archived Game Page content: header, then tabs with read-only cards, leaderboard and threads. [Archived Game Page]
 - `app/(app)/archive/[archivedGameId]/page.tsx` — Archived Game Page [Archived Game Page]
 - `app/(app)/archive/page.tsx` — Archive Page - the finished games the caller took part in [Archive Page]
 - `app/api/archived-games/[archivedGameId]/route.ts` — Archived Game Detail API
+- `app/api/archived-games/[archivedGameId]/threads/[threadId]/route.ts` — Archived Thread API [Deleting an Archived Thread]
 - `app/api/archived-games/route.ts` — Archived Games API
 - `components/archive/archived-card.tsx` — One player's card in an archived game. It reads no live data: cells only open their details. [Archived Game Page]
 - `components/archive/archived-cell-dialog.tsx` — Read-only details of an archived cell, as plain text. [Archived Game Page]
-- `lib/db/archived-game-repository.ts` — Archived Game Repository - Read-only snapshots of finished games [Archiving a Game]
+- `lib/db/archived-game-repository.ts` — Archived Game Repository - Read-only snapshots of finished games [Archiving a Game; Deleting an Archived Game]
+- `lib/db/archived-thread-repository.ts` — Archived Thread Repository - The review threads kept in an archived game [Archiving a Game; Deleting an Archived Thread]
 - `lib/db/game-repository.ts` — Game Repository - Database operations for games [Archiving a Game]
 - `lib/shared/types.ts`
 
@@ -259,7 +271,7 @@ _No file references this spec._
 - `lib/shared/shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
 - `lib/shared/types.ts`
 
-## Unmapped files (96)
+## Unmapped files (95)
 
 No spec reference in the file. See `files.md` for their purpose.
 
@@ -277,7 +289,6 @@ No spec reference in the file. See `files.md` for their purpose.
 - `app/api/resolutions/all/route.ts`
 - `app/api/threads/[threadId]/files/route.ts`
 - `app/api/threads/[threadId]/messages/route.ts`
-- `app/api/threads/[threadId]/route.ts`
 - `app/api/threads/[threadId]/vote/route.ts`
 - `app/api/utils.ts`
 - `app/layout.tsx`

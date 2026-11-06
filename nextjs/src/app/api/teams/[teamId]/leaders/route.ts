@@ -1,6 +1,6 @@
 /**
- * Team Leaders API
- * Spec Reference: 04-bingo-teams.md - Leaders
+ * Team Admins API (the route keeps the stored role name, leader)
+ * Spec Reference: 04-bingo-teams.md - Admins
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -39,5 +39,5 @@ export const POST = withAuth(async (
 
   await notifyTeams([teamId]);
 
-  return NextResponse.json({ message: 'Member promoted to leader' });
+  return NextResponse.json({ message: 'Member promoted to Team Admin' });
 });

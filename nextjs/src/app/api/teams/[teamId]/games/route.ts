@@ -6,6 +6,7 @@
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import { requirePermission } from '@/lib/authz';
 import { createGame, getRunningGamesForTeam, getTeamMembers } from '@/lib/db';
+import { DEFAULT_GRID_SIZE, isGridSize } from '@/lib/shared/types';
 import { notifyTeams } from '@/lib/team-signals';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -40,9 +41,14 @@ export const POST = withAuth(async (
   const denied = await requirePermission(currentUser, 'game.create', { scope: 'team', teamId });
   if (denied) return denied;
 
-  const { name, playerIds } = await request.json();
+  const { name, playerIds, gridSize } = await request.json();
   if (typeof name !== 'string' || name.trim().length === 0) {
     return errorResponse('Game name is required', 400);
+  }
+
+  // Spec: 16-games.md - Game Creation. The card size is chosen once, here, and defaults to 5x5.
+  if (gridSize !== undefined && !isGridSize(gridSize)) {
+    return errorResponse('Card size must be 3, 5 or 9', 400);
   }
 
   // Spec: 16-games.md - Game Creation. Without playerIds every member plays; the creator always does.
@@ -56,7 +62,7 @@ export const POST = withAuth(async (
   }
   const players: string[] = playerIds === undefined ? memberIds : [currentUser.id, ...playerIds];
 
-  const game = await createGame(teamId, name.trim(), players);
+  const game = await createGame(teamId, name.trim(), players, gridSize ?? DEFAULT_GRID_SIZE);
 
   await notifyTeams([teamId]);
 

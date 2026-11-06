@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { apiFetch } from "@/lib/api-client";
+import { DEFAULT_GRID_SIZE, GRID_SIZES, isGridSize, type GridSize } from "@/lib/shared/types";
 import { Loader2, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -19,8 +21,8 @@ interface NewGameDialogProps {
 }
 
 /**
- * New Game button plus its dialog. The leader names the game and picks its players, all
- * selected by default; the creator always plays. On success it opens the new game's page,
+ * New Game button plus its dialog. The leader names the game, picks its card size (5×5 by
+ * default, fixed once created) and picks its players, all selected by default; the creator always plays. On success it opens the new game's page,
  * where the leader sets the goal.
  * Spec Reference: 16-games.md - Game Creation
  *
@@ -34,19 +36,29 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [gridSize, setGridSize] = useState<GridSize>(DEFAULT_GRID_SIZE);
   const [isCreating, setIsCreating] = useState(false);
   const allMemberIds = members.map((member) => member.user.userId);
   const [playerIds, setPlayerIds] = useState<string[]>(allMemberIds);
 
-  /** Opens or closes the dialog; opening selects every member again. */
+  /** Opens or closes the dialog; opening selects every member and the default card size again. */
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) setPlayerIds(allMemberIds);
+    if (nextOpen) {
+      setPlayerIds(allMemberIds);
+      setGridSize(DEFAULT_GRID_SIZE);
+    }
     setOpen(nextOpen);
   };
 
   /** Adds or removes one member from the players. */
   const togglePlayer = (userId: string, checked: boolean) => {
     setPlayerIds((current) => (checked ? [...current, userId] : current.filter((id) => id !== userId)));
+  };
+
+  /** Picks the card size from the select's string value. */
+  const handleGridSizeChange = (value: string) => {
+    const size = Number(value);
+    if (isGridSize(size)) setGridSize(size);
   };
 
   /** Creates the game and navigates to it. */
@@ -56,7 +68,7 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
     setIsCreating(true);
     const result = await apiFetch<{ game: { id: string } }>(`/api/teams/${teamId}/games`, {
       method: "POST",
-      json: { name, playerIds },
+      json: { name, playerIds, gridSize },
     });
 
     if (result.ok) {
@@ -91,6 +103,22 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
               onChange={(event) => setName(event.target.value)}
               onKeyDown={(event) => event.key === "Enter" && !isCreating && handleCreateGame()}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="gameCardSize">{t("newGameDialog.cardSize")}</Label>
+            <Select value={String(gridSize)} onValueChange={handleGridSizeChange}>
+              <SelectTrigger id="gameCardSize">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GRID_SIZES.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {t("newGameDialog.cardSizeOption", { size })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">{t("newGameDialog.cardSizeHint")}</p>
           </div>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">{t("newGameDialog.players")}</legend>

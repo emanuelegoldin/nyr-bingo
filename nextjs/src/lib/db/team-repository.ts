@@ -212,7 +212,7 @@ export async function isTeamMember(teamId: string, userId: string): Promise<bool
 
 /**
  * Make a team member a leader. The caller checks that the acting user is a leader.
- * Spec: 04-bingo-teams.md - Leaders
+ * Spec: 04-bingo-teams.md - Admins
  * @param teamId The team
  * @param userId The member to promote
  * @returns An error when the user is not a member or is already a leader
@@ -230,7 +230,7 @@ export async function promoteToLeader(
   }
 
   const isMember = await isTeamMember(teamId, userId);
-  return { success: false, error: isMember ? 'User is already a leader' : 'User is not a member of this team' };
+  return { success: false, error: isMember ? 'User is already a Team Admin' : 'User is not a member of this team' };
 }
 
 /**

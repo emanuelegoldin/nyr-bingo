@@ -28,3 +28,5 @@ Base schema: `database/`. What each migration does: `docs/database/migrations.md
 | V5_7_0 | `V5_7_0__multiple_team_leaders.sql` |
 | V5_8_0 | `V5_8_0__card_lock.sql` |
 | V5_9_0 | `V5_9_0__cell_resolution_snapshot.sql` |
+| V5_10_0 | `V5_10_0__game_grid_size.sql` |
+| V5_11_0 | `V5_11_0__archived_threads.sql` |

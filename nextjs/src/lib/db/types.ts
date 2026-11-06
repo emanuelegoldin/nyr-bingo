@@ -3,7 +3,7 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import { CellSourceType, CellState, CellSubtask, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, ThreadStatus, VoteType } from "../shared/types";
+import { CellSourceType, CellState, CellSubtask, GameStatus, GridSize, InvitationStatus, ResolutionScope, ResolutionType, Subtask, TeamRole, ThreadStatus, VoteType } from "../shared/types";
 
 // Re-export shared enums/types so consumers can import from db/types
 export { CellSourceType, CellState, GameStatus, InvitationStatus, ResolutionScope, ResolutionType, TeamRole, ThreadStatus, VoteType };
@@ -132,6 +132,8 @@ export interface Game {
   endedAt: Date | null;
   /** Last playable day as YYYY-MM-DD, or null when the game only ends manually. */
   deadline: string | null;
+  /** Side length of every card of the game, set at creation and never changed (spec 16). */
+  gridSize: GridSize;
 }
 
 // Team membership

@@ -4,23 +4,20 @@
     "heading": "Le mie partite",
     "loadFailed": "Impossibile caricare le partite",
     "emptyTitle": "Ancora nessuna partita",
-    "emptyDescription": "Un leader del team crea le partite dalla pagina del team.",
+    "emptyDescription": "Un admin del team crea le partite dalla pagina del team.",
     "goToTeams": "Vai ai team"
   },
   "detail": {
     "pageTitle": "Partita",
-    "leaders": "Leader: {names}",
     "lastDay": "Ultimo giorno: {date}",
     "startBingo": "Avvia il bingo",
     "tabs": {
       "cards": "Carte",
-      "members": "Membri",
-      "leaderboard": "Classifica"
-    },
-    "unknownLeader": "Sconosciuto"
+      "leaderboard": "Classifica",
+      "threads": "Thread"
+    }
   },
   "actionsMenu": {
-    "moreActions": "Altre azioni",
     "setGoal": "Imposta obiettivo",
     "configure": "Configura",
     "endGame": "Termina partita",
@@ -38,7 +35,7 @@
     },
     "leaveDialog": {
       "title": "Abbandonare questa partita?",
-      "description": "La tua carta bingo, la tua voce in classifica e gli obiettivi scritti per te in questa partita verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Non potrai rientrare in questa partita. Se sei l'unico leader, promuovi prima un altro giocatore dalla pagina del team.",
+      "description": "La tua carta bingo, la tua voce in classifica e gli obiettivi scritti per te in questa partita verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Non potrai rientrare in questa partita. Se sei l'unico admin del team, promuovi prima un altro giocatore dalla pagina del team.",
       "confirm": "Abbandona partita"
     }
   },
@@ -60,15 +57,11 @@
   },
   "teamGoal": {
     "none": "Nessun obiettivo del team ancora impostato.",
-    "setGoal": "Imposta obiettivo",
-    "label": "Obiettivo del team:",
-    "edit": "Modifica obiettivo del team",
-    "subtasks": "{count, plural, one {# sottoattività} other {# sottoattività}}",
-    "target": "Traguardo: {count, plural, one {# ripetizione} other {# ripetizioni}}"
+    "setGoal": "Imposta obiettivo"
   },
   "cardsTab": {
     "notStartedTitle": "La partita non è ancora iniziata",
-    "notStartedDescription": "Il leader del team avvierà la partita quando tutti avranno proposto obiettivi per gli altri.",
+    "notStartedDescription": "Un admin del team avvierà la partita quando tutti avranno proposto obiettivi per gli altri.",
     "noCards": "Ancora nessuna carta bingo disponibile.",
     "heading": "Carte bingo",
     "noCard": "Nessuna carta bingo disponibile"

@@ -13,6 +13,7 @@ import { toTeamMember } from '@/components/team/types';
 import { requireUser } from '@/lib/auth';
 import { getGameCapabilities, requirePagePermission } from '@/lib/authz';
 import {
+  getClosedGameThreads,
   getGameBingoCards,
   getGameGoalResolution,
   getGameLeaderboard,
@@ -23,7 +24,7 @@ import {
   type Resolution,
 } from '@/lib/db';
 import { resolutionToFormData } from '@/lib/shared/resolution-form';
-import type { LeaderboardEntry, ResolutionFormData } from '@/lib/shared/types';
+import type { ArchivedThread, LeaderboardEntry, ResolutionFormData } from '@/lib/shared/types';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import GameDetailPageClient from './game-detail-page-client';
@@ -78,11 +79,12 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
 
   const capabilities = await getGameCapabilities(currentUser, game);
 
-  const [cardsResult, goalResult, resolutionsResult, leaderboardResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
+  const [cardsResult, goalResult, resolutionsResult, leaderboardResult, threadsResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
     cardPromise,
     getGameGoalResolution(gameId),
     getMemberProvidedResolutionsByUser(gameId, currentUser.id),
     getGameLeaderboard(gameId),
+    getClosedGameThreads(gameId),
   ]);
 
   // undefined marks a failed read, so a refresh keeps the data already on screen
@@ -93,6 +95,8 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
     : undefined;
   const initialLeaderboardEntries: LeaderboardEntry[] | undefined =
     leaderboardResult.status === 'fulfilled' ? leaderboardResult.value : undefined;
+  const initialArchivedThreads: ArchivedThread[] | undefined =
+    threadsResult.status === 'fulfilled' ? threadsResult.value : undefined;
 
   return (
     <GameDetailPageClient
@@ -103,6 +107,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
       initialTeamGoal={initialTeamGoal}
       initialExistingResolutions={initialExistingResolutions}
       initialLeaderboardEntries={initialLeaderboardEntries}
+      initialArchivedThreads={initialArchivedThreads}
     />
   );
 }

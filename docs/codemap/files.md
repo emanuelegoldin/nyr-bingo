@@ -23,7 +23,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/(app)/archive/[archivedGameId]
 
-- `archived-game-page-client.tsx` — Archived Game Page content: header, final leaderboard and read-only cards.
+- `archived-game-page-client.tsx` — Archived Game Page content: header, then tabs with read-only cards, leaderboard and threads.
 - `page.tsx` — Archived Game Page
 
 ## app/(app)/dashboard
@@ -47,8 +47,8 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `GameActionDialog.tsx`
 - `GameActionsMenu.tsx`
 - `GameConfigDialog.tsx`
+- `MissingTeamGoalNotice.tsx`
 - `ProposeResolutionsDialog.tsx`
-- `TeamGoalDisplay.tsx`
 - `use-game-actions.ts`
 - `use-last-loaded.ts`
 
@@ -79,6 +79,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `InviteDialog.tsx`
 - `NewGameDialog.tsx`
+- `TeamActionsMenu.tsx` — More actions menu of the team header, with the confirmations its items open.
 
 ## app/(auth)
 
@@ -103,6 +104,10 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 ## app/api/archived-games/[archivedGameId]
 
 - `route.ts` — Archived Game Detail API
+
+## app/api/archived-games/[archivedGameId]/threads/[threadId]
+
+- `route.ts` — Archived Thread API
 
 ## app/api/auth/login
 
@@ -281,7 +286,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/api/teams/[teamId]/leaders
 
-- `route.ts` — Team Leaders API
+- `route.ts` — Team Admins API (the route keeps the stored role name, leader)
 
 ## app/api/teams/[teamId]/leave
 
@@ -294,6 +299,10 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 ## app/api/threads/[threadId]
 
 - `route.ts` — Review Thread API
+
+## app/api/threads/[threadId]/close
+
+- `route.ts` — Review Thread Close API
 
 ## app/api/threads/[threadId]/files
 
@@ -321,6 +330,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## components
 
+- `actions-menu.tsx` — More actions menu: a "⋯" button that opens a menu of the less used actions of a page header.
 - `app-header.tsx`
 - `app-sidebar.tsx`
 - `confetti.ts` — Bingo confetti effect.
@@ -345,6 +355,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `BingoCardContent.tsx`
 - `BingoCardProvider.tsx`
 - `ConfettiLayer.tsx`
+- `card-grid.tsx` — The N x N grid that lays out the cells of a live or archived bingo card.
 
 ## components/bingo-card/dashboard-page
 
@@ -368,6 +379,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `dashboard-game-card-client.tsx`
 - `dashboard-page-shell.tsx`
+- `game-tag.tsx` — Clickable tag naming the game a dashboard card belongs to; it opens the game page.
 
 ## components/dialogs
 
@@ -408,11 +420,17 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## components/team
 
-- `game-list.tsx` — Grid of running games with a link to each game page.
+- `game-list.tsx` — Grid of running games; each card links to its game page.
 - `game-status-badge.tsx`
-- `leaders.ts` — Helpers for the leaders of a team or game: the members whose role is leader.
-- `members-tab.tsx` — Members list, shown as a tab of the game page and on the team page.
+- `leaders.ts` — Helpers for the Team Admins of a team or game: the members whose stored role is leader.
+- `members-list.tsx` — Members list of the team page.
 - `types.ts` — Shared types for the team page, the game page and their components.
+
+## components/threads
+
+- `archived-thread-dialog.tsx` — Read-only view of an archived thread: its result, messages and file links.
+- `archived-threads-tab.tsx` — Threads tab: the archived threads of a running or an archived game, opened read-only.
+- `thread-outcome-badge.tsx` — The final result of an archived thread: the state its cell took, and the vote counts.
 
 ## components/ui
 
@@ -463,6 +481,8 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 ## lib/db
 
 - `archived-game-repository.ts` — Archived Game Repository - Read-only snapshots of finished games
+- `archived-thread-repository.ts` — Archived Thread Repository - The review threads kept in an archived game
+- `archived-thread-rows.ts` — Row types and the mapper that turn closed threads, live or archived, into the shared shape.
 - `bingo-card-arrangement.ts` — Bingo Card Arrangement - Shuffling and locking a card
 - `bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game
 - `bingo-card-repository.ts` — Bingo Card Repository - Reading bingo cards
@@ -471,6 +491,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `cell-history-repository.ts` — Cell History Repository
 - `cell-progress-repository.ts` — Cell Progress Repository - The progress a compound or iterative cell holds
 - `cell-snapshot.ts` — Cell Snapshot - The copy of a resolution's definition that a bingo cell holds
+- `closed-thread-repository.ts` — Closed Thread Repository - The archived threads of a running game: reading and deleting them
 - `connection.ts` — MariaDB Database Connection
 - `game-repository.ts` — Game Repository - Database operations for games
 - `index.ts` — Database Module Exports

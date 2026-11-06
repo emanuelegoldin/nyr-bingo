@@ -4,23 +4,20 @@
     "heading": "Meine Spiele",
     "loadFailed": "Spiele konnten nicht geladen werden",
     "emptyTitle": "Noch keine Spiele",
-    "emptyDescription": "Eine Teamleitung erstellt Spiele auf der Team-Seite.",
+    "emptyDescription": "Ein Team-Admin erstellt Spiele auf der Team-Seite.",
     "goToTeams": "Zu den Teams"
   },
   "detail": {
     "pageTitle": "Spiel",
-    "leaders": "Teamleitung: {names}",
     "lastDay": "Letzter Tag: {date}",
     "startBingo": "Bingo starten",
     "tabs": {
       "cards": "Karten",
-      "members": "Mitglieder",
-      "leaderboard": "Rangliste"
-    },
-    "unknownLeader": "Unbekannt"
+      "leaderboard": "Rangliste",
+      "threads": "Threads"
+    }
   },
   "actionsMenu": {
-    "moreActions": "Weitere Aktionen",
     "setGoal": "Ziel festlegen",
     "configure": "Konfigurieren",
     "endGame": "Spiel beenden",
@@ -38,7 +35,7 @@
     },
     "leaveDialog": {
       "title": "Dieses Spiel verlassen?",
-      "description": "Deine Bingo-Karte, dein Eintrag in der Rangliste und die für dich geschriebenen Vorsätze in diesem Spiel werden gelöscht. Die Vorsätze, die du für andere Spieler geschrieben hast, bleiben auf deren Karten. Du kannst diesem Spiel nicht erneut beitreten. Wenn du die einzige Teamleitung bist, befördere zuerst auf der Team-Seite eine andere Person.",
+      "description": "Deine Bingo-Karte, dein Eintrag in der Rangliste und die für dich geschriebenen Vorsätze in diesem Spiel werden gelöscht. Die Vorsätze, die du für andere Spieler geschrieben hast, bleiben auf deren Karten. Du kannst diesem Spiel nicht erneut beitreten. Wenn du der einzige Team-Admin bist, befördere zuerst auf der Team-Seite eine andere Person.",
       "confirm": "Spiel verlassen"
     }
   },
@@ -60,15 +57,11 @@
   },
   "teamGoal": {
     "none": "Noch kein Teamziel festgelegt.",
-    "setGoal": "Ziel festlegen",
-    "label": "Teamziel:",
-    "edit": "Teamziel bearbeiten",
-    "subtasks": "{count, plural, one {# Teilaufgabe} other {# Teilaufgaben}}",
-    "target": "Ziel: {count, plural, one {# Wiederholung} other {# Wiederholungen}}"
+    "setGoal": "Ziel festlegen"
   },
   "cardsTab": {
     "notStartedTitle": "Das Spiel hat noch nicht begonnen",
-    "notStartedDescription": "Die Teamleitung startet das Spiel, sobald alle Vorsätze füreinander vorgeschlagen haben.",
+    "notStartedDescription": "Ein Team-Admin startet das Spiel, sobald alle Vorsätze füreinander vorgeschlagen haben.",
     "noCards": "Noch keine Bingo-Karten verfügbar.",
     "heading": "Bingo-Karten",
     "noCard": "Keine Bingo-Karte verfügbar"

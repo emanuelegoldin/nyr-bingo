@@ -45,7 +45,7 @@ export const CellFace = ({
         failed: { icon: getCellStateIcon("failed", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.failed.bg, text: CELL_STATE_COLORS.failed.text },
     };
     const config = stateConfig[cell.state];
-    // Resolution title for cell display: up to three lines on phones, one line from md (spec 20)
+    // Resolution title for cell display: up to three lines on phones (two smaller ones on a 9x9 card), one line from md (spec 20)
     const displayTitle = cell.resolutionTitle || cell.resolutionText;
 
     if (cell.isEmpty) {
@@ -59,14 +59,14 @@ export const CellFace = ({
     return (
         <Cell
             cellClassName={cn(
-                "relative flex flex-col items-center justify-center aspect-square p-1 sm:p-2 rounded-lg border shadow-sm text-center transition-all duration-300",
+                "relative flex flex-col items-center justify-center aspect-square p-1 sm:p-2 max-md:group-data-[size=9]/card:p-0.5 rounded-lg border shadow-sm text-center transition-all duration-300",
                 config.color,
                 canInteract ? "cursor-pointer hover:scale-105 hover:shadow-md" : "cursor-default"
             )}
             isDisabled={!canInteract}
             onClick={onClick}>
 
-            <p className={cn("text-[10px] leading-tight sm:text-xs md:text-sm font-medium break-words line-clamp-3 md:line-clamp-none md:truncate max-w-full", config.text)}>
+            <p className={cn("text-[10px] leading-tight sm:text-xs md:text-sm font-medium break-words line-clamp-3 md:line-clamp-none md:truncate max-w-full max-md:group-data-[size=9]/card:text-[8px] max-md:group-data-[size=9]/card:line-clamp-2", config.text)}>
                 {displayTitle}
             </p>
             <div className="absolute top-1 right-1">

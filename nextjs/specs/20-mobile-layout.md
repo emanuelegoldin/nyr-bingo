@@ -61,9 +61,9 @@ Make the application usable on phones. The authenticated pages, their dialogs an
 
 ### Bingo Card
 
-- The 5×5 card fits the width of the screen without horizontal scrolling. This applies to live cards (dashboard, game page) and archived cards.
-- On mobile, a cell shows up to three lines of the resolution title in a smaller font, instead of a single truncated line.
-- The joker cell's icon and label fit inside the cell.
+- A card fits the width of the screen without horizontal scrolling, whatever its size (spec 16). This applies to live cards (dashboard, game page) and archived cards.
+- On mobile, a cell of a 3×3 or 5×5 card shows up to three lines of the resolution title in a smaller font, instead of a single truncated line. A 9×9 cell is too narrow for that: it shows as much of the title as fits, and tapping it opens the full details as on any card.
+- The joker cell's icon and label fit inside the cell. On a 9×9 card on mobile the joker shows only its icon, with the label kept for screen readers.
 
 ---
 
@@ -74,7 +74,7 @@ Make the application usable on phones. The authenticated pages, their dialogs an
 - At 360px, the landing page does not scroll horizontally and its header buttons are fully visible.
 - At 360px, the title, description and actions of the Resolutions page are all fully visible, and each resolution title can be read in full.
 - At 360px, every dialog fits in the screen with a side margin, and its last button can be reached by scrolling inside it.
-- At 360px, the bingo card fits the screen and cell titles show up to three lines.
+- At 360px, the bingo card fits the screen, whatever its size, and the cell titles of 3×3 and 5×5 cards show up to three lines.
 - At 768px and wider, the layout is the same as before this spec.
 
 ---

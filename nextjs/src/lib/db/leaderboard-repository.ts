@@ -11,8 +11,8 @@
  */
 
 import { notifications } from '../notifications';
-import { BINGO_LINES } from '../shared/bingo-lines';
-import { CellState, JOKER_POSITION, type LeaderboardEntry } from '../shared/types';
+import { getBingoLines } from '../shared/bingo-lines';
+import { CellState, getJokerPosition, type LeaderboardEntry } from '../shared/types';
 import { query } from './connection';
 import type { Game } from './types';
 
@@ -52,23 +52,26 @@ function isCellDone(cell: CellForBingo): boolean {
 
 /**
  * Given a user's cells, compute the datetime of their first bingo line.
- * Returns null if no bingo has been achieved yet.
+ * @param cells The stored cells of the card
+ * @param gridSize The side length of the card
+ * @returns The first bingo time, or null if no bingo has been achieved yet
  */
-function computeFirstBingoAt(cells: Array<CellForBingo & { updated_at: Date | null }>): Date | null {
+function computeFirstBingoAt(cells: Array<CellForBingo & { updated_at: Date | null }>, gridSize: number): Date | null {
   const byPosition = new Map<number, typeof cells[0]>();
   for (const cell of cells) {
     byPosition.set(cell.position, cell);
   }
 
   let earliest: Date | null = null;
+  const jokerPosition = getJokerPosition(gridSize);
 
-  for (const line of BINGO_LINES) {
+  for (const line of getBingoLines(gridSize)) {
     let lineComplete = true;
     let latestUpdate: Date | null = null;
 
     for (const pos of line) {
       // The joker is implicit: always done, not stored, and adds no timestamp.
-      if (pos === JOKER_POSITION) continue;
+      if (pos === jokerPosition) continue;
 
       const cell = byPosition.get(pos);
       if (!cell || !isCellDone(cell)) {
@@ -137,8 +140,8 @@ export async function refreshLeaderboardEntry(
   userId: string
 ): Promise<void> {
   // Get the user's card cells for this game
-  const cells = await query<Array<CellForBingo & { updated_at: Date | null }>>(
-    `SELECT c.position, c.state, c.is_empty, c.updated_at
+  const cells = await query<Array<CellForBingo & { updated_at: Date | null; grid_size: number }>>(
+    `SELECT c.position, c.state, c.is_empty, c.updated_at, bc.grid_size
      FROM bingo_cells c
      JOIN bingo_cards bc ON c.card_id = bc.id
      WHERE bc.game_id = ? AND bc.user_id = ?`,
@@ -151,7 +154,8 @@ export async function refreshLeaderboardEntry(
   ).length;
 
   // Compute first bingo timestamp
-  const firstBingoAt = computeFirstBingoAt(cells);
+  // Every cell of a card carries the card's size; a user without cells has no bingo either way
+  const firstBingoAt = cells.length > 0 ? computeFirstBingoAt(cells, cells[0].grid_size) : null;
 
   const previous = await query<Array<{ first_bingo_at: Date | null }>>(
     `SELECT first_bingo_at FROM team_leaderboard WHERE game_id = ? AND user_id = ?`,

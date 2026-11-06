@@ -101,7 +101,7 @@ A dedicated page at `/profile/[userId]` displays a read-only view of another use
 - **Bio** is shown only if `bioPublic` is true.
 - If the currently logged-in user visits their own public profile URL, they are redirected to the editable profile page at `/profile`.
 - Unauthenticated visitors are redirected to `/login`.
-- Avatars on the team page (cards, Members tab, Leaderboard tab) link to `/profile/[userId]`.
+- Avatars on the game page (Cards and Leaderboard tabs) and in the members list of the team page link to `/profile/[userId]`.
 
 ---
 

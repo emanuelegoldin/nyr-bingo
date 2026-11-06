@@ -1,11 +1,11 @@
 /**
- * Members list, shown as a tab of the game page and on the team page.
- * Spec Reference: 12-team-tabs.md
+ * Members list of the team page.
+ * Spec Reference: 04-bingo-teams.md - Team Page
  *
- * Displays a simple list of team members (or a game's players). Each row shows the
+ * Displays a simple list of team members. Each row shows the
  * member's avatar on the left (clickable → profile) and their
  * username in the center. On the team page, leaders get a Make Leader action
- * on every non-leader row (spec 04 - Leaders).
+ * on every non-leader row (spec 04 - Admins).
  */
 
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
@@ -16,7 +16,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import type { TeamMember } from "./types";
 
-interface MembersTabProps {
+interface MembersListProps {
   members: TeamMember[];
   currentUserId: string;
   /** Whether the current user may promote members (spec 21: team.promote). */
@@ -33,12 +33,12 @@ interface MembersTabProps {
  * @param props - The members, the current user and the optional promote action.
  * @returns The members card.
  */
-export function MembersTab({ members, currentUserId, canPromote = false, onPromote, promotingUserId = null }: MembersTabProps) {
+export function MembersList({ members, currentUserId, canPromote = false, onPromote, promotingUserId = null }: MembersListProps) {
   const t = useTranslations("Teams");
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">{t("membersTab.title")}</CardTitle>
+        <CardTitle className="font-headline">{t("membersList.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="divide-y">
@@ -65,19 +65,19 @@ export function MembersTab({ members, currentUserId, canPromote = false, onPromo
                   <p className="font-medium truncate">
                     {member.user.displayName || member.user.username}
                     {isCurrentUser && (
-                      <span className="text-muted-foreground text-sm ml-1">{t("membersTab.you")}</span>
+                      <span className="text-muted-foreground text-sm ml-1">{t("membersList.you")}</span>
                     )}
                   </p>
                 </div>
 
                 {!isLeader && canPromote && onPromote && (
                   <ConfirmActionDialog
-                    triggerLabel={t("membersTab.makeLeader")}
+                    triggerLabel={t("membersList.makeLeader")}
                     triggerIcon={Crown}
                     triggerVariant="outline"
-                    title={t("membersTab.makeLeaderTitle", { name: member.user.displayName || member.user.username })}
-                    description={t("membersTab.makeLeaderDescription")}
-                    confirmLabel={t("membersTab.makeLeader")}
+                    title={t("membersList.makeLeaderTitle", { name: member.user.displayName || member.user.username })}
+                    description={t("membersList.makeLeaderDescription")}
+                    confirmLabel={t("membersList.makeLeader")}
                     onConfirm={() => onPromote(member.user.userId)}
                     isPending={promotingUserId === member.user.userId}
                   />
@@ -86,11 +86,11 @@ export function MembersTab({ members, currentUserId, canPromote = false, onPromo
                 {/* Leader badge */}
                 {isLeader && (
                   <span
-                    title={t("membersTab.teamLeader")}
+                    title={t("membersList.teamLeader")}
                     className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400"
                   >
                     <Crown className="h-4 w-4" />
-                    {t("membersTab.leader")}
+                    {t("membersList.leader")}
                   </span>
                 )}
               </li>

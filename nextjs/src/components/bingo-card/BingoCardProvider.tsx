@@ -8,6 +8,7 @@ import { BingoCardContent } from "./BingoCardContent";
 import { BingoCardArrangeButtons } from "./dashboard-page/BingoCardArrangeButtons";
 import { BingoCardEditButton } from "./dashboard-page/BingoCardEditButton";
 import { ProfileInfo } from "./team-page/ProfileInfo";
+import { GameTag } from "@/components/dashboard/game-tag";
 
 type BaseBingoCardProviderProps = {
   user: { id: string; username: string };
@@ -121,8 +122,8 @@ type DashboardBingoCardProviderProps = Omit<BaseBingoCardProviderProps, "headerS
 };
 
 /**
- * The current user's card on the dashboard, headed by the game name and the edit, shuffle and
- * lock buttons.
+ * The current user's card on the dashboard, headed by a tag linking to its game and the edit,
+ * shuffle and lock buttons.
  *
  * @param props - The card, its owner and the game name.
  * @returns The card.
@@ -136,9 +137,12 @@ export function DashboardBingoCardProvider({
     <div className="flex w-full flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
         <CardTitle className="font-headline text-2xl">
-          {t("cardTitle", { gameName })}
+          {t("cardTitle")}
         </CardTitle>
-        <CardDescription>
+        <div className="mt-2">
+          <GameTag gameId={props.gameId} gameName={gameName} label={t("openGame", { gameName })} />
+        </div>
+        <CardDescription className="mt-2">
           {t("headerDescription")}
         </CardDescription>
       </div>

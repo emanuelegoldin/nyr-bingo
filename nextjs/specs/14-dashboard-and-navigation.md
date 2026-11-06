@@ -12,6 +12,7 @@ Define the public landing page, the authenticated application shell, and the das
 - Move between the main sections of the application
 - See my own bingo card for every started game in one place
 - See the games I am playing
+- Open a game from its card on the dashboard
 - Edit my card content from the dashboard
 - Log out
 
@@ -52,7 +53,8 @@ There is no route middleware.
 `/dashboard` is the destination after login. It shows the current user's card for **each started game**.
 
 - Each card loads independently, with its own loading state, so one slow or failed card does not affect the others.
-- A card shows the game name, an **Edit Card** button (spec 09), the **Shuffle** and **Lock** buttons while the card is unlocked (spec 22) and the same interactive cells as the owner's card on the game page (spec 06).
+- A card shows the game name as a clickable tag that opens the game page, an **Edit Card** button (spec 09), the **Shuffle** and **Lock** buttons while the card is unlocked (spec 22) and the same interactive cells as the owner's card on the game page (spec 06).
+- The tag is styled so it reads as interactive (an icon and a chevron, with a hover state), and it is also shown on the loading, failed and missing placeholders.
 - A game without a card for this user shows a "none available" message.
 
 Empty states, with a **Get Started** button:
@@ -67,4 +69,5 @@ Empty states, with a **Get Started** button:
 - Authenticated users can navigate between Dashboard, Games, Teams, Profile, Resolutions and Archive.
 - The dashboard shows one card per started game.
 - A failed card does not prevent the other cards from rendering.
+- Clicking the game tag of a dashboard card opens that game's page, including while the card is loading, failed or missing.
 - Users can log out from the user menu.
