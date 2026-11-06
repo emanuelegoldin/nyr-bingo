@@ -3,7 +3,7 @@
 ## Purpose
 
 Organise the game page (spec 16) into distinct tabs for better navigation and
-separation of concerns: **Cards**, **Leaderboard** and **Threads**. The members list is on
+separation of concerns: **Cards**, **Leaderboard**, **Threads** and **Progress**. The members list is on
 the team page only (spec 04): it is also reachable from the game's leaderboard.
 
 ---
@@ -16,6 +16,7 @@ the team page only (spec 04): it is also reachable from the game's leaderboard.
 - See a confetti animation when a bingo line is completed.
 - See how many resolutions each player has accomplished in the leaderboard.
 - Read the game's closed review threads in a "Threads" tab.
+- Follow each player's progress over time in a "Progress" tab (spec 23).
 
 ---
 
@@ -31,7 +32,7 @@ the team page only (spec 04): it is also reachable from the game's leaderboard.
 
 ## Tab Structure
 
-The game page header (spec 16) remains above the tabs. Below it, three tabs are
+The game page header (spec 16) remains above the tabs. Below it, four tabs are
 rendered. **Cards** is selected by default. The page is available to team
 members only; others get a not-found page.
 
@@ -90,6 +91,11 @@ members only; others get a not-found page.
 - Lists the game's archived review threads and opens them read-only, as
   defined in spec 07 (Archived Threads). Admins of the game can delete one.
 - It is one component, shared with the archived game page (spec 18).
+
+### 4. Progress Tab
+
+- Shows a chart of each player's completed count over time, as defined in
+  spec 23. It is one component, shared with the archived game page (spec 18).
 
 ---
 
@@ -153,8 +159,8 @@ Persists per-user, per-game leaderboard data for efficient retrieval.
 
 ## Acceptance Criteria
 
-- [ ] Game page renders three tabs: Cards, Leaderboard and Threads; it has no
-      Members tab.
+- [ ] Game page renders four tabs: Cards, Leaderboard, Threads and Progress;
+      it has no Members tab.
 - [ ] Threads tab lists the game's archived threads (spec 07).
 - [ ] Cards tab contains the bingo-card layout.
 - [ ] Leaderboard tab shows a ranked table with first-bingo datetime.

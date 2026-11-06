@@ -177,7 +177,7 @@ The admin may start bingo only when:
 Other members are verified because joining requires it.
 
 On start:
-- The game's status becomes `started` and a bingo card is generated for every player (spec 05), in one transaction: if generation fails, the game stays `forming` with no cards
+- The game's status becomes `started`, its `started_at` is set to the current time, and a bingo card is generated for every player (spec 05), in one transaction: if generation fails, the game stays `forming` with no cards, and `started_at` stays `NULL`
 - A leaderboard row is created for every player (spec 12)
 
 ---
@@ -269,6 +269,7 @@ The role-to-permission table and the status of every refusal are defined in spec
 | `name` | VARCHAR(255) | Required |
 | `status` | ENUM | `forming`, `started`, `ended` |
 | `created_at`, `updated_at` | DATETIME | |
+| `started_at` | DATETIME | NULL until bingo starts |
 | `ended_at` | DATETIME | NULL until the game ends |
 | `deadline` | DATE | Last playable day. NULL when the game only ends manually |
 | `grid_size` | TINYINT | `3`, `5` or `9`. Set at creation, never changed. Default `5` |
@@ -285,7 +286,7 @@ The primary key is `(game_id, user_id)`.
 
 `bingo_cards`, `team_leaderboard` and `resolutions` carry both `game_id` and `team_id`. `resolutions.game_id` is `NULL` for personal resolutions. Each of those tables is unique per game, not per team.
 
-**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games. `V5_6_0__game_players.sql` adds `game_players`, with every existing game's team members as its players. `V5_10_0__game_grid_size.sql` adds `grid_size`, which is `5` for existing games.
+**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games. `V5_6_0__game_players.sql` adds `game_players`, with every existing game's team members as its players. `V5_10_0__game_grid_size.sql` adds `grid_size`, which is `5` for existing games. `V5_12_0__leaderboard_progress.sql` adds `started_at`; for a game already `started` or `ended`, it is set to the creation time of the game's earliest bingo card.
 
 ---
 

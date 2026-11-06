@@ -12,6 +12,7 @@ Keep a read-only record of every finished game. An archived game is a snapshot o
 - See the final standings of a game
 - Look at each player's final card and open the details of a cell
 - Read the game's archived review threads
+- See how each player progressed during the game (spec 23)
 - Delete a game, or one of its archived threads, from the archive, as an admin who ran it
 
 ---
@@ -31,10 +32,11 @@ Keep a read-only record of every finished game. An archived game is a snapshot o
 Every game that ends is archived, whether it ended manually or at its deadline (spec 16).
 
 - The archive holds, as they were when the game ended:
-  - The game name, the team name, the end date, the card size and the admins who ran the game: its players who were Team Admins when it was archived
+  - The game name, the team name, the start date, the end date, the card size and the admins who ran the game: its players who were Team Admins when it was archived
   - The leaderboard
   - The card of every player
   - The game's archived review threads (spec 07)
+  - The progress history of its players (spec 23)
 - The **players** of an archived game are the game's players (spec 16) who had a card in it. A member without a card has no access.
 - A member-provided cell whose provider was no longer a player is labelled "Former Teammates".
 - A cell keeps its position, title, description, type, state, source and source label. The snapshot is taken from the cell's own columns and from `bingo_cell_subtasks` (spec 05) when the game ends. A `compound` cell also keeps its subtasks and an `iterative` cell its counters.
@@ -70,6 +72,7 @@ The header holds the game name, team name and end date, and a **Delete** button 
 - **Cards**: the card of every player, in leaderboard order
 - **Leaderboard**: the final leaderboard, with the columns and order of spec 12
 - **Threads**: the game's archived threads, with the Threads tab of spec 07. The admins who ran the game can delete one.
+- **Progress**: the progress chart of spec 23, up to the end date
 
 Cards are read-only. They have no edit mode, real-time updates, confetti, proof actions or resolution history. Selecting a non-empty cell other than the Joker opens its details as plain text: title, description, state, type, source, and the subtasks or counter of a `compound` or `iterative` cell.
 
@@ -106,17 +109,18 @@ The role-to-permission table and the status of every refusal are defined in spec
 
 | Table | Primary key | Holds |
 | ----- | ----------- | ----- |
-| `archived_games` | `id`, the game's former id | `name`, `team_name`, `ended_at`, `grid_size` |
+| `archived_games` | `id`, the game's former id | `name`, `team_name`, `started_at`, `ended_at`, `grid_size` |
 | `archived_game_players` | `archived_game_id`, `user_id` | `player_name`, `is_leader`, `leaderboard_rank`, `completed_tasks`, `first_bingo_at` |
 | `archived_cells` | `archived_game_id`, `user_id`, `position` | `title`, `description`, `resolution_type`, `state`, `source_type`, `source_user_id`, `source_label`, `is_empty`, `number_of_repetition`, `completed_times` |
 | `archived_cell_subtasks` | `archived_game_id`, `user_id`, `position`, `subtask_index` | `title`, `description`, `completed` |
 | `archived_threads` | `id`, the thread's former id | `archived_game_id`, `user_id`, `position` (the cell), `created_at`, `closed_at`, `outcome`, `accept_votes`, `deny_votes` |
 | `archived_thread_messages` | `id` | `archived_thread_id`, `author_name`, `content`, `created_at` |
 | `archived_thread_files` | `id` | `archived_thread_id`, `file_path`, `file_name`, `file_size`, `mime_type`, `created_at` |
+| `archived_progress` | `id` | `archived_game_id`, `user_id`, `recorded_at`, `completed_tasks` (spec 23) |
 
-Each table cascades from the one above it; `archived_threads` cascades from `archived_cells`. `archived_game_players.user_id` references `users.id` ON DELETE CASCADE. `leaderboard_rank` is `NULL` for a player who had no leaderboard row, who is left out of the leaderboard. The Joker is implicit, as on a live card (spec 05).
+Each table cascades from the one above it; `archived_threads` cascades from `archived_cells`, and `archived_progress` from `archived_game_players`. `archived_game_players.user_id` references `users.id` ON DELETE CASCADE. `leaderboard_rank` is `NULL` for a player who had no leaderboard row, who is left out of the leaderboard. The Joker is implicit, as on a live card (spec 05).
 
-**Migration:** `V5_4_0__game_archive.sql`. `V5_11_0__archived_threads.sql` adds the thread tables. `V5_7_0__multiple_team_leaders.sql` replaces `archived_games.leader_user_id` with `archived_game_players.is_leader`.
+**Migration:** `V5_4_0__game_archive.sql`. `V5_11_0__archived_threads.sql` adds the thread tables. `V5_12_0__leaderboard_progress.sql` adds `archived_progress` and `archived_games.started_at`, which is `NULL` for games archived before it. `V5_7_0__multiple_team_leaders.sql` replaces `archived_games.leader_user_id` with `archived_game_players.is_leader`.
 
 ---
 
@@ -133,7 +137,7 @@ Each table cascades from the one above it; `archived_threads` cascades from `arc
 - Editing or deleting a resolution, or deleting the team, does not change an archived game.
 - Non-players cannot view an archived game.
 - Only an admin who ran the game can delete it, and deletion removes it for every player.
-- The archived game page shows the Cards, Leaderboard and Threads tabs.
+- The archived game page shows the Cards, Leaderboard, Threads and Progress tabs.
 - A game's archived threads, with their messages, file links and results, are in its archive.
 - Only an admin who ran the game can delete an archived thread.
 - Deleting an archived game, or one of its archived threads, removes their files from disk unless another thread shares them.
