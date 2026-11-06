@@ -13,7 +13,8 @@
     "startBingo": "Start Bingo",
     "tabs": {
       "cards": "Cards",
-      "leaderboard": "Leaderboard"
+      "leaderboard": "Leaderboard",
+      "threads": "Threads"
     }
   },
   "actionsMenu": {

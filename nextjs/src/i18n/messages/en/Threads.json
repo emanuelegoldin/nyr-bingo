@@ -50,7 +50,14 @@
     "uploadMissingInfo": "File uploaded but response is missing file info",
     "postFailed": "Failed to post message",
     "deleteFailed": "Failed to delete file",
-    "closeConfirm": "Close this thread and revert the resolution to pending? This will delete all thread files and messages.",
+    "closeConfirm": "Close this thread and revert the resolution to pending? The thread stays readable in the game's Threads tab.",
     "closeFailed": "Failed to close thread"
+  },
+  "archived": {
+    "empty": "No closed threads yet.",
+    "ownerClosed": "{owner} · closed {date}",
+    "deleteTitle": "Delete this thread?",
+    "deleteDescription": "This permanently deletes the thread with its messages and files. The resolution keeps its state. This action cannot be undone.",
+    "deleteFailed": "Failed to delete the thread"
   }
 }

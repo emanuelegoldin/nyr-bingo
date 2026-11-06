@@ -11,7 +11,6 @@
   "gamePage": {
     "deleteFailed": "Failed to delete the archived game",
     "deleteTitle": "Delete this archived game?",
-    "deleteDescription": "This permanently deletes the game from the archive for every player. This action cannot be undone.",
-    "cards": "Bingo Cards"
+    "deleteDescription": "This permanently deletes the game from the archive for every player. This action cannot be undone."
   }
 }

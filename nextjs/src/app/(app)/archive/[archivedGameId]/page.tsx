@@ -28,6 +28,7 @@ export default async function ArchivedGamePage({ params }: ArchivedGamePageProps
     <ArchivedGamePageClient
       archivedGame={archivedGame}
       canDelete={(await authorize(currentUser, 'archive.delete', target)).allowed}
+      canDeleteThreads={(await authorize(currentUser, 'archive.thread.delete', target)).allowed}
     />
   );
 }

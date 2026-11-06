@@ -11,7 +11,6 @@
   "gamePage": {
     "deleteFailed": "Das archivierte Spiel konnte nicht gelöscht werden",
     "deleteTitle": "Dieses archivierte Spiel löschen?",
-    "deleteDescription": "Das Spiel wird für alle Spieler dauerhaft aus dem Archiv gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
-    "cards": "Bingo-Karten"
+    "deleteDescription": "Das Spiel wird für alle Spieler dauerhaft aus dem Archiv gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
   }
 }
