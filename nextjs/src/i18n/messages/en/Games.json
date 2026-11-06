@@ -58,7 +58,6 @@
     "none": "No team goal set yet.",
     "setGoal": "Set Goal",
     "label": "Team Goal:",
-    "edit": "Edit team goal",
     "subtasks": "{count, plural, one {# subtask} other {# subtasks}}",
     "target": "Target: {count, plural, one {# repetition} other {# repetitions}}"
   },

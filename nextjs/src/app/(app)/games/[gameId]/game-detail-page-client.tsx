@@ -141,7 +141,7 @@ export default function GameDetailPageClient({
           <TeamGoalDisplay
             goal={teamGoal}
             isLeader={can('game.goal.set')}
-            onEdit={() => setGoalDialogOpen(true)}
+            onSetGoal={() => setGoalDialogOpen(true)}
           />
         </CardContent>
       </Card>

@@ -58,7 +58,6 @@
     "none": "Nessun obiettivo del team ancora impostato.",
     "setGoal": "Imposta obiettivo",
     "label": "Obiettivo del team:",
-    "edit": "Modifica obiettivo del team",
     "subtasks": "{count, plural, one {# sottoattività} other {# sottoattività}}",
     "target": "Traguardo: {count, plural, one {# ripetizione} other {# ripetizioni}}"
   },

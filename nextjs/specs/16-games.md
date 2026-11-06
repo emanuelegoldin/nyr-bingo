@@ -104,7 +104,7 @@ The header keeps only the most used actions visible, so it stays readable for le
 - **Start Bingo** (when the caller can use it) and **Propose Resolutions** are buttons.
 - The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Set Goal, Configure, End Game, a separator, Leave Game and Delete Game, which is styled as destructive. The menu lists only the actions the caller can use in the current state, as in the table above.
 - Choosing a menu item opens the same dialog or confirmation as the action's button did.
-- While no goal is set, a leader also sees a **Set Goal** button in the goal area. Once a goal is set, the goal area has an edit button instead.
+- While no goal is set, a leader also sees a **Set Goal** button in the goal area. Once a goal is set, the goal area has no button: the goal is changed through **Set Goal** in the More actions menu.
 
 `/games` lists the caller's running games with their name, team, status and a link to the game page. New games are created from the team page (spec 04).
 

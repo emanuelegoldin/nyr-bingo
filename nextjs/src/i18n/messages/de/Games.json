@@ -58,7 +58,6 @@
     "none": "Noch kein Teamziel festgelegt.",
     "setGoal": "Ziel festlegen",
     "label": "Teamziel:",
-    "edit": "Teamziel bearbeiten",
     "subtasks": "{count, plural, one {# Teilaufgabe} other {# Teilaufgaben}}",
     "target": "Ziel: {count, plural, one {# Wiederholung} other {# Wiederholungen}}"
   },
