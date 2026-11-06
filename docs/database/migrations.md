@@ -557,3 +557,22 @@ None. Existing cells start with no reaction.
 ### Idempotency
 
 `CREATE TABLE IF NOT EXISTS` does nothing on a second run.
+
+## 5.13.1 - Reaction Tilt and Scale
+
+Each cell reaction also gets a random tilt and size, picked again every time it is placed, as its
+spot already was. Archived games keep them (spec 24).
+
+### Schema changes
+
+- `cell_reactions` and `archived_cell_reactions` get `rotation` (`TINYINT`, degrees between -45
+  and 45, default `0`) and `scale` (`TINYINT UNSIGNED`, percent of the base size between 75 and
+  125, default `100`).
+
+### Data migration
+
+None. Reactions stored before it take the defaults, so they show untilted at the base size.
+
+### Idempotency
+
+`Create_Column` does nothing on a second run.
