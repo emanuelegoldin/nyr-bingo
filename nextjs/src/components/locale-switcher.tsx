@@ -16,6 +16,7 @@ import { useSetLocale } from "@/i18n/use-set-locale";
 import { cn } from "@/lib/utils";
 import { Check, Globe } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { ThemeSwitcher } from "./theme/theme-switcher";
 
 interface LocaleSwitcherProps {
   className?: string;
@@ -73,14 +74,15 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
 }
 
 /**
- * The switcher pinned to the top right of a page that has no header
- * (login, registration, invitation and verification pages).
+ * The theme and language switchers pinned to the top right of a page that has no header
+ * (login, registration, invitation and verification pages; specs 15 and 25).
  *
- * @returns The pinned switcher.
+ * @returns The pinned switchers.
  */
 export function CornerLocaleSwitcher() {
   return (
-    <div className="fixed right-4 top-4 z-20">
+    <div className="fixed right-4 top-4 z-20 flex items-center">
+      <ThemeSwitcher />
       <LocaleSwitcher />
     </div>
   );

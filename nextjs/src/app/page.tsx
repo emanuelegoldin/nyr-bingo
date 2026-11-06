@@ -1,5 +1,6 @@
 import { AppLogo } from '@/components/icons';
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { ThemeSwitcher } from '@/components/theme/theme-switcher';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -42,7 +43,10 @@ export default async function Home() {
           <span className="hidden sm:inline font-semibold font-headline">{t('App.name')}</span>
         </Link>
         <nav className="ml-auto flex items-center gap-2 sm:gap-4">
-          <LocaleSwitcher />
+          <div className="flex items-center">
+            <ThemeSwitcher />
+            <LocaleSwitcher />
+          </div>
           <Button variant="ghost" asChild>
             <Link href="/login">{t('Home.loginLink')}</Link>
           </Button>
