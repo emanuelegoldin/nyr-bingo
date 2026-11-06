@@ -303,6 +303,14 @@ _No file references this spec._
 - `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads
 - `lib/shared/reactions.ts` — The reaction pool and the shapes of a reaction on a cell, shared by the server and the client. [Reaction Pool]
 
+## 25-theming.md — Theming
+
+- `components/theme/theme-provider.tsx` — Client context holding the active theme and applying it to the page. [Selection and Persistence]
+- `components/theme/theme-script.tsx` — Inline script that applies the operating system's theme before the first paint. [Selection and Persistence]
+- `components/theme/theme-switcher.tsx` — Theme switcher shown in the page headers. [Selection and Persistence]
+- `lib/theme/config.ts` — Theme settings shared by the server and the browser. [Themes]
+- `lib/theme/get-theme.ts` — Server helper that reads the stored theme. [Selection and Persistence]
+
 ## Unmapped files (93)
 
 No spec reference in the file. See `files.md` for their purpose.

@@ -84,6 +84,12 @@ Run once at Node startup:
 - Strings live in `i18n/messages/{en,it,de}/<Namespace>.json`, with one file per namespace. Every key must exist in all three languages.
 - Use `useTranslations('<Namespace>')` in client components and `getTranslations` on the server.
 
+## Theme (spec 25)
+
+- The `theme` cookie (`light`, `dark` or `system`; settings in `lib/theme/config.ts`) is read by `lib/theme/get-theme.ts` in `app/layout.tsx`. That file sets the `dark` class on `<html>` for an explicit theme, or renders `components/theme/theme-script.tsx` to resolve `system` before paint.
+- `components/theme/theme-provider.tsx` holds the theme on the client. `useTheme()` returns `{ theme, setTheme }`. `setTheme` writes the cookie and applies the class without a reload. The provider follows OS changes while the theme is `system`. The switcher is `components/theme/theme-switcher.tsx`.
+- Colours come from the tokens in `app/globals.css` (`:root` and `.dark`), mapped in `tailwind.config.ts`. Use `success`, `warning` and `destructive` for status colours, not fixed palette classes.
+
 ## Where new things go
 
 | Adding… | Put it in |
@@ -94,6 +100,7 @@ Run once at Node startup:
 | a permission | `lib/authz/` (spec 21) |
 | a real-time refresh | a call to a `lib/team-signals.ts` helper after the commit |
 | UI text | a key in all three `i18n/messages/*/<Namespace>.json` files |
+| a colour | a token in `app/globals.css`, defined in both `:root` and `.dark`, plus `tailwind.config.ts` |
 | an external package | an update to `docs/external_deps/` in the same change |
 
 Start every new file with a header docblock, so `scripts/codemap.py` can map it:
