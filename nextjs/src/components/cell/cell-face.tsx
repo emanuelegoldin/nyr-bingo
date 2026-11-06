@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
-import { Cell } from "./cell";
+import { Cell, CELL_BASE_CLASSES } from "./cell";
 import { CellReactions } from "./cell-reactions";
 import { CellHourglass } from "./cell-hourglass";
 import { CellStamp, type CellStampMotion } from "./cell-stamp";
@@ -54,13 +54,14 @@ export const CellFace = ({
 }: CellFaceProps) => {
     const tl = useTranslations("Labels");
     const stateConfig = {
-        pending: { icon: null, color: "bg-card hover:bg-secondary/50", text: "text-card-foreground" },
+        pending: { icon: null, color: "bg-card", text: "text-card-foreground" },
         // Spec 06 - Card Display Rules: completed and accomplished cells show a stamp instead of a colour
         completed: { icon: null, color: "bg-card", text: "text-card-foreground" },
         // Spec 06 - Card Display Rules: a cell under review shows a yellow hourglass instead of a colour
         pending_review: { icon: null, color: "bg-card", text: "text-card-foreground" },
         accomplished: { icon: null, color: "bg-card", text: "text-card-foreground line-through" },
-        failed: { icon: getCellStateIcon("failed", "h-3 w-3 sm:h-4 sm:w-4"), color: CELL_STATE_COLORS.failed.bg, text: CELL_STATE_COLORS.failed.text },
+        // The translucent dark-mode red would let the grid lines show through, so the grid uses an opaque one
+        failed: { icon: getCellStateIcon("failed", "h-3 w-3 sm:h-4 sm:w-4"), color: cn(CELL_STATE_COLORS.failed.bg, "dark:bg-red-950"), text: CELL_STATE_COLORS.failed.text },
     };
     const config = stateConfig[cell.state];
     // Resolution title for cell display: up to three lines on phones (two smaller ones on a 9x9 card), one line from md (spec 20)
@@ -77,9 +78,9 @@ export const CellFace = ({
     return (
         <Cell
             cellClassName={cn(
-                "relative flex flex-col items-center justify-center aspect-square p-1 sm:p-2 max-md:group-data-[size=9]/card:p-0.5 rounded-lg border shadow-sm text-center transition-all duration-300",
+                CELL_BASE_CLASSES,
                 config.color,
-                canInteract ? "cursor-pointer hover:scale-105 hover:shadow-md" : "cursor-default"
+                canInteract ? "cursor-pointer hover:brightness-95 dark:hover:brightness-125" : "cursor-default"
             )}
             isDisabled={!canInteract}
             onClick={onClick}>

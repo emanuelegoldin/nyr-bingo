@@ -5,8 +5,11 @@
 
 import { PropsWithChildren } from "react"
 
-/** Layout classes shared by every cell of the grid; each cell adds its own colours. */
-export const CELL_BASE_CLASSES = "relative flex flex-col items-center justify-center aspect-square p-1 sm:p-2 max-md:group-data-[size=9]/card:p-0.5 rounded-lg border shadow-sm text-center transition-all duration-300";
+/**
+ * Layout classes shared by every cell of the grid; each cell adds its own colours.
+ * Cell backgrounds must be opaque, because the grid lines are the background behind them.
+ */
+export const CELL_BASE_CLASSES = "relative flex flex-col items-center justify-center aspect-square p-1 sm:p-2 max-md:group-data-[size=9]/card:p-0.5 text-center transition duration-300";
 
 export interface CellProps {
     cellClassName: string,

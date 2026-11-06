@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-import { Cell } from "./cell";
+import { Cell, CELL_BASE_CLASSES } from "./cell";
 
 interface EmptyCellProps {
   canInteract: boolean,
@@ -21,9 +21,9 @@ export const EmptyCell = ({
   return (
     <Cell
       cellClassName={cn(
-        "relative flex flex-col items-center justify-center aspect-square p-1 sm:p-2 max-md:group-data-[size=9]/card:p-0.5 rounded-lg border shadow-sm text-center transition-all duration-300",
-        "bg-muted hover:bg-secondary/50",
-        canInteract ? "cursor-pointer hover:scale-105 hover:shadow-md" : "cursor-default"
+        CELL_BASE_CLASSES,
+        "bg-muted",
+        canInteract ? "cursor-pointer hover:brightness-95 dark:hover:brightness-125" : "cursor-default"
       )}
       isDisabled={!canInteract}
       onClick={onClick}>
