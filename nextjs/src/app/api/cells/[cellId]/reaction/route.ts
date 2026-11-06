@@ -47,7 +47,7 @@ const checkReactionAccess = async (user: User, cellId: string): Promise<NextResp
 };
 
 /**
- * PUT /api/cells/[cellId]/reaction - Add the caller's reaction, or change it and keep its spot
+ * PUT /api/cells/[cellId]/reaction - Add or change the caller's reaction, at a new random placement
  * Spec: 24-cell-reactions.md - Adding, Changing and Removing
  */
 export const PUT = withAuth(async (

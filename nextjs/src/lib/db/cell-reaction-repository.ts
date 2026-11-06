@@ -6,6 +6,10 @@
 import type { PoolConnection } from 'mysql2/promise';
 import {
   REACTABLE_CELL_STATES,
+  REACTION_ROTATION_MAX,
+  REACTION_ROTATION_MIN,
+  REACTION_SCALE_MAX,
+  REACTION_SCALE_MIN,
   REACTION_SPOT_MAX,
   REACTION_SPOT_MIN,
   type CellReaction,
@@ -21,6 +25,8 @@ export interface CellReactionRow {
   reaction: ReactionId;
   pos_x: number;
   pos_y: number;
+  rotation: number;
+  scale: number;
 }
 
 /** What the reaction routes check about a cell before acting on it. */
@@ -40,16 +46,25 @@ const STAMPED_STATES_SQL = REACTABLE_CELL_STATES.map((state) => `'${state}'`).jo
  * @returns The reaction.
  */
 export function rowToReaction(row: CellReactionRow): CellReaction {
-  return { userId: row.user_id, reaction: row.reaction, x: row.pos_x, y: row.pos_y };
+  return {
+    userId: row.user_id,
+    reaction: row.reaction,
+    x: row.pos_x,
+    y: row.pos_y,
+    rotation: row.rotation,
+    scale: row.scale,
+  };
 }
 
 /**
- * Pick a random spot for a new reaction, inside the bounds that keep it in the cell.
+ * Pick a random whole number in a range, for one value of a reaction's placement.
  *
- * @returns A whole percentage between `REACTION_SPOT_MIN` and `REACTION_SPOT_MAX`.
+ * @param min - The lowest allowed value.
+ * @param max - The highest allowed value.
+ * @returns A whole number between `min` and `max`, both included.
  */
-function randomSpot(): number {
-  return REACTION_SPOT_MIN + Math.floor(Math.random() * (REACTION_SPOT_MAX - REACTION_SPOT_MIN + 1));
+function randomWholeBetween(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1));
 }
 
 /**
@@ -72,9 +87,10 @@ export async function getCellReactionTarget(cellId: string): Promise<CellReactio
 }
 
 /**
- * Add a player's reaction to a stamped cell at a random spot, or change the emoji of their
- * existing reaction and keep its spot. The insert is guarded by the cell's state, so a cell
- * that stopped being stamped meanwhile gets no reaction. The route checks permissions.
+ * Add a player's reaction to a stamped cell, or change the emoji of their existing reaction.
+ * Either way the reaction gets a new random placement: spot, tilt and size. The insert is guarded
+ * by the cell's state, so a cell that stopped being stamped meanwhile gets no reaction. The route
+ * checks permissions.
  * Spec: 24-cell-reactions.md - Adding, Changing and Removing
  *
  * @param cellId - The cell.
@@ -88,17 +104,30 @@ export async function setCellReaction(
   reaction: ReactionId
 ): Promise<CellReaction | null> {
   await execute(
-    `INSERT INTO cell_reactions (cell_id, user_id, reaction, pos_x, pos_y)
-     SELECT c.id, ?, ?, ?, ?
+    `INSERT INTO cell_reactions (cell_id, user_id, reaction, pos_x, pos_y, rotation, scale)
+     SELECT c.id, ?, ?, ?, ?, ?, ?
      FROM bingo_cells c
      WHERE c.id = ? AND c.state IN (${STAMPED_STATES_SQL})
-     ON DUPLICATE KEY UPDATE reaction = VALUES(reaction)`,
-    [userId, reaction, randomSpot(), randomSpot(), cellId]
+     ON DUPLICATE KEY UPDATE
+       reaction = VALUES(reaction),
+       pos_x = VALUES(pos_x),
+       pos_y = VALUES(pos_y),
+       rotation = VALUES(rotation),
+       scale = VALUES(scale)`,
+    [
+      userId,
+      reaction,
+      randomWholeBetween(REACTION_SPOT_MIN, REACTION_SPOT_MAX),
+      randomWholeBetween(REACTION_SPOT_MIN, REACTION_SPOT_MAX),
+      randomWholeBetween(REACTION_ROTATION_MIN, REACTION_ROTATION_MAX),
+      randomWholeBetween(REACTION_SCALE_MIN, REACTION_SCALE_MAX),
+      cellId,
+    ]
   );
 
-  // Read back rather than trust affectedRows, which is 0 when the same reaction is sent again
+  // Read back rather than trust affectedRows, which is 0 when nothing changed
   const rows = await query<CellReactionRow[]>(
-    `SELECT r.cell_id, r.user_id, r.reaction, r.pos_x, r.pos_y
+    `SELECT r.cell_id, r.user_id, r.reaction, r.pos_x, r.pos_y, r.rotation, r.scale
      FROM cell_reactions r
      JOIN bingo_cells c ON c.id = r.cell_id
      WHERE r.cell_id = ? AND r.user_id = ? AND c.state IN (${STAMPED_STATES_SQL})`,

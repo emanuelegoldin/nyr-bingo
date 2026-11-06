@@ -457,7 +457,7 @@ async function getArchivedCards(
     const key = cellKey(row.user_id, row.position);
     reactionsByCell.set(key, [
       ...(reactionsByCell.get(key) ?? []),
-      { reaction: row.reaction, x: row.pos_x, y: row.pos_y },
+      { reaction: row.reaction, x: row.pos_x, y: row.pos_y, rotation: row.rotation, scale: row.scale },
     ]);
   }
 

@@ -72,7 +72,7 @@ async function getCellsWithThreadsByCard(filter: CellFilter): Promise<Map<string
       [param]
     ),
     query<CellReactionRow[]>(
-      `SELECT r.cell_id, r.user_id, r.reaction, r.pos_x, r.pos_y
+      `SELECT r.cell_id, r.user_id, r.reaction, r.pos_x, r.pos_y, r.rotation, r.scale
        FROM cell_reactions r
        JOIN bingo_cells c ON r.cell_id = c.id
        JOIN bingo_cards bc ON c.card_id = bc.id

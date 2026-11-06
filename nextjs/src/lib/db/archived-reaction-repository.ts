@@ -13,6 +13,8 @@ export interface ArchivedReactionRow {
   reaction: ReactionId;
   pos_x: number;
   pos_y: number;
+  rotation: number;
+  scale: number;
 }
 
 /**
@@ -24,8 +26,9 @@ export interface ArchivedReactionRow {
 export async function saveReactionSnapshot(gameId: string, connection: Executor): Promise<void> {
   await execute(
     `INSERT INTO archived_cell_reactions
-       (archived_game_id, user_id, position, reactor_user_id, reaction, pos_x, pos_y)
-     SELECT bc.game_id, bc.user_id, c.position, r.user_id, r.reaction, r.pos_x, r.pos_y
+       (archived_game_id, user_id, position, reactor_user_id, reaction, pos_x, pos_y, rotation, scale)
+     SELECT bc.game_id, bc.user_id, c.position, r.user_id, r.reaction, r.pos_x, r.pos_y, r.rotation,
+       r.scale
      FROM cell_reactions r
      JOIN bingo_cells c ON c.id = r.cell_id
      JOIN bingo_cards bc ON bc.id = c.card_id
@@ -44,7 +47,7 @@ export async function saveReactionSnapshot(gameId: string, connection: Executor)
  */
 export async function getArchivedReactions(archivedGameId: string): Promise<ArchivedReactionRow[]> {
   return query<ArchivedReactionRow[]>(
-    `SELECT user_id, position, reaction, pos_x, pos_y
+    `SELECT user_id, position, reaction, pos_x, pos_y, rotation, scale
      FROM archived_cell_reactions
      WHERE archived_game_id = ?
      ORDER BY reactor_user_id ASC`,

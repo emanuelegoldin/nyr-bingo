@@ -18,11 +18,24 @@ export const REACTABLE_CELL_STATES: readonly CellState[] = [CellState.COMPLETED,
 export const REACTION_SPOT_MIN = 15;
 export const REACTION_SPOT_MAX = 85;
 
-/** A reaction as drawn on a cell: the emoji and the spot of its center, in percent. */
+/** Bounds of a reaction's tilt, in degrees around its center. */
+export const REACTION_ROTATION_MIN = -45;
+export const REACTION_ROTATION_MAX = 45;
+
+/** Bounds of a reaction's size, in percent of the base reaction size. */
+export const REACTION_SCALE_MIN = 75;
+export const REACTION_SCALE_MAX = 125;
+
+/**
+ * A reaction as drawn on a cell: the emoji, the spot of its center in percent, its tilt in
+ * degrees and its size in percent of the base size.
+ */
 export interface CellReactionMark {
   reaction: ReactionId;
   x: number;
   y: number;
+  rotation: number;
+  scale: number;
 }
 
 /** A reaction on a live cell, with the player who put it. */
