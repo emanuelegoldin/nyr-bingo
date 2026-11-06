@@ -14,7 +14,8 @@
     "tabs": {
       "cards": "Karten",
       "leaderboard": "Rangliste",
-      "threads": "Threads"
+      "threads": "Threads",
+      "progress": "Fortschritt"
     }
   },
   "actionsMenu": {
@@ -72,6 +73,20 @@
     "player": "Spieler",
     "completed": "Erledigt",
     "firstBingo": "Erstes Bingo"
+  },
+  "progress": {
+    "title": "Fortschritt",
+    "empty": "Noch kein Fortschritt erfasst.",
+    "notStarted": "Der Fortschritt wird angezeigt, sobald das Bingo beginnt.",
+    "granularity": "Zeitschritt",
+    "day": "Tag",
+    "month": "Monat",
+    "chartLabel": "Erledigte Vorsätze jedes Spielers im Zeitverlauf",
+    "legendHint": "Namen auswählen, um Spieler hervorzuheben.",
+    "viewPicker": "Fortschrittsansicht",
+    "views": {
+      "completedOverTime": "Erledigt im Zeitverlauf"
+    }
   },
   "actions": {
     "started": "Bingo-Spiel gestartet!",

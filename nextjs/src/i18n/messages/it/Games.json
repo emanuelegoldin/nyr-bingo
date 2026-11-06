@@ -14,7 +14,8 @@
     "tabs": {
       "cards": "Carte",
       "leaderboard": "Classifica",
-      "threads": "Thread"
+      "threads": "Thread",
+      "progress": "Progressi"
     }
   },
   "actionsMenu": {
@@ -72,6 +73,20 @@
     "player": "Giocatore",
     "completed": "Completati",
     "firstBingo": "Primo bingo"
+  },
+  "progress": {
+    "title": "Progressi",
+    "empty": "Nessun progresso registrato.",
+    "notStarted": "I progressi vengono mostrati quando inizia il bingo.",
+    "granularity": "Intervallo di tempo",
+    "day": "Giorno",
+    "month": "Mese",
+    "chartLabel": "Propositi completati da ogni giocatore nel tempo",
+    "legendHint": "Seleziona i nomi per evidenziare i giocatori.",
+    "viewPicker": "Vista dei progressi",
+    "views": {
+      "completedOverTime": "Completati nel tempo"
+    }
   },
   "actions": {
     "started": "Partita di bingo avviata!",

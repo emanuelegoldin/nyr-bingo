@@ -15,6 +15,8 @@ export interface Game {
   name: string;
   teamResolutionText: string | null;
   status: GameStatus;
+  /** ISO datetime bingo started, or null while the game is forming. */
+  startedAt: string | null;
   /** Last playable day as YYYY-MM-DD, or null when the game only ends manually. */
   deadline: string | null;
   members: TeamMember[];

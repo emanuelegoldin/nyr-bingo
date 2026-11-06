@@ -14,7 +14,8 @@
     "tabs": {
       "cards": "Cards",
       "leaderboard": "Leaderboard",
-      "threads": "Threads"
+      "threads": "Threads",
+      "progress": "Progress"
     }
   },
   "actionsMenu": {
@@ -72,6 +73,20 @@
     "player": "Player",
     "completed": "Completed",
     "firstBingo": "First Bingo"
+  },
+  "progress": {
+    "title": "Progress",
+    "empty": "No progress recorded yet.",
+    "notStarted": "Progress is shown once bingo starts.",
+    "granularity": "Time step",
+    "day": "Day",
+    "month": "Month",
+    "chartLabel": "Completed resolutions of each player over time",
+    "legendHint": "Select names to highlight players.",
+    "viewPicker": "Progress view",
+    "views": {
+      "completedOverTime": "Completed over time"
+    }
   },
   "actions": {
     "started": "Bingo game started!",

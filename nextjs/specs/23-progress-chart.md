@@ -76,7 +76,7 @@ Show how a game has moved over time. The leaderboard (spec 12) only holds each p
 
 ### 5) Colours and Legend
 
-- Each player has a colour from a fixed categorical palette, assigned in leaderboard order. The palette works in light and dark themes. When there are more players than colours, the colours repeat in order.
+- Each player has a colour from a fixed categorical palette, assigned in leaderboard order. The palette works in light and dark themes. The palette has eight colours: from the ninth player on, the colours repeat in order, and those players' lines are dashed, so no two players share the same line.
 - The legend under the chart lists every player with their colour and their name: display name if `displayNamePublic` is true, otherwise username (as in spec 12).
 - Clicking a name in the legend toggles that player's highlight. Several players can be highlighted at once.
 - While at least one player is highlighted, the highlighted lines are drawn thicker and the others are dimmed. With nobody highlighted, every line is drawn normally.

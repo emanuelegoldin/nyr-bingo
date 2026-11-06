@@ -4,13 +4,15 @@
  * Game Page
  * Spec Reference: 16-games.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md
  *
- * The page is organised into three tabs:
+ * The page is organised into four tabs:
  *   1. Cards   — bingo cards for every member (existing functionality)
  *   2. Leaderboard — ranked table of first-bingo times
  *   3. Threads — the game's archived review threads (spec 07)
+ *   4. Progress — each player's completed count over time (spec 23)
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
+import { ProgressTab } from "@/components/progress/progress-tab";
 import { ArchivedThreadsTab } from "@/components/threads/archived-threads-tab";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
@@ -25,7 +27,7 @@ import { useState } from 'react';
 
 import type { GamePermission } from "@/lib/authz/permissions";
 import { BingoCardWithCells } from "@/lib/db/types";
-import type { ArchivedThread, LeaderboardEntry, ResolutionFormData } from "@/lib/shared/types";
+import type { ArchivedThread, LeaderboardEntry, ProgressPoint, ResolutionFormData } from "@/lib/shared/types";
 import { GameActionsMenu } from "./_components/GameActionsMenu";
 import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { MissingTeamGoalNotice } from "./_components/MissingTeamGoalNotice";
@@ -46,6 +48,7 @@ interface GameDetailPageClientProps {
   initialExistingResolutions?: TeamProvidedResolution[];
   initialLeaderboardEntries?: LeaderboardEntry[];
   initialArchivedThreads?: ArchivedThread[];
+  initialProgressPoints?: ProgressPoint[];
 }
 
 export default function GameDetailPageClient({
@@ -57,6 +60,7 @@ export default function GameDetailPageClient({
   initialExistingResolutions,
   initialLeaderboardEntries,
   initialArchivedThreads,
+  initialProgressPoints,
 }: GameDetailPageClientProps) {
   const t = useTranslations("Games.detail");
   usePageTitle(t("pageTitle"));
@@ -64,6 +68,7 @@ export default function GameDetailPageClient({
   const cards = useLastLoaded<BingoCardWithCells[]>(initialCards, []);
   const leaderboardEntries = useLastLoaded<LeaderboardEntry[]>(initialLeaderboardEntries, []);
   const archivedThreads = useLastLoaded<ArchivedThread[]>(initialArchivedThreads, []);
+  const progressPoints = useLastLoaded<ProgressPoint[]>(initialProgressPoints, []);
 
   const {
     game,
@@ -170,6 +175,7 @@ export default function GameDetailPageClient({
             <TabsTrigger value="cards">{t("tabs.cards")}</TabsTrigger>
             <TabsTrigger value="leaderboard">{t("tabs.leaderboard")}</TabsTrigger>
             <TabsTrigger value="threads">{t("tabs.threads")}</TabsTrigger>
+            <TabsTrigger value="progress">{t("tabs.progress")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="cards" className="mt-6">
@@ -188,6 +194,16 @@ export default function GameDetailPageClient({
             <ArchivedThreadsTab
               threads={archivedThreads}
               getDeleteUrl={can('thread.delete') ? (threadId) => `/api/threads/${threadId}` : undefined}
+            />
+          </TabsContent>
+
+          <TabsContent value="progress" className="mt-6">
+            <ProgressTab
+              started={game.status !== "forming"}
+              leaderboard={leaderboardEntries}
+              points={progressPoints}
+              startedAt={game.startedAt}
+              endedAt={null}
             />
           </TabsContent>
         </Tabs>

@@ -61,10 +61,15 @@ Run once at Node startup:
 - A proof file on disk is content-addressed and can be named by `review_files` and `archived_thread_files` rows; `deleteStoredFileUnlessShared` removes it only when no other row in either table names it.
 - Both game pages load the threads on the server and render `components/threads/archived-threads-tab.tsx`.
 
+## Progress history (spec 23)
+
+- `refreshLeaderboardEntry` (`lib/db/leaderboard-repository.ts`) logs a `leaderboard_progress` row whenever a player's completed count changes; `initializeGameLeaderboard` writes the `0` points at game start. `archiveGame` copies them into `archived_progress` through `lib/db/archived-progress-repository.ts`.
+- Both game pages load the points on the server and render `components/progress/progress-tab.tsx`, which builds one `ProgressData` and renders the views listed in `components/progress/views.ts`. A new progress view is a component taking `ProgressViewProps` plus one entry there.
+
 ## UI structure
 
 - `app/(app)/*` holds the pages behind login, and `app/(auth)/*` holds login and register. Each route has a server `page.tsx` and a `*-client.tsx` component. Pieces used by only one route go in that route's `_components/`.
-- Reusable components are in `components/`, grouped by area (cell, bingo-card, dialogs, team, archive, threads, notifications). Primitives come from `components/ui/` (shadcn/ui), so reuse them.
+- Reusable components are in `components/`, grouped by area (cell, bingo-card, dialogs, team, archive, threads, progress, notifications). Primitives come from `components/ui/` (shadcn/ui), so reuse them.
 - The page title and other app state come from `hooks/AppContext.tsx` (see `docs/nextjs/context_provider.md`).
 
 ## i18n (spec 15)

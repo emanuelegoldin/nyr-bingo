@@ -23,7 +23,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/(app)/archive/[archivedGameId]
 
-- `archived-game-page-client.tsx` — Archived Game Page content: header, then tabs with read-only cards, leaderboard and threads.
+- `archived-game-page-client.tsx` — Archived Game Page content: header, then tabs with read-only cards, leaderboard, threads and progress.
 - `page.tsx` — Archived Game Page
 
 ## app/(app)/dashboard
@@ -481,6 +481,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 ## lib/db
 
 - `archived-game-repository.ts` — Archived Game Repository - Read-only snapshots of finished games
+- `archived-progress-repository.ts` — Archived Progress Repository - The progress points kept in an archived game
 - `archived-thread-repository.ts` — Archived Thread Repository - The review threads kept in an archived game
 - `archived-thread-rows.ts` — Row types and the mapper that turn closed threads, live or archived, into the shared shape.
 - `bingo-card-arrangement.ts` — Bingo Card Arrangement - Shuffling and locking a card

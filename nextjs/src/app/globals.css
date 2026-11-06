@@ -32,6 +32,15 @@ body {
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    /* Progress chart series (spec 23), validated on the card surface */
+    --progress-series-1: #2a78d6;
+    --progress-series-2: #eb6834;
+    --progress-series-3: #1baf7a;
+    --progress-series-4: #eda100;
+    --progress-series-5: #e87ba4;
+    --progress-series-6: #008300;
+    --progress-series-7: #6250d6;
+    --progress-series-8: #e34948;
     --radius: 0.5rem;
     --sidebar-background: 285 43% 98%;
     --sidebar-foreground: 285 20% 20%;
@@ -67,6 +76,15 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    /* Progress chart series (spec 23), validated on the card surface */
+    --progress-series-1: #3987e5;
+    --progress-series-2: #d95926;
+    --progress-series-3: #199e70;
+    --progress-series-4: #c98500;
+    --progress-series-5: #d55181;
+    --progress-series-6: #008300;
+    --progress-series-7: #9085e9;
+    --progress-series-8: #e66767;
     --sidebar-background: 285 20% 12%;
     --sidebar-foreground: 285 30% 80%;
     --sidebar-primary: 224.3 76.3% 48%;

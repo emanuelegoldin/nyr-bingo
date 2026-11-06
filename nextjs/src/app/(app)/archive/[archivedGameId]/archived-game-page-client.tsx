@@ -1,14 +1,15 @@
 "use client";
 
 /**
- * Archived Game Page content: header, then tabs with read-only cards, leaderboard and threads.
- * Spec Reference: 18-game-archive.md - Archived Game Page
+ * Archived Game Page content: header, then tabs with read-only cards, leaderboard, threads and progress.
+ * Spec Reference: 18-game-archive.md - Archived Game Page, 23-progress-chart.md
  */
 
 import { LeaderboardTab } from "@/app/(app)/games/[gameId]/leaderboard-tab";
 import { ArchivedCardView } from "@/components/archive/archived-card";
 import { formatArchiveDate } from "@/components/archive/format-archive-date";
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
+import { ProgressTab } from "@/components/progress/progress-tab";
 import { ArchivedThreadsTab } from "@/components/threads/archived-threads-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
@@ -83,6 +84,7 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete, canDel
           <TabsTrigger value="cards">{tt("cards")}</TabsTrigger>
           <TabsTrigger value="leaderboard">{tt("leaderboard")}</TabsTrigger>
           <TabsTrigger value="threads">{tt("threads")}</TabsTrigger>
+          <TabsTrigger value="progress">{tt("progress")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cards" className="mt-6 space-y-8">
@@ -101,6 +103,16 @@ export default function ArchivedGamePageClient({ archivedGame, canDelete, canDel
             getDeleteUrl={canDeleteThreads
               ? (threadId) => `/api/archived-games/${archivedGame.id}/threads/${threadId}`
               : undefined}
+          />
+        </TabsContent>
+
+        <TabsContent value="progress" className="mt-6">
+          <ProgressTab
+            started
+            leaderboard={archivedGame.leaderboard}
+            points={archivedGame.progress}
+            startedAt={archivedGame.startedAt}
+            endedAt={archivedGame.endedAt}
           />
         </TabsContent>
       </Tabs>

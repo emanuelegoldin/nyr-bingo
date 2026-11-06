@@ -212,7 +212,7 @@ _No file references this spec._
 
 ## 18-game-archive.md — Game Archive
 
-- `app/(app)/archive/[archivedGameId]/archived-game-page-client.tsx` — Archived Game Page content: header, then tabs with read-only cards, leaderboard and threads. [Archived Game Page]
+- `app/(app)/archive/[archivedGameId]/archived-game-page-client.tsx` — Archived Game Page content: header, then tabs with read-only cards, leaderboard, threads and progress. [Archived Game Page]
 - `app/(app)/archive/[archivedGameId]/page.tsx` — Archived Game Page [Archived Game Page]
 - `app/(app)/archive/page.tsx` — Archive Page - the finished games the caller took part in [Archive Page]
 - `app/api/archived-games/[archivedGameId]/route.ts` — Archived Game Detail API
@@ -269,6 +269,13 @@ _No file references this spec._
 - `lib/db/bingo-card-arrangement.ts` — Bingo Card Arrangement - Shuffling and locking a card [Lock; Shuffle]
 - `lib/db/types.ts` — TypeScript Types for Database Entities
 - `lib/shared/shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
+- `lib/shared/types.ts`
+
+## 23-progress-chart.md — Progress Chart
+
+- `app/(app)/games/[gameId]/page.tsx` — Game Page
+- `lib/db/archived-progress-repository.ts` — Archived Progress Repository - The progress points kept in an archived game
+- `lib/db/leaderboard-repository.ts` — Leaderboard Repository – persisted game leaderboard data
 - `lib/shared/types.ts`
 
 ## Unmapped files (95)
