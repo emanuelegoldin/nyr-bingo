@@ -67,6 +67,8 @@ A check stamp is a round stamp with a checkmark inside, drawn over the cell so t
 
 **Hourglass animation.** When a cell becomes `pending_review` while the card is shown, its hourglass fades in, shakes briefly left and right, and settles centred on the cell. The same rules as the stamp animation apply: it waits for an open dialog of the cell to close, and does not play on load or when the user prefers reduced motion.
 
+**Card grid.** The cells form a ruled grid, like a printed bingo card: square cells touch each other and are separated by thin lines in the primary colour, inside a thicker frame of the same colour. This applies to live and archived cards. A clickable cell shows a background highlight on hover.
+
 **Reactions.** Teammates can put small emoji reactions on a stamped cell. They are drawn above the stamp and below the title (spec 24).
 
 Every non-empty, non-joker cell shows its title. On `sm` screens and wider it also shows a source badge: "Team Goal", the provider's username, or "Personal". A member-provided cell whose provider is no longer a player of the game (spec 16, Leaving a Game) shows "Former Teammates", without a profile link.
