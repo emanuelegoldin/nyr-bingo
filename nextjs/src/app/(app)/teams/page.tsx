@@ -6,11 +6,10 @@
  */
 
 import { PageSpinner } from "@/components/page-spinner";
-import { formatLeaderNames } from "@/components/team/leaders";
 import type { Team } from "@/components/team/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -143,9 +142,6 @@ export default function TeamsPage() {
                       <Users className="h-5 w-5 text-primary" />
                       {team.name}
                     </CardTitle>
-                    <CardDescription>
-                      {t("list.ledBy", { names: formatLeaderNames(team.members, t("leaders.unknown")) })}
-                    </CardDescription>
                   </CardHeader>
                   <CardContent className="flex-grow">
                     <p className="text-sm font-medium mb-2">{t("list.membersLabel")}</p>

@@ -11,7 +11,6 @@
     "nameLabel": "Teamname",
     "namePlaceholder": "z. B. Zielstrebige 2025",
     "submit": "Team erstellen",
-    "ledBy": "Admins: {names}",
     "membersLabel": "Teammitglieder:",
     "memberCount": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
     "emptyTitle": "Noch keine Teams",
