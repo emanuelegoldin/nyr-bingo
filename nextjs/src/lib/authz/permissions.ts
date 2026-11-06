@@ -48,7 +48,7 @@ export type GamePermission =
   | 'game.goal.set';
 
 /** Permissions held through a role in an archived game. */
-export type ArchivePermission = 'archive.view' | 'archive.delete';
+export type ArchivePermission = 'archive.view' | 'archive.delete' | 'archive.thread.delete';
 
 /** Every permission. */
 export type Permission = GlobalPermission | TeamPermission | GamePermission | ArchivePermission;
@@ -94,7 +94,7 @@ export const GAME_ROLE_PERMISSIONS: Record<GameScopeRole, readonly GamePermissio
 
 /** Permissions of each archive role. */
 export const ARCHIVE_ROLE_PERMISSIONS: Record<ArchiveScopeRole, readonly ArchivePermission[]> = {
-  leader: ['archive.view', 'archive.delete'],
+  leader: ['archive.view', 'archive.delete', 'archive.thread.delete'],
   player: ['archive.view'],
 };
 

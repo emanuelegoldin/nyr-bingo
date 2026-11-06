@@ -225,12 +225,13 @@ export interface ArchivedGameSummary {
   endedAt: string;
 }
 
-/** An archived game with its leaderboard and cards. */
+/** An archived game with its leaderboard, cards and archived threads. */
 export interface ArchivedGameDetail extends ArchivedGameSummary {
   /** The side length of every card of the game. */
   gridSize: number;
   leaderboard: LeaderboardEntry[];
   cards: ArchivedCard[];
+  threads: ArchivedThread[];
 }
 
 // Archived threads: closed review threads, read-only, of a running or an archived game

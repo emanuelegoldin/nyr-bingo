@@ -11,6 +11,7 @@ export * from './types';
 
 // Repositories
 export * from './archived-game-repository';
+export { deleteArchivedThread } from './archived-thread-repository';
 export * from './bingo-card-arrangement';
 export * from './bingo-card-generation';
 export * from './bingo-card-repository';
