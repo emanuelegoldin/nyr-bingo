@@ -39,5 +39,17 @@
     "decrement": "Zähler verringern",
     "increment": "Zähler erhöhen",
     "percentComplete": "{percent} % abgeschlossen"
+  },
+  "reactions": {
+    "label": "Reagieren",
+    "failed": "Deine Reaktion konnte nicht aktualisiert werden",
+    "names": {
+      "heart": "Herz",
+      "thumbs_up": "Daumen hoch",
+      "fire": "Feuer",
+      "star": "Stern",
+      "smile": "Lächeln",
+      "party": "Party"
+    }
   }
 }

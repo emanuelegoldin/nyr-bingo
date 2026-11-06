@@ -150,6 +150,7 @@ export const ResolutionCell = ({
                 canInteract={canInteract}
                 sourceLabel={sourceLabel}
                 onClick={handleClick}
+                reactions={cell.reactions}
                 // The stamp waits, hidden, for the cell's dialogs to close, so the user sees it land
                 stampMotion={!stampPending ? "still" : activeDialog === null ? "stamping" : "waiting"}
                 onStampAnimationEnd={() => setStampPending(false)} />
@@ -203,6 +204,7 @@ export const ResolutionCell = ({
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}
                     isOwner={isOwner}
+                    currentReaction={cell.reactions.find((reaction) => reaction.userId === currentUserId)?.reaction ?? null}
                     sourceLabel={sourceLabel}
                     onRefresh={onRefresh}
                     onOpenDialog={setActiveDialog}

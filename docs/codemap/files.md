@@ -373,11 +373,14 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 ## components/cell
 
 - `cell-face.tsx`
+- `cell-reactions.tsx` — Teammates' reactions drawn over a stamped cell, each at its stored spot.
 - `cell-stamp.tsx` — Round check stamp drawn over a completed or accomplished cell, with an optional stamping animation.
 - `cell-state-style.tsx`
 - `cell.tsx`
 - `empty.tsx`
 - `joker.tsx`
+- `reaction-icon.tsx` — The drawing of each reaction in the pool, as a small inline SVG.
+- `reaction-picker.tsx` — The React row of the cell detail dialog: one button per reaction, to add, change or remove the
 - `resolution-cell.tsx`
 
 ## components/dashboard

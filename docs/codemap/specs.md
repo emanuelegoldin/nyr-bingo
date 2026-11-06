@@ -291,6 +291,9 @@ _No file references this spec._
 ## 24-cell-reactions.md — Cell Reactions
 
 - `app/api/cells/[cellId]/reaction/route.ts` — Cell Reaction API [Backend Rules]
+- `components/cell/cell-reactions.tsx` — Teammates' reactions drawn over a stamped cell, each at its stored spot. [Card Display]
+- `components/cell/reaction-icon.tsx` — The drawing of each reaction in the pool, as a small inline SVG. [Reaction Pool]
+- `components/cell/reaction-picker.tsx` — The React row of the cell detail dialog: one button per reaction, to add, change or remove the [Reacting in the Cell Detail Dialog]
 - `lib/db/archived-reaction-repository.ts` — Archived Reaction Repository - The cell reactions kept in an archived game [Ended and Archived Games]
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
 - `lib/db/cell-reaction-repository.ts` — Cell Reaction Repository - Teammates' emoji reactions on stamped cells [Clearing]

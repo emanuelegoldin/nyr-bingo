@@ -1,11 +1,13 @@
 import { BingoCell } from "@/lib/db/types";
 import { cellSourceText } from "@/lib/shared/cell-source";
 import { CellSourceType, type CellSourceLabel } from "@/lib/shared/types";
+import type { CellReactionMark } from "@/lib/shared/reactions";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { Cell } from "./cell";
+import { CellReactions } from "./cell-reactions";
 import { CellStamp, type CellStampMotion } from "./cell-stamp";
 import { CELL_STATE_COLORS, getCellStateIcon } from "./cell-state-style";
 import { EmptyCell } from "./empty";
@@ -18,6 +20,8 @@ interface CellFaceProps {
     canInteract: boolean,
     sourceLabel: CellSourceLabel,
     onClick: () => void,
+    /** Teammates' reactions on the cell (spec 24); none by default. */
+    reactions?: CellReactionMark[],
     /** How the stamp of a completed or accomplished cell appears; defaults to `still`. */
     stampMotion?: CellStampMotion,
     /** Called when the stamping animation has finished. */
@@ -33,6 +37,7 @@ interface CellFaceProps {
  * @param canInteract - Whether the cell can be clicked.
  * @param sourceLabel - Label of the cell source, shown in the badge.
  * @param onClick - Click handler of the cell.
+ * @param reactions - Teammates' reactions, drawn above the stamp and below the title.
  * @param stampMotion - Whether the stamp is at rest, waiting to be stamped, or stamping.
  * @param onStampAnimationEnd - Called when the stamping animation has finished.
  * @returns The cell face.
@@ -42,6 +47,7 @@ export const CellFace = ({
     canInteract,
     sourceLabel,
     onClick,
+    reactions = [],
     stampMotion = "still",
     onStampAnimationEnd
 }: CellFaceProps) => {
@@ -83,6 +89,8 @@ export const CellFace = ({
                     motion={stampMotion}
                     onAnimationEnd={onStampAnimationEnd} />
             }
+            {/* Spec 24 - Card Display: above the stamp, below the title */}
+            <CellReactions reactions={reactions} />
             <p className={cn("relative text-[10px] leading-tight sm:text-xs md:text-sm font-medium break-words line-clamp-3 md:line-clamp-none md:truncate max-w-full max-md:group-data-[size=9]/card:text-[8px] max-md:group-data-[size=9]/card:line-clamp-2", config.text)}>
                 {displayTitle}
             </p>

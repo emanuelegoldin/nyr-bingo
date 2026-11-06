@@ -39,5 +39,17 @@
     "decrement": "Decrement counter",
     "increment": "Increment counter",
     "percentComplete": "{percent}% complete"
+  },
+  "reactions": {
+    "label": "React",
+    "failed": "Failed to update your reaction",
+    "names": {
+      "heart": "Heart",
+      "thumbs_up": "Thumbs up",
+      "fire": "Fire",
+      "star": "Star",
+      "smile": "Smile",
+      "party": "Party"
+    }
   }
 }
