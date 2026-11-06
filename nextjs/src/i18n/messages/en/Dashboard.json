@@ -1,6 +1,7 @@
 {
   "title": "Dashboard",
-  "cardTitle": "Your Bingo Card for {gameName}",
+  "cardTitle": "Your Bingo Card",
+  "openGame": "Open the game {gameName}",
   "headerContent": "Welcome to Resolution Bingo!",
   "headerDescription": "Complete your resolutions to get a BINGO! Click on a cell to mark it as completed.",
   "headerDescriptionNoTeam": "Join or create a team to start playing.",

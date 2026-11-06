@@ -155,7 +155,7 @@ _No file references this spec._
 
 ## 14-dashboard-and-navigation.md — Dashboard and Navigation
 
-_No file references this spec._
+- `components/dashboard/game-tag.tsx` — Clickable tag naming the game a dashboard card belongs to; it opens the game page. [Dashboard]
 
 ## 15-internationalization.md — Internationalization
 

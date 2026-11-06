@@ -1,6 +1,7 @@
 {
   "title": "Dashboard",
-  "cardTitle": "Deine Bingo-Karte für {gameName}",
+  "cardTitle": "Deine Bingo-Karte",
+  "openGame": "Spiel {gameName} öffnen",
   "headerContent": "Willkommen bei Resolution Bingo!",
   "headerDescription": "Erfülle deine Vorsätze, um ein BINGO zu bekommen! Klicke auf eine Zelle, um sie als erledigt zu markieren.",
   "headerDescriptionNoTeam": "Tritt einem Team bei oder gründe eines, um zu spielen.",

@@ -370,6 +370,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `dashboard-game-card-client.tsx`
 - `dashboard-page-shell.tsx`
+- `game-tag.tsx` — Clickable tag naming the game a dashboard card belongs to; it opens the game page.
 
 ## components/dialogs
 
