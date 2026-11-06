@@ -63,7 +63,7 @@ Make the application usable on phones. The authenticated pages, their dialogs an
 
 - A card fits the width of the screen without horizontal scrolling, whatever its size (spec 16). This applies to live cards (dashboard, game page) and archived cards.
 - On mobile, a cell of a 3×3 or 5×5 card shows up to three lines of the resolution title in a smaller font, instead of a single truncated line. A 9×9 cell is too narrow for that: it shows as much of the title as fits, and tapping it opens the full details as on any card.
-- The joker cell's icon and label fit inside the cell.
+- The joker cell's icon and label fit inside the cell. On a 9×9 card on mobile the joker shows only its icon, with the label kept for screen readers.
 
 ---
 
