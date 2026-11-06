@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/api-client";
 import { BingoCellDetail, BingoCellWithThread } from "@/lib/db/types";
 import { getSourceLabel } from "@/lib/shared/cell-source";
 import { CellSourceType, CellState, ResolutionType } from "@/lib/shared/types";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MarkCellCompleteDialog } from "../dialogs/complete-dialog";
 import { EditCellDialog } from "../dialogs/edit-cell";
 import { RequestProofDialog } from "../dialogs/request-proof";
@@ -18,6 +18,9 @@ import { CellFace } from "./cell-face";
 
 /** The dialog currently opened from a cell, or null when none is open. */
 type ActiveDialog = 'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | 'history' | null;
+
+/** Cell states whose stamp or hourglass animates in on the card (spec 06, Card Display Rules). */
+const ANIMATED_MARK_STATES: ReadonlySet<string> = new Set([CellState.COMPLETED, CellState.ACCOMPLISHED, CellState.PENDING_REVIEW]);
 
 /**
  * Load the data shown by the detail dialog for a cell.
@@ -79,6 +82,18 @@ export const ResolutionCell = ({
     const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
     const [detailData, setDetailData] = useState<ResolutionDetailData | null>(null);
     const usernames = useTeamMembers();
+    // Spec 06 - Card Display Rules: animate the stamp or hourglass when the cell enters its state while shown, not on load
+    const previousStateRef = useRef(cell.state);
+    const [markPending, setMarkPending] = useState<boolean>(false);
+
+    useEffect(() => {
+        const previousState = previousStateRef.current;
+        previousStateRef.current = cell.state;
+        if (previousState === cell.state) return;
+        // With reduced motion the mark just appears, and no animation end would clear the flag
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        setMarkPending(ANIMATED_MARK_STATES.has(cell.state) && !prefersReducedMotion);
+    }, [cell.state]);
 
     /** Dialogs report close requests through this; opening is done via `setActiveDialog`. */
     const handleDialogOpenChange = (open: boolean) => {
@@ -134,7 +149,11 @@ export const ResolutionCell = ({
                 cell={cell}
                 canInteract={canInteract}
                 sourceLabel={sourceLabel}
-                onClick={handleClick} />
+                onClick={handleClick}
+                reactions={cell.reactions}
+                // The mark waits, hidden, for the cell's dialogs to close, so the user sees it land
+                markMotion={!markPending ? "still" : activeDialog === null ? "stamping" : "waiting"}
+                onMarkAnimationEnd={() => setMarkPending(false)} />
             {activeDialog === "complete" &&
                 <MarkCellCompleteDialog
                     cell={{
@@ -185,6 +204,7 @@ export const ResolutionCell = ({
                     isOpen={true}
                     setIsOpen={handleDialogOpenChange}
                     isOwner={isOwner}
+                    currentReaction={cell.reactions.find((reaction) => reaction.userId === currentUserId)?.reaction ?? null}
                     sourceLabel={sourceLabel}
                     onRefresh={onRefresh}
                     onOpenDialog={setActiveDialog}

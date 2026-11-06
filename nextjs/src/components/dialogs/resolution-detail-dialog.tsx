@@ -17,6 +17,8 @@
 "use client";
 
 import { STATE_CONFIG } from "@/components/cell/cell-state-style";
+import { ReactionPicker } from "@/components/cell/reaction-picker";
+import { REACTABLE_CELL_STATES, type ReactionId } from "@/lib/shared/reactions";
 import { cellSourceText } from "@/lib/shared/cell-source";
 import type { CellSourceLabel, CellSubtask } from "@/lib/shared/types";
 import { CellState, ResolutionType } from "@/lib/shared/types";
@@ -74,6 +76,8 @@ interface ResolutionDetailDialogProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   isOwner: boolean;
+  /** The viewer's reaction on the cell (spec 24), or null. */
+  currentReaction?: ReactionId | null;
   /** Human-readable source label, e.g. "Personal", "Team Goal", or a username */
   sourceLabel?: CellSourceLabel;
   /** Called after a mutation so the parent can refresh the bingo card */
@@ -94,6 +98,7 @@ export const ResolutionDetailDialog = ({
   isOpen,
   setIsOpen,
   isOwner,
+  currentReaction = null,
   sourceLabel,
   onRefresh,
   onOpenDialog,
@@ -155,6 +160,11 @@ export const ResolutionDetailDialog = ({
               <p className="text-sm text-muted-foreground italic">{t("detail.noDescription")}</p>
             )}
           </div>
+        )}
+
+        {/* Spec 24 - a teammate reacts to a stamped cell */}
+        {!isOwner && REACTABLE_CELL_STATES.includes(cell.state) && (
+          <ReactionPicker cellId={cell.cellId} currentReaction={currentReaction} onRefresh={onRefresh} />
         )}
 
         {/* Action buttons */}

@@ -5,6 +5,7 @@
 
 import { CellSourceType, CellState, GameStatus, ResolutionType } from '../shared/types';
 import { getResolvedCellRowById, rowToCell } from './bingo-card-rows';
+import { clearUnstampedCellReactions } from './cell-reaction-repository';
 import { EMPTY_SNAPSHOT, replaceCellSnapshot, snapshotOf } from './cell-snapshot';
 import { execute, query, withTransaction } from './connection';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
@@ -154,6 +155,9 @@ export async function updateCellState(
     return { success: false, error: 'Cell state has changed — please refresh and try again' };
   }
 
+  // Spec: 24-cell-reactions.md - an undo back to pending loses the cell's reactions
+  await clearUnstampedCellReactions(cellId);
+
   // Refresh persisted leaderboard data after state change
   await refreshLeaderboardEntry(cell.game_id, cell.card_user_id);
 
@@ -251,6 +255,8 @@ export async function updateCellContent(
     if (updateResult.affectedRows === 0) return false;
 
     await replaceCellSnapshot(connection, cellId, snapshot);
+    // Spec: 24-cell-reactions.md - the edit resets the state, so the cell loses its reactions
+    await clearUnstampedCellReactions(cellId, connection);
     return true;
   }, (didUpdate) => didUpdate);
 
@@ -310,6 +316,8 @@ export async function undoCompletion(
       [cellId],
       connection
     );
+    // Spec: 24-cell-reactions.md - back to pending, the cell loses its reactions
+    await clearUnstampedCellReactions(cellId, connection);
     return undoResult.affectedRows > 0;
   }, (didRevert) => didRevert);
 
@@ -367,6 +375,9 @@ export async function autoTransitionCellState(
   if (result.affectedRows === 0) {
     return [];
   }
+
+  // Spec: 24-cell-reactions.md - a cell reverted to pending loses its reactions
+  await clearUnstampedCellReactions(cellId);
 
   await refreshLeaderboardEntry(owners[0].game_id, owners[0].user_id);
 

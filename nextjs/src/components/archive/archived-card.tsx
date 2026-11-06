@@ -44,6 +44,7 @@ export function ArchivedCardView({ card, gridSize }: ArchivedCardViewProps) {
                 cell={cell}
                 canInteract={!cell.isEmpty}
                 sourceLabel={cell.sourceLabel}
+                reactions={cell.reactions}
                 onClick={() => setSelectedCell(cell)}
               />
             )

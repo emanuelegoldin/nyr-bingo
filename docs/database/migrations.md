@@ -534,3 +534,45 @@ Progress tab can chart it over time (spec 23). Archived games keep both (spec 18
 `Create_Column` and `CREATE TABLE IF NOT EXISTS` do nothing on a second run. `started_at` is only
 set where it is `NULL`, the `0` points only for players with no point, and the running counts only
 for players whose only point is that `0`.
+
+## 5.13.0 - Cell Reactions
+
+Players can put one emoji reaction on each of a teammate's completed or accomplished cells, at a
+random spot the server picks. Archived games keep them (spec 24).
+
+### Schema changes
+
+- `cell_reactions` holds one row per player per cell: `cell_id` (FK → `bingo_cells`), `user_id`
+  (FK → `users`), `reaction` (an id from the pool), `pos_x` and `pos_y` (the reaction's center, in
+  percent of the cell), `created_at` and `updated_at`. Primary key `(cell_id, user_id)`, both
+  foreign keys `ON DELETE CASCADE`.
+- `archived_cell_reactions` holds the same values for an archived cell, with the reacting player
+  as `reactor_user_id` (no foreign key). `(archived_game_id, user_id, position)` references
+  `archived_cells`, `ON DELETE CASCADE`.
+
+### Data migration
+
+None. Existing cells start with no reaction.
+
+### Idempotency
+
+`CREATE TABLE IF NOT EXISTS` does nothing on a second run.
+
+## 5.13.1 - Reaction Tilt and Scale
+
+Each cell reaction also gets a random tilt and size, picked again every time it is placed, as its
+spot already was. Archived games keep them (spec 24).
+
+### Schema changes
+
+- `cell_reactions` and `archived_cell_reactions` get `rotation` (`TINYINT`, degrees between -45
+  and 45, default `0`) and `scale` (`TINYINT UNSIGNED`, percent of the base size between 75 and
+  125, default `100`).
+
+### Data migration
+
+None. Reactions stored before it take the defaults, so they show untilted at the base size.
+
+### Idempotency
+
+`Create_Column` does nothing on a second run.

@@ -1,3 +1,5 @@
+import type { CellReactionMark } from './reactions';
+
 // Game status
 // Spec: 16-games.md
 export enum GameStatus {
@@ -199,6 +201,8 @@ export interface ArchivedCell {
   subtasks: CellSubtask[] | null;
   numberOfRepetition: number | null;
   completedTimes: number | null;
+  /** Reactions the cell had when the game ended (spec 24). */
+  reactions: CellReactionMark[];
 }
 
 /** One player's card in an archived game. */

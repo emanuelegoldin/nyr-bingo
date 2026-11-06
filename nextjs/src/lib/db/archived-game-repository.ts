@@ -18,7 +18,9 @@ import {
   type CellSourceLabel,
   type CellSubtask,
 } from '../shared/types';
+import type { CellReactionMark } from '../shared/reactions';
 import { getArchivedProgress, saveProgressSnapshot } from './archived-progress-repository';
+import { getArchivedReactions, saveReactionSnapshot } from './archived-reaction-repository';
 import { getBingoCard } from './bingo-card-repository';
 import {
   buildThreadSnapshots,
@@ -249,6 +251,8 @@ function snapshotCell(
     subtasks: isCompound && progress ? progress.subtasks : null,
     numberOfRepetition: isIterative ? progress?.numberOfRepetition ?? null : null,
     completedTimes: isIterative ? progress?.completedTimes ?? null : null,
+    // Copied straight from the live table by saveReactionSnapshot
+    reactions: [],
   };
 }
 
@@ -384,6 +388,7 @@ export async function archiveGame(game: Game): Promise<boolean> {
 
     await saveThreadSnapshots(game.id, threads, connection);
     await saveProgressSnapshot(game.id, connection);
+    await saveReactionSnapshot(game.id, connection);
 
     const deleted = await execute(
       `DELETE FROM games WHERE id = ? AND status = 'ended'`,
@@ -445,6 +450,16 @@ async function getArchivedCards(
     `SELECT * FROM archived_cell_subtasks WHERE archived_game_id = ? ORDER BY subtask_index ASC`,
     [id]
   );
+  const reactionRows = await getArchivedReactions(id);
+
+  const reactionsByCell = new Map<string, CellReactionMark[]>();
+  for (const row of reactionRows) {
+    const key = cellKey(row.user_id, row.position);
+    reactionsByCell.set(key, [
+      ...(reactionsByCell.get(key) ?? []),
+      { reaction: row.reaction, x: row.pos_x, y: row.pos_y, rotation: row.rotation, scale: row.scale },
+    ]);
+  }
 
   const subtasksByCell = new Map<string, CellSubtask[]>();
   for (const row of subtaskRows) {
@@ -472,6 +487,7 @@ async function getArchivedCards(
         subtasks: subtasksByCell.get(cellKey(row.user_id, row.position)) ?? null,
         numberOfRepetition: row.number_of_repetition,
         completedTimes: row.completed_times,
+        reactions: reactionsByCell.get(cellKey(row.user_id, row.position)) ?? [],
       }));
 
     cells.push({
@@ -488,6 +504,7 @@ async function getArchivedCards(
       subtasks: null,
       numberOfRepetition: null,
       completedTimes: null,
+      reactions: [],
     });
     cells.sort((a, b) => a.position - b.position);
 

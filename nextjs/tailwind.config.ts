@@ -88,10 +88,30 @@ export default {
             height: '0',
           },
         },
+        // Spec 06 - Card Display Rules: the check stamp fades in above the cell, presses down and settles
+        'stamp-in': {
+          '0%': { opacity: '0', transform: 'rotate(-12deg) scale(1.5)' },
+          '45%': { opacity: '0.45', transform: 'rotate(-12deg) scale(1.35)' },
+          '70%': { opacity: '0.7', transform: 'rotate(-12deg) scale(0.94)' },
+          '85%': { opacity: '0.6', transform: 'rotate(-12deg) scale(1.03)' },
+          '100%': { opacity: '0.6', transform: 'rotate(-12deg) scale(1)' },
+        },
+        // Spec 06 - Card Display Rules: the hourglass fades in, shakes left and right, and settles centred
+        'hourglass-in': {
+          '0%': { opacity: '0', transform: 'translateX(0) rotate(0deg)' },
+          '30%': { opacity: '0.6', transform: 'translateX(0) rotate(0deg)' },
+          '45%': { transform: 'translateX(-8%) rotate(-6deg)' },
+          '60%': { transform: 'translateX(7%) rotate(5deg)' },
+          '74%': { transform: 'translateX(-5%) rotate(-3deg)' },
+          '87%': { transform: 'translateX(3%) rotate(2deg)' },
+          '100%': { opacity: '0.6', transform: 'translateX(0) rotate(0deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'stamp-in': 'stamp-in 550ms cubic-bezier(.2,.8,.3,1) 150ms both',
+        'hourglass-in': 'hourglass-in 700ms ease-out 150ms both',
       },
     },
   },

@@ -158,6 +158,10 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `route.ts` — Increment Iterative Cell API
 
+## app/api/cells/[cellId]/reaction
+
+- `route.ts` — Cell Reaction API
+
 ## app/api/cells/[cellId]/request-proof
 
 - `route.ts` — Request Proof API
@@ -369,10 +373,15 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 ## components/cell
 
 - `cell-face.tsx`
+- `cell-hourglass.tsx` — Yellow hourglass drawn over a cell whose proof was requested, with an optional settling animation.
+- `cell-reactions.tsx` — Teammates' reactions drawn over a stamped cell, each at its stored spot, tilt and size.
+- `cell-stamp.tsx` — Round check stamp drawn over a completed or accomplished cell, with an optional stamping animation.
 - `cell-state-style.tsx`
-- `cell.tsx`
+- `cell.tsx` — The button that every bingo cell is drawn as, and the layout classes the cells share.
 - `empty.tsx`
-- `joker.tsx`
+- `joker.tsx` — The Joker at the center of a card: a plain cell with a purple outline star.
+- `reaction-icon.tsx` — The drawing of each reaction in the pool, as a small inline SVG.
+- `reaction-picker.tsx` — The React row of the cell detail dialog: one button per reaction, to add, change or remove the
 - `resolution-cell.tsx`
 
 ## components/dashboard
@@ -417,6 +426,18 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 ## components/profile
 
 - `public-profile-page-shell.tsx`
+
+## components/progress
+
+- `bucket-progress.ts` — Turn progress points into one row per calendar day or month, in the viewer's time zone.
+- `build-progress-data.ts` — Assemble the progress data of a live or archived game for the Progress tab.
+- `progress-legend.tsx` — Legend under the progress chart: each player's colour and name, clickable to highlight them.
+- `progress-line-chart.tsx` — Progress view: a step line per player of their completed count, by day or month, with a
+- `progress-tab.tsx` — Progress tab of the game page and the archived game page.
+- `progress-tooltip.tsx` — Tooltip of the progress chart: the day or month and each player's value, highest first.
+- `series-style.ts` — Colour and dash of each player's series in the progress views.
+- `types.ts` — Shared contract of the Progress tab: the data every progress view reads, and the shape of a view.
+- `views.ts` — The progress views the Progress tab offers, in order. Add a view here to make it available.
 
 ## components/team
 
@@ -482,6 +503,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 
 - `archived-game-repository.ts` — Archived Game Repository - Read-only snapshots of finished games
 - `archived-progress-repository.ts` — Archived Progress Repository - The progress points kept in an archived game
+- `archived-reaction-repository.ts` — Archived Reaction Repository - The cell reactions kept in an archived game
 - `archived-thread-repository.ts` — Archived Thread Repository - The review threads kept in an archived game
 - `archived-thread-rows.ts` — Row types and the mapper that turn closed threads, live or archived, into the shared shape.
 - `bingo-card-arrangement.ts` — Bingo Card Arrangement - Shuffling and locking a card
@@ -491,6 +513,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
 - `cell-history-repository.ts` — Cell History Repository
 - `cell-progress-repository.ts` — Cell Progress Repository - The progress a compound or iterative cell holds
+- `cell-reaction-repository.ts` — Cell Reaction Repository - Teammates' emoji reactions on stamped cells
 - `cell-snapshot.ts` — Cell Snapshot - The copy of a resolution's definition that a bingo cell holds
 - `closed-thread-repository.ts` — Closed Thread Repository - The archived threads of a running game: reading and deleting them
 - `connection.ts` — MariaDB Database Connection
@@ -521,6 +544,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `bingo-lines.ts`
 - `cell-source.ts`
 - `dates.ts` — Date helpers usable from server and client code.
+- `reactions.ts` — The reaction pool and the shapes of a reaction on a cell, shared by the server and the client.
 - `resolution-form.ts` — Mappers that build ResolutionFormData for the resolution create/edit dialog.
 - `resolution-type.ts`
 - `shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
