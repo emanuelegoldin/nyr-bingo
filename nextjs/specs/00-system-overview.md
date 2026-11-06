@@ -90,9 +90,9 @@ Out of scope (not implemented):
 - **TeamInvitation**
   - teamId, inviteCode, invitedEmail, invitedUserId, status, expiresAt
 - **BingoCard** (one per game per user)
-  - id, gameId, teamId, userId, gridSize (always 5)
-- **BingoCell** (24 stored cells; the center Joker is not stored)
-  - id, cardId, position (0–24)
+  - id, gameId, teamId, userId, gridSize (the game's size: 3, 5 or 9)
+- **BingoCell** (N²−1 stored cells on an N×N card; the center Joker is not stored)
+  - id, cardId, position (0 to N²−1)
   - resolutionId (nullable link to the source resolution, used only to avoid duplicates during generation; `NULL` for `prepared` and `empty` cells)
   - A snapshot of the definition: title, description, resolutionType, numberOfRepetition, and its subtasks in `bingo_cell_subtasks` (cellId, subtaskIndex, title, description, completed)
   - Progress: completedTimes (iterative counter, starts at 0) and each subtask's `completed` flag (starts false)

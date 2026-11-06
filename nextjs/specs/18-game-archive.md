@@ -30,7 +30,7 @@ Keep a read-only record of every finished game. An archived game is a snapshot o
 Every game that ends is archived, whether it ended manually or at its deadline (spec 16).
 
 - The archive holds, as they were when the game ended:
-  - The game name, the team name, the end date and the admins who ran the game: its players who were Team Admins when it was archived
+  - The game name, the team name, the end date, the card size and the admins who ran the game: its players who were Team Admins when it was archived
   - The leaderboard
   - The card of every player
 - The **players** of an archived game are the game's players (spec 16) who had a card in it. A member without a card has no access.
@@ -94,7 +94,7 @@ The role-to-permission table and the status of every refusal are defined in spec
 
 | Table | Primary key | Holds |
 | ----- | ----------- | ----- |
-| `archived_games` | `id`, the game's former id | `name`, `team_name`, `ended_at` |
+| `archived_games` | `id`, the game's former id | `name`, `team_name`, `ended_at`, `grid_size` |
 | `archived_game_players` | `archived_game_id`, `user_id` | `player_name`, `is_leader`, `leaderboard_rank`, `completed_tasks`, `first_bingo_at` |
 | `archived_cells` | `archived_game_id`, `user_id`, `position` | `title`, `description`, `resolution_type`, `state`, `source_type`, `source_user_id`, `source_label`, `is_empty`, `number_of_repetition`, `completed_times` |
 | `archived_cell_subtasks` | `archived_game_id`, `user_id`, `position`, `subtask_index` | `title`, `description`, `completed` |

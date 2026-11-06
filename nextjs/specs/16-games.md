@@ -42,6 +42,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 - A game belongs to one team and has a non-empty name.
 - `status` is `forming`, `started` or `ended`.
 - `deadline` is optional. It is the last playable day of the game. A game without one only ends manually.
+- `grid_size` is the size of every card of the game: `3` (3×3), `5` (5×5) or `9` (9×9). It is chosen when the game is created and cannot be changed afterwards, in any status.
 - The players of a game are its **roster**, stored in `game_players`. Every player is a member of the game's team.
 - The admins of a game are the Team Admins (spec 04) who are players of the game. Everything this spec reserves to "the admin" is open to any of them.
 - A game always has at least one admin among its players: an admin cannot leave while they are the only one.
@@ -68,7 +69,9 @@ A **running** game is one in `forming` or `started`.
 - Only an admin of the team can create a game (`403` otherwise), and the admin must be verified (`403` otherwise).
 - The body has a non-empty `name` (`400` otherwise).
 - The body MAY have `playerIds`, the team members who play the game. Without it, every member plays. Each id must belong to a team member (`400` otherwise). The creator is always a player, whether or not they are listed.
+- The body MAY have `gridSize`, one of `3`, `5` or `9` (`400` otherwise). Without it, the game is 5×5.
 - The **New Game** dialog lists the team members with a checkbox each, all checked. The creator's box is checked and cannot be cleared.
+- The **New Game** dialog has a **Card size** choice with 3×3, 5×5 and 9×9. 5×5 is selected by default.
 - The game starts in `forming` status with no goal and no resolutions.
 - A team can have any number of running games.
 
@@ -113,6 +116,8 @@ The header keeps only the most used actions visible, so it stays readable for ad
 ### Game Configuration
 
 `PATCH /api/games/[gameId]` with `deadline`, a date as `YYYY-MM-DD` or `null` for no deadline.
+
+- The grid size is not configurable: the route ignores any other field, and the **Configure** dialog does not offer it.
 
 - Only the admin can configure a game (`403` otherwise), and it must be running: `forming` or `started` (`400` otherwise).
 - `deadline` must be a real date that is not before today (`400` otherwise). `null` removes the deadline.
@@ -266,6 +271,7 @@ The role-to-permission table and the status of every refusal are defined in spec
 | `created_at`, `updated_at` | DATETIME | |
 | `ended_at` | DATETIME | NULL until the game ends |
 | `deadline` | DATE | Last playable day. NULL when the game only ends manually |
+| `grid_size` | TINYINT | `3`, `5` or `9`. Set at creation, never changed. Default `5` |
 
 ### `game_players`
 
@@ -279,7 +285,7 @@ The primary key is `(game_id, user_id)`.
 
 `bingo_cards`, `team_leaderboard` and `resolutions` carry both `game_id` and `team_id`. `resolutions.game_id` is `NULL` for personal resolutions. Each of those tables is unique per game, not per team.
 
-**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games. `V5_6_0__game_players.sql` adds `game_players`, with every existing game's team members as its players.
+**Migration:** `V5_0_0__separate_games_from_teams.sql`. Each existing team receives one game with the team's name, status and creation date. Teams are not merged. `V5_1_0__game_deadline.sql` adds `deadline`, which is `NULL` for existing games. `V5_6_0__game_players.sql` adds `game_players`, with every existing game's team members as its players. `V5_10_0__game_grid_size.sql` adds `grid_size`, which is `5` for existing games.
 
 ---
 
@@ -305,6 +311,8 @@ The primary key is `(game_id, user_id)`.
 - An ended game cannot be changed and its routes return `404`.
 - Deleting a game leaves its team and sibling games intact.
 - An admin can choose which team members play a new game; all are selected by default.
+- An admin chooses a 3×3, 5×5 or 9×9 card size when creating a game; 5×5 is selected by default.
+- The card size of a game cannot be changed once it is created, and every card of the game has that size.
 - Only players can see and play a game.
 - A player can leave a game after confirming. Their card, leaderboard row and the resolutions written for them are removed; resolutions they wrote for others stay, tagged "Former Teammates".
 - The only admin of a game cannot leave it until another player is promoted.

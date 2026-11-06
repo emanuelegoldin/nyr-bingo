@@ -133,9 +133,9 @@ Persists per-user, per-game leaderboard data for efficient retrieval.
 
 #### Bingo detection logic
 
-- A "bingo" is a complete row, column, or diagonal on the 5×5 grid.
+- A "bingo" is a complete row, column, or diagonal on the card's N×N grid (spec 05). A line has N cells.
 - A cell counts as "done" when its state is `completed` or `accomplished`.
-- Position 12 (the Joker) always counts as done, whether or not a row exists
+- The center position (the Joker) always counts as done, whether or not a row exists
   for it, and adds no timestamp to its line.
 - The first-bingo time equals the latest `updated_at` among the cells of the
   earliest completed line.
@@ -153,8 +153,8 @@ Persists per-user, per-game leaderboard data for efficient retrieval.
       `completed` or `accomplished`.
 - [ ] Leaderboard sorts by: bingo-holders first (earliest bingo), then by
       completed tasks descending, then alphabetically.
-- [ ] A completed line through the center (row 3, column 3 or either diagonal)
-      sets the first-bingo datetime.
+- [ ] A completed line through the center (the middle row, the middle column
+      or either diagonal) sets the first-bingo datetime, on every card size.
 - [ ] The leaderboard updates without a page reload, for the acting player and
       for teammates, when a card change is signalled.
 - [ ] Positions 1 / 2 / 3 are coloured gold / silver / bronze.
