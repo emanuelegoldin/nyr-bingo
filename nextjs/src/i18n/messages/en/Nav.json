@@ -1,5 +1,9 @@
 {
   "language": "Language",
+  "theme": "Theme",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeSystem": "System",
   "dashboard": "Dashboard",
   "games": "Games",
   "teams": "Teams",

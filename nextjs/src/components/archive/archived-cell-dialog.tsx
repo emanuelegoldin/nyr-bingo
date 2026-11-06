@@ -58,7 +58,7 @@ export function ArchivedCellDialog({ cell, onClose }: ArchivedCellDialogProps) {
           <ul className="space-y-2">
             {cell.subtasks.map((subtask, index) => (
               <li key={index} className="flex items-start gap-2 text-sm">
-                <Check className={cn("h-4 w-4 mt-0.5 shrink-0", subtask.completed ? "text-green-600" : "invisible")} />
+                <Check className={cn("h-4 w-4 mt-0.5 shrink-0", subtask.completed ? "text-success" : "invisible")} />
                 <div className="min-w-0">
                   <p className="font-medium">{subtask.title}</p>
                   {subtask.description && (

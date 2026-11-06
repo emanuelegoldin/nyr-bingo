@@ -38,8 +38,12 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `cards-tab.tsx` — Cards Tab — Game Page
 - `game-detail-page-client.tsx` — Game Page
+- `leaderboard-podium.tsx` — Leaderboard Podium — positions 1–3 as cards in a triangle (1 on top, 2 and 3 below).
+- `leaderboard-rank.ts` — Leaderboard rank colours — gold / silver / bronze accents for positions 1–3.
 - `leaderboard-tab.tsx` — Leaderboard Tab — Game Page
+- `leaderboard-table.tsx` — Leaderboard Table — positions 4 and below, under the podium.
 - `page.tsx` — Game Page
+- `trophy-icon.tsx` — Trophy Icon — simple decorative trophy shown on the first-place podium card.
 - `types.ts` — Shared types for the game page and its tab components.
 
 ## app/(app)/games/[gameId]/_components
@@ -447,6 +451,12 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `members-list.tsx` — Members list of the team page.
 - `types.ts` — Shared types for the team page, the game page and their components.
 
+## components/theme
+
+- `theme-provider.tsx` — Client context holding the active theme and applying it to the page.
+- `theme-script.tsx` — Inline script that applies the operating system's theme before the first paint.
+- `theme-switcher.tsx` — Theme switcher shown in the page headers.
+
 ## components/threads
 
 - `archived-thread-dialog.tsx` — Read-only view of an archived thread: its result, messages and file links.
@@ -550,6 +560,11 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
 - `types.ts`
 - `ws-messages.ts` — Client side of the WebSocket protocol (spec 11).
+
+## lib/theme
+
+- `config.ts` — Theme settings shared by the server and the browser.
+- `get-theme.ts` — Server helper that reads the stored theme.
 
 ## ws-server
 

@@ -110,7 +110,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-green-600"
+                      className="h-7 w-7 text-muted-foreground hover:text-success"
                       onClick={() => handleSaveEdit(idx)}
                       aria-label={t("subtasks.saveAriaLabel")}
                       disabled={disabled || !editingText.trim()}
@@ -120,7 +120,7 @@ export const CompoundSubtaskEditor = ({ subtasks, onChange, disabled }: Compound
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
                       onClick={handleCancelEdit}
                       aria-label={t("subtasks.cancelAriaLabel")}
                       disabled={disabled}

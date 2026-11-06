@@ -2,47 +2,28 @@
  * Leaderboard Tab — Game Page
  * Spec Reference: 12-team-tabs.md
  *
- * Displays a ranked table of team members ordered by the datetime they
- * first scored a bingo (complete row / column / diagonal).
+ * Shows team members ranked by the datetime they first scored a bingo
+ * (complete row / column / diagonal): positions 1–3 on a podium of cards,
+ * positions 4 and below in a table.
  *
- * Ranking rules:
+ * Ranking rules (applied by the repository, not here):
  * - Users who scored a bingo appear first, ordered by earliest bingo time.
  * - Ties (same bingo time or both null) are broken by completed tasks (desc).
  * - Final tiebreaker is alphabetical by username.
- * - Position numbers: 1 = gold, 2 = silver, 3 = bronze.
- * - The "First Bingo" column is blank until the user scores one.
  */
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFormatter, useTranslations } from "next-intl";
-import Link from "next/link";
 import type { LeaderboardEntry } from "@/lib/shared/types";
+import { LeaderboardPodium } from "./leaderboard-podium";
+import { LeaderboardTable } from "./leaderboard-table";
 
-// ── Types ─────────────────────────────────────────────────────────
-
+/** Number of positions shown on the podium. */
+const PODIUM_SIZE = 3;
 
 interface LeaderboardTabProps {
   initialEntries: LeaderboardEntry[];
 }
-
-// ── Helpers ───────────────────────────────────────────────────────
-
-/** Map a 1-indexed rank to a color class for the position badge. */
-function rankColorClass(rank: number): string {
-  switch (rank) {
-    case 1:
-      return "text-yellow-500 dark:text-yellow-400"; // gold
-    case 2:
-      return "text-gray-400 dark:text-gray-300"; // silver
-    case 3:
-      return "text-amber-700 dark:text-amber-500"; // bronze
-    default:
-      return "text-muted-foreground";
-  }
-}
-
-// ── Component ─────────────────────────────────────────────────────
 
 export function LeaderboardTab({ initialEntries }: LeaderboardTabProps) {
   const t = useTranslations("Games.leaderboard");
@@ -70,56 +51,18 @@ export function LeaderboardTab({ initialEntries }: LeaderboardTabProps) {
             {t("empty")}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="pb-2 pr-4 w-12">#</th>
-                  <th className="pb-2 pr-4">{t("player")}</th>
-                  <th className="pb-2 pr-4 text-center">{t("completed")}</th>
-                  <th className="pb-2">{t("firstBingo")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry, index) => {
-                  const rank = index + 1;
-                  return (
-                    <tr key={entry.userId} className="border-b last:border-0">
-                      {/* Rank */}
-                      <td className={`py-3 pr-4 font-bold ${rankColorClass(rank)}`}>
-                        {rank}
-                      </td>
-
-                      {/* Player: avatar + name */}
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-3">
-                          <Link href={`/profile/${entry.userId}`}>
-                            <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
-                              <AvatarFallback className="text-xs">
-                                {(entry.displayName || entry.username)?.charAt(0) || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                          </Link>
-                          <span className="font-medium">
-                            {entry.displayName || entry.username}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Completed tasks count */}
-                      <td className="py-3 pr-4 text-center font-medium">
-                        {entry.completedTasks}
-                      </td>
-
-                      {/* First bingo datetime */}
-                      <td className="py-3 text-muted-foreground">
-                        {entry.firstBingoAt ? formatDate(entry.firstBingoAt) : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="flex flex-col gap-6">
+            <LeaderboardPodium
+              entries={entries.slice(0, PODIUM_SIZE)}
+              formatDate={formatDate}
+            />
+            {entries.length > PODIUM_SIZE && (
+              <LeaderboardTable
+                entries={entries.slice(PODIUM_SIZE)}
+                startRank={PODIUM_SIZE + 1}
+                formatDate={formatDate}
+              />
+            )}
           </div>
         )}
       </CardContent>

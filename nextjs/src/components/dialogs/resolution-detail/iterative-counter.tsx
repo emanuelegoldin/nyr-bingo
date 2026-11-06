@@ -76,12 +76,12 @@ export const IterativeCounter = ({
       {/* Counter display */}
       <div className="flex flex-col items-center gap-4">
         <div className="text-4xl font-bold tabular-nums">
-          <span className={isComplete ? "text-green-600" : ""}>{completedTimes}</span>
+          <span className={isComplete ? "text-success" : ""}>{completedTimes}</span>
           <span className="text-muted-foreground"> / {numberOfRepetition}</span>
         </div>
 
         {isComplete && (
-          <span className="flex items-center gap-1 text-green-600 font-medium text-sm">
+          <span className="flex items-center gap-1 text-success font-medium text-sm">
             <Check className="h-4 w-4" /> {t("iterative.targetReached")}
           </span>
         )}

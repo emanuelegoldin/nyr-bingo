@@ -76,7 +76,7 @@ export const CompoundChecklist = ({ cellId, subtasks, isOwner, onRefresh }: Comp
           {t("compound.progress", { completed: completedCount, total: totalCount })}
         </span>
         {allDone && (
-          <span className="flex items-center gap-1 text-green-600 font-medium">
+          <span className="flex items-center gap-1 text-success font-medium">
             <Check className="h-4 w-4" /> {t("compound.allDone")}
           </span>
         )}
@@ -96,7 +96,7 @@ export const CompoundChecklist = ({ cellId, subtasks, isOwner, onRefresh }: Comp
               onClick={() => handleToggle(idx)}
               className={`mt-0.5 flex-shrink-0 h-5 w-5 rounded border flex items-center justify-center transition-colors ${
                 subtask.completed
-                  ? "bg-green-500 border-green-500 text-white"
+                  ? "bg-success border-success text-success-foreground"
                   : "border-muted-foreground/40 hover:border-primary"
               } ${!isOwner ? "cursor-default opacity-70" : "cursor-pointer"}`}
               aria-label={t("compound.toggleSubtask", { title: subtask.title })}
