@@ -3,7 +3,7 @@
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
-import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -11,7 +11,7 @@ import { defineConfig } from 'vitest/config';
  * @param folder The folder relative to src/
  * @returns The absolute path
  */
-const srcPath = (folder: string): string => path.resolve(__dirname, 'src', folder);
+const srcPath = (folder: string): string => fileURLToPath(new URL(`./src/${folder}`, import.meta.url)).replace(/\/$/, '');
 
 export default defineConfig({
   resolve: {
