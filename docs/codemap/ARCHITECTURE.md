@@ -102,6 +102,7 @@ Run once at Node startup:
 | UI text | a key in all three `i18n/messages/*/<Namespace>.json` files |
 | a colour | a token in `app/globals.css`, defined in both `:root` and `.dark`, plus `tailwind.config.ts` |
 | an external package | an update to `docs/external_deps/` in the same change |
+| a DB test | `nextjs/tests/db/<entity>.test.ts`, using the builders in `tests/db/support/fixtures.ts` (see `docs/tests/db/README.md`) |
 
 Start every new file with a header docblock, so `scripts/codemap.py` can map it:
 
