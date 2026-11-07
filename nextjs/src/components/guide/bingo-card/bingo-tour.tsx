@@ -6,10 +6,13 @@
  */
 
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useMemo } from "react";
+import type { GuideStep } from "../engine/intro-adapter";
+import { tourSelector } from "../engine/tour-selector";
+import { useGuidedTour } from "../engine/use-guided-tour";
+import type { GuideTourProps } from "../types";
 import { DemoCard } from "./demo-card";
-import { DEMO_TARGETS, tourSelector } from "./demo-data";
-import type { GuideStep, GuideTourHandle } from "./intro-adapter";
+import { DEMO_TARGETS } from "./demo-data";
 
 /** The steps of the bingo tour, in order. */
 const BINGO_TOUR_STEPS = ["overview", "card", "cell", "detail", "complete", "completed"] as const;
@@ -28,11 +31,6 @@ const STEP_TARGETS: Record<BingoTourStepId, string | undefined> = {
 /** Steps the user goes on from by clicking the highlighted element, not Next. */
 const ACTION_STEPS: ReadonlySet<BingoTourStepId> = new Set(["cell", "complete"]);
 
-interface BingoTourProps {
-  /** Called when the tour ends: finished, skipped or closed. */
-  onEnd: () => void;
-}
-
 /**
  * Runs the bingo tour on the demo card. On the action steps the user opens the cell and marks
  * it complete by clicking them. The demo state follows the current step, so going back undoes
@@ -41,20 +39,11 @@ interface BingoTourProps {
  * @param props - The callback run when the tour ends.
  * @returns The demo card.
  */
-export const BingoTour = ({ onEnd }: BingoTourProps) => {
-  const t = useTranslations("Guide");
-  const [stepIndex, setStepIndex] = useState(0);
-  const handleRef = useRef<GuideTourHandle | null>(null);
-  // The running tour calls the latest callback without being restarted when it changes
-  const onEndRef = useRef(onEnd);
-  useEffect(() => {
-    onEndRef.current = onEnd;
-  }, [onEnd]);
+export const BingoTour = ({ onEnd }: GuideTourProps) => {
+  const t = useTranslations("Guide.bingoCard");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const steps: GuideStep[] = BINGO_TOUR_STEPS.map((stepId) => {
+  const steps = useMemo<GuideStep[]>(
+    () => BINGO_TOUR_STEPS.map((stepId) => {
       const target = STEP_TARGETS[stepId];
       return {
         text: t(`steps.${stepId}`),
@@ -62,39 +51,18 @@ export const BingoTour = ({ onEnd }: BingoTourProps) => {
         target: target ? tourSelector(target) : undefined,
         action: ACTION_STEPS.has(stepId),
       };
-    });
-
-    // The library is loaded only when a tour starts
-    void import("./intro-adapter").then(async ({ startTour }) => {
-      if (cancelled) return;
-      const started = await startTour({
-        steps,
-        labels: { next: t("nav.next"), back: t("nav.back"), done: t("nav.done") },
-        onStepChange: setStepIndex,
-        onEnd: () => onEndRef.current(),
-      });
-      if (cancelled) {
-        started.stop();
-        return;
-      }
-      handleRef.current = started;
-    });
-
-    return () => {
-      cancelled = true;
-      handleRef.current?.stop();
-      handleRef.current = null;
-    };
-  }, [t]);
+    }),
+    [t]
+  );
+  const { stepIndex, next } = useGuidedTour({ steps, onEnd });
 
   const stepId = BINGO_TOUR_STEPS[stepIndex] ?? "overview";
-  const goToNextStep = () => handleRef.current?.next();
 
   return (
     <DemoCard
       detailOpen={stepId === "detail" || stepId === "complete"}
       targetCompleted={stepId === "completed"}
-      onOpenTarget={stepId === "cell" ? goToNextStep : undefined}
-      onMarkComplete={stepId === "complete" ? goToNextStep : undefined} />
+      onOpenTarget={stepId === "cell" ? next : undefined}
+      onMarkComplete={stepId === "complete" ? next : undefined} />
   );
 };

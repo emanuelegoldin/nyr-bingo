@@ -5,27 +5,31 @@
     "back": "Indietro",
     "done": "Fine"
   },
-  "demo": {
-    "title": "Carta di prova",
-    "notice": "Questa è una carta di prova. Nulla di ciò che fai qui modifica le tue carte reali."
-  },
-  "cells": {
-    "read": "Leggere 12 libri",
-    "run": "Correre una gara di 10 km",
-    "cook": "Cucinare una ricetta nuova ogni mese",
-    "guitar": "Imparare a suonare la chitarra",
-    "travel": "Visitare un nuovo paese",
-    "save": "Risparmiare il 10% delle entrate",
-    "call": "Chiamare i nonni ogni settimana",
-    "garden": "Coltivare un orto"
-  },
-  "steps": {
-    "overviewTitle": "Come funziona il Bingo",
-    "overview": "I tuoi buoni propositi per l'anno nuovo sono distribuiti su una carta del Bingo: completali per segnare le loro celle e riempi un'intera riga, colonna o diagonale per fare bingo!",
-    "card": "Questa è la tua carta. Contiene i tuoi propositi e gli obiettivi della squadra, e il jolly al centro è una cella libera.",
-    "cell": "Ogni cella contiene un proposito. Tocca questa cella per aprirne i dettagli.",
-    "detail": "I dettagli mostrano il proposito, il suo stato attuale e cosa puoi fare.",
-    "complete": "Ce l'hai fatta? Tocca Segna come completato per provare.",
-    "completed": "La cella riceve un timbro. I tuoi compagni di squadra lo vedono e possono chiederti una prova."
+  "bingoCard": {
+    "title": "Come funziona il gioco",
+    "description": "Un breve giro su una carta di prova: cos'è una carta, come aprire una cella e come segnare un proposito come completato.",
+    "demo": {
+      "title": "Carta di prova",
+      "notice": "Questa è una carta di prova. Nulla di ciò che fai qui modifica le tue carte reali."
+    },
+    "cells": {
+      "read": "Leggere 12 libri",
+      "run": "Correre una gara di 10 km",
+      "cook": "Cucinare una ricetta nuova ogni mese",
+      "guitar": "Imparare a suonare la chitarra",
+      "travel": "Visitare un nuovo paese",
+      "save": "Risparmiare il 10% delle entrate",
+      "call": "Chiamare i nonni ogni settimana",
+      "garden": "Coltivare un orto"
+    },
+    "steps": {
+      "overviewTitle": "Come funziona il Bingo",
+      "overview": "I tuoi buoni propositi per l'anno nuovo sono distribuiti su una carta del Bingo: completali per segnare le loro celle e riempi un'intera riga, colonna o diagonale per fare bingo!",
+      "card": "Questa è la tua carta. Contiene i tuoi propositi e gli obiettivi della squadra, e il jolly al centro è una cella libera.",
+      "cell": "Ogni cella contiene un proposito. Tocca questa cella per aprirne i dettagli.",
+      "detail": "I dettagli mostrano il proposito, il suo stato attuale e cosa puoi fare.",
+      "complete": "Ce l'hai fatta? Tocca Segna come completato per provare.",
+      "completed": "La cella riceve un timbro. I tuoi compagni di squadra lo vedono e possono chiederti una prova."
+    }
   }
 }

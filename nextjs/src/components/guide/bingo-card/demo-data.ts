@@ -5,7 +5,7 @@
 
 import { CellState } from "@/lib/shared/types";
 
-/** Translation keys (namespace `Guide`, under `cells`) of the demo resolutions. */
+/** Translation keys (namespace `Guide.bingoCard`, under `cells`) of the demo resolutions. */
 export type DemoResolutionKey =
   | "read"
   | "run"
@@ -34,14 +34,6 @@ export const DEMO_TARGETS = {
   detail: "demo-cell-detail",
   markComplete: "demo-mark-complete",
 } as const;
-
-/**
- * Builds the selector of an element marked with a `data-tour` attribute.
- *
- * @param target - The `data-tour` value.
- * @returns The CSS selector.
- */
-export const tourSelector = (target: string): string => `[data-tour="${target}"]`;
 
 /**
  * Builds the demo card in its initial state: a 3x3 card with a joker in the centre,

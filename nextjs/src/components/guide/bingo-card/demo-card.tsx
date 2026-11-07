@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CellSourceType, CellState } from "@/lib/shared/types";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { SandboxLayer } from "../sandbox/sandbox-layer";
 import { DemoCellDetail } from "./demo-cell-detail";
 import { createDemoCells, DEMO_GRID_SIZE, DEMO_TARGET_POSITION, DEMO_TARGETS } from "./demo-data";
 
@@ -72,59 +72,49 @@ interface DemoCardProps {
 }
 
 /**
- * Full-screen layer with the demo card, and the details of its target cell drawn over the card
- * like the real cell dialog. It is a plain element rather than a modal dialog, whose focus trap
- * would block the tour's tooltip.
+ * The demo card above the page, and the details of its target cell drawn over the card like
+ * the real cell dialog.
  *
  * @param props - The demo state derived from the current tour step.
- * @returns The layer, rendered into the document body.
+ * @returns The demo layer with the card.
  */
 export const DemoCard = ({ detailOpen, targetCompleted, onOpenTarget, onMarkComplete }: DemoCardProps) => {
-  const t = useTranslations("Guide");
+  const t = useTranslations("Guide.bingoCard");
   const cells = createDemoCells(targetCompleted);
   const target = cells[DEMO_TARGET_POSITION];
   const targetTitle = target.kind === "resolution" ? t(`cells.${target.resolutionKey}`) : "";
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t("demo.title")}
-      className="fixed inset-0 z-50 overflow-y-auto bg-background/95 backdrop-blur-sm"
-    >
-      {/* As wide as a real card on larger screens, so the cell titles are not cut */}
-      <div className="relative mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-8">
-        <p className="text-center text-sm text-muted-foreground">{t("demo.notice")}</p>
-        <Card data-tour={DEMO_TARGETS.card}>
-          <CardHeader>
-            <CardTitle className="font-headline text-xl">{t("demo.title")}</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6">
-            <CardGrid gridSize={DEMO_GRID_SIZE}>
-              {cells.map((cell, position) => (
-                // Each cell sits in its own grid box, so the target can carry its tour marker. The box's
-                // column may shrink (minmax(0, 1fr)), or a one-line title from md would widen the cell
-                <div
-                  key={position}
-                  className="grid min-w-0 grid-cols-1"
-                  data-tour={position === DEMO_TARGET_POSITION ? DEMO_TARGETS.cell : undefined}
-                >
-                  {cell.kind === "joker"
-                    ? <JokerCell />
-                    : (
-                      <DemoResolutionCell
-                        title={t(`cells.${cell.resolutionKey}`)}
-                        state={cell.state}
-                        onClick={position === DEMO_TARGET_POSITION ? onOpenTarget : undefined} />
-                    )}
-                </div>
-              ))}
-            </CardGrid>
-          </CardContent>
-        </Card>
-        <DemoCellDetail title={targetTitle} open={detailOpen} onMarkComplete={onMarkComplete} />
-      </div>
-    </div>,
-    document.body
+  return (
+    // As wide as a real card on larger screens, so the cell titles are not cut
+    <SandboxLayer label={t("demo.title")} notice={t("demo.notice")} className="max-w-2xl">
+      <Card data-tour={DEMO_TARGETS.card}>
+        <CardHeader>
+          <CardTitle className="font-headline text-xl">{t("demo.title")}</CardTitle>
+        </CardHeader>
+        <CardContent className="px-3 sm:px-6">
+          <CardGrid gridSize={DEMO_GRID_SIZE}>
+            {cells.map((cell, position) => (
+              // Each cell sits in its own grid box, so the target can carry its tour marker. The box's
+              // column may shrink (minmax(0, 1fr)), or a one-line title from md would widen the cell
+              <div
+                key={position}
+                className="grid min-w-0 grid-cols-1"
+                data-tour={position === DEMO_TARGET_POSITION ? DEMO_TARGETS.cell : undefined}
+              >
+                {cell.kind === "joker"
+                  ? <JokerCell />
+                  : (
+                    <DemoResolutionCell
+                      title={t(`cells.${cell.resolutionKey}`)}
+                      state={cell.state}
+                      onClick={position === DEMO_TARGET_POSITION ? onOpenTarget : undefined} />
+                  )}
+              </div>
+            ))}
+          </CardGrid>
+        </CardContent>
+      </Card>
+      <DemoCellDetail title={targetTitle} open={detailOpen} onMarkComplete={onMarkComplete} />
+    </SandboxLayer>
   );
 };

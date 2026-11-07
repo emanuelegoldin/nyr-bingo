@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { CircleHelp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { BingoTour } from "./bingo-tour";
+import { BingoTour } from "./bingo-card/bingo-tour";
 
 interface GuideButtonProps {
   className?: string;
