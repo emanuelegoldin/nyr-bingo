@@ -10,10 +10,11 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test": "vitest run --project unit && vitest run --project db",
+    "test": "vitest run --project unit && vitest run --project db && vitest run --project api",
     "test:unit": "vitest run --project unit",
     "test:db": "vitest run --project db",
     "test:db:watch": "vitest --project db",
+    "test:api": "vitest run --project api",
     "test:db:up": "docker compose -f ../database/test/docker-compose.test.yml up -d --wait db && docker compose -f ../database/test/docker-compose.test.yml run --rm flyway",
     "test:db:down": "docker compose -f ../database/test/docker-compose.test.yml down -v"
   },

@@ -46,6 +46,16 @@ export default defineConfig({
           fileParallelism: false,
         },
       },
+      {
+        extends: true,
+        test: {
+          name: 'api',
+          include: ['tests/api/**/*.test.ts'],
+          setupFiles: ['tests/support/api/setup.ts'],
+          // Shares the test database with the db project, so one file at a time too
+          fileParallelism: false,
+        },
+      },
     ],
   },
 });
