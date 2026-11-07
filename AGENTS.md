@@ -118,9 +118,11 @@ When working on a feature, the agent MUST follow this sequence:
 
 ## Tests
 
-- Database tests live in `nextjs/tests/db/` and run against a throwaway MariaDB. See `docs/tests/db/README.md`.
+- Tests are split by layer: `nextjs/tests/unit/`, `nextjs/tests/db/`, `nextjs/tests/api/` (route handlers), `ws-server/tests/` and `database/test/sql/` (migration procedures). See `docs/tests/README.md`.
+- One folder per area and one file per aspect (`tests/<layer>/<area>/<aspect>.test.ts`); shared setups go in `<area>/helpers.ts`, data builders in `tests/support/db/fixtures.ts`.
 - When changing anything in `nextjs/src/lib/db/` or the schema, write or adjust the DB test first, see it fail, then change the code.
 - Mark `// Arrange`, `// Act` and `// Assert` in every test, and cite the spec rule in the test title.
+- If a new test fails against the current code, do not change the code to make it pass: report the case as a spec gap or bug.
 
 ---
 
