@@ -1,10 +1,10 @@
 /**
  * Fixture builders: insert the toy data a test needs, inside the test's rolled-back transaction.
- * Spec Reference: 01-authentication.md - Registration, 16-games.md - Game Model, 05-bingo-card-generation.md - Data Model Notes
+ * Spec Reference: 01-authentication.md - Registration, 04-bingo-teams.md - Invitations / Joining, 16-games.md - Game Model, 05-bingo-card-generation.md - Data Model Notes
  */
 
 import { randomUUID } from 'node:crypto';
-import { CellState, GameStatus, ResolutionType } from '@/lib/shared/types';
+import { CellState, GameStatus, InvitationStatus, ResolutionType, TeamRole } from '@/lib/shared/types';
 import { execute } from './test-connection';
 
 /** A user created by createUser. */
@@ -229,4 +229,102 @@ export const createPersonalResolution = async (owner: UserFixture, title: string
   );
 
   return id;
+};
+
+/**
+ * Add a user to a team.
+ * @param team The team
+ * @param user The new member
+ * @param role The stored role (default member; leader makes them a Team Admin)
+ */
+export const addMember = async (
+  team: TeamFixture,
+  user: UserFixture,
+  role: TeamRole = TeamRole.MEMBER
+): Promise<void> => {
+  await execute(
+    'INSERT INTO team_memberships (id, team_id, user_id, role) VALUES (?, ?, ?, ?)',
+    [randomUUID(), team.id, user.id, role]
+  );
+};
+
+/** What an invitation created by createInvitation looks like. */
+export interface InvitationFixtureInput {
+  /** The invitation's status (default pending) */
+  status?: InvitationStatus;
+  /** True for an invitation whose 7 days are over (default false) */
+  expired?: boolean;
+}
+
+/**
+ * Insert an invitation to a team.
+ * @param team The team
+ * @param input Its status and whether it has expired
+ * @returns The invite code
+ */
+export const createInvitation = async (
+  team: TeamFixture,
+  input: InvitationFixtureInput = {}
+): Promise<string> => {
+  const inviteCode = randomUUID();
+  const expiresAt = input.expired ? 'NOW() - INTERVAL 1 DAY' : 'NOW() + INTERVAL 7 DAY';
+
+  await execute(
+    `INSERT INTO team_invitations (id, team_id, invite_code, status, expires_at) VALUES (?, ?, ?, ?, ${expiresAt})`,
+    [randomUUID(), team.id, inviteCode, input.status ?? InvitationStatus.PENDING]
+  );
+
+  return inviteCode;
+};
+
+/**
+ * Insert the team goal of a game.
+ * @param game The game
+ * @param owner The admin who sets it
+ * @returns The resolution id
+ */
+export const createTeamGoal = async (game: GameFixture, owner: UserFixture): Promise<string> => {
+  const id = randomUUID();
+
+  await execute(
+    "INSERT INTO resolutions (id, owner_user_id, title, scope, resolution_type, team_id, game_id) VALUES (?, ?, 'Team goal', 'team', 'base', ?, ?)",
+    [id, owner.id, game.teamId, game.id]
+  );
+
+  return id;
+};
+
+/**
+ * Insert a member-provided resolution, written by one player of a game for another.
+ * @param game The game
+ * @param author The player who writes it
+ * @param recipient The player it is for
+ * @returns The resolution id
+ */
+export const createMemberResolution = async (
+  game: GameFixture,
+  author: UserFixture,
+  recipient: UserFixture
+): Promise<string> => {
+  const id = randomUUID();
+
+  await execute(
+    `INSERT INTO resolutions (id, owner_user_id, title, scope, resolution_type, team_id, game_id, to_user_id)
+     VALUES (?, ?, 'For you', 'member_provided', 'base', ?, ?, ?)`,
+    [id, author.id, game.teamId, game.id, recipient.id]
+  );
+
+  return id;
+};
+
+/**
+ * Insert a player's leaderboard row in a game, with no progress.
+ * @param game The game
+ * @param player The player
+ */
+export const createLeaderboardRow = async (game: GameFixture, player: UserFixture): Promise<void> => {
+  await execute(
+    'INSERT INTO team_leaderboard (user_id, team_id, game_id, completed_tasks) VALUES (?, ?, ?, 0)',
+    [player.id, game.teamId, game.id]
+  );
 };

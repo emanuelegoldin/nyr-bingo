@@ -41,6 +41,7 @@ In CI the tests run in `.github/workflows/db-tests.yml`. They gate the release i
 | `nextjs/tests/db/support/test-connection.ts` | One pinned connection per file; `withTransaction` becomes a savepoint inside the test's transaction |
 | `nextjs/tests/db/support/fixtures.ts` | Builders that insert the toy data a test needs |
 | `nextjs/tests/db/support/schema.ts` | `getColumns(table)` for structure tests |
+| `nextjs/tests/db/support/rows.ts` | `countRows(table, where, params)` to check what a call kept or removed |
 
 Because every repository reaches the DB through `lib/db/connection`, the whole data layer runs on the test's transaction without any change to production code. Each test starts from an empty database.
 
