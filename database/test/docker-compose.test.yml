@@ -1,0 +1,51 @@
+# Throwaway MariaDB for the database tests (nextjs/tests/db).
+# Builds the real schema: database/mariadb-init/001-schema.sql on first start,
+# then every database-migrations/V*.sql through Flyway, the same way production does.
+# Data lives on tmpfs, so `down` (or a restart) leaves nothing behind.
+#
+# Usage (from nextjs/): pnpm test:db:up, pnpm test:db, pnpm test:db:down
+
+name: nyr-bingo-test
+
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: test
+    command:
+      - --innodb-buffer-pool-size=32M
+      - --performance-schema=OFF
+    tmpfs:
+      - /var/lib/mysql
+    volumes:
+      - ../mariadb-init/001-schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    ports:
+      # Not 3306, so the tests never reach a local development database by mistake
+      - "127.0.0.1:3307:3306"
+    mem_limit: 400m
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  flyway:
+    build:
+      context: ../../database-migrations
+      dockerfile: docker/Dockerfile.flyway
+    command: migrate
+    environment:
+      FLYWAY_URL: jdbc:mariadb://db:3306/resolution_bingo
+      FLYWAY_USER: root
+      FLYWAY_PASSWORD: test
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+      # The init script already created tables, so Flyway starts from a baseline (version 1)
+      FLYWAY_BASELINE_ON_MIGRATE: "true"
+      REDGATE_DISABLE_TELEMETRY: "true"
+      JAVA_ARGS: -Xmx256m
+    mem_limit: 400m
+    depends_on:
+      db:
+        condition: service_healthy
+    # One-shot: started with `docker compose run --rm flyway`, never by `up`
+    profiles: ["migrate"]
