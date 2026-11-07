@@ -206,6 +206,22 @@ describe('bingo_cells', () => {
       expect((await readCell(cellId)).state).toBe(CellState.PENDING);
     });
 
+    it.each([ResolutionType.COMPOUND, ResolutionType.ITERATIVE])(
+      'completing a %s cell manually (06-bingo-gameplay.md – Automatic Completion)',
+      async (type) => {
+        // Arrange
+        const { card } = await createPlayingCard([{ type }]);
+        const [cellId] = card.cellIds;
+
+        // Act
+        const result = await updateCellState(cellId, CellState.COMPLETED);
+
+        // Assert
+        expect(result).toEqual({ success: false, error: 'Compound and iterative cells complete automatically' });
+        expect((await readCell(cellId)).state).toBe(CellState.PENDING);
+      }
+    );
+
     it('failing an empty cell (06-bingo-gameplay.md – Non-Checkable Cells)', async () => {
       // Arrange
       const { card } = await createPlayingCard([{ source: 'empty' }]);
