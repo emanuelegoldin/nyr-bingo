@@ -5,8 +5,11 @@
 
 import { NextRequest } from 'next/server';
 
-/** A route handler as exported by a `route.ts` file. */
-type RouteHandler = (request: NextRequest, context: { params: Promise<Record<string, string>> }) => Promise<Response>;
+/**
+ * A route handler as exported by a `route.ts` file. The context is typed `never` so that a handler
+ * of any params shape fits; callRoute builds the context the App Router would pass.
+ */
+type RouteHandler = (request: NextRequest, context: never) => Promise<Response>;
 
 /** What a test passes to a route. */
 export interface RouteCall {
@@ -44,7 +47,8 @@ export const callRoute = async <T = Record<string, unknown>>(
     init.body = JSON.stringify(body);
     init.headers = { 'content-type': 'application/json' };
   }
-  const response = await handler(new NextRequest(url, init), { params: Promise.resolve(params) });
+  const context = { params: Promise.resolve(params) };
+  const response = await handler(new NextRequest(url, init), context as never);
   const text = await response.text();
   return { status: response.status, body: (text ? JSON.parse(text) : null) as T };
 };
