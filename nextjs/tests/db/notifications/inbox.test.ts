@@ -11,7 +11,9 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '@/lib/notifications/repository';
+import { createTeam, createUser } from '../../support/db/fixtures';
 import { countRows } from '../../support/db/rows';
+import { execute } from '../../support/db/test-connection';
 import { createNotificationSetup, makePendingEventsDue } from './helpers';
 
 describe('notifications – inbox', () => {
@@ -48,6 +50,30 @@ describe('notifications – inbox', () => {
       // Assert
       expect(await countRows('notification_recipients', 'user_id = ? AND read_at IS NULL', [teammate.id])).toBe(0);
       expect(await countRows('notification_recipients', 'user_id = ?', [teammate.id])).toBe(2);
+    });
+
+    it('lists only the latest 50 notifications, newest first (19-notifications.md – Notification List)', async () => {
+      // Arrange: 51 released notifications, one minute apart
+      const user = await createUser();
+      const team = await createTeam(user);
+      for (let minutesAgo = 0; minutesAgo <= 50; minutesAgo += 1) {
+        const eventId = `00000000-0000-4000-8000-${String(minutesAgo).padStart(12, '0')}`;
+        await execute(
+          `INSERT INTO notification_events (id, type, team_id, team_name, item_count, created_at, published_at)
+           VALUES (?, 'member_joined', ?, 'Team', 1, NOW() - INTERVAL ? MINUTE, NOW())`,
+          [eventId, team.id, minutesAgo]
+        );
+        await execute('INSERT INTO notification_recipients (event_id, user_id) VALUES (?, ?)', [eventId, user.id]);
+      }
+
+      // Act
+      const { notifications: listed, unreadCount } = await getUserNotifications(user.id);
+
+      // Assert
+      expect(listed).toHaveLength(50);
+      expect(listed[0].id).toBe('00000000-0000-4000-8000-000000000000');
+      expect(listed[49].id).toBe('00000000-0000-4000-8000-000000000049');
+      expect(unreadCount).toBe(51);
     });
   });
 
