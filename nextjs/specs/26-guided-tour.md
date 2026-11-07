@@ -44,6 +44,7 @@ This specification is a **proof of concept**. It covers a single tour that expla
 ### Demo Card
 
 - The tour runs on a **demo card**, not on the user's cards. The demo card is shown above the current page while the tour runs and is removed when it ends.
+- The demo card is as wide as a real card on larger screens, so the cell titles are not cut short, and it fits the screen width on phones.
 - The demo card is a 3×3 card with sample resolutions, using the same look as a real card (spec 06 - Card Display Rules): a joker in the centre, pending cells, and one completed cell with its stamp.
 - The demo card never calls the server. Nothing the user does during the tour creates, changes or deletes data, sends notifications or real-time signals, or affects the leaderboard.
 
@@ -53,11 +54,12 @@ The tour shows these steps in order. Each step has a short translated text and, 
 
 1. **Overview** — one sentence explaining the game: you complete your resolutions to mark cells on your card, and a full row, column or diagonal is a bingo.
 2. **Your card** — highlights the demo card.
-3. **A cell** — highlights one pending cell and explains that each cell holds one resolution.
-4. **Cell details** — opens the details of that cell (title, state, and the Mark Complete action) and highlights them.
-5. **Mark as complete** — highlights the Mark Complete action. Moving to the next step marks the demo cell as completed. The details close, and the cell shows its stamp with the usual animation. A last step highlights the stamped cell.
+3. **A cell** — highlights one pending cell, explains that each cell holds one resolution, and asks the user to open it. The user continues by **clicking the cell**, which opens its details (no Next button on this step).
+4. **Cell details** — the details of that cell (title, state, and the Mark Complete action) are shown over the demo card, like the real cell dialog, and are highlighted.
+5. **Mark as complete** — highlights the Mark Complete action and asks the user to use it. The user continues by **clicking Mark Complete** (no Next button on this step). The details close, and the cell shows its stamp with the usual animation. A last step highlights the stamped cell.
 
-- The user can go forward and back, skip or close the tour at any step (Next, Back, Done, close button or Escape).
+- On the steps that ask for a click, only the highlighted element reacts. Elsewhere, the demo card cannot be used.
+- The user can go back, skip or close the tour at any step (Back, Done, close button or Escape), and go forward with Next on the steps that do not ask for a click. Keyboard navigation can also go forward on any step.
 - Going back to the details step from the completion step shows the cell as pending again.
 
 ### Ending the Tour
@@ -80,6 +82,7 @@ The tour shows these steps in order. Each step has a short translated text and, 
 
 - A help button appears in the application header on every authenticated page and starts the bingo tour.
 - The tour shows, in order: an overview, the card, one cell, the cell's details, and marking the cell as complete.
+- The user opens the cell's details by clicking the cell, and marks it as complete by clicking Mark Complete. Those two steps have no Next button.
 - Marking the cell as complete in the tour shows it with the completed stamp on the demo card.
 - No request is sent to the server during the tour, and the user's real cards are unchanged.
 - After the tour ends (finished, skipped or closed), the demo card disappears, and a new tour starts from the initial card.
