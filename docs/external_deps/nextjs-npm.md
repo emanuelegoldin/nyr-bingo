@@ -67,6 +67,7 @@ Used only for development, build, lint and tests. Not shipped to users.
 | `tailwindcss` | ^3.4.1 | 3.4.19 | MIT | Utility-first CSS framework. |
 | `postcss` | ^8 | 8.5.6 | MIT | CSS processing pipeline used by Tailwind. |
 | `@playwright/test` | ^1.58.2 | 1.58.2 | Apache-2.0 | End-to-end tests (`pnpm test:e2e`). Browsers are downloaded separately and have their own licenses (Chromium BSD, Firefox MPL-2.0, WebKit LGPL/BSD). They are used only locally and in CI. |
+| `vitest` | 5.1.0 | 5.1.0 | MIT | Database tests (`pnpm test:db`, `tests/db/`). Pulls in Vite 8 and `lightningcss` (MPL-2.0). |
 | `@types/node` | ^20 | 20.19.27 | MIT | Type definitions. |
 | `@types/react` | ^19.2.1 | 19.2.7 | MIT | Type definitions. |
 | `@types/react-dom` | ^19.2.1 | 19.2.3 | MIT | Type definitions. |
@@ -76,7 +77,7 @@ Used only for development, build, lint and tests. Not shipped to users.
 
 ## Transitive dependencies
 
-There are about 580 packages in total (direct and transitive, prod and dev),
+There are about 640 packages in total (direct and transitive, prod and dev),
 counted from the installed `node_modules` and cross-checked with the lockfile:
 
 | License | Count | Notes |
@@ -88,7 +89,7 @@ counted from the installed `node_modules` and cross-checked with the lockfile:
 | BSD-3-Clause | 4 | |
 | Apache-2.0 AND MIT | 2 | `@swc/core-linux-x64-gnu`, `@swc/core-linux-x64-musl` |
 | **LGPL-3.0-or-later** | 2 | `@img/sharp-libvips-linux-x64`, `@img/sharp-libvips-linuxmusl-x64` 1.2.4 (see below) |
-| MPL-2.0 | 1 | `axe-core` 4.11.1 (dev only) |
+| MPL-2.0 | 4 | `axe-core` 4.11.1 (dev only); `lightningcss` and its two linux-x64 binaries (dev only, via `vitest` → `vite`) |
 | CC-BY-4.0 | 1 | `caniuse-lite` (browser support data, used at build time) |
 | CC0-1.0 | 1 | `language-subtag-registry` (dev, ESLint a11y plugin) |
 | Python-2.0 | 1 | `argparse` 2.0.1 (dev, YAML parsing in tooling). Permissive. |

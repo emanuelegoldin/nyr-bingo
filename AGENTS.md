@@ -116,6 +116,14 @@ When working on a feature, the agent MUST follow this sequence:
 
 ---
 
+## Tests
+
+- Database tests live in `nextjs/tests/db/` and run against a throwaway MariaDB. See `docs/tests/db/README.md`.
+- When changing anything in `nextjs/src/lib/db/` or the schema, write or adjust the DB test first, see it fail, then change the code.
+- Mark `// Arrange`, `// Act` and `// Assert` in every test, and cite the spec rule in the test title.
+
+---
+
 ## Security & Authorization
 
 - Users may ONLY modify their own data

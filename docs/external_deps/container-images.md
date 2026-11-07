@@ -11,6 +11,10 @@ an image from each one and pushes it to `ghcr.io/<owner>/<image_name>`.
 | `nginx` | `nginx/docker/Dockerfile.nginx` | `nginx:1.29.4` | Nginx 1.29.4 | BSD-2-Clause | Reverse proxy in front of Next.js and the WebSocket server; caching (`nyr-bingo_nginx.conf`). |
 | `flyway` | `database-migrations/docker/Dockerfile.flyway` | `flyway/flyway:12.1.0` | Redgate Flyway 12.1.0 | Community edition: **Apache-2.0**. Paid editions: Redgate EULA | Applies the SQL migrations in `database-migrations/`. |
 
+The database tests reuse `mariadb:11` and the `flyway` Dockerfile in
+`database/test/docker-compose.test.yml`, which builds a throwaway test database.
+Nothing new is added, and those images are not published.
+
 The Node.js images also install **pnpm** globally (`npm install -g pnpm`, MIT)
 to install dependencies at build time. The installed version is not pinned.
 

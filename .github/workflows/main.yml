@@ -32,9 +32,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Maybe Access Token is required
 
-  build-and-push-nextjs-app:
+  # Release images are built only after the DB tests pass (docs/tests/db/README.md)
+  db-tests:
     if: &run-on-release ${{ needs.compute-release-version.outputs.published == 'true' }}
     needs: compute-release-version
+    uses: ./.github/workflows/db-tests.yml
+
+  build-and-push-nextjs-app:
+    if: *run-on-release
+    needs: [compute-release-version, db-tests]
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
       dockerfile: nextjs/docker/Dockerfile.nextjs
@@ -47,7 +53,7 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
   build-and-push-mariadb:
     if: *run-on-release
-    needs: compute-release-version
+    needs: [compute-release-version, db-tests]
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
       dockerfile: database/docker/Dockerfile.mariadb
@@ -59,7 +65,7 @@ jobs:
     secrets: *secrets
   build-and-push-nginx:
     if: *run-on-release
-    needs: compute-release-version
+    needs: [compute-release-version, db-tests]
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
       dockerfile: nginx/docker/Dockerfile.nginx
@@ -71,7 +77,7 @@ jobs:
     secrets: *secrets
   build-and-push-flyway:
     if: *run-on-release
-    needs: compute-release-version
+    needs: [compute-release-version, db-tests]
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
       dockerfile: database-migrations/docker/Dockerfile.flyway
@@ -83,7 +89,7 @@ jobs:
     secrets: *secrets
   build-and-push-ws-server:
     if: *run-on-release
-    needs: compute-release-version
+    needs: [compute-release-version, db-tests]
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
       dockerfile: ws-server/Dockerfile

@@ -134,7 +134,7 @@ Refusals follow spec 21: `401` when not logged in, and the cell-route status for
 
 ### Automatic Completion (compound and iterative)
 
-These types have no manual Mark Complete in the UI, and no manual Undo except from `failed`. After a subtask toggle or counter change, only the cell whose progress changed is updated. No other cell is touched, even one copied from the same resolution:
+These types cannot be completed manually: they embed the logic that completes them. The UI has no Mark Complete for them, and the API refuses a manual completion (`400`). They have no manual Undo except from `failed`. After a subtask toggle or counter change, only the cell whose progress changed is updated. No other cell is touched, even one copied from the same resolution:
 
 - Progress complete and cell `pending` or `failed` → `completed`
 - Progress incomplete and cell `completed` → `pending`
