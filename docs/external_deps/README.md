@@ -78,7 +78,7 @@ remains.
    while the project is open-source and non-commercial. Before a commercial,
    closed-source or non-AGPL release, either buy a commercial license (one-time,
    $9.99 for one project at the 2026-11-07 price) or replace it with a
-   permissively licensed library (only `nextjs/src/components/guide/intro-adapter.ts`
+   permissively licensed library (only `nextjs/src/components/guide/engine/intro-adapter.ts`
    needs to change). As long as it is used under the AGPL, the license chosen in
    point 1 must be compatible with AGPLv3. See
    [nextjs-npm.md](nextjs-npm.md#introjs-agpl-30).

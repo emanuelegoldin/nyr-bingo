@@ -323,12 +323,20 @@ _No file references this spec._
 
 ## 26-guided-tour.md — Guided Tour (Proof of Concept)
 
-- `components/guide/bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library. [Tour Steps]
-- `components/guide/demo-card.tsx` — The demo card the guided tour runs on, shown above the page; it calls no API. [Demo Card]
-- `components/guide/demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour; it calls no API. [Tour Steps]
-- `components/guide/demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights. [Demo Card]
-- `components/guide/guide-button.tsx` — Help button of the application header that starts the bingo tour. [Trigger]
-- `components/guide/intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it. [Module Boundary]
+- `app/(app)/guides/guides-page-client.tsx` — Client side of the Guides page: its title and the list of guides. [Guides Page]
+- `app/(app)/guides/page.tsx` — Guides Page - the guided tours the user can start [Guides Page]
+- `components/guide/bingo-card/bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library. [Tour Steps]
+- `components/guide/bingo-card/demo-card.tsx` — The demo card the guided tour runs on, shown above the page; it calls no API. [Demo Card]
+- `components/guide/bingo-card/demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour; it calls no API. [Tour Steps]
+- `components/guide/bingo-card/demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights. [Demo Card]
+- `components/guide/engine/intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it. [Module Boundary]
+- `components/guide/engine/tour-selector.ts` — Selector of the elements a tour highlights, marked with a `data-tour` attribute. [Module Boundary]
+- `components/guide/engine/use-guided-tour.ts` — Hook that runs any tour with the tour library and reports its current step. [Module Boundary]
+- `components/guide/guide-entry.tsx` — One entry of the Guides page: a title that expands to a description and a Play button. [Guides Page]
+- `components/guide/guide-list.tsx` — List of every available guide, shown on the Guides page. [Guides Page]
+- `components/guide/guides.ts` — The guides listed on the Guides page, in display order. [Guides Page]
+- `components/guide/sandbox/sandbox-layer.tsx` — Full-screen layer that shows a tour's demo content above the page. [Demo Card]
+- `components/guide/types.ts` — Contract every guide follows, so any listed tour starts the same way. [Module Boundary]
 
 ## Unmapped files (92)
 

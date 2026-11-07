@@ -56,6 +56,11 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `use-game-actions.ts`
 - `use-last-loaded.ts`
 
+## app/(app)/guides
+
+- `guides-page-client.tsx` — Client side of the Guides page: its title and the list of guides.
+- `page.tsx` — Guides Page - the guided tours the user can start
+
 ## app/(app)/profile
 
 - `ProfilePageClient.tsx` — Profile Page Client Component
@@ -423,12 +428,27 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## components/guide
 
+- `guide-entry.tsx` — One entry of the Guides page: a title that expands to a description and a Play button.
+- `guide-list.tsx` — List of every available guide, shown on the Guides page.
+- `guides.ts` — The guides listed on the Guides page, in display order.
+- `types.ts` — Contract every guide follows, so any listed tour starts the same way.
+
+## components/guide/bingo-card
+
 - `bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library.
 - `demo-card.tsx` — The demo card the guided tour runs on, shown above the page; it calls no API.
 - `demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour; it calls no API.
 - `demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights.
-- `guide-button.tsx` — Help button of the application header that starts the bingo tour.
+
+## components/guide/engine
+
 - `intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it.
+- `tour-selector.ts` — Selector of the elements a tour highlights, marked with a `data-tour` attribute.
+- `use-guided-tour.ts` — Hook that runs any tour with the tour library and reports its current step.
+
+## components/guide/sandbox
+
+- `sandbox-layer.tsx` — Full-screen layer that shows a tour's demo content above the page.
 
 ## components/notifications
 
