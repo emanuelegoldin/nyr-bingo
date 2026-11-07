@@ -93,7 +93,7 @@ Run once at Node startup:
 ## Guided tours (spec 26, proof of concept)
 
 - `components/guide/` is self-contained. The Guides page (`app/(app)/guides/`, linked from `components/app-sidebar.tsx`) renders `guide-list.tsx`, one `guide-entry.tsx` per guide in the `guides.ts` registry. Play mounts the guide's tour component (`GuideTourProps` in `types.ts`), so starting a tour does not depend on which tour it is.
-- Each tour has its own subfolder (`bingo-card/`: steps in `bingo-tour.tsx`, demo card reusing `CardGrid` and `CellFace`). Demo content renders inside `sandbox/sandbox-layer.tsx` and calls no API.
+- Each tour has its own subfolder (`bingo-card/`, `leaderboard/`, `progress/`, `request-proof/`, `proof-thread-owner/`, `proof-thread-voter/`). Tours reuse real presentational components (`CardGrid`, `CellFace`, the leaderboard podium and table, `ProgressLineChart`, `ThreadFiles`, `ThreadMessages`) fed with sample data, plus shared demo pieces in `sandbox/`. Demo content renders inside `sandbox/sandbox-layer.tsx` and calls no API.
 - `engine/` is the library side: `use-guided-tour.ts` starts a tour and reports the current step, and only `engine/intro-adapter.ts` imports Intro.js (AGPL-3.0, paid for commercial use, see `docs/external_deps/`), loaded with a dynamic `import()` when a tour starts. To add a guide, swap the library or remove the tours, see `components/guide/README.md`.
 
 ## Where new things go

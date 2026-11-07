@@ -19,15 +19,24 @@ Guides page (`/guides`, linked from the sidebar). They evaluate
 | `engine/tour-selector.ts` | `tourSelector()`: the selector of a `data-tour` target. |
 | `sandbox/` | Demo pieces any tour can reuse. |
 | `sandbox/sandbox-layer.tsx` | Full-screen portal layer with a "this is a demo" notice. |
+| `sandbox/demo-cells.ts`, `sandbox/demo-grid.tsx` | Sample 3x3 cards and their grid, drawn with `CardGrid`, `CellFace` and `JokerCell`; the stamp or hourglass animates in when a cell changes. |
+| `sandbox/demo-game-tabs.tsx` | The game page's tab bar with one tab selected, to show where a feature is. |
+| `sandbox/demo-thread.tsx`, `sandbox/demo-vote.tsx` | A review thread (reusing `ThreadFiles` and `ThreadMessages`) with sample content, and its vote section. |
 | `bingo-card/` | The bingo tour and everything only it uses. |
 | `bingo-card/bingo-tour.tsx` | Its steps, and the demo state derived from the current step. |
 | `bingo-card/demo-card.tsx` | The demo card, reusing `CardGrid`, `CellFace` and `JokerCell`. |
 | `bingo-card/demo-cell-detail.tsx` | Details of the target cell with Mark Complete, mimicking the cell detail dialog. |
 | `bingo-card/demo-data.ts` | Sample cells and the `data-tour` markers the steps highlight. |
+| `leaderboard/` | Leaderboard tour, on the real podium and table with sample players. |
+| `progress/` | Progress tour, on the real chart with sample points. Its action steps go on when a click lands inside the highlighted element. |
+| `request-proof/` | Request-proof tour: the user's and a teammate's card, the Request Proof dialog and the new thread. |
+| `proof-thread-owner/`, `proof-thread-voter/` | The review thread seen by the card owner (no action) and by a teammate (votes). |
 
 Texts live in the `Guide` namespace (`i18n/messages/*/Guide.json`): `page`,
-`play` and `nav` are shared, and each guide owns a subtree named after its id
-(`bingoCard`) with at least `title` and `description`.
+`play` and `nav` are shared, `sandbox` holds the texts of the shared demo pieces
+(notice, sample resolutions, thread messages), and each guide owns a subtree
+named after its id (`bingoCard`, `leaderboard`, ...) with at least `title` and
+`description`. Keep step texts to one short sentence.
 
 ## Adding a guide
 
