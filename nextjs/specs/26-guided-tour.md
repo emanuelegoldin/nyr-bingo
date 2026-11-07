@@ -4,7 +4,7 @@
 
 Show new users how the application works with a short, step-by-step guided tour that highlights parts of the interface.
 
-This specification is a **proof of concept**. It covers a single tour that explains the bingo game, and it is meant to evaluate whether a tour library (Intro.js) fits the project. It may be extended, replaced or removed.
+This specification is a **proof of concept**. It covers a few short tours (the bingo game, the leaderboard, the progress chart and proof review), and it is meant to evaluate whether a tour library (Intro.js) fits the project. It may be extended, replaced or removed.
 
 ---
 
@@ -18,16 +18,16 @@ This specification is a **proof of concept**. It covers a single tour that expla
 
 ## In Scope
 
-- One tour: how the bingo game works
+- The tours listed under Tour Steps and Other Tours
 - A Guides page that lists the available tours and starts them
-- A demo card that the tour operates on
+- Demo content (cards, leaderboard, chart, threads) that the tours operate on
 - Translation and theming of the tour
 
 ---
 
 ## Out of Scope
 
-- Tours for other pages or features
+- Tours for pages or features not listed in this spec
 - Starting a tour automatically (for example on first login)
 - Remembering whether a user has already seen a tour
 - Using the user's real card or real resolutions in the tour
@@ -43,7 +43,7 @@ This specification is a **proof of concept**. It covers a single tour that expla
 - Selecting an entry's title expands it to show a short description and a **Play** button; selecting it again collapses it. Entries expand independently, and the expand control works with the keyboard and announces whether it is expanded.
 - **Play** starts that guide's tour. While the tour runs, its Play button is disabled.
 - When the tour ends, the user is back on the Guides page as they left it, and Play can start the tour again.
-- Today the page lists one guide: the bingo tour ("How the bingo game works").
+- The page lists, in order: the bingo tour ("How the bingo game works"), Leaderboard, Progress, Request a proof, Proof thread (your cell) and Proof thread (a teammate's cell).
 - The application header has no button that starts a tour.
 
 ### Demo Card
@@ -67,13 +67,23 @@ The tour shows these steps in order. Each step has a short translated text and, 
 - The user can go back, skip or close the tour at any step (Back, Done, close button or Escape), and go forward with Next on the steps that do not ask for a click. Keyboard navigation can also go forward on any step.
 - Going back to the details step from the completion step shows the cell as pending again.
 
+### Other Tours
+
+Every tour runs on demo content with sample data (players, cells, chart points, files and messages), shown above the page like the demo card and under the same rules: it never calls the server and is reset when the tour ends. Where a tour shows where to find a feature, it shows the game page's tabs (spec 12) with that tab highlighted. Texts are one short sentence per step.
+
+- **Leaderboard**: the game page's Leaderboard tab; the podium; the **Completed** column (cells completed or accomplished); the **First Bingo** column (when the player first scored a bingo, which ranks first).
+- **Progress**: the game page's Progress tab; the chart; the **Day / Month** toggle, which the user uses to continue; the legend, where the user selects a player to highlight them and continue.
+- **Request a proof**: two 3×3 demo cards, the user's and a teammate's. The user selects a completed cell of the teammate's card, which opens the Request Proof dialog, and confirms it with **Request Proof** (no Next button on these two steps). The review thread is then shown briefly (it has its own tours), and a last step highlights the cell, which now shows the hourglass.
+- **Proof thread (your cell)**: the thread seen by the card owner, with no action asked at any step: a one-sentence overview; the header (which resolution, and the thread's status); uploading files; the messages.
+- **Proof thread (a teammate's cell)**: the thread seen by a teammate: voting with Accept or Deny, which the user uses to continue; that the thread closes once everyone has voted or after 2 days; that closed threads are kept in the game page's Threads tab. Going back to the voting step removes the demo vote.
+
 ### Ending the Tour
 
-- When the tour ends, whether it finished, was skipped or closed, the demo card is removed and its state is reset to its initial content. Starting the tour again begins from the same initial card.
+- When the tour ends, whether it finished, was skipped or closed, the demo content is removed and its state is reset to its initial content. Starting the tour again begins from the same initial content.
 
 ### Translation and Theme
 
-- Every text of the tour, the demo card's sample resolutions and the navigation buttons are translated in every locale (spec 15).
+- Every text of the tours, the demo content's sample resolutions and the navigation buttons are translated in every locale (spec 15).
 - The tour's tooltips use the theme tokens and are readable in light and dark themes (spec 25).
 - The tour and the demo card fit narrow screens without horizontal scrolling (spec 20).
 
@@ -87,7 +97,7 @@ The tour shows these steps in order. Each step has a short translated text and, 
 
 ## Acceptance Criteria
 
-- The sidebar links to the Guides page, which lists the bingo tour by its title.
+- The sidebar links to the Guides page, which lists every tour by its title.
 - Selecting the title expands the entry with a description and a Play button, and Play starts the bingo tour.
 - The application header has no help button.
 - The tour shows, in order: an overview, the card, one cell, the cell's details, and marking the cell as complete.
@@ -96,4 +106,5 @@ The tour shows these steps in order. Each step has a short translated text and, 
 - No request is sent to the server during the tour, and the user's real cards are unchanged.
 - After the tour ends (finished, skipped or closed), the demo card disappears, and a new tour starts from the initial card.
 - All tour texts are translated in every locale, and the tour is readable in both themes and on narrow screens.
+- The Leaderboard, Progress, Request a proof and both Proof thread tours show the steps listed under Other Tours, on demo content, and send no request to the server.
 - The tour library is used only inside the tours' folder.
