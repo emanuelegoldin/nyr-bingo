@@ -31,6 +31,14 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          // Pure code: no database, no Next.js runtime, files run in parallel
+          name: 'unit',
+          include: ['tests/unit/**/*.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
           name: 'db',
           include: ['tests/db/**/*.test.ts'],
           setupFiles: ['tests/support/db/setup.ts'],
