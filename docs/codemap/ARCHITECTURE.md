@@ -90,6 +90,11 @@ Run once at Node startup:
 - `components/theme/theme-provider.tsx` holds the theme on the client. `useTheme()` returns `{ theme, setTheme }`. `setTheme` writes the cookie and applies the class without a reload. The provider follows OS changes while the theme is `system`. The switcher is `components/theme/theme-switcher.tsx`.
 - Colours come from the tokens in `app/globals.css` (`:root` and `.dark`), mapped in `tailwind.config.ts`. Use `success`, `warning` and `destructive` for status colours, not fixed palette classes.
 
+## Guided tour (spec 26, proof of concept)
+
+- `components/guide/` is self-contained. `guide-button.tsx` (in `components/app-header.tsx`) mounts `bingo-tour.tsx`, which shows a demo card (`demo-card.tsx`, reusing `CardGrid` and `CellFace`) and derives the demo state from the current step. The demo calls no API.
+- Only `components/guide/intro-adapter.ts` imports Intro.js (AGPL-3.0, paid for commercial use, see `docs/external_deps/`). It is loaded with a dynamic `import()` when a tour starts. To swap the library or remove the tour, see `components/guide/README.md`.
+
 ## Where new things go
 
 | Adding… | Put it in |
@@ -101,6 +106,7 @@ Run once at Node startup:
 | a real-time refresh | a call to a `lib/team-signals.ts` helper after the commit |
 | UI text | a key in all three `i18n/messages/*/<Namespace>.json` files |
 | a colour | a token in `app/globals.css`, defined in both `:root` and `.dark`, plus `tailwind.config.ts` |
+| a guided tour step | `components/guide/` (steps in a `*-tour.tsx`, targets marked with `data-tour`), never importing `intro.js` outside `intro-adapter.ts` |
 | an external package | an update to `docs/external_deps/` in the same change |
 | a unit test | `nextjs/tests/unit/<area>/<aspect>.test.ts`, pure functions only (see `docs/tests/README.md`) |
 | a DB test | `nextjs/tests/db/<area>/<aspect>.test.ts`, using the builders in `tests/support/db/fixtures.ts` |

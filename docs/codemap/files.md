@@ -421,6 +421,15 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `compound-subtask-editor.tsx`
 - `iterative-repetition-input.tsx`
 
+## components/guide
+
+- `bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library.
+- `demo-card.tsx` — The demo card the guided tour runs on, shown above the page. It holds no real data and
+- `demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour. It mirrors the cell
+- `demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights.
+- `guide-button.tsx` — Help button of the application header that starts the bingo tour.
+- `intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it.
+
 ## components/notifications
 
 - `notification-bell.tsx`

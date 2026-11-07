@@ -321,6 +321,15 @@ _No file references this spec._
 - `lib/theme/config.ts` — Theme settings shared by the server and the browser. [Themes]
 - `lib/theme/get-theme.ts` — Server helper that reads the stored theme. [Selection and Persistence]
 
+## 26-guided-tour.md — Guided Tour (Proof of Concept)
+
+- `components/guide/bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library. [Tour Steps]
+- `components/guide/demo-card.tsx` — The demo card the guided tour runs on, shown above the page. It holds no real data and [Demo Card]
+- `components/guide/demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour. It mirrors the cell [Tour Steps]
+- `components/guide/demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights. [Demo Card]
+- `components/guide/guide-button.tsx` — Help button of the application header that starts the bingo tour. [Trigger]
+- `components/guide/intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it. [Module Boundary]
+
 ## Unmapped files (92)
 
 No spec reference in the file. See `files.md` for their purpose.
