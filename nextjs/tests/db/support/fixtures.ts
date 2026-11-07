@@ -4,7 +4,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { CellState, GameStatus, InvitationStatus, ResolutionType, TeamRole, VoteType } from '@/lib/shared/types';
+import { CellState, GameStatus, type GridSize, InvitationStatus, ResolutionType, TeamRole, VoteType } from '@/lib/shared/types';
 import { execute } from './test-connection';
 
 /** A user created by createUser. */
@@ -24,6 +24,8 @@ export interface TeamFixture {
 export interface GameFixture {
   id: string;
   teamId: string;
+  /** The side length of the game's cards */
+  gridSize: GridSize;
 }
 
 /** What one cell of a fixture card holds. Every field has a default. */
@@ -36,6 +38,10 @@ export interface CellFixtureInput {
   state?: CellState;
   /** The resolution the cell was filled from (default none) */
   resolutionId?: string;
+  /** The cell's position (default its index in the list passed to createCard) */
+  position?: number;
+  /** When the cell last changed, as 'YYYY-MM-DD hh:mm:ss' (default now) */
+  updatedAt?: string;
 }
 
 /** A card created by createCard. */
@@ -43,7 +49,7 @@ export interface CardFixture {
   id: string;
   gameId: string;
   ownerId: string;
-  /** The cell ids, in the order of the cells passed in (position = index) */
+  /** The cell ids, in the order of the cells passed in */
   cellIds: string[];
 }
 
@@ -103,24 +109,26 @@ export const createTeam = async (leader: UserFixture): Promise<TeamFixture> => {
  * @param team The team the game belongs to
  * @param players The users who play it
  * @param status The game's status (default started)
+ * @param gridSize The side length of its cards (default 5)
  * @returns The created game
  */
 export const createGame = async (
   team: TeamFixture,
   players: UserFixture[],
-  status: GameStatus = GameStatus.STARTED
+  status: GameStatus = GameStatus.STARTED,
+  gridSize: GridSize = 5
 ): Promise<GameFixture> => {
   const id = randomUUID();
 
   await execute(
-    'INSERT INTO games (id, team_id, name, status) VALUES (?, ?, ?, ?)',
-    [id, team.id, `game_${id.slice(0, 8)}`, status]
+    'INSERT INTO games (id, team_id, name, status, grid_size) VALUES (?, ?, ?, ?, ?)',
+    [id, team.id, `game_${id.slice(0, 8)}`, status, gridSize]
   );
   for (const player of players) {
     await execute('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)', [id, player.id]);
   }
 
-  return { id, teamId: team.id };
+  return { id, teamId: team.id, gridSize };
 };
 
 /**
@@ -145,8 +153,8 @@ const insertCell = async (
   await execute(
     `INSERT INTO bingo_cells
        (id, card_id, position, source_type, source_user_id, state, resolution_type, title, number_of_repetition,
-        resolution_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        resolution_id, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, NOW()))`,
     [
       id,
       cardId,
@@ -158,6 +166,7 @@ const insertCell = async (
       isEmpty ? null : `Cell ${position}`,
       type === ResolutionType.ITERATIVE ? 3 : null,
       input.resolutionId ?? null,
+      input.updatedAt ?? null,
     ]
   );
 
@@ -174,7 +183,7 @@ const insertCell = async (
 };
 
 /**
- * Insert a user's card in a game, with the given cells at positions 0, 1, 2, ...
+ * Insert a user's card in a game, with the given cells at positions 0, 1, 2, ... unless a cell sets its own.
  * @param game The game the card belongs to
  * @param owner The card owner (should be a player of the game)
  * @param cells What each cell holds
@@ -188,13 +197,13 @@ export const createCard = async (
   const id = randomUUID();
 
   await execute(
-    'INSERT INTO bingo_cards (id, team_id, user_id, game_id) VALUES (?, ?, ?, ?)',
-    [id, game.teamId, owner.id, game.id]
+    'INSERT INTO bingo_cards (id, team_id, user_id, game_id, grid_size) VALUES (?, ?, ?, ?, ?)',
+    [id, game.teamId, owner.id, game.id, game.gridSize]
   );
 
   const cellIds: string[] = [];
-  for (const [position, input] of cells.entries()) {
-    cellIds.push(await insertCell(id, owner.id, position, input));
+  for (const [index, input] of cells.entries()) {
+    cellIds.push(await insertCell(id, owner.id, input.position ?? index, input));
   }
 
   return { id, gameId: game.id, ownerId: owner.id, cellIds };
@@ -303,19 +312,36 @@ export const createTeamGoal = async (game: GameFixture, owner: UserFixture): Pro
  * @param game The game
  * @param author The player who writes it
  * @param recipient The player it is for
+ * @param input Its title (default 'For you') and type (default base); compound gets 2 subtasks, iterative a target of 3
  * @returns The resolution id
  */
 export const createMemberResolution = async (
   game: GameFixture,
   author: UserFixture,
-  recipient: UserFixture
+  recipient: UserFixture,
+  input: { title?: string; type?: ResolutionType } = {}
 ): Promise<string> => {
   const id = randomUUID();
+  const type = input.type ?? ResolutionType.BASE;
+  const subtasks = type === ResolutionType.COMPOUND
+    ? JSON.stringify([{ title: 'Step 1', description: '' }, { title: 'Step 2', description: '' }])
+    : null;
 
   await execute(
-    `INSERT INTO resolutions (id, owner_user_id, title, scope, resolution_type, team_id, game_id, to_user_id)
-     VALUES (?, ?, 'For you', 'member_provided', 'base', ?, ?, ?)`,
-    [id, author.id, game.teamId, game.id, recipient.id]
+    `INSERT INTO resolutions
+       (id, owner_user_id, title, scope, resolution_type, team_id, game_id, to_user_id, subtasks, number_of_repetition)
+     VALUES (?, ?, ?, 'member_provided', ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      author.id,
+      input.title ?? 'For you',
+      type,
+      game.teamId,
+      game.id,
+      recipient.id,
+      subtasks,
+      type === ResolutionType.ITERATIVE ? 3 : null,
+    ]
   );
 
   return id;
