@@ -42,6 +42,18 @@
 }
 
 /*
+ * Intro.js dims the page with a fixed dark-grey shadow around the highlight, which barely shows on
+ * the dark theme. There, the page is dimmed further and the highlight gets a ring in the primary
+ * colour, so the focused area stands out.
+ */
+.dark .introjs-helperLayer {
+  box-shadow:
+    0 0 0 2px hsl(var(--primary)),
+    0 0 12px 4px hsl(var(--primary) / 0.6),
+    0 0 0 5000px rgb(0 0 0 / 0.75) !important;
+}
+
+/*
  * Action steps: the user goes on by using the highlighted element. The demo card sits in its own
  * stacking layer, below the tour's overlay, so the overlay and the highlight let clicks through.
  */
