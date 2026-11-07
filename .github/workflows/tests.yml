@@ -1,0 +1,83 @@
+# All automated tests (docs/tests/README.md), one job per layer so they run in parallel:
+# Next.js unit, DB and route tests, the WebSocket server, and the SQL migration procedures.
+# Each job that needs MariaDB starts its own throwaway one (database/test/docker-compose.test.yml).
+# Runs on pull requests and pushes to dev, gates the release images in main.yml,
+# and can be started by hand on any branch from the Actions tab ("tests", "Run workflow").
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [ dev ]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  nextjs-unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node-pnpm
+        with:
+          working-directory: nextjs
+      - name: Run unit tests
+        working-directory: nextjs
+        run: pnpm test:unit
+
+  # DB tests (repository code) and route tests (API handlers); each gets its own database
+  nextjs-with-db:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [ db, api ]
+    name: nextjs-${{ matrix.project }}
+    defaults:
+      run:
+        working-directory: nextjs
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node-pnpm
+        with:
+          working-directory: nextjs
+      - name: Start test database and apply migrations
+        run: pnpm test:db:up
+      - name: Run ${{ matrix.project }} tests
+        run: pnpm test:${{ matrix.project }}
+      - name: Stop test database
+        if: ${{ always() }}
+        run: pnpm test:db:down
+
+  ws-server:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node-pnpm
+        with:
+          working-directory: ws-server
+      - name: Run WebSocket server tests
+        working-directory: ws-server
+        run: pnpm test
+
+  # Migration helper procedures (V1_0_1); needs only MariaDB, no Node.js and no migrations
+  sql-procedures:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: database/test
+    steps:
+      - uses: actions/checkout@v6
+      - name: Start test database
+        run: docker compose -f docker-compose.test.yml up -d --wait db
+      - name: Run SQL tests
+        run: ./run-sql-tests.sh
+      - name: Stop test database
+        if: ${{ always() }}
+        run: docker compose -f docker-compose.test.yml down -v

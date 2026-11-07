@@ -1,0 +1,27 @@
+# Install pnpm (version from the packageManager field), Node.js 22 and the dependencies of one package.
+# Used by the jobs of tests.yml; see docs/tests/README.md.
+name: Set up Node.js and pnpm
+description: Install pnpm, Node.js and the frozen dependencies of one package directory
+
+inputs:
+  working-directory:
+    description: Directory holding package.json and pnpm-lock.yaml (nextjs or ws-server)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        package_json_file: ${{ inputs.working-directory }}/package.json
+    - name: Use Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: 22
+        cache: pnpm
+        cache-dependency-path: ${{ inputs.working-directory }}/pnpm-lock.yaml
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: pnpm install --frozen-lockfile
