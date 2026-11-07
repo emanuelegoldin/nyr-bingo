@@ -14,9 +14,21 @@
     "title": "How the bingo game works",
     "description": "A short walk through a demo card: what a card is, how to open a cell and how to mark a resolution as complete.",
     "demo": {
-      "title": "Demo card",
-      "notice": "This is a demo card. Nothing you do here changes your real cards."
+      "title": "Demo card"
     },
+    "steps": {
+      "overviewTitle": "How the bingo game works",
+      "overview": "Your New Year's resolutions are spread across a bingo card: complete them to mark their cells, and fill a whole row, column or diagonal to score a bingo!",
+      "card": "This is your card. It mixes your own resolutions with your team's goals, and the joker in the centre is a free cell.",
+      "cell": "Each cell holds one resolution. Tap this cell to open its details.",
+      "detail": "The details show the resolution, its current state and what you can do with it.",
+      "complete": "Achieved it? Tap Mark Complete to try it.",
+      "completed": "The cell gets a stamp. Your teammates see it and can ask you for proof."
+    }
+  },
+  "sandbox": {
+    "notice": "This is a demo. Nothing you do here changes your real data.",
+    "you": "you",
     "cells": {
       "read": "Read 12 books",
       "run": "Run a 10 km race",
@@ -27,14 +39,63 @@
       "call": "Call my grandparents every week",
       "garden": "Grow a vegetable garden"
     },
+    "thread": {
+      "ask": "Nice! Any photo from the race?",
+      "reply": "Sure, here's my finish line photo."
+    }
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "description": "Where to find the ranking and what its columns mean.",
     "steps": {
-      "overviewTitle": "How the bingo game works",
-      "overview": "Your New Year's resolutions are spread across a bingo card: complete them to mark their cells, and fill a whole row, column or diagonal to score a bingo!",
-      "card": "This is your card. It mixes your own resolutions with your team's goals, and the joker in the centre is a free cell.",
-      "cell": "Each cell holds one resolution. Tap this cell to open its details.",
-      "detail": "The details show the resolution, its current state and what you can do with it.",
-      "complete": "Achieved it? Tap Mark Complete to try it.",
-      "completed": "The cell gets a stamp. Your teammates see it and can ask you for proof."
+      "tab": "Open a game and pick the Leaderboard tab.",
+      "podium": "The top three stand on the podium.",
+      "completed": "Completed: cells marked complete or accomplished.",
+      "firstBingo": "First Bingo: when they first filled a line. The earliest bingo ranks first."
+    }
+  },
+  "progress": {
+    "title": "Progress",
+    "description": "Follow how each player's completed cells grow over time.",
+    "steps": {
+      "tab": "Open a game and pick the Progress tab.",
+      "chart": "Each line is a player's completed cells over time.",
+      "granularity": "Tap Month or Day to change the time step.",
+      "legend": "Tap a name to highlight that player.",
+      "highlighted": "Highlighted players stand out. Tap their name again to clear."
+    }
+  },
+  "requestProof": {
+    "title": "Request a proof",
+    "description": "Doubt a teammate's cell? Ask them for proof.",
+    "yourCard": "Your card",
+    "teammateCard": "Ben's card",
+    "steps": {
+      "cards": "Your card, and a teammate's card.",
+      "cell": "Ben marked this cell as done. Tap it.",
+      "request": "Tap Request Proof to confirm.",
+      "thread": "A review thread opens. It has its own guides.",
+      "review": "The hourglass means the cell is under review."
+    }
+  },
+  "proofThreadOwner": {
+    "title": "Proof thread: your cell",
+    "description": "Someone asked proof for your cell. Here is how to answer.",
+    "steps": {
+      "overview": "A teammate doubts one of your cells. Show them it's done!",
+      "header": "Which resolution is under review, and the thread's status.",
+      "files": "Upload photos, videos or PDFs as proof.",
+      "messages": "Chat with your teammates here."
+    }
+  },
+  "proofThreadVoter": {
+    "title": "Proof thread: a teammate's cell",
+    "description": "Check the proof and vote.",
+    "steps": {
+      "vote": "Convinced? Tap Accept or Deny.",
+      "change": "You can change your vote while the thread is open.",
+      "closes": "The thread closes once everyone has voted, or after 2 days.",
+      "archive": "Closed threads are kept in the game's Threads tab."
     }
   }
 }

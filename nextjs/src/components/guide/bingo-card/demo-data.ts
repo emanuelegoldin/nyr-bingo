@@ -4,25 +4,7 @@
  */
 
 import { CellState } from "@/lib/shared/types";
-
-/** Translation keys (namespace `Guide.bingoCard`, under `cells`) of the demo resolutions. */
-export type DemoResolutionKey =
-  | "read"
-  | "run"
-  | "cook"
-  | "guitar"
-  | "travel"
-  | "save"
-  | "call"
-  | "garden";
-
-/** One cell of the demo card: a resolution, or the joker. */
-export type DemoCell =
-  | { kind: "joker" }
-  | { kind: "resolution"; resolutionKey: DemoResolutionKey; state: CellState };
-
-/** Side length of the demo card. */
-export const DEMO_GRID_SIZE = 3;
+import { buildDemoCells, type DemoCell } from "../sandbox/demo-cells";
 
 /** Position of the cell the tour focuses on and marks as complete. */
 export const DEMO_TARGET_POSITION = 1;
@@ -43,22 +25,8 @@ export const DEMO_TARGETS = {
  * @param targetCompleted - Whether the tour has marked the target cell as complete.
  * @returns The cells, in position order.
  */
-export const createDemoCells = (targetCompleted: boolean): DemoCell[] => {
-  const pending = (resolutionKey: DemoResolutionKey): DemoCell => ({
-    kind: "resolution",
-    resolutionKey,
-    state: CellState.PENDING,
-  });
-
-  return [
-    { kind: "resolution", resolutionKey: "read", state: CellState.COMPLETED },
-    { kind: "resolution", resolutionKey: "run", state: targetCompleted ? CellState.COMPLETED : CellState.PENDING },
-    pending("cook"),
-    pending("guitar"),
-    { kind: "joker" },
-    pending("travel"),
-    pending("save"),
-    pending("call"),
-    pending("garden"),
-  ];
-};
+export const createDemoCells = (targetCompleted: boolean): DemoCell[] =>
+  buildDemoCells(
+    ["read", "run", "cook", "guitar", "travel", "save", "call", "garden"],
+    { 0: CellState.COMPLETED, ...(targetCompleted ? { [DEMO_TARGET_POSITION]: CellState.COMPLETED } : {}) }
+  );

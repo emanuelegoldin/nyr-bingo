@@ -14,9 +14,21 @@
     "title": "Come funziona il gioco",
     "description": "Un breve giro su una carta di prova: cos'è una carta, come aprire una cella e come segnare un proposito come completato.",
     "demo": {
-      "title": "Carta di prova",
-      "notice": "Questa è una carta di prova. Nulla di ciò che fai qui modifica le tue carte reali."
+      "title": "Carta di prova"
     },
+    "steps": {
+      "overviewTitle": "Come funziona il Bingo",
+      "overview": "I tuoi buoni propositi per l'anno nuovo sono distribuiti su una carta del Bingo: completali per segnare le loro celle e riempi un'intera riga, colonna o diagonale per fare bingo!",
+      "card": "Questa è la tua carta. Contiene i tuoi propositi e gli obiettivi della squadra, e il jolly al centro è una cella libera.",
+      "cell": "Ogni cella contiene un proposito. Tocca questa cella per aprirne i dettagli.",
+      "detail": "I dettagli mostrano il proposito, il suo stato attuale e cosa puoi fare.",
+      "complete": "Ce l'hai fatta? Tocca Segna come completato per provare.",
+      "completed": "La cella riceve un timbro. I tuoi compagni di squadra lo vedono e possono chiederti una prova."
+    }
+  },
+  "sandbox": {
+    "notice": "Questa è una prova. Nulla di ciò che fai qui modifica i tuoi dati reali.",
+    "you": "tu",
     "cells": {
       "read": "Leggere 12 libri",
       "run": "Correre una gara di 10 km",
@@ -27,14 +39,63 @@
       "call": "Chiamare i nonni ogni settimana",
       "garden": "Coltivare un orto"
     },
+    "thread": {
+      "ask": "Grande! Hai una foto della gara?",
+      "reply": "Certo, ecco la foto all'arrivo."
+    }
+  },
+  "leaderboard": {
+    "title": "Classifica",
+    "description": "Dove trovare la classifica e cosa significano le colonne.",
     "steps": {
-      "overviewTitle": "Come funziona il Bingo",
-      "overview": "I tuoi buoni propositi per l'anno nuovo sono distribuiti su una carta del Bingo: completali per segnare le loro celle e riempi un'intera riga, colonna o diagonale per fare bingo!",
-      "card": "Questa è la tua carta. Contiene i tuoi propositi e gli obiettivi della squadra, e il jolly al centro è una cella libera.",
-      "cell": "Ogni cella contiene un proposito. Tocca questa cella per aprirne i dettagli.",
-      "detail": "I dettagli mostrano il proposito, il suo stato attuale e cosa puoi fare.",
-      "complete": "Ce l'hai fatta? Tocca Segna come completato per provare.",
-      "completed": "La cella riceve un timbro. I tuoi compagni di squadra lo vedono e possono chiederti una prova."
+      "tab": "Apri una partita e scegli la scheda Classifica.",
+      "podium": "I primi tre salgono sul podio.",
+      "completed": "Completati: celle completate o raggiunte.",
+      "firstBingo": "Primo bingo: quando hanno riempito la prima linea. Chi fa bingo prima è in testa."
+    }
+  },
+  "progress": {
+    "title": "Progressi",
+    "description": "Segui come crescono nel tempo le celle completate di ogni giocatore.",
+    "steps": {
+      "tab": "Apri una partita e scegli la scheda Progressi.",
+      "chart": "Ogni linea mostra le celle completate di un giocatore nel tempo.",
+      "granularity": "Tocca Mese o Giorno per cambiare il passo temporale.",
+      "legend": "Tocca un nome per evidenziare quel giocatore.",
+      "highlighted": "I giocatori evidenziati risaltano. Tocca di nuovo il nome per toglierli."
+    }
+  },
+  "requestProof": {
+    "title": "Chiedere una prova",
+    "description": "Dubiti di una cella di un compagno? Chiedigli una prova.",
+    "yourCard": "La tua carta",
+    "teammateCard": "La carta di Ben",
+    "steps": {
+      "cards": "La tua carta e quella di un compagno.",
+      "cell": "Ben ha segnato questa cella come fatta. Toccala.",
+      "request": "Tocca Richiedi prova per confermare.",
+      "thread": "Si apre un thread di revisione. Ha le sue guide.",
+      "review": "La clessidra indica che la cella è in revisione."
+    }
+  },
+  "proofThreadOwner": {
+    "title": "Thread di revisione: la tua cella",
+    "description": "Qualcuno ha chiesto una prova per la tua cella. Ecco come rispondere.",
+    "steps": {
+      "overview": "Un compagno dubita di una tua cella. Dimostragli che è fatta!",
+      "header": "Quale proposito è in revisione e lo stato del thread.",
+      "files": "Carica foto, video o PDF come prova.",
+      "messages": "Scrivi qui ai tuoi compagni."
+    }
+  },
+  "proofThreadVoter": {
+    "title": "Thread di revisione: la cella di un compagno",
+    "description": "Controlla la prova e vota.",
+    "steps": {
+      "vote": "Convinto? Tocca Accetta o Rifiuta.",
+      "change": "Puoi cambiare voto finché il thread è aperto.",
+      "closes": "Il thread si chiude quando tutti hanno votato, o dopo 2 giorni.",
+      "archive": "I thread chiusi restano nella scheda Thread della partita."
     }
   }
 }
