@@ -102,10 +102,11 @@ export const DemoCard = ({ detailOpen, targetCompleted, onOpenTarget, onMarkComp
           <CardContent className="px-3 sm:px-6">
             <CardGrid gridSize={DEMO_GRID_SIZE}>
               {cells.map((cell, position) => (
-                // Each cell sits in its own grid box, so the target can carry its tour marker
+                // Each cell sits in its own grid box, so the target can carry its tour marker. The box's
+                // column may shrink (minmax(0, 1fr)), or a one-line title from md would widen the cell
                 <div
                   key={position}
-                  className="grid"
+                  className="grid min-w-0 grid-cols-1"
                   data-tour={position === DEMO_TARGET_POSITION ? DEMO_TARGETS.cell : undefined}
                 >
                   {cell.kind === "joker"
