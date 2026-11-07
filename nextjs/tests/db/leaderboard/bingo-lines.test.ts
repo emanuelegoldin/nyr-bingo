@@ -1,69 +1,15 @@
 /**
- * DB tests for bingo line detection: which lines score, which cells count as done, the first-bingo time
- * stored on the leaderboard, and the bingo notification.
- * Spec Reference: 12-team-tabs.md - Bingo detection logic, 19-notifications.md - Events
+ * DB tests for detecting a bingo line and storing the first bingo time.
+ * Spec Reference: 12-team-tabs.md - Bingo detection logic
  */
 
 import { describe, expect, it } from 'vitest';
 import { refreshLeaderboardEntry } from '@/lib/db/leaderboard-repository';
-import { CellState, GameStatus, type GridSize } from '@/lib/shared/types';
-import {
-  createCard,
-  createGame as seedGame,
-  createLeaderboardRow,
-  createTeam as seedTeam,
-  createUser,
-  type CellFixtureInput,
-  type GameFixture,
-  type UserFixture,
-} from './support/fixtures';
-import { countRows } from './support/rows';
-import { execute, query } from './support/test-connection';
+import { CellState } from '@/lib/shared/types';
+import { execute } from '../../support/db/test-connection';
+import { createBingoCard, cellsAt, readFirstBingoAt } from './helpers';
 
-/** A player with a card in a started game, and a leaderboard row with no bingo. */
-interface BingoSetup {
-  player: UserFixture;
-  game: GameFixture;
-  cellIds: string[];
-}
-
-/**
- * Build a started game of one player whose card holds the given cells.
- * @param gridSize The side length of the card
- * @param cells The stored cells, each at its own position
- * @returns The player, the game and the cell ids in the order given
- */
-const createBingoCard = async (gridSize: GridSize, cells: CellFixtureInput[]): Promise<BingoSetup> => {
-  const player = await createUser();
-  const game = await seedGame(await seedTeam(player), [player], GameStatus.STARTED, gridSize);
-  const card = await createCard(game, player, cells);
-  await createLeaderboardRow(game, player);
-  return { player, game, cellIds: card.cellIds };
-};
-
-/**
- * Cells in one state at the given positions.
- * @param positions The positions
- * @param state The state of every cell (default completed)
- * @returns The cell inputs
- */
-const cellsAt = (positions: number[], state: CellState = CellState.COMPLETED): CellFixtureInput[] =>
-  positions.map((position) => ({ position, state }));
-
-/**
- * Read the stored first-bingo time of a player.
- * @param setup The player and game
- * @returns The time as 'YYYY-MM-DD hh:mm:ss', or null without a bingo
- */
-const readFirstBingoAt = async ({ game, player }: BingoSetup): Promise<string | null> => {
-  const rows = await query<{ first_bingo_at: string | null }[]>(
-    'SELECT CAST(first_bingo_at AS CHAR) AS first_bingo_at FROM team_leaderboard WHERE game_id = ? AND user_id = ?',
-    [game.id, player.id]
-  );
-  return rows[0].first_bingo_at;
-};
-
-describe('bingo lines', () => {
+describe('leaderboard – bingo lines', () => {
   describe('operations', () => {
     it.each([
       ['the middle row, through the Joker', [10, 11, 13, 14]],
@@ -134,21 +80,6 @@ describe('bingo lines', () => {
 
       // Assert
       expect(await readFirstBingoAt(setup)).toBeNull();
-    });
-
-    it('publishes one bingo event and drops it while still pending when the bingo is lost (19-notifications.md – Cancellation)', async () => {
-      // Arrange
-      const setup = await createBingoCard(3, cellsAt([2, 6]));
-      await refreshLeaderboardEntry(setup.game.id, setup.player.id);
-      const eventsAfterBingo = await countRows('notification_events', "type = 'bingo_scored' AND game_id = ?", [setup.game.id]);
-      await execute("UPDATE bingo_cells SET state = 'pending' WHERE id = ?", [setup.cellIds[0]]);
-
-      // Act
-      await refreshLeaderboardEntry(setup.game.id, setup.player.id);
-
-      // Assert
-      expect(eventsAfterBingo).toBe(1);
-      expect(await countRows('notification_events', "type = 'bingo_scored' AND game_id = ?", [setup.game.id])).toBe(0);
     });
   });
 

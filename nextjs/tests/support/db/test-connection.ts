@@ -49,7 +49,7 @@ export const closeTestConnection = async (): Promise<void> => {
  */
 const getPinnedConnection = (): mysql.PoolConnection => {
   if (!pinnedConnection) {
-    throw new Error('Test DB connection is not open; is tests/db/support/setup.ts in setupFiles?');
+    throw new Error('Test DB connection is not open; is tests/support/db/setup.ts in setupFiles?');
   }
   return pinnedConnection;
 };

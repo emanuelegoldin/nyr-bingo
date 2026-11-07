@@ -1,125 +1,33 @@
 /**
- * DB tests for bingo card generation: at game start, at join time, the fallbacks, snapshots and refusals.
- * Spec Reference: 05-bingo-card-generation.md - Generation Rules, Data Model Notes, Duplicate Handling, Constraints, 16-games.md - Start Conditions, Joining After Start
+ * DB tests for generating the cards when a game starts.
+ * Spec Reference: 05-bingo-card-generation.md - Generation Rules, Duplicate Handling, Data Model Notes
  */
 
 import { describe, expect, it } from 'vitest';
-import { ensureBingoCardForUser, startGameWithCards } from '@/lib/db/bingo-card-generation';
-import { CellSourceType, GameStatus, type GridSize, ResolutionType } from '@/lib/shared/types';
+import { startGameWithCards } from '@/lib/db/bingo-card-generation';
 import {
-  addMember,
+  CellSourceType,
+  GameStatus,
+  type GridSize,
+  ResolutionType,
+} from '@/lib/shared/types';
+import {
   createGame as seedGame,
   createMemberResolution,
   createPersonalResolution,
   createTeam as seedTeam,
-  createTeamGoal,
   createUser,
-  type GameFixture,
-  type TeamFixture,
-  type UserFixture,
-} from './support/fixtures';
-import { countRows } from './support/rows';
-import { getColumns } from './support/schema';
-import { query } from './support/test-connection';
+} from '../../support/db/fixtures';
+import { countRows } from '../../support/db/rows';
+import { query } from '../../support/db/test-connection';
+import {
+  createFormingGame,
+  readCardCells,
+  countSource,
+  countPreparedFrom,
+} from './helpers';
 
-/** A forming game with its team goal set. */
-interface FormingGameSetup {
-  team: TeamFixture;
-  game: GameFixture;
-  players: UserFixture[];
-}
-
-/**
- * Build a forming game whose admin set the team goal ('Team goal').
- * @param playerCount How many players, the first being the admin (default 2)
- * @param gridSize The side length of its cards (default 5)
- * @returns The team, the game and its players
- */
-const createFormingGame = async (playerCount = 2, gridSize: GridSize = 5): Promise<FormingGameSetup> => {
-  const players: UserFixture[] = [await createUser()];
-  const team = await seedTeam(players[0]);
-  for (let index = 1; index < playerCount; index++) {
-    const member = await createUser();
-    await addMember(team, member);
-    players.push(member);
-  }
-  const game = await seedGame(team, players, GameStatus.FORMING, gridSize);
-  await createTeamGoal(game, players[0]);
-  return { team, game, players };
-};
-
-/** A generated cell as the tests look at it. */
-interface GeneratedCell {
-  position: number;
-  source_type: CellSourceType;
-  source_user_id: string | null;
-  resolution_id: string | null;
-  title: string | null;
-  state: string;
-  completed_times: number;
-}
-
-/**
- * Read the cells of a player's card in a game, by position.
- * @param game The game
- * @param player The card owner
- * @returns The stored cells
- */
-const readCardCells = async (game: GameFixture, player: UserFixture): Promise<GeneratedCell[]> =>
-  query<GeneratedCell[]>(
-    `SELECT c.position, c.source_type, c.source_user_id, c.resolution_id, c.title, c.state, c.completed_times
-       FROM bingo_cells c JOIN bingo_cards b ON b.id = c.card_id
-      WHERE b.game_id = ? AND b.user_id = ?
-      ORDER BY c.position`,
-    [game.id, player.id]
-  );
-
-/**
- * Count a card's cells by source.
- * @param cells The card's cells
- * @param source The source type
- * @returns How many cells have it
- */
-const countSource = (cells: GeneratedCell[], source: CellSourceType): number =>
-  cells.filter((cell) => cell.source_type === source).length;
-
-/**
- * Count a card's prepared cells copied from one category of the pool.
- * @param game The game
- * @param player The card owner
- * @param category short, medium or long
- * @returns How many cells came from that category
- */
-const countPreparedFrom = async (game: GameFixture, player: UserFixture, category: string): Promise<number> => {
-  const rows = await query<{ total: number }[]>(
-    `SELECT COUNT(*) AS total
-       FROM bingo_cells c JOIN bingo_cards b ON b.id = c.card_id
-       JOIN prepared_resolutions p ON p.title = c.title AND p.category = ?
-      WHERE b.game_id = ? AND b.user_id = ? AND c.source_type = 'prepared'`,
-    [category, game.id, player.id]
-  );
-  return Number(rows[0].total);
-};
-
-describe('card generation', () => {
-  describe('structure', () => {
-    it('has the expected bingo_cards columns (05-bingo-card-generation.md – Data Model Notes)', async () => {
-      // Act
-      const columns = await getColumns('bingo_cards');
-
-      // Assert
-      expect(columns).toEqual([
-        { name: 'id', type: 'varchar(36)', nullable: false, generated: false },
-        { name: 'team_id', type: 'varchar(36)', nullable: false, generated: false },
-        { name: 'user_id', type: 'varchar(36)', nullable: false, generated: false },
-        { name: 'grid_size', type: 'int(11)', nullable: true, generated: false },
-        { name: 'created_at', type: 'datetime', nullable: true, generated: false },
-        { name: 'game_id', type: 'varchar(36)', nullable: false, generated: false },
-        { name: 'locked_at', type: 'datetime', nullable: true, generated: false },
-      ]);
-    });
-  });
-
+describe('cards – generation', () => {
   describe('operations', () => {
     it('starts the game and gives every player a 5×5 card without a stored Joker (05-bingo-card-generation.md – Assumptions)', async () => {
       // Arrange
@@ -264,28 +172,6 @@ describe('card generation', () => {
       expect(new Set(texts).size).toBe(texts.length);
       expect(countSource(cells, CellSourceType.PERSONAL)).toBe(0);
     });
-
-    it('gives a late joiner a card with the goal, no prepared cells and empty filler (05-bingo-card-generation.md – Generation Rules)', async () => {
-      // Arrange
-      const { team, game } = await createFormingGame(1);
-      await startGameWithCards(game.id);
-      const joiner = await createUser();
-      await addMember(team, joiner);
-      await createPersonalResolution(joiner, 'Juggle');
-
-      // Act
-      const result = await ensureBingoCardForUser(game.id, joiner.id);
-
-      // Assert
-      expect(result.created).toBe(true);
-      const cells = await readCardCells(game, joiner);
-      expect(cells).toHaveLength(24);
-      expect(countSource(cells, CellSourceType.TEAM)).toBe(1);
-      expect(countSource(cells, CellSourceType.PERSONAL)).toBe(1);
-      expect(countSource(cells, CellSourceType.PREPARED)).toBe(0);
-      expect(countSource(cells, CellSourceType.EMPTY)).toBe(22);
-      expect(await countRows('team_leaderboard', 'game_id = ? AND user_id = ?', [game.id, joiner.id])).toBe(1);
-    });
   });
 
   describe('rejects', () => {
@@ -314,34 +200,6 @@ describe('card generation', () => {
       // Assert
       expect(result).toEqual({ success: false, error: 'Game is not in forming status' });
       expect(await countRows('bingo_cards', 'game_id = ?', [game.id])).toBe(2);
-    });
-
-    it('regenerating a card the player already has (05-bingo-card-generation.md – Generation Rules)', async () => {
-      // Arrange
-      const { game, players } = await createFormingGame(1);
-      await startGameWithCards(game.id);
-      const cellsBefore = await readCardCells(game, players[0]);
-
-      // Act
-      const result = await ensureBingoCardForUser(game.id, players[0].id);
-
-      // Assert
-      expect(result.created).toBe(false);
-      expect(await readCardCells(game, players[0])).toEqual(cellsBefore);
-    });
-
-    it('generating a join-time card in a game that has not started (05-bingo-card-generation.md – Constraints)', async () => {
-      // Arrange
-      const { team, game } = await createFormingGame(1);
-      const joiner = await createUser();
-      await addMember(team, joiner);
-
-      // Act
-      const result = await ensureBingoCardForUser(game.id, joiner.id);
-
-      // Assert
-      expect(result).toEqual({ created: false, error: 'Game is not started' });
-      expect(await countRows('bingo_cards', 'game_id = ? AND user_id = ?', [game.id, joiner.id])).toBe(0);
     });
   });
 });

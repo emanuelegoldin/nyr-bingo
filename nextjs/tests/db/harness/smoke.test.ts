@@ -6,8 +6,8 @@
 import { describe, expect, it } from 'vitest';
 import { withTransaction } from '@/lib/db/connection';
 import { findUserById } from '@/lib/db/user-repository';
-import { createUser } from './support/fixtures';
-import { execute, query } from './support/test-connection';
+import { createUser } from '../../support/db/fixtures';
+import { execute, query } from '../../support/db/test-connection';
 
 // Fixed id so the second test can look for the row the first one wrote
 const ISOLATION_USER_ID = '00000000-0000-4000-8000-000000000001';

@@ -36,18 +36,18 @@ In CI the tests run in `.github/workflows/db-tests.yml`. They gate the release i
 | File | Role |
 |---|---|
 | `database/test/docker-compose.test.yml` | The test DB and the one-shot Flyway migration |
-| `nextjs/vitest.config.mts` | Runs `tests/db/**/*.test.ts`, one file at a time |
-| `nextjs/tests/db/support/setup.ts` | Replaces `@/lib/db/connection` with the test connection; starts a transaction before each test and rolls it back after |
-| `nextjs/tests/db/support/test-connection.ts` | One pinned connection per file; `withTransaction` becomes a savepoint inside the test's transaction |
-| `nextjs/tests/db/support/fixtures.ts` | Builders that insert the toy data a test needs |
-| `nextjs/tests/db/support/schema.ts` | `getColumns(table)` for structure tests |
-| `nextjs/tests/db/support/rows.ts` | `countRows(table, where, params)` to check what a call kept or removed |
+| `nextjs/vitest.config.mts` | The `db` project runs `tests/db/**/*.test.ts`, one file at a time |
+| `nextjs/tests/support/db/setup.ts` | Replaces `@/lib/db/connection` with the test connection; starts a transaction before each test and rolls it back after |
+| `nextjs/tests/support/db/test-connection.ts` | One pinned connection per file; `withTransaction` becomes a savepoint inside the test's transaction |
+| `nextjs/tests/support/db/fixtures.ts` | Builders that insert the toy data a test needs |
+| `nextjs/tests/support/db/schema.ts` | `getColumns(table)` for structure tests |
+| `nextjs/tests/support/db/rows.ts` | `countRows(table, where, params)` to check what a call kept or removed |
 
 Because every repository reaches the DB through `lib/db/connection`, the whole data layer runs on the test's transaction without any change to production code. Each test starts from an empty database.
 
 ## Writing a test
 
-One file per table or entity: `nextjs/tests/db/<entity>.test.ts`, with one `describe` per concern:
+One folder per area and one file per aspect: `nextjs/tests/db/<area>/<aspect>.test.ts` (for example `db/reviews/votes.test.ts`). Setups and direct table reads shared by an area live in `db/<area>/helpers.ts`. Inside a file, one `describe` per concern:
 
 - `structure`: the table's columns (`getColumns`), compared in full so that a schema change must update the test.
 - `operations`: a repository call that should succeed; check the return value and the stored row.
