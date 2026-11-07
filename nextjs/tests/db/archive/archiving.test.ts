@@ -1,6 +1,6 @@
 /**
  * DB tests for archiving an ended game.
- * Spec Reference: 18-game-archive.md - Archiving a Game
+ * Spec Reference: 18-game-archive.md - Archiving a Game; 24-cell-reactions.md - Losing Reactions
  */
 
 import { describe, expect, it } from 'vitest';
@@ -11,6 +11,7 @@ import {
   createCard,
   createGame as seedGame,
   createProgressPoint,
+  createReaction,
   createTeam as seedTeam,
   createThread,
   createThreadMessage,
@@ -90,6 +91,22 @@ describe('archive – archiving', () => {
       // Assert
       expect(await countRows('archived_progress', 'archived_game_id = ? AND user_id = ?', [game.id, admin.id])).toBe(2);
       expect(await countRows('leaderboard_progress', 'game_id = ?', [game.id])).toBe(0);
+    });
+
+    it('copies the reactions of the cards with their emoji and placement (24-cell-reactions.md – Losing Reactions)', async () => {
+      // Arrange
+      const { admin, member, game, adminCellIds } = await createEndedGame();
+      await createReaction(adminCellIds[0], member, 'star');
+
+      // Act
+      await archiveGame(await loadGame(game));
+
+      // Assert
+      const reactions = await query<{ user_id: string; position: number; reactor_user_id: string; reaction: string; pos_x: number; pos_y: number }[]>(
+        'SELECT user_id, position, reactor_user_id, reaction, pos_x, pos_y FROM archived_cell_reactions WHERE archived_game_id = ?',
+        [game.id]
+      );
+      expect(reactions).toEqual([{ user_id: admin.id, position: 0, reactor_user_id: member.id, reaction: 'star', pos_x: 50, pos_y: 50 }]);
     });
   });
 

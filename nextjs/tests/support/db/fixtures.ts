@@ -434,3 +434,16 @@ export const createProgressPoint = async (
     [game.id, player.id, completedTasks]
   );
 };
+
+/**
+ * Insert a player's reaction on a cell, at a fixed placement.
+ * @param cellId The cell
+ * @param reactor The player reacting
+ * @param reaction The reaction id (default heart)
+ */
+export const createReaction = async (cellId: string, reactor: UserFixture, reaction = 'heart'): Promise<void> => {
+  await execute(
+    'INSERT INTO cell_reactions (cell_id, user_id, reaction, pos_x, pos_y, rotation, scale) VALUES (?, ?, ?, 50, 50, 0, 100)',
+    [cellId, reactor.id, reaction]
+  );
+};
