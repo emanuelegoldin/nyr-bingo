@@ -20,16 +20,18 @@ interface DemoCellDetailProps {
   title: string;
   /** Whether the details are shown. They keep their place when hidden, so the tour can measure them. */
   open: boolean;
+  /** Set while the tour waits for the user to mark the cell as complete. */
+  onMarkComplete?: () => void;
 }
 
 /**
  * The details of a pending demo cell: its title, state, type and source, and the
  * Mark Complete action, which the tour highlights.
  *
- * @param props - The resolution title and whether the details are shown.
- * @returns The details panel.
+ * @param props - The resolution title, whether the details are shown, and the Mark Complete handler.
+ * @returns The details panel, drawn over the demo card.
  */
-export const DemoCellDetail = ({ title, open }: DemoCellDetailProps) => {
+export const DemoCellDetail = ({ title, open, onMarkComplete }: DemoCellDetailProps) => {
   const tl = useTranslations("Labels");
   const tc = useTranslations("Cell");
   const stateConfig = STATE_CONFIG[CellState.PENDING];
@@ -38,7 +40,10 @@ export const DemoCellDetail = ({ title, open }: DemoCellDetailProps) => {
     <Card
       data-tour={DEMO_TARGETS.detail}
       aria-hidden={!open}
-      className={cn("transition-opacity duration-300", open ? "opacity-100" : "invisible opacity-0")}
+      className={cn(
+        "absolute inset-x-6 top-1/2 z-10 -translate-y-1/2 shadow-lg transition-opacity duration-300",
+        open ? "opacity-100" : "invisible opacity-0"
+      )}
     >
       <CardHeader className="pb-3">
         <CardTitle className="font-headline text-lg">{title}</CardTitle>
@@ -52,7 +57,12 @@ export const DemoCellDetail = ({ title, open }: DemoCellDetailProps) => {
           <Badge variant="secondary">{tl("cellSource.personal")}</Badge>
         </div>
         <div className="flex justify-end">
-          <Button data-tour={DEMO_TARGETS.markComplete} tabIndex={-1}>
+          <Button
+            data-tour={DEMO_TARGETS.markComplete}
+            disabled={!onMarkComplete}
+            className="disabled:opacity-100"
+            onClick={onMarkComplete}
+          >
             <Check className="mr-2 h-4 w-4" /> {tc("markComplete")}
           </Button>
         </div>

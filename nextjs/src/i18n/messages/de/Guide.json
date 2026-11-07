@@ -23,9 +23,9 @@
     "overviewTitle": "So funktioniert das Bingo",
     "overview": "Deine Neujahrsvorsätze sind auf einer Bingokarte verteilt: Erfülle sie, um ihre Felder zu markieren, und fülle eine ganze Reihe, Spalte oder Diagonale für ein Bingo!",
     "card": "Das ist deine Karte. Sie mischt deine eigenen Vorsätze mit den Zielen deines Teams, und der Joker in der Mitte ist ein freies Feld.",
-    "cell": "Jedes Feld enthält einen Vorsatz. Wähle es aus, um die Details zu sehen.",
+    "cell": "Jedes Feld enthält einen Vorsatz. Tippe auf dieses Feld, um die Details zu öffnen.",
     "detail": "Die Details zeigen den Vorsatz, seinen aktuellen Status und was du damit tun kannst.",
-    "complete": "Geschafft? Markiere ihn als erledigt.",
+    "complete": "Geschafft? Tippe auf Als erledigt markieren, um es auszuprobieren.",
     "completed": "Das Feld bekommt einen Stempel. Deine Teammitglieder sehen ihn und können einen Nachweis anfordern."
   }
 }

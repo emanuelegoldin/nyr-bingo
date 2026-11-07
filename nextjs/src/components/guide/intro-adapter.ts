@@ -19,6 +19,11 @@ export interface GuideStep {
   title?: string;
   /** Selector of the element to highlight; the tooltip is centred when omitted. */
   target?: string;
+  /**
+   * Whether the user continues by using the highlighted element instead of Next: the
+   * element can be clicked, the Next button is hidden, and the page calls `next()`.
+   */
+  action?: boolean;
 }
 
 /** Translated labels of the tour's navigation buttons. */
@@ -40,9 +45,14 @@ export interface StartTourOptions {
 
 /** A running tour. */
 export interface GuideTourHandle {
+  /** Moves to the next step, for example when the user has done what an action step asks. */
+  next: () => void;
   /** Ends the tour without calling `onEnd`. Safe to call more than once. */
   stop: () => void;
 }
+
+/** Class set on the root element while an action step is shown, so its clicks reach the page. */
+const ACTION_STEP_CLASS = "guide-action-step";
 
 /**
  * Starts a tour. Every target element must already be in the page.
@@ -57,6 +67,8 @@ export const startTour = async ({ steps, labels, onStepChange, onEnd }: StartTou
       intro: step.text,
       title: step.title,
       element: step.target ? document.querySelector(step.target) : undefined,
+      disableInteraction: !step.action,
+      tooltipClass: step.action ? "guide-tooltip guide-tooltip-action" : "guide-tooltip",
     })),
     nextLabel: labels.next,
     prevLabel: labels.back,
@@ -70,10 +82,17 @@ export const startTour = async ({ steps, labels, onStepChange, onEnd }: StartTou
     exitOnOverlayClick: true,
   });
 
+  const setActionStep = (isActionStep: boolean) => {
+    document.documentElement.classList.toggle(ACTION_STEP_CLASS, isActionStep);
+  };
+
   tour.onChange(() => {
-    onStepChange(tour.getCurrentStep() ?? 0);
+    const stepIndex = tour.getCurrentStep() ?? 0;
+    setActionStep(steps[stepIndex]?.action === true);
+    onStepChange(stepIndex);
   });
   tour.onExit(() => {
+    setActionStep(false);
     if (!active) return;
     active = false;
     onEnd();
@@ -82,7 +101,11 @@ export const startTour = async ({ steps, labels, onStepChange, onEnd }: StartTou
   await tour.start();
 
   return {
+    next: () => {
+      if (active) void tour.nextStep();
+    },
     stop: () => {
+      setActionStep(false);
       if (!active) return;
       active = false;
       void tour.exit(true);

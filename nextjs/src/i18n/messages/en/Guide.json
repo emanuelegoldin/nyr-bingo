@@ -23,9 +23,9 @@
     "overviewTitle": "How the bingo game works",
     "overview": "Your New Year's resolutions are spread across a bingo card: complete them to mark their cells, and fill a whole row, column or diagonal to score a bingo!",
     "card": "This is your card. It mixes your own resolutions with your team's goals, and the joker in the centre is a free cell.",
-    "cell": "Each cell holds one resolution. Select it to see its details.",
+    "cell": "Each cell holds one resolution. Tap this cell to open its details.",
     "detail": "The details show the resolution, its current state and what you can do with it.",
-    "complete": "Achieved it? Mark it as complete.",
+    "complete": "Achieved it? Tap Mark Complete to try it.",
     "completed": "The cell gets a stamp. Your teammates see it and can ask you for proof."
   }
 }

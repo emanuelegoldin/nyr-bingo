@@ -19,16 +19,18 @@ import { createDemoCells, DEMO_GRID_SIZE, DEMO_TARGET_POSITION, DEMO_TARGETS } f
 interface DemoResolutionCellProps {
   title: string;
   state: CellState;
+  /** Click handler; the cell can be clicked only when it is set. */
+  onClick?: () => void;
 }
 
 /**
  * A demo resolution cell drawn like a real one. Like a real cell (spec 06 - Card Display
  * Rules), its stamp animates in when it becomes completed while shown, not on load.
  *
- * @param props - The resolution title and the cell state.
+ * @param props - The resolution title, the cell state and the optional click handler.
  * @returns The cell.
  */
-const DemoResolutionCell = ({ title, state }: DemoResolutionCellProps) => {
+const DemoResolutionCell = ({ title, state, onClick }: DemoResolutionCellProps) => {
   const previousStateRef = useRef(state);
   const [stamping, setStamping] = useState(false);
 
@@ -50,9 +52,9 @@ const DemoResolutionCell = ({ title, state }: DemoResolutionCellProps) => {
         sourceType: CellSourceType.PERSONAL,
         sourceUserId: null,
       }}
-      canInteract={false}
+      canInteract={onClick !== undefined}
       sourceLabel={{ kind: "personal" }}
-      onClick={() => { }}
+      onClick={onClick ?? (() => { })}
       markMotion={stamping ? "stamping" : "still"}
       onMarkAnimationEnd={() => setStamping(false)} />
   );
@@ -63,16 +65,21 @@ interface DemoCardProps {
   detailOpen: boolean;
   /** Whether the tour has marked the target cell as complete. */
   targetCompleted: boolean;
+  /** Set while the tour waits for the user to open the target cell. */
+  onOpenTarget?: () => void;
+  /** Set while the tour waits for the user to mark the target cell as complete. */
+  onMarkComplete?: () => void;
 }
 
 /**
- * Full-screen layer with the demo card and the details of its target cell. It is a plain
- * element rather than a modal dialog, whose focus trap would block the tour's tooltip.
+ * Full-screen layer with the demo card, and the details of its target cell drawn over the card
+ * like the real cell dialog. It is a plain element rather than a modal dialog, whose focus trap
+ * would block the tour's tooltip.
  *
  * @param props - The demo state derived from the current tour step.
  * @returns The layer, rendered into the document body.
  */
-export const DemoCard = ({ detailOpen, targetCompleted }: DemoCardProps) => {
+export const DemoCard = ({ detailOpen, targetCompleted, onOpenTarget, onMarkComplete }: DemoCardProps) => {
   const t = useTranslations("Guide");
   const cells = createDemoCells(targetCompleted);
   const target = cells[DEMO_TARGET_POSITION];
@@ -85,7 +92,8 @@ export const DemoCard = ({ detailOpen, targetCompleted }: DemoCardProps) => {
       aria-label={t("demo.title")}
       className="fixed inset-0 z-50 overflow-y-auto bg-background/95 backdrop-blur-sm"
     >
-      <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-8">
+      {/* As wide as a real card on larger screens, so the cell titles are not cut */}
+      <div className="relative mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-8">
         <p className="text-center text-sm text-muted-foreground">{t("demo.notice")}</p>
         <Card data-tour={DEMO_TARGETS.card}>
           <CardHeader>
@@ -102,13 +110,18 @@ export const DemoCard = ({ detailOpen, targetCompleted }: DemoCardProps) => {
                 >
                   {cell.kind === "joker"
                     ? <JokerCell />
-                    : <DemoResolutionCell title={t(`cells.${cell.resolutionKey}`)} state={cell.state} />}
+                    : (
+                      <DemoResolutionCell
+                        title={t(`cells.${cell.resolutionKey}`)}
+                        state={cell.state}
+                        onClick={position === DEMO_TARGET_POSITION ? onOpenTarget : undefined} />
+                    )}
                 </div>
               ))}
             </CardGrid>
           </CardContent>
         </Card>
-        <DemoCellDetail title={targetTitle} open={detailOpen} />
+        <DemoCellDetail title={targetTitle} open={detailOpen} onMarkComplete={onMarkComplete} />
       </div>
     </div>,
     document.body

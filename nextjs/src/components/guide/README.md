@@ -22,6 +22,12 @@ A step-by-step tour that explains the bingo game on a **demo card**. It evaluate
 - The demo state comes from the current step index. Going back undoes it, and it
   disappears when `BingoTour` unmounts at the end of the tour (finished, skipped
   or closed). The next tour starts from the initial card.
+- On the **action steps** (open the cell, Mark Complete) the user continues by
+  clicking the highlighted element: the adapter hides Next and lets clicks
+  through, and the demo calls the handle's `next()`. Because the demo layer is
+  its own stacking context, below the Intro.js overlay, the adapter sets
+  `guide-action-step` on `<html>` during those steps so the overlay ignores
+  clicks (`guide-theme.css`).
 - Every highlighted element is rendered from the start, and the cell details are
   only hidden (`invisible`), so Intro.js can find and measure them when the tour
   starts.
@@ -41,8 +47,8 @@ of `docs/external_deps/README.md`.
 ## Replacing the library
 
 Rewrite `intro-adapter.ts` so it keeps the same `startTour(options)` signature
-(steps with text, optional title and target selector, labels, `onStepChange`,
-`onEnd`, a handle with `stop()`), and rewrite `guide-theme.css`. Nothing else
+(steps with text, optional title, target selector and `action` flag, labels,
+`onStepChange`, `onEnd`, a handle with `next()` and `stop()`), and rewrite `guide-theme.css`. Nothing else
 imports the library. Then swap the package in `nextjs/package.json` and update
 `docs/external_deps/`.
 

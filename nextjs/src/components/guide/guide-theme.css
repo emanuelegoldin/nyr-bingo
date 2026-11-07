@@ -40,3 +40,16 @@
 .guide-tooltip .introjs-progressbar {
   background-color: hsl(var(--primary));
 }
+
+/*
+ * Action steps: the user goes on by using the highlighted element. The demo card sits in its own
+ * stacking layer, below the tour's overlay, so the overlay and the highlight let clicks through.
+ */
+.guide-action-step .introjs-overlay,
+.guide-action-step .introjs-helperLayer {
+  pointer-events: none;
+}
+
+.guide-tooltip-action .introjs-nextbutton {
+  display: none;
+}
