@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * Details of the demo card's target cell, shown by the guided tour. It mirrors the cell
- * detail dialog but reads and writes nothing.
+ * Details of the demo card's target cell, shown by the guided tour; it calls no API.
  * Spec Reference: 26-guided-tour.md - Tour Steps
  */
 

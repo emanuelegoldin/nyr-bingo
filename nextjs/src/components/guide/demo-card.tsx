@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * The demo card the guided tour runs on, shown above the page. It holds no real data and
- * calls no API.
+ * The demo card the guided tour runs on, shown above the page; it calls no API.
  * Spec Reference: 26-guided-tour.md - Demo Card
  */
 
