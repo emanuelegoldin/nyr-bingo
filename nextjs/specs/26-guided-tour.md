@@ -11,7 +11,7 @@ This specification is a **proof of concept**. It covers a single tour that expla
 ## User Stories Covered
 
 - As a new user, learn how the bingo game works without reading documentation
-- Start the explanation whenever I want, from any page
+- Find every available guide in one place, and start the one I want whenever I want
 - Try the explanation without changing my real card or bothering my teammates
 
 ---
@@ -19,7 +19,7 @@ This specification is a **proof of concept**. It covers a single tour that expla
 ## In Scope
 
 - One tour: how the bingo game works
-- A control that starts the tour
+- A Guides page that lists the available tours and starts them
 - A demo card that the tour operates on
 - Translation and theming of the tour
 
@@ -36,10 +36,15 @@ This specification is a **proof of concept**. It covers a single tour that expla
 
 ## Functional Requirements
 
-### Trigger
+### Guides Page
 
-- A **help button** (a question-mark icon) appears in the application header, right before the theme switcher (spec 25), on every authenticated page.
-- Selecting it starts the bingo tour. The button has a translated accessible label and tooltip.
+- `/guides` is an authenticated page of the application shell (spec 14), linked from the sidebar as **Guides**, with a translated page title.
+- It lists every available guide as an entry that shows only the guide's title.
+- Selecting an entry's title expands it to show a short description and a **Play** button; selecting it again collapses it. Entries expand independently, and the expand control works with the keyboard and announces whether it is expanded.
+- **Play** starts that guide's tour. While the tour runs, its Play button is disabled.
+- When the tour ends, the user is back on the Guides page as they left it, and Play can start the tour again.
+- Today the page lists one guide: the bingo tour ("How the bingo game works").
+- The application header has no button that starts a tour.
 
 ### Demo Card
 
@@ -74,17 +79,21 @@ The tour shows these steps in order. Each step has a short translated text and, 
 
 ### Module Boundary
 
-- The tour lives in its own folder. Only that folder uses the tour library, so the library can be replaced or the whole tour removed without changing other features.
+- The tours live in their own folder. Only that folder uses the tour library, so the library can be replaced or the tours removed without changing other features.
+- Inside it, each tour keeps the files only it uses in its own subfolder, and pieces used by several tours live in shared subfolders.
+- Starting a tour does not depend on which tour it is: the Guides page starts any listed tour the same way.
 
 ---
 
 ## Acceptance Criteria
 
-- A help button appears in the application header on every authenticated page and starts the bingo tour.
+- The sidebar links to the Guides page, which lists the bingo tour by its title.
+- Selecting the title expands the entry with a description and a Play button, and Play starts the bingo tour.
+- The application header has no help button.
 - The tour shows, in order: an overview, the card, one cell, the cell's details, and marking the cell as complete.
 - The user opens the cell's details by clicking the cell, and marks it as complete by clicking Mark Complete. Those two steps have no Next button.
 - Marking the cell as complete in the tour shows it with the completed stamp on the demo card.
 - No request is sent to the server during the tour, and the user's real cards are unchanged.
 - After the tour ends (finished, skipped or closed), the demo card disappears, and a new tour starts from the initial card.
 - All tour texts are translated in every locale, and the tour is readable in both themes and on narrow screens.
-- The tour library is used only inside the tour's folder.
+- The tour library is used only inside the tours' folder.
