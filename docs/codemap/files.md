@@ -568,9 +568,17 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 
 ## ws-server
 
-- `server.ts`
+- `create-server.ts` — Builds the WebSocket server: rooms joined with signed tokens, and the internal notify endpoint.
+- `server.ts` — Entry point of the WebSocket server: reads the environment and starts listening.
 
 ## ws-server/messages
 
 - `join-room.ts` — Sent by a client to join the room named by a token the Next.js server signed.
 - `notification.ts` — A change the Next.js server announces, and the room whose viewers must refetch.
+
+## ws-server/tests
+
+- `connection-limits.test.ts` — Tests of the limits on WebSocket connections: same-origin pages only, and a message rate limit.
+- `notify-endpoint.test.ts` — Tests of the internal notify endpoint the Next.js server calls.
+- `rooms.test.ts` — Tests of joining rooms with signed tokens and of what each room is told on a change.
+- `support.ts` — Test helpers for the WebSocket server: a server on a free port, signed tokens, clients and notify calls.

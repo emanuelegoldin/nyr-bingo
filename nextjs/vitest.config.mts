@@ -1,5 +1,5 @@
 /**
- * Vitest configuration for the database tests (tests/db), run with `pnpm test:db`
+ * Vitest configuration: one project per test layer (see docs/tests/README.md)
  * Spec Reference: 00-system-overview.md - Core Concepts / Data
  */
 
@@ -27,9 +27,35 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['tests/db/**/*.test.ts'],
-    setupFiles: ['tests/db/support/setup.ts'],
-    // One file at a time: every file holds one connection with an open transaction
-    fileParallelism: false,
+    projects: [
+      {
+        extends: true,
+        test: {
+          // Pure code: no database, no Next.js runtime, files run in parallel
+          name: 'unit',
+          include: ['tests/unit/**/*.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'db',
+          include: ['tests/db/**/*.test.ts'],
+          setupFiles: ['tests/support/db/setup.ts'],
+          // One file at a time: every file holds one connection with an open transaction
+          fileParallelism: false,
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'api',
+          include: ['tests/api/**/*.test.ts'],
+          setupFiles: ['tests/support/api/setup.ts'],
+          // Shares the test database with the db project, so one file at a time too
+          fileParallelism: false,
+        },
+      },
+    ],
   },
 });

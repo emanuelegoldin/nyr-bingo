@@ -29,7 +29,11 @@ usage terms.
 
 Workflows: `main.yml` (release and image publishing), `nextjs-app-build.yml`,
 `websocket-server-build.yml`, `node-build-reusable-workflow.yml`,
-`docker-build-and-push.yml`, `pr-title.yml`, `db-tests.yml` (DB tests against the throwaway MariaDB of `database/test/`; no new actions).
+`docker-build-and-push.yml`, `pr-title.yml`, `tests.yml` (all test layers as parallel jobs, see
+`docs/tests/README.md`; the DB, route and SQL jobs use the throwaway MariaDB of `database/test/`; no new actions).
+
+Local composite action: `.github/actions/setup-node-pnpm` (used by `tests.yml`) wraps `pnpm/action-setup@v4`
+and `actions/setup-node@v6` and installs one package's frozen dependencies; it adds no external action.
 
 Actions are pinned to major tags, not commit SHAs. For supply-chain hardening,
 consider pinning third-party actions (`cycjimmy/*`, `pnpm/*`) to a full SHA.

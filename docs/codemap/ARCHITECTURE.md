@@ -102,7 +102,11 @@ Run once at Node startup:
 | UI text | a key in all three `i18n/messages/*/<Namespace>.json` files |
 | a colour | a token in `app/globals.css`, defined in both `:root` and `.dark`, plus `tailwind.config.ts` |
 | an external package | an update to `docs/external_deps/` in the same change |
-| a DB test | `nextjs/tests/db/<entity>.test.ts`, using the builders in `tests/db/support/fixtures.ts` (see `docs/tests/db/README.md`) |
+| a unit test | `nextjs/tests/unit/<area>/<aspect>.test.ts`, pure functions only (see `docs/tests/README.md`) |
+| a DB test | `nextjs/tests/db/<area>/<aspect>.test.ts`, using the builders in `tests/support/db/fixtures.ts` |
+| a route test | `nextjs/tests/api/<area>/<aspect>.test.ts`, using `signInAs` and `callRoute` from `tests/support/api/` |
+| a WebSocket server test | `ws-server/tests/<aspect>.test.ts`, using `ws-server/tests/support.ts` |
+| a SQL procedure test | `database/test/sql/<procedure>.test.sql`, run by `database/test/run-sql-tests.sh` |
 
 Start every new file with a header docblock, so `scripts/codemap.py` can map it:
 
