@@ -1,6 +1,6 @@
 /**
- * WebSocket server: rooms joined with signed tokens, and the internal notify endpoint that
- * tells a room's viewers to refetch. Built by a factory so tests can start one on any port.
+ * Builds the WebSocket server: rooms joined with signed tokens, and the internal notify endpoint.
+ * The notify endpoint tells a room's viewers to refetch. A factory, so tests can start one on any port.
  * Spec Reference: 11-real-time-card-updates.md - WebSocket Server, Joining a Room, WebSocket Messages
  */
 

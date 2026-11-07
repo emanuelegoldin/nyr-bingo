@@ -148,6 +148,12 @@ _No file references this spec._
 - `app/api/ws-token/route.ts` — WebSocket Room Token API
 - `components/team-refresh-listener.tsx`
 - `lib/ws-client.ts` — Browser WebSocket client shared by the team socket and the notification socket:
+- `ws-server/create-server.ts` — Builds the WebSocket server: rooms joined with signed tokens, and the internal notify endpoint. [WebSocket Server]
+- `ws-server/server.ts` — Entry point of the WebSocket server: reads the environment and starts listening. [WebSocket Server]
+- `ws-server/tests/connection-limits.test.ts` — Tests of the limits on WebSocket connections: same-origin pages only, and a message rate limit. [WebSocket Server]
+- `ws-server/tests/notify-endpoint.test.ts` — Tests of the internal notify endpoint the Next.js server calls. [WebSocket Server]
+- `ws-server/tests/rooms.test.ts` — Tests of joining rooms with signed tokens and of what each room is told on a change. [Room Model]
+- `ws-server/tests/support.ts` — Test helpers for the WebSocket server: a server on a free port, signed tokens, clients and notify calls. [Joining a Room]
 
 ## 12-team-tabs.md — Game Tabs & Leaderboard
 
@@ -315,7 +321,7 @@ _No file references this spec._
 - `lib/theme/config.ts` — Theme settings shared by the server and the browser. [Themes]
 - `lib/theme/get-theme.ts` — Server helper that reads the stored theme. [Selection and Persistence]
 
-## Unmapped files (93)
+## Unmapped files (92)
 
 No spec reference in the file. See `files.md` for their purpose.
 
@@ -411,4 +417,3 @@ No spec reference in the file. See `files.md` for their purpose.
 - `lib/ws-token.ts`
 - `ws-server/messages/join-room.ts`
 - `ws-server/messages/notification.ts`
-- `ws-server/server.ts`
