@@ -1,10 +1,10 @@
 /**
  * Fixture builders: insert the toy data a test needs, inside the test's rolled-back transaction.
- * Spec Reference: 01-authentication.md - Registration, 04-bingo-teams.md - Invitations / Joining, 16-games.md - Game Model, 05-bingo-card-generation.md - Data Model Notes
+ * Spec Reference: 01-authentication.md - Registration, 04-bingo-teams.md - Invitations / Joining, 16-games.md - Game Model, 05-bingo-card-generation.md - Data Model Notes, 07-proof-and-approval.md - Review Thread Model, 23-progress-chart.md - Data Model
  */
 
 import { randomUUID } from 'node:crypto';
-import { CellState, GameStatus, InvitationStatus, ResolutionType, TeamRole } from '@/lib/shared/types';
+import { CellState, GameStatus, InvitationStatus, ResolutionType, TeamRole, VoteType } from '@/lib/shared/types';
 import { execute } from './test-connection';
 
 /** A user created by createUser. */
@@ -34,6 +34,8 @@ export interface CellFixtureInput {
   type?: ResolutionType;
   /** The cell's state (default pending) */
   state?: CellState;
+  /** The resolution the cell was filled from (default none) */
+  resolutionId?: string;
 }
 
 /** A card created by createCard. */
@@ -142,8 +144,9 @@ const insertCell = async (
 
   await execute(
     `INSERT INTO bingo_cells
-       (id, card_id, position, source_type, source_user_id, state, resolution_type, title, number_of_repetition)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, card_id, position, source_type, source_user_id, state, resolution_type, title, number_of_repetition,
+        resolution_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       cardId,
@@ -154,6 +157,7 @@ const insertCell = async (
       type,
       isEmpty ? null : `Cell ${position}`,
       type === ResolutionType.ITERATIVE ? 3 : null,
+      input.resolutionId ?? null,
     ]
   );
 
@@ -326,5 +330,81 @@ export const createLeaderboardRow = async (game: GameFixture, player: UserFixtur
   await execute(
     'INSERT INTO team_leaderboard (user_id, team_id, game_id, completed_tasks) VALUES (?, ?, ?, 0)',
     [player.id, game.teamId, game.id]
+  );
+};
+
+/** What a review thread created by createThread looks like. */
+export interface ThreadFixtureInput {
+  /** Closed threads get closed_at and the outcome (default open) */
+  closedWithOutcome?: 'accomplished' | 'pending';
+  /** How many days ago it was opened (default 0) */
+  ageDays?: number;
+}
+
+/**
+ * Insert a review thread on a cell. The cell's state is the caller's choice: an open thread
+ * normally sits on a pending_review cell.
+ * @param cellId The cell under review
+ * @param completedBy The card owner, who completed the cell
+ * @param input Whether it is closed and how old it is
+ * @returns The thread id
+ */
+export const createThread = async (
+  cellId: string,
+  completedBy: UserFixture,
+  input: ThreadFixtureInput = {}
+): Promise<string> => {
+  const id = randomUUID();
+  const outcome = input.closedWithOutcome ?? null;
+
+  await execute(
+    `INSERT INTO review_threads (id, cell_id, completed_by_user_id, status, created_at, closed_at, outcome)
+     VALUES (?, ?, ?, ?, NOW() - INTERVAL ? DAY, ${outcome ? 'NOW()' : 'NULL'}, ?)`,
+    [id, cellId, completedBy.id, outcome ? 'closed' : 'open', input.ageDays ?? 0, outcome]
+  );
+
+  return id;
+};
+
+/**
+ * Insert a vote on a review thread.
+ * @param threadId The thread
+ * @param voter The player voting
+ * @param vote accept or deny
+ */
+export const createVote = async (threadId: string, voter: UserFixture, vote: VoteType): Promise<void> => {
+  await execute(
+    'INSERT INTO review_votes (id, thread_id, voter_user_id, vote) VALUES (?, ?, ?, ?)',
+    [randomUUID(), threadId, voter.id, vote]
+  );
+};
+
+/**
+ * Insert a message in a review thread.
+ * @param threadId The thread
+ * @param author The player writing it
+ * @param content The message text
+ */
+export const createThreadMessage = async (threadId: string, author: UserFixture, content: string): Promise<void> => {
+  await execute(
+    'INSERT INTO review_messages (id, thread_id, author_user_id, content) VALUES (?, ?, ?, ?)',
+    [randomUUID(), threadId, author.id, content]
+  );
+};
+
+/**
+ * Insert a progress point of a player in a game, recorded now.
+ * @param game The game
+ * @param player The player
+ * @param completedTasks The player's completed count from then on
+ */
+export const createProgressPoint = async (
+  game: GameFixture,
+  player: UserFixture,
+  completedTasks: number
+): Promise<void> => {
+  await execute(
+    'INSERT INTO leaderboard_progress (game_id, user_id, recorded_at, completed_tasks) VALUES (?, ?, NOW(), ?)',
+    [game.id, player.id, completedTasks]
   );
 };
