@@ -1,0 +1,31 @@
+{
+  "button": "So funktioniert das Spiel",
+  "nav": {
+    "next": "Weiter",
+    "back": "Zurück",
+    "done": "Fertig"
+  },
+  "demo": {
+    "title": "Beispielkarte",
+    "notice": "Dies ist eine Beispielkarte. Was du hier tust, ändert deine echten Karten nicht."
+  },
+  "cells": {
+    "read": "12 Bücher lesen",
+    "run": "Einen 10-km-Lauf schaffen",
+    "cook": "Jeden Monat ein neues Rezept kochen",
+    "guitar": "Gitarre spielen lernen",
+    "travel": "Ein neues Land besuchen",
+    "save": "10 % meines Einkommens sparen",
+    "call": "Jede Woche meine Großeltern anrufen",
+    "garden": "Einen Gemüsegarten anlegen"
+  },
+  "steps": {
+    "overviewTitle": "So funktioniert das Bingo",
+    "overview": "Deine Neujahrsvorsätze sind auf einer Bingokarte verteilt: Erfülle sie, um ihre Felder zu markieren, und fülle eine ganze Reihe, Spalte oder Diagonale für ein Bingo!",
+    "card": "Das ist deine Karte. Sie mischt deine eigenen Vorsätze mit den Zielen deines Teams, und der Joker in der Mitte ist ein freies Feld.",
+    "cell": "Jedes Feld enthält einen Vorsatz. Wähle es aus, um die Details zu sehen.",
+    "detail": "Die Details zeigen den Vorsatz, seinen aktuellen Status und was du damit tun kannst.",
+    "complete": "Geschafft? Markiere ihn als erledigt.",
+    "completed": "Das Feld bekommt einen Stempel. Deine Teammitglieder sehen ihn und können einen Nachweis anfordern."
+  }
+}

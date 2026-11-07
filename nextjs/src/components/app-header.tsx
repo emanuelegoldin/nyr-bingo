@@ -2,6 +2,7 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAppContext } from "@/hooks/AppContext";
+import { GuideButton } from "./guide/guide-button";
 import { LocaleSwitcher } from "./locale-switcher";
 import { NotificationBell } from "./notifications/notification-bell";
 import { ThemeSwitcher } from "./theme/theme-switcher";
@@ -20,6 +21,7 @@ export function AppHeader() {
         </h1>
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        <GuideButton />
         <ThemeSwitcher />
         <LocaleSwitcher />
         <NotificationBell />

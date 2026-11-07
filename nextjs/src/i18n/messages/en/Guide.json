@@ -1,0 +1,31 @@
+{
+  "button": "How the game works",
+  "nav": {
+    "next": "Next",
+    "back": "Back",
+    "done": "Done"
+  },
+  "demo": {
+    "title": "Demo card",
+    "notice": "This is a demo card. Nothing you do here changes your real cards."
+  },
+  "cells": {
+    "read": "Read 12 books",
+    "run": "Run a 10 km race",
+    "cook": "Cook a new recipe every month",
+    "guitar": "Learn to play the guitar",
+    "travel": "Visit a new country",
+    "save": "Save 10% of my income",
+    "call": "Call my grandparents every week",
+    "garden": "Grow a vegetable garden"
+  },
+  "steps": {
+    "overviewTitle": "How the bingo game works",
+    "overview": "Your New Year's resolutions are spread across a bingo card: complete them to mark their cells, and fill a whole row, column or diagonal to score a bingo!",
+    "card": "This is your card. It mixes your own resolutions with your team's goals, and the joker in the centre is a free cell.",
+    "cell": "Each cell holds one resolution. Select it to see its details.",
+    "detail": "The details show the resolution, its current state and what you can do with it.",
+    "complete": "Achieved it? Mark it as complete.",
+    "completed": "The cell gets a stamp. Your teammates see it and can ask you for proof."
+  }
+}

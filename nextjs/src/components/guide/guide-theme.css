@@ -1,0 +1,42 @@
+/*
+ * Intro.js tooltip colours mapped to the theme tokens, so the tour reads well in both themes.
+ * Spec Reference: 26-guided-tour.md - Translation and Theme
+ */
+
+.introjs-tooltip.guide-tooltip {
+  --introjs-bg: hsl(var(--card));
+  --introjs-color: hsl(var(--card-foreground));
+  --introjs-arrow-color: hsl(var(--card));
+  --introjs-btn-bg: hsl(var(--secondary));
+  --introjs-btn-color: hsl(var(--secondary-foreground));
+  --introjs-btn-border: hsl(var(--border));
+  --introjs-btn-hover-bg: hsl(var(--primary));
+  --introjs-btn-hover-color: hsl(var(--primary-foreground));
+  --introjs-btn-focus-bg: hsl(var(--secondary));
+  --introjs-btn-focus-color: hsl(var(--secondary-foreground));
+  --introjs-btn-active-bg: hsl(var(--primary));
+  --introjs-btn-active-color: hsl(var(--primary-foreground));
+  --introjs-btn-active-border: hsl(var(--primary));
+  --introjs-btn-textShadow: transparent;
+  color: hsl(var(--card-foreground));
+  font-family: inherit;
+  /* Fits a 320px phone screen (spec 20) */
+  max-width: min(300px, calc(100vw - 2rem));
+  min-width: min(250px, calc(100vw - 2rem));
+}
+
+.guide-tooltip .introjs-tooltipbuttons {
+  border-top-color: hsl(var(--border));
+}
+
+.guide-tooltip .introjs-skipbutton {
+  color: hsl(var(--muted-foreground));
+}
+
+.guide-tooltip .introjs-progress {
+  background-color: hsl(var(--secondary));
+}
+
+.guide-tooltip .introjs-progressbar {
+  background-color: hsl(var(--primary));
+}

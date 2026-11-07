@@ -10,6 +10,7 @@ import enCell from './en/Cell.json';
 import enCommon from './en/Common.json';
 import enDashboard from './en/Dashboard.json';
 import enGames from './en/Games.json';
+import enGuide from './en/Guide.json';
 import enHome from './en/Home.json';
 import enLabels from './en/Labels.json';
 import enLoginPage from './en/LoginPage.json';
@@ -31,6 +32,7 @@ import deCell from './de/Cell.json';
 import deCommon from './de/Common.json';
 import deDashboard from './de/Dashboard.json';
 import deGames from './de/Games.json';
+import deGuide from './de/Guide.json';
 import deHome from './de/Home.json';
 import deLabels from './de/Labels.json';
 import deLoginPage from './de/LoginPage.json';
@@ -52,6 +54,7 @@ import itCell from './it/Cell.json';
 import itCommon from './it/Common.json';
 import itDashboard from './it/Dashboard.json';
 import itGames from './it/Games.json';
+import itGuide from './it/Guide.json';
 import itHome from './it/Home.json';
 import itLabels from './it/Labels.json';
 import itLoginPage from './it/LoginPage.json';
@@ -75,6 +78,7 @@ const en = {
   Common: enCommon,
   Dashboard: enDashboard,
   Games: enGames,
+  Guide: enGuide,
   Home: enHome,
   Labels: enLabels,
   LoginPage: enLoginPage,
@@ -99,6 +103,7 @@ const de = {
   Common: deCommon,
   Dashboard: deDashboard,
   Games: deGames,
+  Guide: deGuide,
   Home: deHome,
   Labels: deLabels,
   LoginPage: deLoginPage,
@@ -123,6 +128,7 @@ const it = {
   Common: itCommon,
   Dashboard: itDashboard,
   Games: itGames,
+  Guide: itGuide,
   Home: itHome,
   Labels: itLabels,
   LoginPage: itLoginPage,
