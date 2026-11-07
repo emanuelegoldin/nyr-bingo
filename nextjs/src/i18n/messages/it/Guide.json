@@ -1,5 +1,10 @@
 {
-  "button": "Come funziona il gioco",
+  "page": {
+    "title": "Guide",
+    "heading": "Guide",
+    "intro": "Brevi tour guidati che ti mostrano come funziona l'app. Apri una guida e premi Avvia per iniziare."
+  },
+  "play": "Avvia",
   "nav": {
     "next": "Avanti",
     "back": "Indietro",

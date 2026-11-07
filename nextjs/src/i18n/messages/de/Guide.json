@@ -1,5 +1,10 @@
 {
-  "button": "So funktioniert das Spiel",
+  "page": {
+    "title": "Anleitungen",
+    "heading": "Anleitungen",
+    "intro": "Kurze geführte Touren, die dir zeigen, wie die App funktioniert. Öffne eine Anleitung und tippe auf Starten."
+  },
+  "play": "Starten",
   "nav": {
     "next": "Weiter",
     "back": "Zurück",

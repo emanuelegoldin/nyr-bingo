@@ -1,5 +1,10 @@
 {
-  "button": "How the game works",
+  "page": {
+    "title": "Guides",
+    "heading": "Guides",
+    "intro": "Short guided tours that show you how the app works. Open a guide and press Play to start it."
+  },
+  "play": "Play",
   "nav": {
     "next": "Next",
     "back": "Back",
