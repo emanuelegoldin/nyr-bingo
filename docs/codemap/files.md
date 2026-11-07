@@ -56,6 +56,11 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `use-game-actions.ts`
 - `use-last-loaded.ts`
 
+## app/(app)/guides
+
+- `guides-page-client.tsx` — Client side of the Guides page: its title and the list of guides.
+- `page.tsx` — Guides Page - the guided tours the user can start
+
 ## app/(app)/profile
 
 - `ProfilePageClient.tsx` — Profile Page Client Component
@@ -420,6 +425,56 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `compound-subtask-editor.tsx`
 - `iterative-repetition-input.tsx`
+
+## components/guide
+
+- `guide-entry.tsx` — One entry of the Guides page: a title that expands to a description and a Play button.
+- `guide-list.tsx` — List of every available guide, shown on the Guides page.
+- `guides.ts` — The guides listed on the Guides page, in display order.
+- `types.ts` — Contract every guide follows, so any listed tour starts the same way.
+
+## components/guide/bingo-card
+
+- `bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library.
+- `demo-card.tsx` — The demo card the guided tour runs on, shown above the page; it calls no API.
+- `demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour; it calls no API.
+- `demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights.
+
+## components/guide/engine
+
+- `intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it.
+- `tour-selector.ts` — Selector of the elements a tour highlights, marked with a `data-tour` attribute.
+- `use-guided-tour.ts` — Hook that runs any tour with the tour library and reports its current step.
+
+## components/guide/leaderboard
+
+- `leaderboard-tour.tsx` — The leaderboard tour: where the leaderboard is and what its columns mean, on sample players.
+
+## components/guide/progress
+
+- `progress-tour.tsx` — The progress tour: where the progress chart is, its Day / Month toggle and its legend, on sample players.
+
+## components/guide/proof-thread-owner
+
+- `owner-thread-tour.tsx` — The owner's proof-thread tour: the thread seen by the card owner, with no action asked.
+
+## components/guide/proof-thread-voter
+
+- `voter-thread-tour.tsx` — The teammate's proof-thread tour: voting, when the thread closes, and where closed threads go.
+
+## components/guide/request-proof
+
+- `demo-proof-cards.tsx` — The request-proof tour's demo: the user's card, a teammate's card, and the dialogs drawn over them.
+- `request-proof-tour.tsx` — The request-proof tour: ask proof for a teammate's completed cell, on demo cards.
+
+## components/guide/sandbox
+
+- `demo-cells.ts` — Sample cells shared by the tours' demo cards.
+- `demo-game-tabs.tsx` — The game page's tabs, drawn for a tour to show where a feature is.
+- `demo-grid.tsx` — Grid of a demo card, drawn like a real card; it calls no API.
+- `demo-thread.tsx` — A demo review thread, drawn like the real thread dialog; it calls no API.
+- `demo-vote.tsx` — Vote section of a demo review thread, drawn like the real one; it calls no API.
+- `sandbox-layer.tsx` — Full-screen layer that shows a tour's demo content above the page.
 
 ## components/notifications
 

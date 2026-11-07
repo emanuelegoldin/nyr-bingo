@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   Archive,
+  CircleHelp,
   LayoutGrid,
   ListCheck,
   Swords,
@@ -52,7 +53,12 @@ const menuItems = [
     href: "/archive",
     labelKey: "archive",
     icon: Archive,
-  }
+  },
+  {
+    href: "/guides",
+    labelKey: "guides",
+    icon: CircleHelp,
+  },
 ] as const;
 
 export function AppSidebar() {

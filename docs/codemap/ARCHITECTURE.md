@@ -90,6 +90,12 @@ Run once at Node startup:
 - `components/theme/theme-provider.tsx` holds the theme on the client. `useTheme()` returns `{ theme, setTheme }`. `setTheme` writes the cookie and applies the class without a reload. The provider follows OS changes while the theme is `system`. The switcher is `components/theme/theme-switcher.tsx`.
 - Colours come from the tokens in `app/globals.css` (`:root` and `.dark`), mapped in `tailwind.config.ts`. Use `success`, `warning` and `destructive` for status colours, not fixed palette classes.
 
+## Guided tours (spec 26, proof of concept)
+
+- `components/guide/` is self-contained. The Guides page (`app/(app)/guides/`, linked from `components/app-sidebar.tsx`) renders `guide-list.tsx`, one `guide-entry.tsx` per guide in the `guides.ts` registry. Play mounts the guide's tour component (`GuideTourProps` in `types.ts`), so starting a tour does not depend on which tour it is.
+- Each tour has its own subfolder (`bingo-card/`, `leaderboard/`, `progress/`, `request-proof/`, `proof-thread-owner/`, `proof-thread-voter/`). Tours reuse real presentational components (`CardGrid`, `CellFace`, the leaderboard podium and table, `ProgressLineChart`, `ThreadFiles`, `ThreadMessages`) fed with sample data, plus shared demo pieces in `sandbox/`. Demo content renders inside `sandbox/sandbox-layer.tsx` and calls no API.
+- `engine/` is the library side: `use-guided-tour.ts` starts a tour and reports the current step, and only `engine/intro-adapter.ts` imports Intro.js (AGPL-3.0, paid for commercial use, see `docs/external_deps/`), loaded with a dynamic `import()` when a tour starts. To add a guide, swap the library or remove the tours, see `components/guide/README.md`.
+
 ## Where new things go
 
 | Adding… | Put it in |
@@ -101,6 +107,7 @@ Run once at Node startup:
 | a real-time refresh | a call to a `lib/team-signals.ts` helper after the commit |
 | UI text | a key in all three `i18n/messages/*/<Namespace>.json` files |
 | a colour | a token in `app/globals.css`, defined in both `:root` and `.dark`, plus `tailwind.config.ts` |
+| a guided tour | `components/guide/<tour-name>/` plus an entry in `components/guide/guides.ts` (see its README); shared demo pieces in `guide/sandbox/`, never importing `intro.js` outside `guide/engine/intro-adapter.ts` |
 | an external package | an update to `docs/external_deps/` in the same change |
 | a unit test | `nextjs/tests/unit/<area>/<aspect>.test.ts`, pure functions only (see `docs/tests/README.md`) |
 | a DB test | `nextjs/tests/db/<area>/<aspect>.test.ts`, using the builders in `tests/support/db/fixtures.ts` |

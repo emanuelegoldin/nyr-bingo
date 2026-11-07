@@ -321,6 +321,34 @@ _No file references this spec._
 - `lib/theme/config.ts` — Theme settings shared by the server and the browser. [Themes]
 - `lib/theme/get-theme.ts` — Server helper that reads the stored theme. [Selection and Persistence]
 
+## 26-guided-tour.md — Guided Tour (Proof of Concept)
+
+- `app/(app)/guides/guides-page-client.tsx` — Client side of the Guides page: its title and the list of guides. [Guides Page]
+- `app/(app)/guides/page.tsx` — Guides Page - the guided tours the user can start [Guides Page]
+- `components/guide/bingo-card/bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library. [Tour Steps]
+- `components/guide/bingo-card/demo-card.tsx` — The demo card the guided tour runs on, shown above the page; it calls no API. [Demo Card]
+- `components/guide/bingo-card/demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour; it calls no API. [Tour Steps]
+- `components/guide/bingo-card/demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights. [Demo Card]
+- `components/guide/engine/intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it. [Module Boundary]
+- `components/guide/engine/tour-selector.ts` — Selector of the elements a tour highlights, marked with a `data-tour` attribute. [Module Boundary]
+- `components/guide/engine/use-guided-tour.ts` — Hook that runs any tour with the tour library and reports its current step. [Module Boundary]
+- `components/guide/guide-entry.tsx` — One entry of the Guides page: a title that expands to a description and a Play button. [Guides Page]
+- `components/guide/guide-list.tsx` — List of every available guide, shown on the Guides page. [Guides Page]
+- `components/guide/guides.ts` — The guides listed on the Guides page, in display order. [Guides Page]
+- `components/guide/leaderboard/leaderboard-tour.tsx` — The leaderboard tour: where the leaderboard is and what its columns mean, on sample players. [Other Tours]
+- `components/guide/progress/progress-tour.tsx` — The progress tour: where the progress chart is, its Day / Month toggle and its legend, on sample players. [Other Tours]
+- `components/guide/proof-thread-owner/owner-thread-tour.tsx` — The owner's proof-thread tour: the thread seen by the card owner, with no action asked. [Other Tours]
+- `components/guide/proof-thread-voter/voter-thread-tour.tsx` — The teammate's proof-thread tour: voting, when the thread closes, and where closed threads go. [Other Tours]
+- `components/guide/request-proof/demo-proof-cards.tsx` — The request-proof tour's demo: the user's card, a teammate's card, and the dialogs drawn over them. [Other Tours]
+- `components/guide/request-proof/request-proof-tour.tsx` — The request-proof tour: ask proof for a teammate's completed cell, on demo cards. [Other Tours]
+- `components/guide/sandbox/demo-cells.ts` — Sample cells shared by the tours' demo cards. [Demo Card]
+- `components/guide/sandbox/demo-game-tabs.tsx` — The game page's tabs, drawn for a tour to show where a feature is. [Other Tours]
+- `components/guide/sandbox/demo-grid.tsx` — Grid of a demo card, drawn like a real card; it calls no API. [Demo Card]
+- `components/guide/sandbox/demo-thread.tsx` — A demo review thread, drawn like the real thread dialog; it calls no API. [Other Tours]
+- `components/guide/sandbox/demo-vote.tsx` — Vote section of a demo review thread, drawn like the real one; it calls no API. [Other Tours]
+- `components/guide/sandbox/sandbox-layer.tsx` — Full-screen layer that shows a tour's demo content above the page. [Demo Card]
+- `components/guide/types.ts` — Contract every guide follows, so any listed tour starts the same way. [Module Boundary]
+
 ## Unmapped files (92)
 
 No spec reference in the file. See `files.md` for their purpose.

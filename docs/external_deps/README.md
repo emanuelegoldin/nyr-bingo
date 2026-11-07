@@ -18,8 +18,11 @@ Snapshot taken on **2026-11-05** from the `dev` branch (commit `fd0e69c`).
 
 ## License summary
 
-None of the dependencies needs a paid commercial license. All of them can be
-used in a commercial product. The obligations below are what remains.
+All dependencies but one can be used in a commercial product without paying.
+The exception is **Intro.js** (AGPL-3.0, guided tour proof of concept, spec 26).
+It needs a paid commercial license, or must be replaced, before a commercial or
+closed-source release (see point 7 below). The obligations below are what
+remains.
 
 | License | Where | Payment? | What it asks of us |
 |---------|-------|----------|--------------------|
@@ -27,6 +30,7 @@ used in a commercial product. The obligations below are what remains.
 | Apache-2.0 | sharp, class-variance-authority, TypeScript, Playwright, Flyway Community, many transitive packages | No | Keep the license text and any `NOTICE` file when redistributing. State changes if we modify the code. Includes a patent grant. |
 | LGPL-3.0-or-later | `@img/sharp-libvips-*` (native libvips bundled with sharp) | No | When redistributing: ship the license text, say libvips is used, and let users swap the library (met because it is loaded as a separate shared library). |
 | GPL-2.0 | MariaDB server (Docker image) | No | We run MariaDB unmodified as a separate process, and our code talks to it over the network through the MIT `mysql2` driver, so our code is **not** affected by the GPL. If we publish the `mariadb` image we must make the source of the GPL parts available; pointing to the upstream sources is enough for unmodified upstream images. |
+| AGPL-3.0 | `intro.js` (guided tour, `nextjs/src/components/guide/`) | **Yes, for commercial or closed-source use** (one-time license from $9.99) | Free only for open-source, non-commercial use. Its code is sent to browsers, so the app built with it must be released under AGPL-compatible terms with source available, and no extra restrictions may be added. See [nextjs-npm.md](nextjs-npm.md#introjs-agpl-30). |
 | MPL-2.0 | `axe-core` (dev only, via ESLint) | No | Applies only to changes made to MPL files. Not shipped. |
 | SIL OFL-1.1 | Inter and Space Grotesk fonts | No | Free to use. The fonts may not be sold on their own. Not a concern because they are served by Google Fonts. |
 | CC-BY-4.0 | `caniuse-lite` (build-time data) | No | Attribution if redistributed. It is only used at build time and not shipped to users. |
@@ -69,6 +73,15 @@ used in a commercial product. The obligations below are what remains.
 6. **`seq-queue`** (a transitive dependency of `mysql2`) has no `license` field
    in its `package.json`. Its bundled `LICENSE` file is MIT, so it is fine.
    Automatic license scanners may flag it as "unknown".
+7. **Intro.js is AGPL-3.0 and paid for commercial use.** The project owner
+   approved it on 2026-11-07 for the guided tour proof of concept (spec 26),
+   while the project is open-source and non-commercial. Before a commercial,
+   closed-source or non-AGPL release, either buy a commercial license (one-time,
+   $9.99 for one project at the 2026-11-07 price) or replace it with a
+   permissively licensed library (only `nextjs/src/components/guide/engine/intro-adapter.ts`
+   needs to change). As long as it is used under the AGPL, the license chosen in
+   point 1 must be compatible with AGPLv3. See
+   [nextjs-npm.md](nextjs-npm.md#introjs-agpl-30).
 
 ## How this inventory was produced
 
