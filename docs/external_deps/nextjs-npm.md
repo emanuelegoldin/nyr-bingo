@@ -54,6 +54,7 @@ output). Code that runs in the browser is also sent to users.
 | `lucide-react` | ^0.475.0 | 0.475.0 | ISC | Icon set (configured as the shadcn `iconLibrary`). Some icons come from Feather Icons (MIT); both notices are in the package's `LICENSE`. |
 | `canvas-confetti` | 1.9.3 | 1.9.3 | ISC | Confetti animation on bingo (`src/components/confetti.ts`). |
 | `recharts` | ^3.10.1 | 3.10.1 | MIT | Line chart of the game's Progress tab (`src/components/progress/`, spec 23). Brings in MIT/ISC/BSD-3-Clause transitive packages: `d3-*` and `internmap` (ISC; `d3-ease` BSD-3-Clause), `victory-vendor` (MIT AND ISC AND BSD-3-Clause), `@reduxjs/toolkit`, `react-redux`, `redux`, `redux-thunk`, `reselect`, `immer`, `es-toolkit`, `decimal.js-light`, `eventemitter3`, `tiny-invariant` (MIT). |
+| `intro.js` | 8.6.0 | 8.6.0 | **AGPL-3.0** (paid commercial license available) | Guided tour proof of concept (`src/components/guide/`, spec 26). Imported only by `guide/intro-adapter.ts`, loaded on demand. No dependencies of its own. **Not free for commercial use**, see [Intro.js (AGPL-3.0)](#introjs-agpl-30) below. Approved by the project owner on 2026-11-07 for the PoC. |
 
 ## Development dependencies (`devDependencies`)
 
@@ -123,6 +124,55 @@ nothing extra is required.
 Note: `nextjs/pnpm-workspace.yaml` lists `sharp` under
 `ignoredBuiltDependencies`. Its install script is skipped and the prebuilt
 platform binaries above are used.
+
+### Intro.js (AGPL-3.0)
+
+Checked on 2026-11-07 against the npm registry (`intro.js@8.6.0`, license
+`AGPL-3.0`), the package's `license.md` and the pricing section of
+<https://introjs.com/#commercial>.
+
+**Dual licensing.** Intro.js is released under the GNU AGPLv3 for "open-source,
+personal and non-commercial projects", or under a paid commercial license. Its
+`license.md` says: "If you are using Intro.js for a commercial project, you
+would need to get a commercial license". The open-source tier on the website is
+marked "Not for commercial use".
+
+**What the AGPL asks of us while we use the free edition:**
+
+- The library's JavaScript is sent to every browser, which counts as conveying
+  it. The bundle built from it together with our client code is a combined work,
+  so that work must be licensed under the AGPLv3 as a whole (section 5c), with
+  its source available to users (section 6). Section 13 also covers users
+  who interact with a modified version over a network.
+- We may not add restrictions or charge fees for the rights the AGPL grants
+  (section 10). In practice this rules out a closed-source or proprietary
+  release.
+- Keep the copyright and license notices, and mark any change to the library's
+  files with a dated notice (sections 4 and 5a).
+- **The repository has no `LICENSE` yet.** While Intro.js is in use, the
+  license we pick for the app has to be compatible with AGPLv3 (for example
+  AGPL-3.0 itself, or GPL-3.0 under section 13's combination clause). See
+  point 1 and point 7 in [README.md](README.md#points-to-check-before-publishing).
+
+**Commercial license (pricing on 2026-11-07, USD, one-time "lifetime"
+payment, no subscription):**
+
+| Tier | Price | Covers | Notes |
+|------|-------|--------|-------|
+| Starter | $9.99 | 1 commercial project | No commercial support, product updates |
+| Business | $49.99 | 5 projects | 1 month of support, 1 custom theme, product updates |
+| Premium | $299.99 | Unlimited projects | 6 months of support, 3 custom themes, priority support |
+
+The website does not state a seat or developer limit, and does not explicitly
+mention SaaS or internal-only use. Read the commercial license terms before
+buying, and recheck the prices, which may have changed.
+
+**Exit path.** Only `src/components/guide/intro-adapter.ts` imports Intro.js.
+Swapping the library means rewriting that file (see
+`src/components/guide/README.md`). Permissively licensed candidates to evaluate
+at that point: `driver.js` (MIT) and `react-joyride` (MIT). Verify their
+licenses when switching. Shepherd.js is not an option for the same reason as
+Intro.js, because it is also AGPL plus commercial.
 
 ### Stale packages in `node_modules`
 
