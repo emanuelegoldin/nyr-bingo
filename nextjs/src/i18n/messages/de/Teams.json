@@ -56,6 +56,8 @@
     "cardSize": "Kartengröße",
     "cardSizeOption": "{size}×{size}",
     "cardSizeHint": "Sie kann nach dem Erstellen des Spiels nicht mehr geändert werden.",
+    "preparationDeadline": "Ende der Vorbereitung",
+    "preparationDeadlineHint": "Bis dahin schreiben die Spieler ihre Vorsätze. Es kann später nicht geändert werden.",
     "players": "Spieler",
     "you": "(Du)",
     "submit": "Spiel erstellen"
@@ -65,13 +67,13 @@
     "you": "(Du)",
     "makeLeader": "Zum Admin machen",
     "makeLeaderTitle": "{name} zum Team-Admin machen?",
-    "makeLeaderDescription": "Team-Admins können Mitglieder einladen, Spiele erstellen, starten, beenden und löschen, andere Mitglieder befördern und das Team löschen. Das kann nicht rückgängig gemacht werden.",
+    "makeLeaderDescription": "Team-Admins können Mitglieder einladen, Spiele erstellen, konfigurieren, beenden und löschen, andere Mitglieder befördern und das Team löschen. Das kann nicht rückgängig gemacht werden.",
     "teamLeader": "Team-Admin",
     "leader": "Admin"
   },
   "gameStatus": {
     "started": "Spiel gestartet",
-    "forming": "In Bildung"
+    "forming": "Vorbereitung"
   },
   "leaders": {
     "unknown": "Unbekannt"

@@ -1,7 +1,8 @@
 import { useTranslations } from "next-intl";
 
 /**
- * Pill showing whether a game has started or is still forming.
+ * Pill showing whether a game has started or is still in its preparation phase (stored as 'forming').
+ * Spec Reference: 16-games.md - Lifecycle
  *
  * @param status - Game status value ('started' or 'forming').
  * @returns The status pill.
