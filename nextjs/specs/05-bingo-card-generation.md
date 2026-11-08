@@ -9,8 +9,8 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 - Other cells chosen from other team members' provided resolutions
 - A member who proposed nothing is replaced by an easy prepared resolution
 - Each cell holds its own copy of the resolution, so progress is tracked per cell
-- Missing resolutions filled randomly from the user's own resolution list
-- If not enough resolutions, fill with difficult prepared resolutions at game start
+- Missing resolutions filled randomly from the resolutions the user wrote for the game
+- If not enough resolutions, fill with difficult prepared resolutions at game start (then medium, then easy)
 - If still not enough, fill with "empty" non-checkable cells
 
 ## Assumptions
@@ -20,9 +20,9 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 - A card has N²−1 stored cells: 8, 24 or 80.
 
 ## Inputs
-- The game's team goal resolution (`scope = team`)
+- The game's team goal resolution (`scope = team`). At game start, a game without one gets a prepared resolution as its goal first (spec 16, Automatic Start)
 - The game's member-provided resolutions targeted to the card owner (`scope = member_provided`)
-- Card owner's personal resolutions (`scope = personal`), used as fallback
+- Card owner's personal resolutions of the game (`scope = personal`, same `game_id`), used as fallback. Legacy personal resolutions without a game (spec 03) are never used
 - The prepared resolutions pool (spec 17), used as fallback at game start
 
 ## Data Model Notes
@@ -42,8 +42,8 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 2. Add the team goal as a normal, checkable `team` cell. It always gets a cell.
 3. Add the member-provided resolutions targeted to the owner, in random order. When they do not all fit, the ones that fit are picked at random and the rest are left out.
 4. For each other player who has no member-provided resolution for the owner, add one random `short` prepared resolution, while cells are left.
-5. Fill remaining cells by randomly selecting from the owner's personal resolutions.
-6. Fill remaining cells with random `long` prepared resolutions and, once those run out, `medium` ones.
+5. Fill remaining cells by randomly selecting from the owner's personal resolutions of the game.
+6. Fill remaining cells with random `long` prepared resolutions; once those run out, `medium` ones; once those run out, `short` ones. An entry is never used twice on a card.
 7. Fill anything still remaining with `empty` cells.
 8. Shuffle the N²−1 cells across the non-center positions.
 9. Every stored cell starts in state `pending`.
@@ -61,7 +61,7 @@ Steps 4 and 6 apply only at game start. A card generated at join time uses no pr
 ## Constraints
 - Joker cell is always present and immutable.
 - `empty` cells cannot be marked completed.
-- Generation requires the game to be `started` and its team goal to exist.
+- Generation requires the game to be `started` and its team goal to exist. At game start the goal always exists, because a missing one is replaced first (spec 16).
 
 ## Acceptance Criteria
 - Starting the game generates a card for each player.
@@ -71,8 +71,9 @@ Steps 4 and 6 apply only at game start. A card generated at join time uses no pr
 - The team goal is on every card, whatever its size.
 - When the member-provided resolutions for a card do not all fit, the ones on the card are picked at random.
 - Remaining cells follow selection and fallback rules.
+- Only the owner's personal resolutions of the same game fill the card.
 - At game start, a card gets one `short` prepared resolution for each other member who proposed nothing for its owner.
-- At game start, cells that would be empty get `long` prepared resolutions, then `medium` ones.
+- At game start, cells that would be empty get `long` prepared resolutions, then `medium` ones, then `short` ones.
 - A card generated at join time contains no prepared resolutions.
 - Each non-empty cell stores a snapshot of the definition, with progress at zero and every subtask uncompleted.
 - Two cells copied from the same resolution or pool entry have independent progress.

@@ -38,7 +38,7 @@ Define the public landing page, the authenticated application shell, and the das
 ### Application Shell
 
 Pages under `/dashboard`, `/games`, `/teams`, `/profile`, `/resolutions`, `/archive` and `/guides` share a shell:
-- **Sidebar**: links to Dashboard, Games, Teams, Profile, Resolutions, Archive and Guides (spec 26).
+- **Sidebar**: links to Dashboard, Games, Teams, Profile, Resolutions, Archive and Guides (spec 26). The Resolutions page is obsolete and read-only until it is removed after 8 May 2027 (spec 03, Legacy Personal Resolutions).
 - **Header**: the current page title, the language switcher (spec 15), the notification bell (spec 19) and a user menu.
 - **User menu**: username, email, links to Profile and Teams, and Logout. When no user is loaded it shows a Login button instead.
 
