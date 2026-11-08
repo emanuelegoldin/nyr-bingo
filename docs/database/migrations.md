@@ -576,3 +576,45 @@ None. Reactions stored before it take the defaults, so they show untilted at the
 ### Idempotency
 
 `Create_Column` does nothing on a second run.
+
+## 5.14.0 - Game Preparation Phase
+
+A forming game is now a preparation phase with a fixed deadline: players write their own resolutions
+for the game, write resolutions for each other and mark themselves ready, and the game starts when
+everyone is ready or the deadline passes. Personal resolutions belong to a game; the ones without a
+game are legacy rows, kept read-only on `/resolutions` until 2027-05-08 (specs 16 and 03).
+
+### Schema changes
+
+- `games.preparation_deadline` (`DATETIME`, nullable, UTC): the end of the preparation phase. Set at
+  creation and never changed.
+- `game_players.ready_at` (`DATETIME`, nullable): when the player marked themselves ready.
+- `resolutions` is unchanged. A game-bound personal resolution is a `scope = 'personal'` row with
+  `game_id` and `team_id` set; a legacy one has `game_id IS NULL`.
+
+### Data migration
+
+- Games already `forming` get `preparation_deadline = UTC_TIMESTAMP() + 7 days`. Started and ended
+  games keep `NULL`.
+- For every `started` game, each `personal` cell of a card is copied into a `personal` resolution of
+  that game, owned by the card owner, from the cell's snapshot (title, description, type, target, and
+  subtasks from `bingo_cell_subtasks`). The new row takes the cell's id, and the cell's
+  `resolution_id` is pointed at it. The legacy row the cell came from is not changed.
+- For every `started` game, a `member_provided` cell whose source row was deleted
+  (`resolution_id IS NULL`) is recreated the same way as a `member_provided` resolution from its
+  author to the card owner, if the author still plays the game and has no resolution for that player
+  yet. Existing member-provided rows are already game-bound and are left as they are.
+
+So the Personal and Teammates tabs of games started before the change show what is on their cards.
+
+### Idempotency
+
+- `Create_Column` does nothing on a second run.
+- The preparation deadline is only set where it is `NULL`.
+- The backfill inserts a row only when no row with the cell's id exists (`NOT EXISTS`, and
+  `INSERT IGNORE` on the member-provided unique key), and the final `UPDATE` only changes cells not
+  yet linked to it.
+
+Checked by hand on `mariadb:11`: a started game with personal base, compound (two subtasks) and
+iterative cells, a member-provided cell whose source was deleted, empty and prepared cells, plus a
+forming and an ended game. Running the migration twice gave the same rows and links.
