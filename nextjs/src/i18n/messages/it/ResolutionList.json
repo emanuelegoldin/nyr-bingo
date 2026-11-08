@@ -1,0 +1,8 @@
+{
+  "editAriaLabel": "Modifica obiettivo",
+  "deleteAriaLabel": "Elimina obiettivo",
+  "deleted": "Obiettivo eliminato",
+  "deleteError": "Impossibile eliminare l'obiettivo",
+  "subtaskCount": "{count, plural, one {# sottoattività} other {# sottoattività}}",
+  "repetitionTarget": "Traguardo: {count, plural, one {# ripetizione} other {# ripetizioni}}"
+}

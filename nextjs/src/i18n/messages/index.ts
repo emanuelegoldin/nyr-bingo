@@ -21,6 +21,7 @@ import enProfile from './en/Profile.json';
 import enRegisterPage from './en/RegisterPage.json';
 import enResolutionForm from './en/ResolutionForm.json';
 import enResolutionHistoryDialog from './en/ResolutionHistoryDialog.json';
+import enResolutionList from './en/ResolutionList.json';
 import enResolutionsPage from './en/ResolutionsPage.json';
 import enTeams from './en/Teams.json';
 import enThreads from './en/Threads.json';
@@ -43,6 +44,7 @@ import deProfile from './de/Profile.json';
 import deRegisterPage from './de/RegisterPage.json';
 import deResolutionForm from './de/ResolutionForm.json';
 import deResolutionHistoryDialog from './de/ResolutionHistoryDialog.json';
+import deResolutionList from './de/ResolutionList.json';
 import deResolutionsPage from './de/ResolutionsPage.json';
 import deTeams from './de/Teams.json';
 import deThreads from './de/Threads.json';
@@ -65,6 +67,7 @@ import itProfile from './it/Profile.json';
 import itRegisterPage from './it/RegisterPage.json';
 import itResolutionForm from './it/ResolutionForm.json';
 import itResolutionHistoryDialog from './it/ResolutionHistoryDialog.json';
+import itResolutionList from './it/ResolutionList.json';
 import itResolutionsPage from './it/ResolutionsPage.json';
 import itTeams from './it/Teams.json';
 import itThreads from './it/Threads.json';
@@ -89,6 +92,7 @@ const en = {
   RegisterPage: enRegisterPage,
   ResolutionForm: enResolutionForm,
   ResolutionHistoryDialog: enResolutionHistoryDialog,
+  ResolutionList: enResolutionList,
   ResolutionsPage: enResolutionsPage,
   Teams: enTeams,
   Threads: enThreads,
@@ -114,6 +118,7 @@ const de = {
   RegisterPage: deRegisterPage,
   ResolutionForm: deResolutionForm,
   ResolutionHistoryDialog: deResolutionHistoryDialog,
+  ResolutionList: deResolutionList,
   ResolutionsPage: deResolutionsPage,
   Teams: deTeams,
   Threads: deThreads,
@@ -139,6 +144,7 @@ const it = {
   RegisterPage: itRegisterPage,
   ResolutionForm: itResolutionForm,
   ResolutionHistoryDialog: itResolutionHistoryDialog,
+  ResolutionList: itResolutionList,
   ResolutionsPage: itResolutionsPage,
   Teams: itTeams,
   Threads: itThreads,

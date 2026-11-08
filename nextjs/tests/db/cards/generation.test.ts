@@ -1,6 +1,6 @@
 /**
  * DB tests for generating the cards when a game starts.
- * Spec Reference: 05-bingo-card-generation.md - Generation Rules, Duplicate Handling, Data Model Notes
+ * Spec Reference: 05-bingo-card-generation.md - Generation Rules, Duplicate Handling, Data Model Notes, 16-games.md - Automatic Start
  */
 
 import { describe, expect, it } from 'vitest';
@@ -12,6 +12,7 @@ import {
   ResolutionType,
 } from '@/lib/shared/types';
 import {
+  addMember,
   createGame as seedGame,
   createMemberResolution,
   createPersonalResolution,
@@ -126,8 +127,8 @@ describe('cards – generation', () => {
       // Arrange
       const { game, players } = await createFormingGame(1);
       const [owner] = players;
-      await createPersonalResolution(owner, 'Paint');
-      await createPersonalResolution(owner, 'Bake');
+      await createPersonalResolution(owner, 'Paint', game);
+      await createPersonalResolution(owner, 'Bake', game);
 
       // Act
       await startGameWithCards(game.id);
@@ -138,6 +139,67 @@ describe('cards – generation', () => {
       expect(countSource(cells, CellSourceType.EMPTY)).toBe(0);
       expect(await countPreparedFrom(game, owner, 'long')).toBe(20);
       expect(await countPreparedFrom(game, owner, 'medium')).toBe(1);
+    });
+
+    it('fills the card only with the owner\'s personal resolutions of this game, never legacy ones or another game\'s (05-bingo-card-generation.md – Inputs)', async () => {
+      // Arrange
+      const { team, game, players } = await createFormingGame(1);
+      const [owner] = players;
+      const otherGame = await seedGame(team, [owner], GameStatus.FORMING);
+      const ownId = await createPersonalResolution(owner, 'Paint', game);
+      await createPersonalResolution(owner, 'Legacy idea');
+      await createPersonalResolution(owner, 'Other game idea', otherGame);
+
+      // Act
+      await startGameWithCards(game.id);
+
+      // Assert
+      const personal = (await readCardCells(game, owner)).filter((cell) => cell.source_type === CellSourceType.PERSONAL);
+      expect(personal.map((cell) => cell.resolution_id)).toEqual([ownId]);
+    });
+
+    it('fills would-be empty cells with long, then medium, then short prepared resolutions (05-bingo-card-generation.md – Generation Rules)', async () => {
+      // Arrange: a 9×9 card needs more fallbacks than the long and medium categories hold
+      const { game, players } = await createFormingGame(1, 9);
+      const [owner] = players;
+      const poolSize = async (category: string): Promise<number> =>
+        countRows('prepared_resolutions', 'category = ?', [category]);
+      const expectedShort = Math.min(await poolSize('short'), 80 - 1 - (await poolSize('long')) - (await poolSize('medium')));
+
+      // Act
+      await startGameWithCards(game.id);
+
+      // Assert
+      expect(expectedShort).toBeGreaterThan(0);
+      expect(await countPreparedFrom(game, owner, 'long')).toBe(await poolSize('long'));
+      expect(await countPreparedFrom(game, owner, 'medium')).toBe(await poolSize('medium'));
+      expect(await countPreparedFrom(game, owner, 'short')).toBe(expectedShort);
+    });
+
+    it('stores a prepared entry as the team goal when none is set, owned by the admin, on every card (16-games.md – Automatic Start)', async () => {
+      // Arrange
+      const admin = await createUser();
+      const team = await seedTeam(admin);
+      const member = await createUser();
+      await addMember(team, member);
+      const game = await seedGame(team, [admin, member], GameStatus.FORMING);
+
+      // Act
+      const result = await startGameWithCards(game.id);
+
+      // Assert
+      expect(result).toEqual({ success: true });
+      const goals = await query<{ id: string; owner_user_id: string; title: string; team_id: string }[]>(
+        "SELECT id, owner_user_id, title, team_id FROM resolutions WHERE game_id = ? AND scope = 'team'",
+        [game.id]
+      );
+      expect(goals).toHaveLength(1);
+      expect(goals[0]).toMatchObject({ owner_user_id: admin.id, team_id: team.id });
+      expect(await countRows('prepared_resolutions', 'title = ?', [goals[0].title])).toBe(1);
+      for (const player of [admin, member]) {
+        const goalCells = (await readCardCells(game, player)).filter((cell) => cell.source_type === CellSourceType.TEAM);
+        expect(goalCells.map((cell) => [cell.resolution_id, cell.title])).toEqual([[goals[0].id, goals[0].title]]);
+      }
     });
 
     it('creates no resolution rows for prepared cells and leaves them unlinked (05-bingo-card-generation.md – Data Model Notes)', async () => {
@@ -160,8 +222,8 @@ describe('cards – generation', () => {
       const { game, players } = await createFormingGame(2);
       const [owner, author] = players;
       await createMemberResolution(game, author, owner, { title: 'Swim' });
-      await createPersonalResolution(owner, 'SWIM');
-      await createPersonalResolution(owner, 'TEAM GOAL');
+      await createPersonalResolution(owner, 'SWIM', game);
+      await createPersonalResolution(owner, 'TEAM GOAL', game);
 
       // Act
       await startGameWithCards(game.id);
@@ -175,21 +237,7 @@ describe('cards – generation', () => {
   });
 
   describe('rejects', () => {
-    it('starting without a team goal, leaving the game forming with no cards (05-bingo-card-generation.md – Constraints)', async () => {
-      // Arrange
-      const admin = await createUser();
-      const game = await seedGame(await seedTeam(admin), [admin], GameStatus.FORMING);
-
-      // Act
-      const result = await startGameWithCards(game.id);
-
-      // Assert
-      expect(result.success).toBe(false);
-      expect(await countRows('games', "id = ? AND status = 'forming' AND started_at IS NULL", [game.id])).toBe(1);
-      expect(await countRows('bingo_cards', 'game_id = ?', [game.id])).toBe(0);
-    });
-
-    it('starting a game twice (16-games.md – Start Conditions)', async () => {
+    it('starting a game twice (16-games.md – Automatic Start)', async () => {
       // Arrange
       const { game } = await createFormingGame(2);
       await startGameWithCards(game.id);
@@ -200,6 +248,20 @@ describe('cards – generation', () => {
       // Assert
       expect(result).toEqual({ success: false, error: 'Game is not in forming status' });
       expect(await countRows('bingo_cards', 'game_id = ?', [game.id])).toBe(2);
+    });
+
+    it('starting twice a game without a goal, storing only one goal (16-games.md – Automatic Start)', async () => {
+      // Arrange
+      const admin = await createUser();
+      const game = await seedGame(await seedTeam(admin), [admin], GameStatus.FORMING);
+      await startGameWithCards(game.id);
+
+      // Act
+      const result = await startGameWithCards(game.id);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(await countRows('resolutions', "game_id = ? AND scope = 'team'", [game.id])).toBe(1);
     });
   });
 });

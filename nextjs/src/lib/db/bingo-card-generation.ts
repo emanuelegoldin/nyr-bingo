@@ -4,7 +4,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import type { PoolConnection } from 'mysql2/promise';
+import type { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import { getResolutionTextKey } from '../shared/resolution-type';
 import { shuffleArray } from '../shared/shuffle';
 import type { PreparedResolution } from '../shared/types';
@@ -12,17 +12,24 @@ import {
   CellSourceType,
   getJokerPosition,
   PreparedResolutionCategory,
+  ResolutionScope,
 } from '../shared/types';
 import { CardRow, rowToCard } from './bingo-card-rows';
 import { EMPTY_SNAPSHOT, insertCellSubtasks, snapshotOf, type CellSnapshot } from './cell-snapshot';
 import { execute, query, withTransaction } from './connection';
 import { getGameById, getGamePlayerIds } from './game-repository';
 import { refreshLeaderboardEntry } from './leaderboard-repository';
-import { getRandomPreparedResolutions } from './prepared-resolution-repository';
 import {
+  getRandomPreparedEntry,
+  getRandomPreparedResolutions,
+  preparedResolutionToContent,
+} from './prepared-resolution-repository';
+import {
+  createResolution,
   getGameGoalResolution,
   getMemberProvidedResolutionsForUser,
   getRandomResolutions,
+  getResolutionById,
 } from './resolution-repository';
 import { BingoCard, Game, GameStatus, Resolution } from './types';
 
@@ -34,8 +41,12 @@ const WRONG_STATUS_ERRORS: Record<CardGenerationStatus, string> = {
   [GameStatus.STARTED]: 'Game is not started',
 };
 
-/** The categories that replace empty cells, in the order they are used. */
-const DIFFICULT_FALLBACK_CATEGORIES = [PreparedResolutionCategory.LONG, PreparedResolutionCategory.MEDIUM];
+/** The categories that replace empty cells, hardest first, in the order they are used. */
+const EMPTY_CELL_FALLBACK_CATEGORIES = [
+  PreparedResolutionCategory.LONG,
+  PreparedResolutionCategory.MEDIUM,
+  PreparedResolutionCategory.SHORT,
+];
 
 /** The content of one stored cell: where it comes from, and its copy of the definition. */
 interface CellPlan {
@@ -79,24 +90,27 @@ async function loadGameContext(
 }
 
 /**
- * Start a game: mark it as started and generate a card for every team member.
- * Both happen in one transaction, so a failure leaves the game in forming status.
- * Spec: 16-games.md - Start Conditions, 05-bingo-card-generation.md - Generation Rules
+ * Start a game: mark it as started and generate a card for every player. A game without a team goal first gets a
+ * random prepared entry as its goal, owned by its admin who joined first. All of it happens in one transaction, so
+ * a failure leaves the game in forming status with no goal added.
+ * Spec: 16-games.md - Automatic Start, 05-bingo-card-generation.md - Generation Rules
  *
  * @param gameId The game to start
  * @returns Whether the game started, and why not if it did not
  */
 export async function startGameWithCards(gameId: string): Promise<{ success: boolean; error?: string }> {
-  const context = await loadGameContext(gameId, GameStatus.FORMING);
-  if ('error' in context) {
-    return { success: false, error: context.error };
+  const game = await getGameById(gameId);
+  if (!game) {
+    return { success: false, error: 'Game not found' };
+  }
+  if (game.status !== GameStatus.FORMING) {
+    return { success: false, error: WRONG_STATUS_ERRORS[GameStatus.FORMING] };
   }
 
-  const { game, teamGoalResolution } = context;
   const playerIds = await getGamePlayerIds(gameId);
 
   return withTransaction<{ success: boolean; error?: string }>(async (connection) => {
-    // The status guard stops two concurrent starts from generating cards twice.
+    // The status guard stops two concurrent starts from generating cards, or a goal, twice.
     const statusUpdate = await execute(
       `UPDATE games SET status = 'started', started_at = NOW() WHERE id = ? AND status = 'forming'`,
       [gameId],
@@ -107,12 +121,50 @@ export async function startGameWithCards(gameId: string): Promise<{ success: boo
       return { success: false, error: WRONG_STATUS_ERRORS[GameStatus.FORMING] };
     }
 
+    const teamGoalResolution = (await getGameGoalResolution(gameId)) ?? (await createFallbackGoal(connection, game));
+    if (!teamGoalResolution) {
+      return { success: false, error: 'No team goal is set and the prepared pool is empty' };
+    }
+
     for (const playerId of playerIds) {
       await generateCardForUser(connection, game, playerId, teamGoalResolution, true);
     }
 
     return { success: true };
   }, (outcome) => outcome.success);
+}
+
+/**
+ * Store a random prepared entry as the team goal of a game that has none, owned by the game's admin who joined
+ * it first (or its first player, should no admin play it).
+ * Spec: 16-games.md - Automatic Start
+ * @param connection The start transaction
+ * @param game The game being started
+ * @returns The new goal, or null if the pool is empty
+ */
+async function createFallbackGoal(connection: PoolConnection, game: Game): Promise<Resolution | null> {
+  const entry = await getRandomPreparedEntry(connection);
+  const owners = await query<Array<RowDataPacket & { user_id: string }>>(
+    `SELECT p.user_id
+     FROM game_players p
+     LEFT JOIN team_memberships m ON m.team_id = ? AND m.user_id = p.user_id AND m.role = 'leader'
+     WHERE p.game_id = ?
+     ORDER BY m.user_id IS NULL, p.joined_at, p.user_id
+     LIMIT 1`,
+    [game.teamId, game.id],
+    connection
+  );
+  if (!entry || owners.length === 0) {
+    return null;
+  }
+
+  const goalId = await createResolution(
+    owners[0].user_id,
+    preparedResolutionToContent(entry),
+    { scope: ResolutionScope.TEAM, teamId: game.teamId, gameId: game.id },
+    connection
+  );
+  return getResolutionById(goalId, connection);
 }
 
 /**
@@ -213,11 +265,12 @@ async function planCells(
     );
   }
 
-  // Fill remaining with personal resolutions
+  // Fill remaining with the owner's personal resolutions of this game
   // Spec: 05-bingo-card-generation.md - Step 5
   const neededPersonal = storedCells - plan.length;
   if (neededPersonal > 0) {
     const personalResolutions = await getRandomResolutions(
+      game.id,
       userId,
       neededPersonal * 2, // Get extra in case of duplicates
       Array.from(usedTexts)
@@ -225,10 +278,10 @@ async function planCells(
     addUnique(personalResolutions, CellSourceType.PERSONAL);
   }
 
-  // Replace would-be empty cells with difficult prepared resolutions
+  // Replace would-be empty cells with prepared resolutions, hardest first
   // Spec: 05-bingo-card-generation.md - Step 6
   if (useFallbacks) {
-    for (const category of DIFFICULT_FALLBACK_CATEGORIES) {
+    for (const category of EMPTY_CELL_FALLBACK_CATEGORIES) {
       addPrepared(
         await getRandomPreparedResolutions(category, storedCells - plan.length, Array.from(usedTexts))
       );

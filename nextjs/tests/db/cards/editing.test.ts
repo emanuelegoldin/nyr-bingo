@@ -15,21 +15,26 @@ import {
   createPlayingCard,
   createTeam,
   createUser,
+  type GameFixture,
+  type UserFixture,
 } from '../../support/db/fixtures';
 import { query } from '../../support/db/test-connection';
 import { readCell, type StoredCell } from '../gameplay/helpers';
 
 /**
- * Try to place a new personal resolution of the card owner on a cell, and return the result with the cell after it.
+ * Try to place a new personal resolution of the card owner, written for the card's game, on a cell, and return
+ * the result with the cell after it.
  * @param cellId The cell
  * @param owner The card owner
+ * @param game The card's game
  * @returns The repository result and the stored cell
  */
 const placeOwnResolution = async (
   cellId: string,
-  owner: { id: string; username: string; email: string }
+  owner: UserFixture,
+  game: GameFixture
 ): Promise<{ success: boolean; cell: StoredCell }> => {
-  const resolutionId = await createPersonalResolution(owner, 'Read twelve books');
+  const resolutionId = await createPersonalResolution(owner, 'Read twelve books', game);
   const result = await updateCellContent(cellId, { resolutionId, sourceType: CellSourceType.PERSONAL });
   return { success: result.success, cell: await readCell(cellId) };
 };
@@ -38,9 +43,9 @@ describe('cards – editing', () => {
   describe('operations', () => {
     it('replaces a cell with a personal resolution and resets its state (09-bingo-card-editing.md – Persisting a Cell Edit)', async () => {
       // Arrange
-      const { owner, card } = await createPlayingCard([{ state: CellState.COMPLETED }]);
+      const { owner, game, card } = await createPlayingCard([{ state: CellState.COMPLETED }]);
       const [cellId] = card.cellIds;
-      const resolutionId = await createPersonalResolution(owner, 'Read twelve books');
+      const resolutionId = await createPersonalResolution(owner, 'Read twelve books', game);
 
       // Act
       const result = await updateCellContent(cellId, { resolutionId, sourceType: CellSourceType.PERSONAL });
@@ -98,7 +103,7 @@ describe('cards – editing', () => {
     it('editing the Joker (09-bingo-card-editing.md – Permissions & Safety)', async () => {
       // Arrange
       const { owner, game } = await createPlayingCard([{}]);
-      const resolutionId = await createPersonalResolution(owner, 'Read twelve books');
+      const resolutionId = await createPersonalResolution(owner, 'Read twelve books', game);
 
       // Act
       const result = await updateCellContent(`joker:${game.id}`, { resolutionId, sourceType: CellSourceType.PERSONAL });
@@ -109,10 +114,10 @@ describe('cards – editing', () => {
 
     it('editing the team goal cell (09-bingo-card-editing.md – Permissions & Safety)', async () => {
       // Arrange
-      const { owner, card } = await createPlayingCard([{ source: 'team' }]);
+      const { owner, game, card } = await createPlayingCard([{ source: 'team' }]);
 
       // Act
-      const { success, cell } = await placeOwnResolution(card.cellIds[0], owner);
+      const { success, cell } = await placeOwnResolution(card.cellIds[0], owner, game);
 
       // Assert
       expect(success).toBe(false);
@@ -121,10 +126,10 @@ describe('cards – editing', () => {
 
     it('editing a cell under review (09-bingo-card-editing.md – Permissions & Safety)', async () => {
       // Arrange
-      const { owner, card } = await createPlayingCard([{ state: CellState.PENDING_REVIEW }]);
+      const { owner, game, card } = await createPlayingCard([{ state: CellState.PENDING_REVIEW }]);
 
       // Act
-      const { success, cell } = await placeOwnResolution(card.cellIds[0], owner);
+      const { success, cell } = await placeOwnResolution(card.cellIds[0], owner, game);
 
       // Assert
       expect(success).toBe(false);
@@ -133,10 +138,10 @@ describe('cards – editing', () => {
 
     it('editing a cell of an ended game (09-bingo-card-editing.md – Backend Rules)', async () => {
       // Arrange
-      const { owner, card } = await createPlayingCard([{}], GameStatus.ENDED);
+      const { owner, game, card } = await createPlayingCard([{}], GameStatus.ENDED);
 
       // Act
-      const { success, cell } = await placeOwnResolution(card.cellIds[0], owner);
+      const { success, cell } = await placeOwnResolution(card.cellIds[0], owner, game);
 
       // Assert
       expect(success).toBe(false);
@@ -145,9 +150,37 @@ describe('cards – editing', () => {
 
     it('placing another user\'s personal resolution (09-bingo-card-editing.md – Backend Rules)', async () => {
       // Arrange
-      const { card } = await createPlayingCard([{}]);
+      const { team, game, card } = await createPlayingCard([{}]);
       const stranger = await createUser();
-      const resolutionId = await createPersonalResolution(stranger, 'Not yours');
+      await addMember(team, stranger);
+      const resolutionId = await createPersonalResolution(stranger, 'Not yours', game);
+
+      // Act
+      const result = await updateCellContent(card.cellIds[0], { resolutionId, sourceType: CellSourceType.PERSONAL });
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect((await readCell(card.cellIds[0])).title).toBe('Cell 0');
+    });
+
+    it('placing the owner\'s legacy personal resolution (09-bingo-card-editing.md – Definitions)', async () => {
+      // Arrange
+      const { owner, card } = await createPlayingCard([{}]);
+      const resolutionId = await createPersonalResolution(owner, 'From the old list');
+
+      // Act
+      const result = await updateCellContent(card.cellIds[0], { resolutionId, sourceType: CellSourceType.PERSONAL });
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect((await readCell(card.cellIds[0])).title).toBe('Cell 0');
+    });
+
+    it('placing the owner\'s personal resolution of another game (09-bingo-card-editing.md – Definitions)', async () => {
+      // Arrange
+      const { owner, team, card } = await createPlayingCard([{}]);
+      const otherGame = await createGame(team, [owner]);
+      const resolutionId = await createPersonalResolution(owner, 'For the other game', otherGame);
 
       // Act
       const result = await updateCellContent(card.cellIds[0], { resolutionId, sourceType: CellSourceType.PERSONAL });
@@ -177,7 +210,7 @@ describe('cards – editing', () => {
       // Arrange
       const owner = await createUser();
       const game = await createGame(await createTeam(owner), [owner]);
-      const resolutionId = await createPersonalResolution(owner, 'Read twelve books');
+      const resolutionId = await createPersonalResolution(owner, 'Read twelve books', game);
       const card = await createCard(game, owner, [{ resolutionId }, {}]);
 
       // Act
@@ -190,8 +223,8 @@ describe('cards – editing', () => {
 
     it('an empty cell that names a resolution (09-bingo-card-editing.md – Backend Rules)', async () => {
       // Arrange
-      const { owner, card } = await createPlayingCard([{}]);
-      const resolutionId = await createPersonalResolution(owner, 'Read twelve books');
+      const { owner, game, card } = await createPlayingCard([{}]);
+      const resolutionId = await createPersonalResolution(owner, 'Read twelve books', game);
 
       // Act
       const result = await updateCellContent(card.cellIds[0], { resolutionId, sourceType: CellSourceType.EMPTY });

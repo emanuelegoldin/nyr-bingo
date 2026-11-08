@@ -1,15 +1,8 @@
 {
-  "title": "I tuoi Obiettivi",
-  "description": "Gestisci i tuoi obiettivi personali. Questi possono essere utilizzati per riempire le tue carte del bingo.",
+  "title": "I tuoi vecchi obiettivi personali",
+  "description": "Gli obiettivi che hai scritto prima che appartenessero a una partita.",
   "headerTitle": "Obiettivi",
-  "browseIdeas": "Sfoglia idee",
-  "loadError": "Impossibile caricare gli obiettivi",
-  "deleted": "Obiettivo eliminato",
-  "deleteError": "Impossibile eliminare l'obiettivo",
-  "addAriaLabel": "Aggiungi obiettivo",
-  "editAriaLabel": "Modifica obiettivo",
-  "deleteAriaLabel": "Elimina obiettivo",
-  "empty": "Non hai ancora aggiunto nessun obiettivo. Clicca sul pulsante + per crearne uno.",
-  "subtaskCount": "{count, plural, one {# sottoattività} other {# sottoattività}}",
-  "repetitionTarget": "Traguardo: {count, plural, one {# ripetizione} other {# ripetizioni}}"
+  "obsoleteTitle": "Questa pagina sta per essere rimossa",
+  "obsoleteNotice": "Gli obiettivi personali ora appartengono a una partita: li scrivi nella scheda Personali di una partita mentre è in preparazione, prima che inizi. Questo elenco è di sola lettura e non riempie più le tue carte. Copia quello che vuoi tenere: la pagina verrà rimossa dopo l'8 maggio 2027.",
+  "empty": "Non hai obiettivi precedenti."
 }

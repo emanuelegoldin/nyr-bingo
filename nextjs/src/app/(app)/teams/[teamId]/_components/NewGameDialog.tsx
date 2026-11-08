@@ -12,6 +12,17 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+/**
+ * Format a moment for a datetime-local input, in the user's time zone.
+ * @param moment The moment
+ * @returns 'YYYY-MM-DDThh:mm' in local time
+ */
+const toLocalInputValue = (moment: Date): string => {
+  const pad = (value: number): string => String(value).padStart(2, "0");
+  return `${moment.getFullYear()}-${pad(moment.getMonth() + 1)}-${pad(moment.getDate())}`
+    + `T${pad(moment.getHours())}:${pad(moment.getMinutes())}`;
+};
+
 interface NewGameDialogProps {
   teamId: string;
   /** The team members who can be selected as players. */
@@ -37,6 +48,8 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [gridSize, setGridSize] = useState<GridSize>(DEFAULT_GRID_SIZE);
+  // The preparation deadline in local time, as the datetime-local input holds it ('' until chosen)
+  const [preparationDeadline, setPreparationDeadline] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const allMemberIds = members.map((member) => member.user.userId);
   const [playerIds, setPlayerIds] = useState<string[]>(allMemberIds);
@@ -46,6 +59,7 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
     if (nextOpen) {
       setPlayerIds(allMemberIds);
       setGridSize(DEFAULT_GRID_SIZE);
+      setPreparationDeadline("");
     }
     setOpen(nextOpen);
   };
@@ -61,14 +75,14 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
     if (isGridSize(size)) setGridSize(size);
   };
 
-  /** Creates the game and navigates to it. */
+  /** Creates the game and navigates to it. The preparation deadline is sent in UTC. */
   const handleCreateGame = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !preparationDeadline) return;
 
     setIsCreating(true);
     const result = await apiFetch<{ game: { id: string } }>(`/api/teams/${teamId}/games`, {
       method: "POST",
-      json: { name, playerIds, gridSize },
+      json: { name, playerIds, gridSize, preparationDeadline: new Date(preparationDeadline).toISOString() },
     });
 
     if (result.ok) {
@@ -120,6 +134,18 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
             </Select>
             <p className="text-sm text-muted-foreground">{t("newGameDialog.cardSizeHint")}</p>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="gamePreparationDeadline">{t("newGameDialog.preparationDeadline")}</Label>
+            <Input
+              id="gamePreparationDeadline"
+              type="datetime-local"
+              required
+              min={toLocalInputValue(new Date())}
+              value={preparationDeadline}
+              onChange={(event) => setPreparationDeadline(event.target.value)}
+            />
+            <p className="text-sm text-muted-foreground">{t("newGameDialog.preparationDeadlineHint")}</p>
+          </div>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">{t("newGameDialog.players")}</legend>
             <ul className="max-h-60 space-y-2 overflow-y-auto">
@@ -150,7 +176,7 @@ export function NewGameDialog({ teamId, members, currentUserId }: NewGameDialogP
           <Button variant="outline" onClick={() => setOpen(false)}>
             {tc("cancel")}
           </Button>
-          <Button onClick={handleCreateGame} disabled={isCreating || !name.trim()}>
+          <Button onClick={handleCreateGame} disabled={isCreating || !name.trim() || !preparationDeadline}>
             {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t("newGameDialog.submit")}
           </Button>

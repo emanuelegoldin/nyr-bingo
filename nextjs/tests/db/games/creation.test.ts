@@ -20,7 +20,7 @@ describe('games – creation', () => {
       await addMember(team, member);
 
       // Act
-      const game = await createGame(team.id, 'Spring', [leader.id, member.id, leader.id], 3);
+      const game = await createGame(team.id, 'Spring', [leader.id, member.id, leader.id], 3, new Date(Date.now() + 86_400_000));
 
       // Assert
       const stored = await readGame(game.id);

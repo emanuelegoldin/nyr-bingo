@@ -10,12 +10,27 @@
   "detail": {
     "pageTitle": "Spiel",
     "lastDay": "Letzter Tag: {date}",
-    "startBingo": "Bingo starten",
     "tabs": {
       "cards": "Karten",
       "leaderboard": "Rangliste",
       "threads": "Threads",
-      "progress": "Fortschritt"
+      "progress": "Fortschritt",
+      "personal": "Persönlich",
+      "teammates": "Mitspieler"
+    },
+    "deadline": {
+      "startsIn": "Beginnt in {time}",
+      "starting": "Beginnt…",
+      "days": "{days} T {hours} Std {minutes} Min",
+      "hours": "{hours} Std {minutes} Min",
+      "lastHour": "{minutes} Min {seconds} Sek"
+    },
+    "ready": {
+      "ready": "Bereit",
+      "notReady": "Nicht bereit",
+      "count": "{ready}/{total} bereit",
+      "hint": "Drücke Bereit, wenn du fertig bist. Das Spiel beginnt, wenn alle bereit sind oder die Vorbereitung endet.",
+      "failed": "Dein Status konnte nicht aktualisiert werden"
     }
   },
   "actionsMenu": {
@@ -31,12 +46,12 @@
     },
     "deleteDialog": {
       "title": "Dieses Spiel löschen?",
-      "description": "Das Spiel, sein Teamziel, die vorgeschlagenen Vorsätze, die Bingo-Karten und zugehörige Spieldaten werden dauerhaft gelöscht. Das Team und seine anderen Spiele bleiben unberührt. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "description": "Das Spiel, sein Teamziel, alle für das Spiel geschriebenen Vorsätze, die Bingo-Karten und zugehörige Spieldaten werden dauerhaft gelöscht. Das Team und seine anderen Spiele bleiben unberührt. Diese Aktion kann nicht rückgängig gemacht werden.",
       "confirm": "Löschen"
     },
     "leaveDialog": {
       "title": "Dieses Spiel verlassen?",
-      "description": "Deine Bingo-Karte, dein Eintrag in der Rangliste und die für dich geschriebenen Vorsätze in diesem Spiel werden gelöscht. Die Vorsätze, die du für andere Spieler geschrieben hast, bleiben auf deren Karten. Du kannst diesem Spiel nicht erneut beitreten. Wenn du der einzige Team-Admin bist, befördere zuerst auf der Team-Seite eine andere Person.",
+      "description": "Deine Bingo-Karte, dein Ranglisteneintrag, deine Vorsätze für dieses Spiel und die für dich geschriebenen Vorsätze werden gelöscht. Die Vorsätze, die du für andere geschrieben hast, bleiben auf deren Karten. Du kannst diesem Spiel nicht wieder beitreten. Bist du der einzige Team-Admin, ernenne zuerst auf der Teamseite einen anderen Spieler.",
       "confirm": "Spiel verlassen"
     }
   },
@@ -47,22 +62,12 @@
     "clear": "Leeren",
     "failed": "Spiel konnte nicht konfiguriert werden"
   },
-  "proposeDialog": {
-    "button": "Vorsätze vorschlagen",
-    "title": "Vorsätze vorschlagen",
-    "description": "Erstelle oder aktualisiere einen Vorsatz für jedes Teammitglied. Das geht jederzeit.",
-    "forMember": "Für {name}",
-    "noneYet": "Noch kein Vorsatz vorgeschlagen",
-    "edit": "Vorsatz bearbeiten",
-    "add": "Vorsatz hinzufügen"
-  },
   "teamGoal": {
     "none": "Noch kein Teamziel festgelegt.",
-    "setGoal": "Ziel festlegen"
+    "setGoal": "Ziel festlegen",
+    "fallbackHint": "Ist bis zum Spielbeginn keins gesetzt, wird ein vorbereiteter Vorsatz zum Teamziel."
   },
   "cardsTab": {
-    "notStartedTitle": "Das Spiel hat noch nicht begonnen",
-    "notStartedDescription": "Ein Team-Admin startet das Spiel, sobald alle Vorsätze füreinander vorgeschlagen haben.",
     "noCards": "Noch keine Bingo-Karten verfügbar.",
     "heading": "Bingo-Karten",
     "noCard": "Keine Bingo-Karte verfügbar"
@@ -89,13 +94,29 @@
     }
   },
   "actions": {
-    "started": "Bingo-Spiel gestartet!",
-    "startFailed": "Spiel konnte nicht gestartet werden",
     "ended": "Spiel beendet",
     "endFailed": "Spiel konnte nicht beendet werden",
     "left": "Du hast das Spiel verlassen",
     "leaveFailed": "Spiel konnte nicht verlassen werden",
     "deleted": "Spiel gelöscht",
     "deleteFailed": "Spiel konnte nicht gelöscht werden"
+  },
+  "personalTab": {
+    "title": "Deine Vorsätze",
+    "description": "Schreibe deine eigenen Vorsätze für dieses Spiel. Sie füllen deine Karte zusammen mit dem Teamziel und dem, was deine Mitspieler für dich schreiben.",
+    "counterLabel": "geschrieben",
+    "counterHint": "Deine Karte braucht {target, plural, one {# Vorsatz} other {# Vorsätze}} von dir. Fehlende werden durch vorbereitete Vorsätze ersetzt; schreibst du mehr, werden einige zufällig ausgewählt.",
+    "add": "Vorsatz hinzufügen",
+    "browseIdeas": "Ideen entdecken",
+    "empty": "Du hast noch keine Vorsätze für dieses Spiel geschrieben."
+  },
+  "teammatesTab": {
+    "title": "Für deine Mitspieler",
+    "description": "Schreibe für jeden Mitspieler einen Vorsatz. Wer nichts von dir bekommt, erhält stattdessen einen kurzen vorbereiteten Vorsatz.",
+    "empty": "Du bist der einzige Spieler dieses Spiels.",
+    "forMember": "Für {name}",
+    "noneYet": "Noch kein Vorsatz vorgeschlagen",
+    "edit": "Vorsatz bearbeiten",
+    "add": "Vorsatz hinzufügen"
   }
 }

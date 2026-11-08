@@ -1,7 +1,7 @@
 # 00 — System Overview
 
 ## Goal
-New Year Resolution Bingo is an application where users maintain resolutions, join teams, and play bingo games with their team. Each game is generated from a team goal, peer-provided resolutions and personal resolutions, with prepared resolutions filling any gaps.
+New Year Resolution Bingo is an application where users join teams and play bingo games with their team. Each game opens with a preparation phase, in which the players write a team goal, resolutions for each other and their own resolutions; the cards are then generated from them, with prepared resolutions filling any gaps.
 
 ## How to Read These Specs
 - Each spec describes the behavior of the application as it is currently implemented.
@@ -37,10 +37,10 @@ New Year Resolution Bingo is an application where users maintain resolutions, jo
 In scope:
 - User accounts: register, login, logout, email verification
 - User profile: manage personal data and decide what is public
-- Resolutions: personal CRUD of definitions; `base`, `compound` and `iterative` types; a pool of prepared resolutions to copy from
+- Resolutions: a player's own resolutions for a game, as definitions; `base`, `compound` and `iterative` types; a pool of prepared resolutions to copy from; the legacy app-wide list, read-only until 8 May 2027
 - Cell progress and history: progress and the history timeline live on each bingo cell
 - Bingo teams: create team, invite/join
-- Bingo games: the admin creates any number of games for a team; each has one team goal, members create resolutions for each other, and the admin starts and ends it
+- Bingo games: the admin creates any number of games for a team, each with a preparation deadline; during preparation the admin sets the goal, members write resolutions for each other and for themselves and mark themselves ready; the game starts when everyone is ready or at the preparation deadline, and the admin ends it
 - Bingo card generation (joker in the center, text de-duplication, personal and prepared fallbacks, empty filler cells)
 - Gameplay marking (complete / undo), automatic completion for typed resolutions, viewing other members' cards
 - Card editing by the card owner
@@ -59,7 +59,7 @@ Out of scope (not implemented):
 - Leaving a team, removing a member, transferring team leadership
 
 ## Key Roles
-- **User**: owns a profile, manages personal resolutions, participates in teams.
+- **User**: owns a profile, participates in teams and writes their own resolutions in each game.
 - **Team Admin**: the user who created the team; can invite users, delete the team, create, start, end and delete its games, set their team goals, and delete the archived games they ran.
 - **Team member**: a user who joined through an invitation; can create resolutions for other members, request proof and vote on reviews. The admin is also a team member.
 
@@ -114,18 +114,18 @@ The tables `cell_proofs`, `proof_reviews` and `duplicate_reports` still exist in
   - their own bingo card (mark complete/undo, edit content, upload proof to threads about their cells)
 - Other members' actions can still change a cell's state: a proof request moves a cell to review, votes decide its outcome, and progress on a typed cell moves that cell only (spec 06).
 - Team Admin can:
-  - invite, delete the team, create, start, end and delete games, set their team goals
+  - invite, delete the team, create, configure, end and delete games, set their team goals
 - Any team member can:
   - view other team members' bingo cards
-  - create and update resolutions for other members
+  - create and update resolutions for other members and for themselves, and mark themselves ready during the preparation phase
   - request proof on another member's completed cell, post in review threads and vote
 
 ## Primary Flows
 1. Register → email verification → login
 2. Create/update profile + choose public fields
-3. Personal resolutions: add/update/delete definitions. Progress and history belong to the cells of a card
+3. Personal resolutions: add/update/delete definitions for a game, in its Personal tab. Progress and history belong to the cells of a card
 4. Team lifecycle: create team → invite/join members
-   Game lifecycle: admin creates a game → sets its team goal → members provide resolutions for each other → admin starts bingo → admin ends it, which archives it, and can create the next one with the same team
+   Game lifecycle: admin creates a game with a preparation deadline → admin sets its team goal → members provide resolutions for each other and write their own → everyone is ready or the preparation deadline passes, and bingo starts → admin ends it, which archives it, and can create the next one with the same team
 5. Card gameplay: mark completed / undo, or complete automatically through typed progress
 6. Proof review: a teammate requests proof → the owner uploads proof → members discuss and vote → the cell becomes `accomplished` or returns to `pending`
 7. Visibility: view others' cards and the team leaderboard

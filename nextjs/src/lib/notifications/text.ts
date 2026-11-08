@@ -28,7 +28,7 @@ export function notificationText(notification: UserNotification, t: Notification
     case 'member_joined':
       return t('memberJoined', { actor });
     case 'game_started':
-      return t('gameStarted', { actor });
+      return t('gameStarted');
     case 'game_ended':
       return notification.actorUsername ? t('gameEnded', { actor }) : t('gameEndedAtDeadline');
     case 'bingo_scored':

@@ -104,6 +104,7 @@ The `base` row applies to the cell's type, so a `base` team goal is completed ma
 
 - Only the card owner can mark a cell as completed.
 - Marking completion transitions `pending` or `failed` → `completed`.
+- No confirmation is asked: the owner can undo it.
 - No proof or review is triggered automatically.
 
 ---

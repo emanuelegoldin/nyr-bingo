@@ -1,0 +1,8 @@
+{
+  "editAriaLabel": "Vorsatz bearbeiten",
+  "deleteAriaLabel": "Vorsatz löschen",
+  "deleted": "Vorsatz gelöscht",
+  "deleteError": "Vorsatz konnte nicht gelöscht werden",
+  "subtaskCount": "{count, plural, one {# Teilaufgabe} other {# Teilaufgaben}}",
+  "repetitionTarget": "Ziel: {count, plural, one {# Wiederholung} other {# Wiederholungen}}"
+}

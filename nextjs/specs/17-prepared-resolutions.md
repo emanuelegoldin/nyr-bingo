@@ -5,11 +5,12 @@ Offer a shared pool of ready-made resolutions, so that users do not have to come
 
 ## User Stories Covered
 - Browse prepared resolutions by how long they take
-- Add a prepared resolution to my personal resolutions
+- Add a prepared resolution to my personal resolutions of a game
 
 ## In Scope
 - The pool and its categories
-- Browsing the pool and copying entries into personal resolutions
+- Browsing the pool and copying entries into a player's personal resolutions of a game
+- The pool as the source of a missing team goal at game start (spec 16)
 - The pool as a fallback for card generation, whose rules are defined in spec 05
 
 ## Out of Scope
@@ -46,27 +47,29 @@ A goal is categorized by the total effort it takes, not by the length of its las
 ### Browsing the Pool
 `GET /api/resolutions/prepared` returns every entry, grouped in a stable order by category.
 
-On `/resolutions`, the **Browse ideas** button next to the add button opens a dialog with one tab per category. Each entry shows its title, description and type, and an **Add** button. An entry whose text matches one of the user's personal resolutions shows **Added** instead, and its button is disabled.
+In a game's Personal tab (spec 12), the **Browse ideas** button next to the add button opens a dialog with one tab per category. Each entry shows its title, description and type, and an **Add** button. An entry whose text matches one of the caller's personal resolutions of that game shows **Added** instead, and its button is disabled. The obsolete `/resolutions` page no longer offers it (spec 03).
 
 ### Adding to Personal Resolutions
 `POST /api/resolutions/prepared/[id]/add`
 
-- Creates a resolution with `scope = 'personal'` owned by the caller, with the entry's type, title, description and type-specific data. It is a definition only (spec 03).
+- The body has `gameId`, a running game the caller plays (`400` without it, `404` for a missing or ended game, `403` for a non-player).
+- Creates a resolution with `scope = 'personal'` for that game, owned by the caller, with the entry's type, title, description and type-specific data. It is a definition only (spec 03).
 - The copy is an ordinary personal resolution (spec 03): the user can edit or delete it, and it fills cards like any other.
 - Returns `201` with the id of the copy.
 - Returns `404` for an unknown entry.
-- Returns `409` if the caller already has a personal resolution with the same text, compared as in spec 05. A user who changes the text of a copy can add the entry again.
+- Returns `409` if the caller already has a personal resolution of the same game with the same text, compared as in spec 05. A user who changes the text of a copy can add the entry again, and the same entry can be added to different games.
 
 ### Fallbacks on Bingo Cards
 At game start, card generation snapshots entries directly onto cells where proposals or resolutions are missing (spec 05): the cell gets the entry's type, title, description, target and subtasks, with `source_type = 'prepared'` and no `resolution_id`. No row is created in `resolutions`, so these cells do not appear in the owner's personal resolutions. On a card they are labeled **Suggested**.
 
 ## Permissions
 - Both endpoints require authentication.
-- Both are available to unverified users, like personal resolutions (spec 03).
+- Adding is limited to players of the game (permission `game.propose`, spec 21).
 
 ## Acceptance Criteria
-- A user can browse the pool by category from `/resolutions`.
-- A user can add an entry, which appears in their personal resolutions.
+- A player can browse the pool by category from a game's Personal tab.
+- A player can add an entry, which appears in their personal resolutions of that game.
+- The same entry can be added to two different games.
 - Two users can add the same entry, and each gets an independent copy.
 - Prepared fallback cells on a card are copied straight from the pool and create no resolution row.
 - Adding an entry the user already has fails with `409` and creates nothing, and the dialog shows such an entry as added.

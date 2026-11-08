@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * Loads the replacement options of a cell in card editing.
+ * Spec Reference: 09-bingo-card-editing.md - Replacement Options
+ */
+
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { apiFetch } from "@/lib/api-client";
 import type { BingoCellWithThread } from "@/lib/db/types";
@@ -19,7 +24,7 @@ export type EditOption = {
   isEmpty: boolean;
 };
 
-/** Item of `GET /api/resolutions/all` used to build personal options. */
+/** Item of `GET /api/games/:id/personal-resolutions` used to build personal options. */
 interface PersonalResolutionItem {
   id: string;
   title: string;
@@ -45,8 +50,8 @@ interface UseEditCellOptionsParams {
 }
 
 /**
- * Loads the resolutions a cell can be replaced with: the user's own resolutions
- * plus, when a game is given, the ones provided by team members. Resolutions already
+ * Loads the resolutions a cell can be replaced with, all from the card's game: the user's own resolutions for it
+ * and the ones provided to them by team members. Legacy resolutions and other games' are never offered. Resolutions already
  * used by another cell of the card are left out. Failures are reported with a destructive toast.
  *
  * @param params - Card, game and user the options are loaded for, and the dialog's open state.
@@ -77,16 +82,18 @@ export const useEditCellOptions = ({
           .filter((v: string | null): v is string => typeof v === 'string' && v.length > 0)
       );
 
+      if (!gameId || !currentUserId) {
+        setEditOptions([]);
+        return;
+      }
+
       setIsLoading(true);
-      // Fetch ALL resolution types (base + compound + iterative) via the unified endpoint
-      const teamReq = gameId && currentUserId
-        ? apiFetch<{ resolutions?: TeamResolutionItem[] }>(
-          `/api/games/${gameId}/resolutions?toUserId=${encodeURIComponent(currentUserId)}`
-        )
-        : Promise.resolve(null);
+      // Both lists hold every resolution type and belong to the card's game (spec 09)
       const [personalResult, teamResult] = await Promise.all([
-        apiFetch<{ resolutions?: PersonalResolutionItem[] }>('/api/resolutions/all'),
-        teamReq,
+        apiFetch<{ resolutions?: PersonalResolutionItem[] }>(`/api/games/${gameId}/personal-resolutions`),
+        apiFetch<{ resolutions?: TeamResolutionItem[] }>(
+          `/api/games/${gameId}/resolutions?toUserId=${encodeURIComponent(currentUserId)}`
+        ),
       ]);
       setIsLoading(false);
 
@@ -94,7 +101,7 @@ export const useEditCellOptions = ({
         toastApiError(personalResult, t("editDialog.loadPersonalFailed"));
         return;
       }
-      if (teamResult && !teamResult.ok) {
+      if (!teamResult.ok) {
         toastApiError(teamResult, t("editDialog.loadTeamFailed"));
         return;
       }
@@ -114,7 +121,7 @@ export const useEditCellOptions = ({
         // Spec: 05-bingo-card-generation.md - No duplicates in a card
         .filter((opt) => !occupiedKeys.has(opt.key));
 
-      const teamOptions: EditOption[] = (teamResult?.data.resolutions || [])
+      const teamOptions: EditOption[] = (teamResult.data.resolutions || [])
         .map((r) => ({
           key: `member_provided:${r.id}`,
           label: r.title || r.description,

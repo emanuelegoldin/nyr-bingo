@@ -135,6 +135,11 @@ export interface Game {
   endedAt: Date | null;
   /** Last playable day as YYYY-MM-DD, or null when the game only ends manually. */
   deadline: string | null;
+  /**
+   * End of the preparation phase as an ISO 8601 UTC string, set at creation and never changed (spec 16).
+   * Null for games that started before the preparation phase existed.
+   */
+  preparationDeadline: string | null;
   /** Side length of every card of the game, set at creation and never changed (spec 16). */
   gridSize: GridSize;
 }

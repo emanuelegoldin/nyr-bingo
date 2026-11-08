@@ -32,7 +32,7 @@ This spec defines:
   - `scope = 'member_provided'`
   - `game_id` equals the card's `bingo_cards.game_id`
   - `to_user_id` equals the card owner
-- **Personal resolution**: a row in `resolutions` where `scope = 'personal'` and `owner_user_id` is the card owner.
+- **Personal resolution**: a row in `resolutions` where `scope = 'personal'`, `owner_user_id` is the card owner and `game_id` equals the card's `bingo_cards.game_id` (spec 03). Legacy personal resolutions without a game and resolutions of other games are not personal resolutions of the card.
 
 ## Functional Requirements
 
@@ -48,7 +48,7 @@ This spec defines:
 ### 3) Replacement Options
 Selecting a cell opens a dialog listing replacement options:
 - All member-provided resolutions for the game, targeted to the current user: `GET /api/games/[gameId]/resolutions?toUserId=<currentUserId>`
-- All personal resolutions of every type owned by the user: `GET /api/resolutions/all`
+- The user's personal resolutions of every type for the card's game: `GET /api/games/[gameId]/personal-resolutions`
 
 The list:
 - Excludes resolutions already on the card
@@ -100,7 +100,7 @@ Validation:
 - The specified cell MUST NOT be a joker cell (`joker:` id)
 - The specified cell MUST NOT be a team goal cell
 - The specified cell MUST NOT be in `pending_review`
-- For `personal`, the resolution MUST be the caller's own personal resolution
+- For `personal`, the resolution MUST be the caller's own personal resolution of the card's game
 - For `member_provided`, the resolution MUST be proposed to the caller in the card's game
 - The card's game MUST NOT have ended (spec 16)
 - The resolution MUST NOT already be on another cell of the card
@@ -120,8 +120,9 @@ Effects:
 - A card owner can enter and exit edit mode from the dashboard.
 - In edit mode, the owner can select any non-joker, non-team cell not under review (including empty).
 - On selection, the UI shows a list combining:
-  - `GET /api/resolutions/all`
+  - `GET /api/games/[gameId]/personal-resolutions`
   - `GET /api/games/[gameId]/resolutions?toUserId=<currentUserId>`
+- The list offers only resolutions of the card's game: no legacy personal resolution and no resolution of another game.
 - Selecting an option updates the cell via `PUT /api/cells/[cellId]/edit`.
 - Dismissing the dialog returns to the card still in edit mode.
 - The joker cell cannot be modified (both UI and API enforce this).

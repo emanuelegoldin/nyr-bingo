@@ -7,7 +7,6 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
 import { GameStatus, type GridSize } from '../shared/types';
 import { execute, query, withTransaction } from './connection';
-import { getGameGoalResolution } from './resolution-repository';
 import { getGameReviewFiles, removeOrphanedFiles } from './review-file-repository';
 import { getGameMembersWithProfiles } from './team-repository';
 import type { Game, GameWithMembers } from './types';
@@ -23,6 +22,8 @@ interface GameRow extends RowDataPacket {
   ended_at: Date | null;
   // The deadline as text: a DATE read as a Date object can shift a day when serialized
   deadline_date: string | null;
+  // The preparation deadline as UTC text ('YYYY-MM-DD hh:mm:ss'), so the driver's time zone does not shift it
+  preparation_deadline_utc: string | null;
   grid_size: GridSize;
   // Derived from the JOIN with teams
   team_name: string;
@@ -31,7 +32,8 @@ interface GameRow extends RowDataPacket {
 }
 
 const SELECT_GAME = `
-  SELECT g.*, CAST(g.deadline AS CHAR) AS deadline_date, t.name AS team_name,
+  SELECT g.*, CAST(g.deadline AS CHAR) AS deadline_date,
+         CAST(g.preparation_deadline AS CHAR) AS preparation_deadline_utc, t.name AS team_name,
          COALESCE(r.description, r.title) AS team_resolution_text
   FROM games g
   JOIN teams t ON g.team_id = t.id
@@ -51,30 +53,53 @@ function rowToGame(row: GameRow): Game {
     startedAt: row.started_at,
     endedAt: row.ended_at,
     deadline: row.deadline_date,
+    preparationDeadline: utcTextToIso(row.preparation_deadline_utc),
     gridSize: row.grid_size,
   };
 }
 
 /**
- * Create a game for a team. It starts in forming status, with no goal and no resolutions.
+ * Turn a DATETIME read as UTC text into an ISO 8601 string.
+ * @param text 'YYYY-MM-DD hh:mm:ss', or null
+ * @returns The ISO string, or null
+ */
+function utcTextToIso(text: string | null): string | null {
+  return text === null ? null : new Date(`${text.replace(' ', 'T')}Z`).toISOString();
+}
+
+/**
+ * Format a moment as the UTC text a DATETIME column stores, so the driver's time zone does not shift it.
+ * @param moment The moment
+ * @returns 'YYYY-MM-DD hh:mm:ss' in UTC
+ */
+function toUtcDateTimeText(moment: Date): string {
+  return moment.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
+ * Create a game for a team. It starts in forming status (the preparation phase), with no goal, no resolutions
+ * and no player ready.
  * Spec: 16-games.md - Game Creation
  * @param teamId The team that will play it
  * @param name The game's name
  * @param playerIds The team members who play it. The caller validates them.
  * @param gridSize The side length of its cards, fixed for the life of the game
+ * @param preparationDeadline When the preparation phase ends at the latest. The caller checks it is in the future.
  * @returns The new game
  */
 export async function createGame(
   teamId: string,
   name: string,
   playerIds: string[],
-  gridSize: GridSize
+  gridSize: GridSize,
+  preparationDeadline: Date
 ): Promise<Game> {
   const id = uuidv4();
   await withTransaction(async (connection) => {
     await execute(
-      `INSERT INTO games (id, team_id, name, status, grid_size) VALUES (?, ?, ?, 'forming', ?)`,
-      [id, teamId, name, gridSize],
+      `INSERT INTO games (id, team_id, name, status, grid_size, preparation_deadline)
+       VALUES (?, ?, ?, 'forming', ?, ?)`,
+      [id, teamId, name, gridSize, toUtcDateTimeText(preparationDeadline)],
       connection
     );
     for (const playerId of new Set(playerIds)) {
@@ -316,33 +341,85 @@ export async function checkAllResolutionsProvided(game: Pick<Game, 'id'>): Promi
 }
 
 /**
- * Check whether the bingo game can start. startGameWithCards does the actual start.
- * The caller checks that the user may start it (spec 21: game.start).
- * Spec: 16-games.md - Start Conditions
+ * Mark a player ready, or no longer ready, during the preparation phase.
+ * Spec: 16-games.md - Ready
  * @param gameId The game
- * @returns Success, or the start condition that is not met
+ * @param userId The player
+ * @param ready True to mark them ready, false to undo it
+ * @returns False if the game is not forming or the user does not play it
  */
-export async function checkGameCanStart(gameId: string): Promise<{ success: boolean; error?: string }> {
-  const game = await getGameById(gameId);
-  if (!game) {
-    return { success: false, error: 'Game not found' };
-  }
+export async function setPlayerReady(gameId: string, userId: string, ready: boolean): Promise<boolean> {
+  const result = await execute(
+    `UPDATE game_players p
+     JOIN games g ON g.id = p.game_id
+     SET p.ready_at = IF(?, COALESCE(p.ready_at, UTC_TIMESTAMP()), NULL)
+     WHERE p.game_id = ? AND p.user_id = ? AND g.status = 'forming'`,
+    [ready, gameId, userId]
+  );
+  return result.affectedRows > 0;
+}
 
-  // Check if game is still in forming status
-  if (game.status !== GameStatus.FORMING) {
-    return { success: false, error: 'Game is not in forming status' };
-  }
+/**
+ * List the players of a game who are ready.
+ * Spec: 16-games.md - Ready
+ * @param gameId The game
+ * @returns Their ids, in the order they joined the game
+ */
+export async function getReadyPlayerIds(gameId: string): Promise<string[]> {
+  const rows = await query<Array<RowDataPacket & { user_id: string }>>(
+    `SELECT user_id FROM game_players WHERE game_id = ? AND ready_at IS NOT NULL ORDER BY joined_at ASC, user_id ASC`,
+    [gameId]
+  );
+  return rows.map((row) => row.user_id);
+}
 
-  // A game must not start only to be ended by the next sweep
-  if (game.deadline && await isDeadlinePast(game.deadline)) {
-    return { success: false, error: 'The game deadline has passed' };
-  }
+/**
+ * Check whether every player of a game is ready. A game with no players is not.
+ * Spec: 16-games.md - Automatic Start
+ * @param gameId The game
+ * @returns True if it has players and all of them are ready
+ */
+export async function areAllPlayersReady(gameId: string): Promise<boolean> {
+  const rows = await query<Array<RowDataPacket & { players: number; ready: number }>>(
+    `SELECT COUNT(*) AS players, COUNT(ready_at) AS ready FROM game_players WHERE game_id = ?`,
+    [gameId]
+  );
+  const players = Number(rows[0].players);
+  return players > 0 && Number(rows[0].ready) === players;
+}
 
-  // Check if team resolution is set (via resolution entity)
-  const teamGoal = await getGameGoalResolution(gameId);
-  if (!teamGoal) {
-    return { success: false, error: 'Team resolution must be set before starting' };
-  }
+/**
+ * List the forming games that should start: their preparation deadline has passed, or all their players are ready.
+ * Spec: 16-games.md - Automatic Start
+ * @returns The games to start
+ */
+export async function getGamesDueToStart(): Promise<Game[]> {
+  const rows = await query<GameRow[]>(
+    `${SELECT_GAME}
+     WHERE g.status = 'forming'
+       AND (
+         g.preparation_deadline <= UTC_TIMESTAMP()
+         OR (
+           EXISTS (SELECT 1 FROM game_players p WHERE p.game_id = g.id)
+           AND NOT EXISTS (SELECT 1 FROM game_players p WHERE p.game_id = g.id AND p.ready_at IS NULL)
+         )
+       )`
+  );
+  return rows.map(rowToGame);
+}
 
-  return { success: true };
+/**
+ * Check whether a game deadline falls before the date of the game's preparation deadline, in UTC.
+ * A game without a preparation deadline has no such limit.
+ * Spec: 16-games.md - Game Configuration
+ * @param gameId The game
+ * @param deadline The last playable day as YYYY-MM-DD
+ * @returns True if the deadline is before that date
+ */
+export async function isDeadlineBeforePreparation(gameId: string, deadline: string): Promise<boolean> {
+  const rows = await query<Array<RowDataPacket & { is_before: number | null }>>(
+    `SELECT ? < DATE(preparation_deadline) AS is_before FROM games WHERE id = ?`,
+    [deadline, gameId]
+  );
+  return rows.length > 0 && Number(rows[0].is_before) === 1;
 }

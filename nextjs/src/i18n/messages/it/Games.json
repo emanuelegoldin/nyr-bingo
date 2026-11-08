@@ -10,12 +10,27 @@
   "detail": {
     "pageTitle": "Partita",
     "lastDay": "Ultimo giorno: {date}",
-    "startBingo": "Avvia il bingo",
     "tabs": {
       "cards": "Carte",
       "leaderboard": "Classifica",
       "threads": "Thread",
-      "progress": "Progressi"
+      "progress": "Progressi",
+      "personal": "Personali",
+      "teammates": "Compagni"
+    },
+    "deadline": {
+      "startsIn": "Inizia tra {time}",
+      "starting": "Sta iniziando…",
+      "days": "{days}g {hours}h {minutes}m",
+      "hours": "{hours}h {minutes}m",
+      "lastHour": "{minutes}m {seconds}s"
+    },
+    "ready": {
+      "ready": "Pronto",
+      "notReady": "Non pronto",
+      "count": "{ready}/{total} pronti",
+      "hint": "Premi Pronto quando hai finito. La partita inizia quando tutti sono pronti, o alla fine della preparazione.",
+      "failed": "Impossibile aggiornare il tuo stato"
     }
   },
   "actionsMenu": {
@@ -31,12 +46,12 @@
     },
     "deleteDialog": {
       "title": "Eliminare questa partita?",
-      "description": "Verranno eliminati definitivamente la partita, il suo obiettivo del team, gli obiettivi proposti, le carte bingo e i relativi dati di gioco. Il team e le sue altre partite non sono interessati. Questa azione non può essere annullata.",
+      "description": "Verranno eliminati definitivamente la partita, il suo obiettivo del team, tutti gli obiettivi scritti per la partita, le carte bingo e i relativi dati di gioco. Il team e le sue altre partite non sono interessati. Questa azione non può essere annullata.",
       "confirm": "Elimina"
     },
     "leaveDialog": {
       "title": "Abbandonare questa partita?",
-      "description": "La tua carta bingo, la tua voce in classifica e gli obiettivi scritti per te in questa partita verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Non potrai rientrare in questa partita. Se sei l'unico admin del team, promuovi prima un altro giocatore dalla pagina del team.",
+      "description": "La tua carta, la tua posizione in classifica, i tuoi obiettivi per questa partita e gli obiettivi scritti per te verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Non potrai rientrare in questa partita. Se sei l'unico Admin della squadra, promuovi prima un altro giocatore dalla pagina della squadra.",
       "confirm": "Abbandona partita"
     }
   },
@@ -47,22 +62,12 @@
     "clear": "Cancella",
     "failed": "Impossibile configurare la partita"
   },
-  "proposeDialog": {
-    "button": "Proponi obiettivi",
-    "title": "Proponi obiettivi",
-    "description": "Crea o aggiorna un obiettivo per ogni membro del team. Puoi farlo in qualsiasi momento.",
-    "forMember": "Per {name}",
-    "noneYet": "Nessun obiettivo ancora proposto",
-    "edit": "Modifica obiettivo",
-    "add": "Aggiungi obiettivo"
-  },
   "teamGoal": {
     "none": "Nessun obiettivo del team ancora impostato.",
-    "setGoal": "Imposta obiettivo"
+    "setGoal": "Imposta obiettivo",
+    "fallbackHint": "Se non viene impostato prima dell'inizio, un obiettivo preparato diventa l'obiettivo di squadra."
   },
   "cardsTab": {
-    "notStartedTitle": "La partita non è ancora iniziata",
-    "notStartedDescription": "Un admin del team avvierà la partita quando tutti avranno proposto obiettivi per gli altri.",
     "noCards": "Ancora nessuna carta bingo disponibile.",
     "heading": "Carte bingo",
     "noCard": "Nessuna carta bingo disponibile"
@@ -89,13 +94,29 @@
     }
   },
   "actions": {
-    "started": "Partita di bingo avviata!",
-    "startFailed": "Impossibile avviare la partita",
     "ended": "Partita terminata",
     "endFailed": "Impossibile terminare la partita",
     "left": "Hai abbandonato la partita",
     "leaveFailed": "Impossibile abbandonare la partita",
     "deleted": "Partita eliminata",
     "deleteFailed": "Impossibile eliminare la partita"
+  },
+  "personalTab": {
+    "title": "I tuoi obiettivi",
+    "description": "Scrivi i tuoi obiettivi per questa partita. Riempiono la tua carta insieme all'obiettivo di squadra e a quelli che i compagni scrivono per te.",
+    "counterLabel": "scritti",
+    "counterHint": "La tua carta ha bisogno di {target, plural, one {# obiettivo} other {# obiettivi}} da parte tua. Quelli mancanti sono sostituiti da obiettivi preparati; se ne scrivi di più, alcuni vengono scelti a caso.",
+    "add": "Aggiungi obiettivo",
+    "browseIdeas": "Sfoglia idee",
+    "empty": "Non hai ancora scritto obiettivi per questa partita."
+  },
+  "teammatesTab": {
+    "title": "Per i tuoi compagni",
+    "description": "Scrivi un obiettivo per ogni compagno. Chi non riceve nulla da te ottiene un obiettivo preparato breve.",
+    "empty": "Sei l'unico giocatore di questa partita.",
+    "forMember": "Per {name}",
+    "noneYet": "Nessun obiettivo proposto",
+    "edit": "Modifica obiettivo",
+    "add": "Aggiungi obiettivo"
   }
 }

@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { authorize } from '@/lib/authz/policy';
-import { createRolesSetup, loadGame, loadUnverifiedUser, loadUser } from './helpers';
+import { createRolesSetup, loadGame, loadUser } from './helpers';
 
 describe('authz – game scope', () => {
   describe('operations', () => {
@@ -75,30 +75,6 @@ describe('authz – game scope', () => {
 
       // Assert
       expect(decision).toMatchObject({ allowed: false, status: 404 });
-    });
-
-    it('an unverified admin starting a game, with 403 (21-authorization.md – Permission Table)', async () => {
-      // Arrange
-      const { admin, game } = await createRolesSetup();
-      const user = await loadUnverifiedUser(admin);
-
-      // Act
-      const decision = await authorize(user, 'game.start', { scope: 'game', game: await loadGame(game) });
-
-      // Assert
-      expect(decision).toMatchObject({ allowed: false, status: 403 });
-    });
-
-    it('an unverified user on a missing game gets 403, as verification is checked first (21-authorization.md – Status Rules)', async () => {
-      // Arrange
-      const { admin } = await createRolesSetup();
-      const user = await loadUnverifiedUser(admin);
-
-      // Act
-      const decision = await authorize(user, 'game.start', { scope: 'game', game: null });
-
-      // Assert
-      expect(decision).toMatchObject({ allowed: false, status: 403 });
     });
   });
 });

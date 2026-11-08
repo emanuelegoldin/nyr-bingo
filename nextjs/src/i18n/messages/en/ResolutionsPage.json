@@ -1,15 +1,8 @@
 {
-  "title": "Your Personal Resolutions",
-  "description": "Manage your personal resolutions. These can be used to fill your bingo cards.",
+  "title": "Your old personal resolutions",
+  "description": "The resolutions you wrote before they belonged to a game.",
   "headerTitle": "Resolutions",
-  "browseIdeas": "Browse ideas",
-  "loadError": "Failed to load resolutions",
-  "deleted": "Resolution deleted",
-  "deleteError": "Failed to delete resolution",
-  "addAriaLabel": "Add resolution",
-  "editAriaLabel": "Edit resolution",
-  "deleteAriaLabel": "Delete resolution",
-  "empty": "You haven't added any resolutions yet. Click the + button to create one.",
-  "subtaskCount": "{count, plural, one {# subtask} other {# subtasks}}",
-  "repetitionTarget": "Target: {count, plural, one {# repetition} other {# repetitions}}"
+  "obsoleteTitle": "This page is going away",
+  "obsoleteNotice": "Personal resolutions now belong to a game: you write them in the Personal tab of a game while it is in preparation, before it starts. This list is read-only and no longer fills your cards. Copy what you want to keep: the page will be removed after 8 May 2027.",
+  "empty": "You have no resolutions from before."
 }

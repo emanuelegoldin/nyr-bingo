@@ -20,7 +20,7 @@ import {
 const sorted = (permissions: Iterable<string>): string[] => [...permissions].sort();
 
 const GAME_PLAYER = [
-  'game.view', 'game.propose', 'game.leave', 'thread.request', 'thread.view',
+  'game.view', 'game.propose', 'game.ready', 'game.leave', 'thread.request', 'thread.view',
   'thread.message', 'thread.vote', 'card.arrange', 'cell.react',
 ];
 
@@ -42,7 +42,7 @@ describe('permission table', () => {
     );
   });
 
-  it('gives a game player the play, thread, arrange and react permissions (21-authorization.md – Permission Table)', () => {
+  it('gives a game player the play, ready, thread, arrange and react permissions (21-authorization.md – Permission Table)', () => {
     // Assert
     expect(sorted(GAME_ROLE_PERMISSIONS.player)).toEqual(sorted(GAME_PLAYER));
   });
@@ -50,7 +50,7 @@ describe('permission table', () => {
   it('gives a game admin the player permissions plus the management ones (21-authorization.md – Permission Table)', () => {
     // Assert
     expect(sorted(GAME_ROLE_PERMISSIONS.leader)).toEqual(
-      sorted([...GAME_PLAYER, 'thread.delete', 'game.configure', 'game.start', 'game.end', 'game.delete', 'game.goal.set'])
+      sorted([...GAME_PLAYER, 'thread.delete', 'game.configure', 'game.end', 'game.delete', 'game.goal.set'])
     );
   });
 
@@ -64,8 +64,8 @@ describe('permission table', () => {
     expect(sorted(ARCHIVE_ROLE_PERMISSIONS.leader)).toEqual(['archive.delete', 'archive.thread.delete', 'archive.view']);
   });
 
-  it('requires a verified email for team.create, team.join, game.create and game.start only (21-authorization.md – Permission Table)', () => {
+  it('requires a verified email for team.create, team.join and game.create only (21-authorization.md – Permission Table)', () => {
     // Assert
-    expect(sorted(VERIFIED_PERMISSIONS)).toEqual(['game.create', 'game.start', 'team.create', 'team.join']);
+    expect(sorted(VERIFIED_PERMISSIONS)).toEqual(['game.create', 'team.create', 'team.join']);
   });
 });

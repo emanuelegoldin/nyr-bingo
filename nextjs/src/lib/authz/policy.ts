@@ -55,7 +55,6 @@ const VERIFIED_ACTIONS: Partial<Record<Permission, string>> = {
   'team.create': 'creating a team',
   'team.join': 'joining a team',
   'game.create': 'creating a game',
-  'game.start': 'starting a game',
 };
 
 /** Error when a role lacks a leader permission. */
@@ -65,7 +64,6 @@ const LEADER_ONLY_ERRORS: Partial<Record<Permission, string>> = {
   'team.delete': 'Only a Team Admin can delete the team',
   'game.create': 'Only a Team Admin can create a game',
   'game.configure': 'Only a Team Admin playing the game can configure it',
-  'game.start': 'Only a Team Admin playing the game can start it',
   'game.end': 'Only a Team Admin playing the game can end it',
   'game.delete': 'Only a Team Admin playing the game can delete it',
   'game.goal.set': 'Only a Team Admin playing the game can set the team goal',

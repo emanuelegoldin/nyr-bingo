@@ -1,12 +1,20 @@
 /**
- * Route tests for saving the team goal and member-provided resolutions of a game.
+ * Route tests for saving the team goal, member-provided and personal resolutions of a game.
  * Spec Reference: 16-games.md - Team Goal, Member-Provided Resolutions; 03-personal-resolutions.md - Permissions
  */
 
 import { describe, expect, it } from 'vitest';
 import { POST as save } from '@/app/api/resolutions/save/route';
 import { GameStatus } from '@/lib/shared/types';
-import { addMember, createGame, createMemberResolution, createTeam, createTeamGoal, createUser } from '../../support/db/fixtures';
+import {
+  addMember,
+  createGame,
+  createMemberResolution,
+  createPersonalResolution,
+  createTeam,
+  createTeamGoal,
+  createUser,
+} from '../../support/db/fixtures';
 import { countRows } from '../../support/db/rows';
 import { callRoute } from '../../support/api/call-route';
 import { signInAs } from '../../support/api/session';
@@ -70,6 +78,34 @@ describe('resolutions – game scoped', () => {
       // Assert
       expect(await countRows('resolutions', "game_id = ? AND owner_user_id = ? AND to_user_id = ?", [game.id, alice.id, bob.id])).toBe(1);
       expect(await countRows('resolutions', "game_id = ? AND title = 'Better idea'", [game.id])).toBe(1);
+    });
+
+    it('creates a personal resolution for the game, during the preparation phase (03-personal-resolutions.md – Create and Update)', async () => {
+      // Arrange
+      const { alice, game } = await createProposalGame();
+      await signInAs(alice);
+
+      // Act
+      const result = await callRoute(save, { method: 'POST', body: { gameId: game.id, type: 'base', title: 'Learn chess' } });
+
+      // Assert
+      expect(result.status).toBe(201);
+      expect(
+        await countRows('resolutions', "owner_user_id = ? AND scope = 'personal' AND game_id = ? AND team_id = ?", [alice.id, game.id, game.teamId])
+      ).toBe(1);
+    });
+
+    it('creates a personal resolution for a game that has already started (03-personal-resolutions.md – Create and Update)', async () => {
+      // Arrange
+      const { alice, game } = await createProposalGame(GameStatus.STARTED);
+      await signInAs(alice);
+
+      // Act
+      const result = await callRoute(save, { method: 'POST', body: { scope: 'personal', gameId: game.id, type: 'base', title: 'Learn chess' } });
+
+      // Assert
+      expect(result.status).toBe(201);
+      expect(await countRows('resolutions', "owner_user_id = ? AND scope = 'personal' AND game_id = ?", [alice.id, game.id])).toBe(1);
     });
   });
 
@@ -147,6 +183,46 @@ describe('resolutions – game scoped', () => {
       // Assert
       expect(result.status).toBeGreaterThanOrEqual(400);
       expect(await countRows('resolutions', "id = ? AND title = 'Frozen'", [id])).toBe(1);
+    });
+
+    it('a personal resolution without a game, with 400 (03-personal-resolutions.md – Create and Update)', async () => {
+      // Arrange
+      const { alice } = await createProposalGame();
+      await signInAs(alice);
+
+      // Act
+      const result = await callRoute(save, { method: 'POST', body: { type: 'base', title: 'Learn chess' } });
+
+      // Assert
+      expect(result.status).toBe(400);
+      expect(await countRows('resolutions', 'owner_user_id = ?', [alice.id])).toBe(0);
+    });
+
+    it('a personal resolution for a game the caller does not play, with 403 (03-personal-resolutions.md – Permissions)', async () => {
+      // Arrange
+      const { benched, game } = await createProposalGame();
+      await signInAs(benched);
+
+      // Act
+      const result = await callRoute(save, { method: 'POST', body: { gameId: game.id, type: 'base', title: 'Learn chess' } });
+
+      // Assert
+      expect(result.status).toBe(403);
+      expect(await countRows('resolutions', 'owner_user_id = ?', [benched.id])).toBe(0);
+    });
+
+    it('updating a legacy personal resolution, with 400 (03-personal-resolutions.md – Legacy Personal Resolutions)', async () => {
+      // Arrange
+      const { alice, game } = await createProposalGame();
+      const legacyId = await createPersonalResolution(alice, 'From the old list');
+      await signInAs(alice);
+
+      // Act
+      const result = await callRoute(save, { method: 'POST', body: { id: legacyId, gameId: game.id, type: 'base', title: 'Changed' } });
+
+      // Assert
+      expect(result.status).toBe(400);
+      expect(await countRows('resolutions', "id = ? AND title = 'From the old list'", [legacyId])).toBe(1);
     });
   });
 });

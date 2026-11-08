@@ -136,7 +136,7 @@ export interface CellSubtask extends Subtask {
 }
 
 /**
- * Resolution in the unified list shape returned by GET /api/resolutions/all.
+ * Resolution in the unified list shape, as the game page and GET /api/games/[gameId]/personal-resolutions return it.
  * Dates are `Date` on the server and ISO strings once serialized to JSON.
  */
 export interface UnifiedResolution {

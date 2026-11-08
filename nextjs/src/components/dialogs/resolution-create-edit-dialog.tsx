@@ -1,6 +1,7 @@
 /**
  * Resolution Create/Edit Dialog
- * A unified dialog for creating and editing personal resolutions of all types.
+ * A unified dialog for creating and editing the personal, team and member-provided resolutions of a game.
+ * Spec Reference: 03-personal-resolutions.md - Create Dialog
  *
  * Features:
  * - Title input + type dropdown in the header
@@ -9,6 +10,7 @@
  * - Subtask list management for compound resolutions
  * - Number of repetitions input for iterative resolutions
  * - Reusable for both create and edit flows
+ * - Opens with an empty form to create, or the resolution to edit, every time (no state left from the last use)
  */
 
 "use client";
@@ -16,10 +18,11 @@
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
+import { initialResolutionFormState } from "@/lib/shared/resolution-form";
 import type { ResolutionFormData, ResolutionTypeValue, Subtask } from "@/lib/shared/types";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -52,7 +55,7 @@ interface ResolutionCreateEditDialogProps {
   onSaved?: () => void;
   /** Resolution scope. Defaults to 'personal'. */
   scope?: "personal" | "team" | "member_provided";
-  /** Required when scope is 'team' or 'member_provided'. */
+  /** The game the resolution belongs to; required to create one. */
   gameId?: string;
   /** Required when scope is 'member_provided'. */
   toUserId?: string;
@@ -97,7 +100,7 @@ const dialogCopy = (
 /* ─── Component ──────────────────────────────────────────────────── */
 
 /**
- * Dialog for creating or editing a personal resolution.
+ * Dialog for creating or editing a resolution of a game: personal, the team goal or for a teammate.
  * Supports all three resolution types and preserves field state when switching types.
  */
 export const ResolutionCreateEditDialog = ({
@@ -117,20 +120,35 @@ export const ResolutionCreateEditDialog = ({
   const { toast } = useToast();
   const isEdit = Boolean(initialData?.id);
 
+  const initialState = initialResolutionFormState(initialData);
+
   // ── Common fields ────────────────────────────────────────────
-  const [type, setType] = useState<ResolutionTypeValue>(initialData?.type ?? "base");
-  const [title, setTitle] = useState(initialData?.title ?? "");
-  const [text, setText] = useState(initialData?.text ?? "");
+  const [type, setType] = useState<ResolutionTypeValue>(initialState.type);
+  const [title, setTitle] = useState(initialState.title);
+  const [text, setText] = useState(initialState.text);
 
   // ── Compound fields ──────────────────────────────────────────
-  const [subtasks, setSubtasks] = useState<Subtask[]>(initialData?.subtasks ?? []);
+  const [subtasks, setSubtasks] = useState<Subtask[]>(initialState.subtasks);
 
   // ── Iterative fields ─────────────────────────────────────────
-  const [numberOfRepetition, setNumberOfRepetition] = useState<number>(
-    initialData?.numberOfRepetition ?? 2
-  );
+  const [numberOfRepetition, setNumberOfRepetition] = useState<number>(initialState.numberOfRepetition);
 
   const [isSaving, setIsSaving] = useState(false);
+
+  // The dialog stays mounted between uses, so every opening starts again from the initial state:
+  // an empty Common form to create, or the resolution to edit (spec 03 - Create Dialog).
+  const wasOpenRef = useRef(isOpen);
+  useEffect(() => {
+    if (isOpen && !wasOpenRef.current) {
+      const reset = initialResolutionFormState(initialData);
+      setType(reset.type);
+      setTitle(reset.title);
+      setText(reset.text);
+      setSubtasks(reset.subtasks);
+      setNumberOfRepetition(reset.numberOfRepetition);
+    }
+    wasOpenRef.current = isOpen;
+  }, [isOpen, initialData]);
 
   const canSave = () => {
     if (!title.trim()) return false;
@@ -150,11 +168,9 @@ export const ResolutionCreateEditDialog = ({
         text: text.trim() || undefined,
       };
 
-      if (scope !== "personal") {
-        body.scope = scope;
-        if (gameId) body.gameId = gameId;
-        if (toUserId) body.toUserId = toUserId;
-      }
+      body.scope = scope;
+      if (gameId) body.gameId = gameId;
+      if (toUserId) body.toUserId = toUserId;
 
       if (isEdit && initialData?.id) {
         body.id = initialData.id;
