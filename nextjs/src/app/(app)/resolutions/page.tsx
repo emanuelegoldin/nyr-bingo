@@ -1,14 +1,12 @@
 /**
- * Resolutions Page
- * Spec Reference: 02-user-profile-and-privacy.md, 03-personal-resolutions.md
+ * Resolutions Page - the obsolete, read-only list of legacy personal resolutions
+ * Spec Reference: 03-personal-resolutions.md - Legacy Personal Resolutions
  *
- * Server-first implementation:
- * - Auth and initial resolution reads are done on the server
- * - The client component only handles interactive mutations/dialog state
+ * LEGACY-PERSONAL-RESOLUTIONS: remove this page (and its sidebar link) after 2027-05-08.
  */
 
 import { requireUser } from "@/lib/auth";
-import { getResolutionsByUser } from "@/lib/db";
+import { getLegacyPersonalResolutions } from "@/lib/db";
 import { toUnifiedResolution } from "@/lib/shared/resolution-form";
 import { PageSpinner } from "@/components/page-spinner";
 import { Suspense } from "react";
@@ -22,12 +20,10 @@ function ResolutionsLoadingFallback() {
 
 async function ResolutionsContent() {
   const currentUser = await requireUser();
-
-  // Personal resolutions are user-owned, so we can fetch directly on the server.
-  const resolutions = await getResolutionsByUser(currentUser.id);
+  const resolutions = await getLegacyPersonalResolutions(currentUser.id);
 
   return (
-    <ResolutionsPageClient initialResolutions={resolutions.map(toUnifiedResolution)} />
+    <ResolutionsPageClient resolutions={resolutions.map(toUnifiedResolution)} />
   );
 }
 

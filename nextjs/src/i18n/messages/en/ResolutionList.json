@@ -1,0 +1,8 @@
+{
+  "editAriaLabel": "Edit resolution",
+  "deleteAriaLabel": "Delete resolution",
+  "deleted": "Resolution deleted",
+  "deleteError": "Failed to delete resolution",
+  "subtaskCount": "{count, plural, one {# subtask} other {# subtasks}}",
+  "repetitionTarget": "Target: {count, plural, one {# repetition} other {# repetitions}}"
+}
