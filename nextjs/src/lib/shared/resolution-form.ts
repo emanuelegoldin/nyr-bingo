@@ -1,10 +1,37 @@
 /**
- * Mappers that build ResolutionFormData for the resolution create/edit dialog.
+ * Mappers that build ResolutionFormData and the initial form state for the resolution create/edit dialog.
  * Pure functions with no server-only imports, usable from server and client code.
+ * Spec Reference: 03-personal-resolutions.md - Create Dialog
  */
 
 import { toIsoDateString } from "./dates";
 import type { ResolutionFormData, ResolutionType, ResolutionTypeValue, Subtask, UnifiedResolution } from "./types";
+
+/** The editable fields of the resolution dialog. */
+export interface ResolutionFormState {
+  type: ResolutionTypeValue;
+  title: string;
+  text: string;
+  subtasks: Subtask[];
+  numberOfRepetition: number;
+}
+
+/** The repetition target an iterative resolution starts with (spec 03 requires at least 2). */
+const DEFAULT_NUMBER_OF_REPETITION = 2;
+
+/**
+ * Builds the state the resolution dialog opens with: the resolution being edited, or an empty Common form.
+ *
+ * @param initialData - The resolution being edited; undefined to create one.
+ * @returns The form state.
+ */
+export const initialResolutionFormState = (initialData: ResolutionFormData | undefined): ResolutionFormState => ({
+  type: initialData?.type ?? "base",
+  title: initialData?.title ?? "",
+  text: initialData?.text ?? "",
+  subtasks: initialData?.subtasks ?? [],
+  numberOfRepetition: initialData?.numberOfRepetition ?? DEFAULT_NUMBER_OF_REPETITION,
+});
 
 /** Subset of a stored resolution (db `Resolution`) that the form needs. */
 export interface ResolutionFormSource {
