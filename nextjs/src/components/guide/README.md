@@ -68,7 +68,9 @@ named after its id (`bingoCard`, `leaderboard`, ...) with at least `title` and
   because a dialog's focus trap and `pointer-events: none` would block the
   tooltip.
 - `engine/intro-adapter.ts` (with the library and its CSS) is loaded with a
-  dynamic `import()` only when a tour starts.
+  dynamic `import()` only when a tour starts. The first time, its stylesheet
+  can apply after the code runs, so `startTour` waits for it: otherwise the
+  dimming layer is drawn unstyled over the whole page and flashes into place.
 
 ## Licensing
 

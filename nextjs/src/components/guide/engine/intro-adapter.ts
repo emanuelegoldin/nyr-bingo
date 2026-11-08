@@ -54,6 +54,37 @@ export interface GuideTourHandle {
 /** Class set on the root element while an action step is shown, so its clicks reach the page. */
 const ACTION_STEP_CLASS = "guide-action-step";
 
+/** Longest wait, in milliseconds, for the library's stylesheet before starting anyway. */
+const STYLES_TIMEOUT_MS = 2000;
+
+/**
+ * Waits until the library's stylesheet applies to the page. It is loaded with this module,
+ * and the first time it can arrive after the code: a tour started before then draws its
+ * dimming layer unstyled across the whole page, which then flashes into place.
+ *
+ * @returns A promise resolved once the stylesheet applies, or after the timeout.
+ */
+const waitForLibraryStyles = (): Promise<void> => new Promise((resolve) => {
+  // `.introjs-hidden` sets `display: none` in the library's stylesheet
+  const probe = document.createElement("div");
+  probe.className = "introjs-hidden";
+  probe.style.position = "fixed";
+  probe.style.visibility = "hidden";
+  document.body.appendChild(probe);
+  const startedAt = performance.now();
+
+  const check = () => {
+    const applied = getComputedStyle(probe).display === "none";
+    if (applied || performance.now() - startedAt > STYLES_TIMEOUT_MS) {
+      probe.remove();
+      resolve();
+      return;
+    }
+    requestAnimationFrame(check);
+  };
+  check();
+});
+
 /**
  * Starts a tour. Every target element must already be in the page.
  *
@@ -98,6 +129,7 @@ export const startTour = async ({ steps, labels, onStepChange, onEnd }: StartTou
     onEnd();
   });
 
+  await waitForLibraryStyles();
   await tour.start();
 
   return {
