@@ -52,7 +52,15 @@ browser ◀── hooks/use-ws-room.ts ◀── components/team-ws-provider.tsx
 
 Run once at Node startup:
 - An hourly sweep that ends expired games (`lib/game-ending.ts`, which also archives them) and closes review threads past their deadline.
+- A sweep every minute that starts games whose preparation is over (`startDueGames` in `lib/game-starting.ts`).
 - A loop every few seconds that releases due notifications.
+
+## Game preparation and start (specs 16, 03)
+
+- A `forming` game is the preparation phase. `games.preparation_deadline` (UTC) is set at creation; `game_players.ready_at` marks ready players.
+- `lib/game-starting.ts` starts a game: `startGameWithCards` (`lib/db/bingo-card-generation.ts`) stores a prepared entry as the goal if there is none and generates the cards in one transaction; then the leaderboard rows, the `game_started` notification and a refresh signal. It is called by the ready and leave routes (`startGameIfAllReady`) and by the per-minute sweep.
+- Personal resolutions belong to a game (`resolutions.scope = 'personal'` with `game_id`). The game page loads them for its Personal tab, and card editing reads them from `GET /api/games/[gameId]/personal-resolutions`.
+- Rows with `scope = 'personal'` and no `game_id` are legacy, shown read-only on `/resolutions` until 2027-05-08. Every piece of code that only serves them is tagged `LEGACY-PERSONAL-RESOLUTIONS`: grep for it to remove them.
 
 ## Review thread lifecycle (specs 07, 18)
 

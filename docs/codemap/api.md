@@ -28,9 +28,10 @@ Paths are under `nextjs/src/app`. Helpers shared by routes live next to them (se
 | POST | `/api/games/:gameId/end` | End Game API |
 | GET | `/api/games/:gameId/goal` | Team Goal Resolution API |
 | POST | `/api/games/:gameId/leave` | Leave Game API |
+| GET | `/api/games/:gameId/personal-resolutions` | Personal Resolutions of a Game API - the caller's own resolutions for a game |
+| POST | `/api/games/:gameId/ready` | Ready API - a player signals they are done preparing, or no longer done |
 | GET | `/api/games/:gameId/resolutions` | Member-Provided Resolutions API |
 | GET PATCH DELETE | `/api/games/:gameId` | Game Detail API |
-| POST | `/api/games/:gameId/start` | Game Start Bingo API |
 | GET | `/api/games` | Games API |
 | POST | `/api/join` | Team Join API (via invite code) |
 | POST | `/api/notifications/:id/read` | Mark Notification Read API |
@@ -38,12 +39,9 @@ Paths are under `nextjs/src/app`. Helpers shared by routes live next to them (se
 | GET | `/api/notifications` | Notifications API |
 | GET PUT | `/api/notifications/settings` | Notification Settings API |
 | GET PUT | `/api/profile` | Profile API |
-| GET | `/api/resolutions/all` | All Resolutions API — returns resolutions of all types for the current user |
-| GET DELETE | `/api/resolutions/compound` | Compound Resolutions API |
-| GET DELETE | `/api/resolutions/iterative` | Iterative Resolutions API |
 | POST | `/api/resolutions/prepared/:id/add` | Add Prepared Resolution API |
 | GET | `/api/resolutions/prepared` | Prepared Resolutions API |
-| DELETE | `/api/resolutions` | Personal Resolutions API |
+| DELETE | `/api/resolutions` | Resolutions API - delete one of the caller's resolutions |
 | POST | `/api/resolutions/save` | Unified Resolution Save API |
 | GET POST | `/api/teams/:teamId/games` | Team Games API |
 | POST | `/api/teams/:teamId/invite` | Team Invitation API |

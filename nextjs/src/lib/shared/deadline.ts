@@ -1,6 +1,6 @@
 /**
- * Deadline helpers for a game: parsing the preparation deadline, the countdown to it, and how urgent a deadline
- * looks. Pure functions usable from server and client code.
+ * Deadline helpers: parsing the preparation deadline, the countdown to it, and how urgent a deadline looks.
+ * Pure functions usable from server and client code.
  * Spec Reference: 16-games.md - Game Creation, Countdown, Game Page
  */
 

@@ -48,11 +48,14 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/(app)/games/[gameId]/_components
 
-- `GameActionDialog.tsx`
+- `DeadlineInfo.tsx` — The game header's deadline information: the preparation countdown and the last day, styled by how close they are.
 - `GameActionsMenu.tsx`
 - `GameConfigDialog.tsx`
+- `MemberResolutionRow.tsx` — One teammate in the Teammates tab: the caller's resolution for them, or a prompt to write one.
 - `MissingTeamGoalNotice.tsx`
-- `ProposeResolutionsDialog.tsx`
+- `PersonalTab.tsx` — The Personal tab: the caller's own resolutions for the game, with a y/target counter, Add and Browse ideas.
+- `ReadyButton.tsx` — The Ready / Not ready toggle of the preparation phase, with how many players are ready.
+- `TeammatesTab.tsx` — The Teammates tab: every other player with the resolution the caller writes for them, and the dialog to write it.
 - `use-game-actions.ts`
 - `use-last-loaded.ts`
 
@@ -72,8 +75,8 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/(app)/resolutions
 
-- `page.tsx` — Resolutions Page
-- `resolutions-page-client.tsx` — Resolutions Page
+- `page.tsx` — Resolutions Page - the obsolete, read-only list of legacy personal resolutions
+- `resolutions-page-client.tsx` — Resolutions Page - the obsolete, read-only list of legacy personal resolutions, with a notice and Delete only.
 
 ## app/(app)/teams
 
@@ -220,13 +223,17 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `route.ts` — Leave Game API
 
+## app/api/games/[gameId]/personal-resolutions
+
+- `route.ts` — Personal Resolutions of a Game API - the caller's own resolutions for a game
+
+## app/api/games/[gameId]/ready
+
+- `route.ts` — Ready API - a player signals they are done preparing, or no longer done
+
 ## app/api/games/[gameId]/resolutions
 
 - `route.ts` — Member-Provided Resolutions API
-
-## app/api/games/[gameId]/start
-
-- `route.ts` — Game Start Bingo API
 
 ## app/api/join
 
@@ -254,20 +261,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/api/resolutions
 
-- `handlers.ts` — Shared handlers for the personal resolution routes.
-- `route.ts` — Personal Resolutions API
-
-## app/api/resolutions/all
-
-- `route.ts` — All Resolutions API — returns resolutions of all types for the current user
-
-## app/api/resolutions/compound
-
-- `route.ts` — Compound Resolutions API
-
-## app/api/resolutions/iterative
-
-- `route.ts` — Iterative Resolutions API
+- `route.ts` — Resolutions API - delete one of the caller's resolutions
 
 ## app/api/resolutions/prepared
 
@@ -498,6 +492,10 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `types.ts` — Shared contract of the Progress tab: the data every progress view reads, and the shape of a view.
 - `views.ts` — The progress views the Progress tab offers, in order. Add a view here to make it available.
 
+## components/resolutions
+
+- `resolution-list.tsx` — A list of resolution definitions with their type, subtask count or target, and optional Edit and Delete buttons.
+
 ## components/team
 
 - `game-list.tsx` — Grid of running games; each card links to its game page.
@@ -526,7 +524,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 
 - `AppContext.tsx`
 - `use-api-error-toast.ts`
-- `use-edit-cell-options.ts`
+- `use-edit-cell-options.ts` — Loads the replacement options of a cell in card editing.
 - `use-mobile.tsx`
 - `use-notification-socket.ts`
 - `use-review-thread.ts`
@@ -546,6 +544,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `auth.ts` — Authentication Utility
 - `email.ts` — Email Service
 - `game-ending.ts` — Ending a game, by the leader or at its deadline, and archiving it.
+- `game-starting.ts` — Starting a game at the end of its preparation phase: when every player is ready, or at its preparation deadline.
 - `placeholder-images.ts`
 - `team-signals.ts` — Work out which rooms a change affects, and signal them (spec 11).
 - `uploads-processing.ts`
@@ -609,8 +608,10 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `bingo-lines.ts`
 - `cell-source.ts`
 - `dates.ts` — Date helpers usable from server and client code.
+- `deadline.ts` — Deadline helpers: parsing the preparation deadline, the countdown to it, and how urgent a deadline looks.
+- `personal-target.ts` — The number of personal resolutions a player needs to fill their card.
 - `reactions.ts` — The reaction pool and the shapes of a reaction on a cell, shared by the server and the client.
-- `resolution-form.ts` — Mappers that build ResolutionFormData for the resolution create/edit dialog.
+- `resolution-form.ts` — Mappers that build ResolutionFormData and the initial form state for the resolution create/edit dialog.
 - `resolution-type.ts`
 - `shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
 - `types.ts`

@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * The deadline information in the game header: a live countdown to the end of the preparation phase, and the
- * game's last day, each styled by how close it is.
+ * The game header's deadline information: the preparation countdown and the last day, styled by how close they are.
  * Spec Reference: 16-games.md - Countdown, Game Page
  */
 
