@@ -59,7 +59,7 @@ export function PersonalTab({ game, resolutions, onReload }: PersonalTabProps) {
           <CardTitle className="font-headline">{t("title")}</CardTitle>
           <CardDescription>{t("description")}</CardDescription>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => setBrowseOpen(true)}>
             <Lightbulb className="h-4 w-4 mr-2" />
             {t("browseIdeas")}
