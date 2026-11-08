@@ -4,11 +4,9 @@
  * Game Page
  * Spec Reference: 16-games.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md
  *
- * The page is organised into four tabs:
- *   1. Cards   — bingo cards for every member (existing functionality)
- *   2. Leaderboard — ranked table of first-bingo times
- *   3. Threads — the game's archived review threads (spec 07)
- *   4. Progress — each player's completed count over time (spec 23)
+ * The tabs depend on the game's phase (spec 12):
+ *   - Preparation: Personal (the caller's own resolutions) and Teammates (resolutions for the others)
+ *   - Started: Cards, Leaderboard, Threads, Progress, Personal and Teammates
  */
 
 import { ResolutionCreateEditDialog } from "@/components/dialogs/resolution-create-edit-dialog";
@@ -17,20 +15,28 @@ import { ArchivedThreadsTab } from "@/components/threads/archived-threads-tab";
 import { TeamRefreshListener } from "@/components/team-refresh-listener";
 import { TeamWsProvider } from "@/components/team-ws-provider";
 import { GameStatusBadge } from "@/components/team/game-status-badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePageTitle } from "@/hooks/AppContext";
-import { CalendarClock, Loader2, Swords } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from 'react';
 
 import type { GamePermission } from "@/lib/authz/permissions";
 import { BingoCardWithCells } from "@/lib/db/types";
-import type { ArchivedThread, LeaderboardEntry, ProgressPoint, ResolutionFormData } from "@/lib/shared/types";
+import { GameStatus } from "@/lib/shared/types";
+import type {
+  ArchivedThread,
+  LeaderboardEntry,
+  ProgressPoint,
+  ResolutionFormData,
+  UnifiedResolution,
+} from "@/lib/shared/types";
+import { DeadlineInfo } from "./_components/DeadlineInfo";
 import { GameActionsMenu } from "./_components/GameActionsMenu";
-import { ProposeResolutionsDialog } from "./_components/ProposeResolutionsDialog";
 import { MissingTeamGoalNotice } from "./_components/MissingTeamGoalNotice";
+import { PersonalTab } from "./_components/PersonalTab";
+import { ReadyButton } from "./_components/ReadyButton";
+import { TeammatesTab } from "./_components/TeammatesTab";
 import { useGameActions } from "./_components/use-game-actions";
 import { useLastLoaded } from "./_components/use-last-loaded";
 import { CardsTab } from "./cards-tab";
@@ -46,6 +52,8 @@ interface GameDetailPageClientProps {
   capabilities: GamePermission[];
   initialTeamGoal?: ResolutionFormData | null;
   initialExistingResolutions?: TeamProvidedResolution[];
+  /** The caller's personal resolutions of the game, newest first. */
+  initialPersonalResolutions?: UnifiedResolution[];
   initialLeaderboardEntries?: LeaderboardEntry[];
   initialArchivedThreads?: ArchivedThread[];
   initialProgressPoints?: ProgressPoint[];
@@ -58,6 +66,7 @@ export default function GameDetailPageClient({
   capabilities,
   initialTeamGoal,
   initialExistingResolutions,
+  initialPersonalResolutions,
   initialLeaderboardEntries,
   initialArchivedThreads,
   initialProgressPoints,
@@ -66,6 +75,7 @@ export default function GameDetailPageClient({
   usePageTitle(t("pageTitle"));
 
   const cards = useLastLoaded<BingoCardWithCells[]>(initialCards, []);
+  const personalResolutions = useLastLoaded<UnifiedResolution[]>(initialPersonalResolutions, []);
   const leaderboardEntries = useLastLoaded<LeaderboardEntry[]>(initialLeaderboardEntries, []);
   const archivedThreads = useLastLoaded<ArchivedThread[]>(initialArchivedThreads, []);
   const progressPoints = useLastLoaded<ProgressPoint[]>(initialProgressPoints, []);
@@ -75,8 +85,6 @@ export default function GameDetailPageClient({
     teamGoal,
     existingResolutions,
     refreshGame,
-    isStarting,
-    handleStartBingo,
     isEnding,
     handleEndGame,
     isDeleting,
@@ -89,6 +97,7 @@ export default function GameDetailPageClient({
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
 
   const can = (permission: GamePermission): boolean => capabilities.includes(permission);
+  const inPreparation = game.status === GameStatus.FORMING;
 
   /** Called when team goal is saved via the resolution dialog. */
   const handleGoalSaved = () => {
@@ -105,30 +114,25 @@ export default function GameDetailPageClient({
             <CardDescription className="mt-2">
               {game.teamName}
             </CardDescription>
-            {game.deadline && (
-              <CardDescription className="flex items-center gap-2 mt-2">
-                <CalendarClock className="h-4 w-4" />
-                {t("lastDay", { date: game.deadline })}
-              </CardDescription>
-            )}
+            <DeadlineInfo
+              status={game.status}
+              preparationDeadline={game.preparationDeadline}
+              deadline={game.deadline}
+            />
             <div className="mt-2">
               <GameStatusBadge status={game.status} />
             </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {can('game.start') && game.status !== 'started' && (
-              <Button size="sm" onClick={handleStartBingo} disabled={isStarting}>
-                {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <Swords className="h-4 w-4 mr-2" /> {t("startBingo")}
-              </Button>
+          <div className="flex gap-2 flex-wrap items-center">
+            {inPreparation && can('game.ready') && (
+              <ReadyButton
+                gameId={game.id}
+                isReady={game.readyPlayerIds.includes(initialCurrentUserId)}
+                readyCount={game.readyPlayerIds.length}
+                playerCount={game.members.length}
+                onChanged={refreshGame}
+              />
             )}
-
-            <ProposeResolutionsDialog
-              game={game}
-              currentUserId={initialCurrentUserId}
-              existingResolutions={existingResolutions}
-              onReload={refreshGame}
-            />
 
             <GameActionsMenu
               game={game}
@@ -150,6 +154,7 @@ export default function GameDetailPageClient({
           <CardContent>
             <MissingTeamGoalNotice
               isLeader={can('game.goal.set')}
+              inPreparation={inPreparation}
               onSetGoal={() => setGoalDialogOpen(true)}
             />
           </CardContent>
@@ -158,7 +163,6 @@ export default function GameDetailPageClient({
 
       {/* ── Team Goal Resolution Dialog ────────────────────────── */}
       <ResolutionCreateEditDialog
-        key={teamGoal?.id ?? 'new-goal'}
         initialData={teamGoal ?? undefined}
         isOpen={goalDialogOpen}
         setIsOpen={setGoalDialogOpen}
@@ -170,40 +174,64 @@ export default function GameDetailPageClient({
       {/* ── Tab navigation ────────────────────────────────────── */}
       <TeamWsProvider teamId={game.teamId}>
         <TeamRefreshListener />
-        <Tabs defaultValue="cards">
-          <TabsList>
-            <TabsTrigger value="cards">{t("tabs.cards")}</TabsTrigger>
-            <TabsTrigger value="leaderboard">{t("tabs.leaderboard")}</TabsTrigger>
-            <TabsTrigger value="threads">{t("tabs.threads")}</TabsTrigger>
-            <TabsTrigger value="progress">{t("tabs.progress")}</TabsTrigger>
+        {/* Keyed by phase, so the started tabs open on Cards once the game starts (spec 12) */}
+        <Tabs key={game.status} defaultValue={inPreparation ? "personal" : "cards"}>
+          <TabsList className="flex-wrap h-auto">
+            {!inPreparation && (
+              <>
+                <TabsTrigger value="cards">{t("tabs.cards")}</TabsTrigger>
+                <TabsTrigger value="leaderboard">{t("tabs.leaderboard")}</TabsTrigger>
+                <TabsTrigger value="threads">{t("tabs.threads")}</TabsTrigger>
+                <TabsTrigger value="progress">{t("tabs.progress")}</TabsTrigger>
+              </>
+            )}
+            <TabsTrigger value="personal">{t("tabs.personal")}</TabsTrigger>
+            <TabsTrigger value="teammates">{t("tabs.teammates")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="cards" className="mt-6">
-            <CardsTab
+          {!inPreparation && (
+            <>
+              <TabsContent value="cards" className="mt-6">
+                <CardsTab
+                  game={game}
+                  initialCards={cards}
+                  currentUserId={initialCurrentUserId}
+                />
+              </TabsContent>
+
+              <TabsContent value="leaderboard" className="mt-6">
+                <LeaderboardTab initialEntries={leaderboardEntries} />
+              </TabsContent>
+
+              <TabsContent value="threads" className="mt-6">
+                <ArchivedThreadsTab
+                  threads={archivedThreads}
+                  getDeleteUrl={can('thread.delete') ? (threadId) => `/api/threads/${threadId}` : undefined}
+                />
+              </TabsContent>
+
+              <TabsContent value="progress" className="mt-6">
+                <ProgressTab
+                  started
+                  leaderboard={leaderboardEntries}
+                  points={progressPoints}
+                  startedAt={game.startedAt}
+                  endedAt={null}
+                />
+              </TabsContent>
+            </>
+          )}
+
+          <TabsContent value="personal" className="mt-6">
+            <PersonalTab game={game} resolutions={personalResolutions} onReload={refreshGame} />
+          </TabsContent>
+
+          <TabsContent value="teammates" className="mt-6">
+            <TeammatesTab
               game={game}
-              initialCards={cards}
               currentUserId={initialCurrentUserId}
-            />
-          </TabsContent>
-
-          <TabsContent value="leaderboard" className="mt-6">
-            <LeaderboardTab initialEntries={leaderboardEntries} />
-          </TabsContent>
-
-          <TabsContent value="threads" className="mt-6">
-            <ArchivedThreadsTab
-              threads={archivedThreads}
-              getDeleteUrl={can('thread.delete') ? (threadId) => `/api/threads/${threadId}` : undefined}
-            />
-          </TabsContent>
-
-          <TabsContent value="progress" className="mt-6">
-            <ProgressTab
-              started={game.status !== "forming"}
-              leaderboard={leaderboardEntries}
-              points={progressPoints}
-              startedAt={game.startedAt}
-              endedAt={null}
+              existingResolutions={existingResolutions}
+              onReload={refreshGame}
             />
           </TabsContent>
         </Tabs>

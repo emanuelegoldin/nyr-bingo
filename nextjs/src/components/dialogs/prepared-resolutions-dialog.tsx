@@ -4,8 +4,8 @@
  * Prepared Resolutions Dialog
  * Spec Reference: 17-prepared-resolutions.md
  *
- * Lets a user browse the shared pool by category and copy entries into their
- * personal resolutions.
+ * Lets a player browse the shared pool by category and copy entries into their
+ * personal resolutions of a game (opened from the game's Personal tab).
  */
 
 import { Badge } from "@/components/ui/badge";
@@ -87,23 +87,27 @@ const PreparedResolutionRow = ({
 };
 
 interface PreparedResolutionsDialogProps {
-  /** The user's personal resolutions, used to mark entries they already have. */
+  /** The game the copies are added to. */
+  gameId: string;
+  /** The player's personal resolutions of the game, used to mark entries they already have. */
   personalResolutions: UnifiedResolution[];
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   /** Called after an entry was copied, so the caller can reload its list. */
-  onAdded: () => Promise<void>;
+  onAdded: () => void | Promise<void>;
 }
 
 /**
  * Dialog listing the pool in one tab per category.
- * @param props.personalResolutions The user's personal resolutions
+ * @param props.gameId The game the copies are added to
+ * @param props.personalResolutions The player's personal resolutions of the game
  * @param props.isOpen Whether the dialog is open
  * @param props.setIsOpen Called when the dialog opens or closes
  * @param props.onAdded Called after an entry was copied
  * @returns The dialog
  */
 export const PreparedResolutionsDialog = ({
+  gameId,
   personalResolutions,
   isOpen,
   setIsOpen,
@@ -142,11 +146,12 @@ export const PreparedResolutionsDialog = ({
     [personalResolutions]
   );
 
-  /** Copy an entry into the user's personal resolutions. */
+  /** Copy an entry into the player's personal resolutions of the game. */
   const handleAdd = async (resolution: PreparedResolution) => {
     setAddingId(resolution.id);
     const result = await apiFetch<{ id: string }>(`/api/resolutions/prepared/${resolution.id}/add`, {
       method: "POST",
+      json: { gameId },
     });
 
     if (result.ok) {

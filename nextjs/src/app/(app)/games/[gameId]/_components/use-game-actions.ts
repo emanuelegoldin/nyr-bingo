@@ -19,7 +19,7 @@ interface UseGameActionsParams {
 
 /**
  * Exposes the game page data (game, team goal, member-provided resolutions) together with
- * the actions that refresh or mutate it: refresh, start bingo, end, delete and leave.
+ * the actions that refresh or mutate it: refresh, end, delete and leave.
  *
  * @param params - The game id and the server-fetched initial payloads.
  * @returns The current data, the actions and their loading flags.
@@ -32,7 +32,6 @@ export function useGameActions({
 }: UseGameActionsParams) {
   const { toast } = useToast();
   const t = useTranslations("Games.actions");
-  const tc = useTranslations("Common");
   const toastApiError = useApiErrorToast();
   const router = useRouter();
   // The server page loads the data; a refresh brings new props (also signalled over WebSocket).
@@ -40,7 +39,6 @@ export function useGameActions({
   const game = useLastLoaded<Game>(initialGame, initialGame);
   const teamGoal = useLastLoaded<ResolutionFormData | null>(initialTeamGoal, null);
   const existingResolutions = useLastLoaded<TeamProvidedResolution[]>(initialExistingResolutions, []);
-  const [isStarting, setIsStarting] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -49,25 +47,6 @@ export function useGameActions({
   const refreshGame = useCallback(() => {
     router.refresh();
   }, [router]);
-
-  /** Starts the bingo game, then refreshes the page to show the cards. */
-  const handleStartBingo = async () => {
-    setIsStarting(true);
-    const result = await apiFetch<unknown>(`/api/games/${gameId}/start`, {
-      method: 'POST',
-    });
-
-    if (result.ok) {
-      toast({
-        title: tc("success"),
-        description: t("started"),
-      });
-      refreshGame();
-    } else {
-      toastApiError(result, t("startFailed"));
-    }
-    setIsStarting(false);
-  };
 
   /**
    * Runs an action that removes the game from view, then returns to the games list.
@@ -120,8 +99,6 @@ export function useGameActions({
     teamGoal,
     existingResolutions,
     refreshGame,
-    isStarting,
-    handleStartBingo,
     isEnding,
     handleEndGame,
     isDeleting,

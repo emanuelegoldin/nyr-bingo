@@ -39,19 +39,6 @@ export function CardsTab({
     [game.members]
   );
 
-  if (game.status === "forming") {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <h3 className="text-xl font-semibold font-headline mb-2">{t("notStartedTitle")}</h3>
-          <p className="text-muted-foreground">
-            {t("notStartedDescription")}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   if (cards.length === 0) {
     return (
       <Card>

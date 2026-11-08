@@ -10,12 +10,27 @@
   "detail": {
     "pageTitle": "Game",
     "lastDay": "Last day: {date}",
-    "startBingo": "Start Bingo",
     "tabs": {
       "cards": "Cards",
       "leaderboard": "Leaderboard",
       "threads": "Threads",
-      "progress": "Progress"
+      "progress": "Progress",
+      "personal": "Personal",
+      "teammates": "Teammates"
+    },
+    "deadline": {
+      "startsIn": "Starts in {time}",
+      "starting": "Starting…",
+      "days": "{days}d {hours}h {minutes}m",
+      "hours": "{hours}h {minutes}m",
+      "lastHour": "{minutes}m {seconds}s"
+    },
+    "ready": {
+      "ready": "Ready",
+      "notReady": "Not ready",
+      "count": "{ready}/{total} ready",
+      "hint": "Press Ready when you are done. The game starts when everyone is ready, or when the preparation ends.",
+      "failed": "Failed to update your status"
     }
   },
   "actionsMenu": {
@@ -31,12 +46,12 @@
     },
     "deleteDialog": {
       "title": "Delete this game?",
-      "description": "This will permanently delete the game, its team goal, its proposed resolutions, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone.",
+      "description": "This will permanently delete the game, its team goal, every resolution written for it, its bingo cards and related gameplay data. The team and its other games are not affected. This action cannot be undone.",
       "confirm": "Delete"
     },
     "leaveDialog": {
       "title": "Leave this game?",
-      "description": "Your bingo card, your leaderboard entry and the resolutions written for you in this game will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only Team Admin, promote another player on the team page first.",
+      "description": "Your bingo card, your leaderboard entry, your resolutions for this game and the resolutions written for you in it will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only Team Admin, promote another player on the team page first.",
       "confirm": "Leave Game"
     }
   },
@@ -47,22 +62,12 @@
     "clear": "Clear",
     "failed": "Failed to configure game"
   },
-  "proposeDialog": {
-    "button": "Propose Resolutions",
-    "title": "Propose Resolutions",
-    "description": "Create or update a resolution for each team member. You can do this at any time.",
-    "forMember": "For {name}",
-    "noneYet": "No resolution proposed yet",
-    "edit": "Edit resolution",
-    "add": "Add resolution"
-  },
   "teamGoal": {
     "none": "No team goal set yet.",
-    "setGoal": "Set Goal"
+    "setGoal": "Set Goal",
+    "fallbackHint": "If none is set before the game starts, a prepared resolution becomes the goal."
   },
   "cardsTab": {
-    "notStartedTitle": "Game Not Started Yet",
-    "notStartedDescription": "A Team Admin will start the game once everyone has proposed resolutions for each other.",
     "noCards": "No bingo cards available yet.",
     "heading": "Bingo Cards",
     "noCard": "No bingo card available"
@@ -89,13 +94,29 @@
     }
   },
   "actions": {
-    "started": "Bingo game started!",
-    "startFailed": "Failed to start game",
     "ended": "Game ended",
     "endFailed": "Failed to end game",
     "left": "You left the game",
     "leaveFailed": "Failed to leave game",
     "deleted": "Game deleted",
     "deleteFailed": "Failed to delete game"
+  },
+  "personalTab": {
+    "title": "Your resolutions",
+    "description": "Write your own resolutions for this game. They fill your card together with the team goal and what your teammates write for you.",
+    "counterLabel": "written",
+    "counterHint": "Your card needs {target, plural, one {# resolution} other {# resolutions}} from you. Missing ones are filled with prepared resolutions; if you write more, some are picked at random.",
+    "add": "Add resolution",
+    "browseIdeas": "Browse ideas",
+    "empty": "You have not written any resolutions for this game yet."
+  },
+  "teammatesTab": {
+    "title": "For your teammates",
+    "description": "Write one resolution for each teammate. A teammate you write nothing for gets a short prepared resolution instead.",
+    "empty": "You are the only player of this game.",
+    "forMember": "For {name}",
+    "noneYet": "No resolution proposed yet",
+    "edit": "Edit resolution",
+    "add": "Add resolution"
   }
 }

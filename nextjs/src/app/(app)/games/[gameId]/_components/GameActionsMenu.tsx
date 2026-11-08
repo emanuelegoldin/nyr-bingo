@@ -86,6 +86,7 @@ export function GameActionsMenu({
         <GameConfigDialog
           gameId={game.id}
           deadline={game.deadline}
+          preparationDeadline={game.preparationDeadline}
           open={openDialog === 'configure'}
           onOpenChange={dialogOpenChange('configure')}
           onSaved={onConfigured}

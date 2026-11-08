@@ -8,10 +8,23 @@ import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+/**
+ * The earliest last day the picker offers: today, or the date the preparation ends if that is later (spec 16).
+ * @param preparationDeadline End of the preparation phase, ISO 8601 in UTC, or null
+ * @returns YYYY-MM-DD
+ */
+const earliestDeadline = (preparationDeadline: string | null): string => {
+  const today = new Date().toISOString().slice(0, 10);
+  const preparationDate = preparationDeadline?.slice(0, 10) ?? today;
+  return preparationDate > today ? preparationDate : today;
+};
+
 interface GameConfigDialogProps {
   gameId: string;
   /** The saved deadline as YYYY-MM-DD, or null when there is none. */
   deadline: string | null;
+  /** End of the preparation phase, ISO 8601 in UTC; the deadline cannot fall before its date. */
+  preparationDeadline: string | null;
   /** Whether the dialog is open. */
   open: boolean;
   /** Called to open or close the dialog. */
@@ -28,7 +41,14 @@ interface GameConfigDialogProps {
  * @param props - The game, its saved deadline, the open state and the callback run after saving.
  * @returns The dialog.
  */
-export function GameConfigDialog({ gameId, deadline, open, onOpenChange, onSaved }: GameConfigDialogProps) {
+export function GameConfigDialog({
+  gameId,
+  deadline,
+  preparationDeadline,
+  open,
+  onOpenChange,
+  onSaved,
+}: GameConfigDialogProps) {
   const t = useTranslations("Games.configDialog");
   const tc = useTranslations("Common");
   const toastApiError = useApiErrorToast();
@@ -81,7 +101,7 @@ export function GameConfigDialog({ gameId, deadline, open, onOpenChange, onSaved
             <Input
               id="gameDeadline"
               type="date"
-              min={new Date().toISOString().slice(0, 10)}
+              min={earliestDeadline(preparationDeadline)}
               value={selectedDate}
               onChange={(event) => setSelectedDate(event.target.value)}
             />
