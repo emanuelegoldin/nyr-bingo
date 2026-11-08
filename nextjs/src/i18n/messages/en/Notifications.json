@@ -5,7 +5,7 @@
   "empty": "Nothing new",
   "someone": "Someone",
   "memberJoined": "{actor} joined the team",
-  "gameStarted": "{actor} started the game",
+  "gameStarted": "The game has started",
   "gameEnded": "{actor} ended the game",
   "gameEndedAtDeadline": "The game reached its deadline",
   "bingoScored": "{actor} scored a BINGO!",

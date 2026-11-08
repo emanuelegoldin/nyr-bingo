@@ -6,7 +6,8 @@
 /** Something that happened in a team and is worth telling its members. */
 export type NotificationEvent =
   | { type: 'member_joined'; teamId: string; actorUserId: string }
-  | { type: 'game_started'; gameId: string; actorUserId: string }
+  /** The actor is null: a game starts on its own when everyone is ready or the preparation ends (spec 16). */
+  | { type: 'game_started'; gameId: string; actorUserId: string | null }
   /** The actor is null when the game ended at its deadline. */
   | { type: 'game_ended'; gameId: string; actorUserId: string | null }
   | { type: 'bingo_scored'; gameId: string; actorUserId: string }
