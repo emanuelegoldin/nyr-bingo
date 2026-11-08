@@ -105,7 +105,8 @@ export const createTeam = async (leader: UserFixture): Promise<TeamFixture> => {
 };
 
 /**
- * Insert a game of a team, with the given users as its players.
+ * Insert a game of a team, with the given users as its players. A forming game gets a preparation deadline
+ * one day ahead on the database's UTC clock; other games get none, like games started before the preparation phase.
  * @param team The team the game belongs to
  * @param players The users who play it
  * @param status The game's status (default started)
@@ -121,8 +122,9 @@ export const createGame = async (
   const id = randomUUID();
 
   await execute(
-    'INSERT INTO games (id, team_id, name, status, grid_size) VALUES (?, ?, ?, ?, ?)',
-    [id, team.id, `game_${id.slice(0, 8)}`, status, gridSize]
+    `INSERT INTO games (id, team_id, name, status, grid_size, preparation_deadline)
+     VALUES (?, ?, ?, ?, ?, IF(? = 'forming', UTC_TIMESTAMP() + INTERVAL 1 DAY, NULL))`,
+    [id, team.id, `game_${id.slice(0, 8)}`, status, gridSize, status]
   );
   for (const player of players) {
     await execute('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)', [id, player.id]);
@@ -228,17 +230,24 @@ export const createPlayingCard = async (
 };
 
 /**
- * Insert a personal resolution of a user, which can be placed on their card.
+ * Insert a personal resolution of a user. With a game it belongs to that game and can fill or be placed on the
+ * owner's card there; without one it is a legacy personal resolution (03-personal-resolutions.md - Legacy).
  * @param owner The resolution's owner
  * @param title The resolution's title
+ * @param game The game it belongs to (default none: legacy)
  * @returns The resolution id
  */
-export const createPersonalResolution = async (owner: UserFixture, title: string): Promise<string> => {
+export const createPersonalResolution = async (
+  owner: UserFixture,
+  title: string,
+  game?: GameFixture
+): Promise<string> => {
   const id = randomUUID();
 
   await execute(
-    "INSERT INTO resolutions (id, owner_user_id, title, scope, resolution_type) VALUES (?, ?, ?, 'personal', 'base')",
-    [id, owner.id, title]
+    `INSERT INTO resolutions (id, owner_user_id, title, scope, resolution_type, team_id, game_id)
+     VALUES (?, ?, ?, 'personal', 'base', ?, ?)`,
+    [id, owner.id, title, game?.teamId ?? null, game?.id ?? null]
   );
 
   return id;

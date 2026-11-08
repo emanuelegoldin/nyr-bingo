@@ -24,6 +24,7 @@ describe('games – structure', () => {
         { name: 'deadline', type: 'date', nullable: true, generated: false },
         { name: 'grid_size', type: 'tinyint(4)', nullable: false, generated: false },
         { name: 'started_at', type: 'datetime', nullable: true, generated: false },
+        { name: 'preparation_deadline', type: 'datetime', nullable: true, generated: false },
       ]);
     });
 
@@ -36,6 +37,7 @@ describe('games – structure', () => {
         { name: 'game_id', type: 'varchar(36)', nullable: false, generated: false },
         { name: 'user_id', type: 'varchar(36)', nullable: false, generated: false },
         { name: 'joined_at', type: 'datetime', nullable: true, generated: false },
+        { name: 'ready_at', type: 'datetime', nullable: true, generated: false },
       ]);
     });
   });

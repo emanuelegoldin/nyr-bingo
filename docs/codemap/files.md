@@ -48,13 +48,21 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/(app)/games/[gameId]/_components
 
-- `GameActionDialog.tsx`
+- `DeadlineInfo.tsx` — The game header's deadline information: the preparation countdown and the last day, styled by how close they are.
 - `GameActionsMenu.tsx`
 - `GameConfigDialog.tsx`
+- `MemberResolutionRow.tsx` — One teammate in the Teammates tab: the caller's resolution for them, or a prompt to write one.
 - `MissingTeamGoalNotice.tsx`
-- `ProposeResolutionsDialog.tsx`
+- `PersonalTab.tsx` — The Personal tab: the caller's own resolutions for the game, with a y/target counter, Add and Browse ideas.
+- `ReadyButton.tsx` — The Ready / Not ready toggle of the preparation phase, with how many players are ready.
+- `TeammatesTab.tsx` — The Teammates tab: every other player with the resolution the caller writes for them, and the dialog to write it.
 - `use-game-actions.ts`
 - `use-last-loaded.ts`
+
+## app/(app)/guides
+
+- `guides-page-client.tsx` — Client side of the Guides page: its title and the list of guides.
+- `page.tsx` — Guides Page - the guided tours the user can start
 
 ## app/(app)/profile
 
@@ -67,8 +75,8 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/(app)/resolutions
 
-- `page.tsx` — Resolutions Page
-- `resolutions-page-client.tsx` — Resolutions Page
+- `page.tsx` — Resolutions Page - the obsolete, read-only list of legacy personal resolutions
+- `resolutions-page-client.tsx` — Resolutions Page - the obsolete, read-only list of legacy personal resolutions, with a notice and Delete only.
 
 ## app/(app)/teams
 
@@ -215,13 +223,17 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 - `route.ts` — Leave Game API
 
+## app/api/games/[gameId]/personal-resolutions
+
+- `route.ts` — Personal Resolutions of a Game API - the caller's own resolutions for a game
+
+## app/api/games/[gameId]/ready
+
+- `route.ts` — Ready API - a player signals they are done preparing, or no longer done
+
 ## app/api/games/[gameId]/resolutions
 
 - `route.ts` — Member-Provided Resolutions API
-
-## app/api/games/[gameId]/start
-
-- `route.ts` — Game Start Bingo API
 
 ## app/api/join
 
@@ -249,20 +261,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 
 ## app/api/resolutions
 
-- `handlers.ts` — Shared handlers for the personal resolution routes.
-- `route.ts` — Personal Resolutions API
-
-## app/api/resolutions/all
-
-- `route.ts` — All Resolutions API — returns resolutions of all types for the current user
-
-## app/api/resolutions/compound
-
-- `route.ts` — Compound Resolutions API
-
-## app/api/resolutions/iterative
-
-- `route.ts` — Iterative Resolutions API
+- `route.ts` — Resolutions API - delete one of the caller's resolutions
 
 ## app/api/resolutions/prepared
 
@@ -397,7 +396,6 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 ## components/dialogs
 
 - `cell-dialog.tsx`
-- `complete-dialog.tsx`
 - `confirm-action-dialog.tsx`
 - `edit-cell.tsx`
 - `edit-option-row.tsx`
@@ -421,6 +419,56 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `compound-subtask-editor.tsx`
 - `iterative-repetition-input.tsx`
 
+## components/guide
+
+- `guide-entry.tsx` — One entry of the Guides page: a title that expands to a description and a Play button.
+- `guide-list.tsx` — List of every available guide, shown on the Guides page.
+- `guides.ts` — The guides listed on the Guides page, in display order.
+- `types.ts` — Contract every guide follows, so any listed tour starts the same way.
+
+## components/guide/bingo-card
+
+- `bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library.
+- `demo-card.tsx` — The demo card the guided tour runs on, shown above the page; it calls no API.
+- `demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour; it calls no API.
+- `demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights.
+
+## components/guide/engine
+
+- `intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it.
+- `tour-selector.ts` — Selector of the elements a tour highlights, marked with a `data-tour` attribute.
+- `use-guided-tour.ts` — Hook that runs any tour with the tour library and reports its current step.
+
+## components/guide/leaderboard
+
+- `leaderboard-tour.tsx` — The leaderboard tour: where the leaderboard is and what its columns mean, on sample players.
+
+## components/guide/progress
+
+- `progress-tour.tsx` — The progress tour: where the progress chart is, its Day / Month toggle and its legend, on sample players.
+
+## components/guide/proof-thread-owner
+
+- `owner-thread-tour.tsx` — The owner's proof-thread tour: the thread seen by the card owner, with no action asked.
+
+## components/guide/proof-thread-voter
+
+- `voter-thread-tour.tsx` — The teammate's proof-thread tour: voting, when the thread closes, and where closed threads go.
+
+## components/guide/request-proof
+
+- `demo-proof-cards.tsx` — The request-proof tour's demo: the user's card, a teammate's card, and the dialogs drawn over them.
+- `request-proof-tour.tsx` — The request-proof tour: ask proof for a teammate's completed cell, on demo cards.
+
+## components/guide/sandbox
+
+- `demo-cells.ts` — Sample cells shared by the tours' demo cards.
+- `demo-game-tabs.tsx` — The game page's tabs, drawn for a tour to show where a feature is.
+- `demo-grid.tsx` — Grid of a demo card, drawn like a real card; it calls no API.
+- `demo-thread.tsx` — A demo review thread, drawn like the real thread dialog; it calls no API.
+- `demo-vote.tsx` — Vote section of a demo review thread, drawn like the real one; it calls no API.
+- `sandbox-layer.tsx` — Full-screen layer that shows a tour's demo content above the page.
+
 ## components/notifications
 
 - `notification-bell.tsx`
@@ -442,6 +490,10 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `series-style.ts` — Colour and dash of each player's series in the progress views.
 - `types.ts` — Shared contract of the Progress tab: the data every progress view reads, and the shape of a view.
 - `views.ts` — The progress views the Progress tab offers, in order. Add a view here to make it available.
+
+## components/resolutions
+
+- `resolution-list.tsx` — A list of resolution definitions with their type, subtask count or target, and optional Edit and Delete buttons.
 
 ## components/team
 
@@ -471,7 +523,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 
 - `AppContext.tsx`
 - `use-api-error-toast.ts`
-- `use-edit-cell-options.ts`
+- `use-edit-cell-options.ts` — Loads the replacement options of a cell in card editing.
 - `use-mobile.tsx`
 - `use-notification-socket.ts`
 - `use-review-thread.ts`
@@ -491,6 +543,7 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `auth.ts` — Authentication Utility
 - `email.ts` — Email Service
 - `game-ending.ts` — Ending a game, by the leader or at its deadline, and archiving it.
+- `game-starting.ts` — Starting a game at the end of its preparation phase: when every player is ready, or at its preparation deadline.
 - `placeholder-images.ts`
 - `team-signals.ts` — Work out which rooms a change affects, and signal them (spec 11).
 - `uploads-processing.ts`
@@ -554,8 +607,10 @@ shadcn/ui primitives (reuse these): alert-dialog, avatar, badge, button, card, d
 - `bingo-lines.ts`
 - `cell-source.ts`
 - `dates.ts` — Date helpers usable from server and client code.
+- `deadline.ts` — Deadline helpers: parsing the preparation deadline, the countdown to it, and how urgent a deadline looks.
+- `personal-target.ts` — The number of personal resolutions a player needs to fill their card.
 - `reactions.ts` — The reaction pool and the shapes of a reaction on a cell, shared by the server and the client.
-- `resolution-form.ts` — Mappers that build ResolutionFormData for the resolution create/edit dialog.
+- `resolution-form.ts` — Mappers that build ResolutionFormData and the initial form state for the resolution create/edit dialog.
 - `resolution-type.ts`
 - `shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
 - `types.ts`

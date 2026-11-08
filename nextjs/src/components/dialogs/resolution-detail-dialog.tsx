@@ -68,7 +68,7 @@ export interface CellContext {
 /* ─── Props ──────────────────────────────────────────────────────── */
 
 /** Dialogs the detail dialog can hand over to. */
-export type DetailFollowUpDialog = 'complete' | 'request_proof' | 'thread' | 'history';
+export type DetailFollowUpDialog = 'request_proof' | 'thread' | 'history';
 
 interface ResolutionDetailDialogProps {
   data: ResolutionDetailData;
@@ -82,10 +82,10 @@ interface ResolutionDetailDialogProps {
   sourceLabel?: CellSourceLabel;
   /** Called after a mutation so the parent can refresh the bingo card */
   onRefresh?: () => void;
-  /** Replaces this dialog with a follow-up one (complete, request proof, thread or history) */
+  /** Replaces this dialog with a follow-up one (request proof, thread or history) */
   onOpenDialog: (dialog: DetailFollowUpDialog) => void;
-  /** Called when the owner undoes a completed or failed cell, or marks a pending cell as failed */
-  onSetState: (state: CellState.PENDING | CellState.FAILED) => void;
+  /** Called when the owner marks the cell completed or failed, or undoes it; no confirmation is asked (spec 06) */
+  onSetState: (state: CellState.PENDING | CellState.COMPLETED | CellState.FAILED) => void;
 }
 
 /**
@@ -182,7 +182,7 @@ export const ResolutionDetailDialog = ({
 
           {/* Owner + pending or failed + non-automatic → Mark Complete */}
           {isOwner && (cell.state === CellState.PENDING || cell.state === CellState.FAILED) && !isAutomatic && (
-            <Button onClick={() => onOpenDialog('complete')}>
+            <Button onClick={() => { setIsOpen(false); onSetState(CellState.COMPLETED); }}>
               <Check className="h-4 w-4 mr-2" /> {t("markComplete")}
             </Button>
           )}

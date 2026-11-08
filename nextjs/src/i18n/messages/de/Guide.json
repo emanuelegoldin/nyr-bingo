@@ -1,0 +1,101 @@
+{
+  "page": {
+    "title": "Anleitungen",
+    "heading": "Anleitungen",
+    "intro": "Kurze geführte Touren, die dir zeigen, wie die App funktioniert. Öffne eine Anleitung und tippe auf Starten."
+  },
+  "play": "Starten",
+  "nav": {
+    "next": "Weiter",
+    "back": "Zurück",
+    "done": "Fertig"
+  },
+  "bingoCard": {
+    "title": "So funktioniert das Spiel",
+    "description": "Ein kurzer Rundgang über eine Beispielkarte: was eine Karte ist, wie du ein Feld öffnest und einen Vorsatz als erledigt markierst.",
+    "demo": {
+      "title": "Beispielkarte"
+    },
+    "steps": {
+      "overviewTitle": "So funktioniert das Bingo",
+      "overview": "Deine Neujahrsvorsätze sind auf einer Bingokarte verteilt: Erfülle sie, um ihre Felder zu markieren, und fülle eine ganze Reihe, Spalte oder Diagonale für ein Bingo!",
+      "card": "Das ist deine Karte. Sie mischt deine eigenen Vorsätze mit den Zielen deines Teams, und der Joker in der Mitte ist ein freies Feld.",
+      "cell": "Jedes Feld enthält einen Vorsatz. Tippe auf dieses Feld, um die Details zu öffnen.",
+      "detail": "Die Details zeigen den Vorsatz, seinen aktuellen Status und was du damit tun kannst.",
+      "complete": "Geschafft? Tippe auf Als erledigt markieren, um es auszuprobieren.",
+      "completed": "Das Feld bekommt einen Stempel. Deine Teammitglieder sehen ihn und können einen Nachweis anfordern."
+    }
+  },
+  "sandbox": {
+    "notice": "Dies ist eine Demo. Was du hier tust, ändert deine echten Daten nicht.",
+    "you": "du",
+    "cells": {
+      "read": "12 Bücher lesen",
+      "run": "Einen 10-km-Lauf schaffen",
+      "cook": "Jeden Monat ein neues Rezept kochen",
+      "guitar": "Gitarre spielen lernen",
+      "travel": "Ein neues Land besuchen",
+      "save": "10 % meines Einkommens sparen",
+      "call": "Jede Woche meine Großeltern anrufen",
+      "garden": "Einen Gemüsegarten anlegen"
+    },
+    "thread": {
+      "ask": "Super! Hast du ein Foto vom Lauf?",
+      "reply": "Klar, hier ist mein Foto im Ziel."
+    }
+  },
+  "leaderboard": {
+    "title": "Rangliste",
+    "description": "Wo du die Rangliste findest und was ihre Spalten bedeuten.",
+    "steps": {
+      "tab": "Öffne ein Spiel und wähle den Tab Rangliste.",
+      "podium": "Die ersten drei stehen auf dem Podest.",
+      "completed": "Erledigt: Felder, die erledigt oder erreicht sind.",
+      "firstBingo": "Erstes Bingo: wann die erste Linie voll war. Das früheste Bingo führt."
+    }
+  },
+  "progress": {
+    "title": "Fortschritt",
+    "description": "Verfolge, wie die erledigten Felder jedes Spielers wachsen.",
+    "steps": {
+      "tab": "Öffne ein Spiel und wähle den Tab Fortschritt.",
+      "chart": "Jede Linie zeigt die erledigten Felder eines Spielers über die Zeit.",
+      "granularity": "Tippe auf Monat oder Tag, um den Zeitschritt zu ändern.",
+      "legend": "Tippe auf einen Namen, um den Spieler hervorzuheben.",
+      "highlighted": "Hervorgehobene Spieler stechen heraus. Tippe erneut auf den Namen, um es aufzuheben."
+    }
+  },
+  "requestProof": {
+    "title": "Einen Nachweis anfordern",
+    "description": "Zweifel an einem Feld eines Mitspielers? Fordere einen Nachweis an.",
+    "yourCard": "Deine Karte",
+    "teammateCard": "Bens Karte",
+    "steps": {
+      "cards": "Deine Karte und die Karte eines Mitspielers.",
+      "cell": "Ben hat dieses Feld als erledigt markiert. Tippe darauf.",
+      "request": "Tippe zum Bestätigen auf Nachweis anfordern.",
+      "thread": "Ein Prüfungs-Thread öffnet sich. Dafür gibt es eigene Anleitungen.",
+      "review": "Die Sanduhr zeigt, dass das Feld in Prüfung ist."
+    }
+  },
+  "proofThreadOwner": {
+    "title": "Prüfungs-Thread: dein Feld",
+    "description": "Jemand will einen Nachweis für dein Feld. So antwortest du.",
+    "steps": {
+      "overview": "Ein Mitspieler zweifelt an einem deiner Felder. Zeig, dass es erledigt ist!",
+      "header": "Welcher Vorsatz geprüft wird, und der Status des Threads.",
+      "files": "Lade Fotos, Videos oder PDFs als Nachweis hoch.",
+      "messages": "Schreib hier mit deinen Mitspielern."
+    }
+  },
+  "proofThreadVoter": {
+    "title": "Prüfungs-Thread: Feld eines Mitspielers",
+    "description": "Prüfe den Nachweis und stimme ab.",
+    "steps": {
+      "vote": "Überzeugt? Tippe auf Akzeptieren oder Ablehnen.",
+      "change": "Du kannst deine Stimme ändern, solange der Thread offen ist.",
+      "closes": "Der Thread schließt, sobald alle abgestimmt haben, oder nach 2 Tagen.",
+      "archive": "Geschlossene Threads bleiben im Tab Threads des Spiels."
+    }
+  }
+}

@@ -95,19 +95,18 @@ Provide secure user registration, login, and **email verification**, ensuring th
 Unverified users **may**:
 - Log in
 - View and edit their own profile
-- Write and manage personal resolutions (inputs for bingo)
 
 Unverified users **may not**:
 - Create a team
 - Join a team
 - Accept team invitations
-- Start bingo games
+- Create bingo games
 
 Verified users:
 - Have full access to all team and gameplay features
 
 Enforcement:
-- `POST /api/teams`, `POST /api/join` and `POST /api/teams/[teamId]/start` reject unverified users with `403`.
+- `POST /api/teams`, `POST /api/join` and `POST /api/teams/[teamId]/games` reject unverified users with `403`.
 - Other team actions require team membership. Membership can only be obtained through team creation or joining, and verification is never revoked, so every team member is verified.
 
 ---

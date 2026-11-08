@@ -3,7 +3,8 @@
 ## Purpose
 
 Organise the game page (spec 16) into distinct tabs for better navigation and
-separation of concerns: **Cards**, **Leaderboard**, **Threads** and **Progress**. The members list is on
+separation of concerns: **Cards**, **Leaderboard**, **Threads**, **Progress**,
+**Personal** and **Teammates**. The members list is on
 the team page only (spec 04): it is also reachable from the game's leaderboard.
 
 ---
@@ -17,6 +18,8 @@ the team page only (spec 04): it is also reachable from the game's leaderboard.
 - See how many resolutions each player has accomplished in the leaderboard.
 - Read the game's closed review threads in a "Threads" tab.
 - Follow each player's progress over time in a "Progress" tab (spec 23).
+- Write my own resolutions for a game in a "Personal" tab (spec 03).
+- Write a resolution for each teammate in a "Teammates" tab (spec 16).
 
 ---
 
@@ -32,9 +35,17 @@ the team page only (spec 04): it is also reachable from the game's leaderboard.
 
 ## Tab Structure
 
-The game page header (spec 16) remains above the tabs. Below it, four tabs are
-rendered. **Cards** is selected by default. The page is available to team
-members only; others get a not-found page.
+The game page header (spec 16) remains above the tabs. The page is available
+to team members only; others get a not-found page. Which tabs are rendered
+depends on the game's phase:
+
+| Phase (spec 16) | Tabs, in order | Selected by default |
+| --------------- | -------------- | ------------------- |
+| Preparation (`forming`) | Personal, Teammates | Personal |
+| Started | Cards, Leaderboard, Threads, Progress, Personal, Teammates | Cards |
+
+When the game starts, an open page re-renders with the started tabs and selects
+Cards.
 
 ### 1. Cards Tab
 
@@ -42,7 +53,6 @@ members only; others get a not-found page.
 - Owner's card is interactive (mark completed, undo, typed progress).
   Card editing is only available on the dashboard (spec 09).
 - Other members' cards are view-only, apart from proof review actions.
-- If the game has not started, a placeholder message is shown.
 - **Confetti animation:** When a card goes from having no bingo line to having
   one, a confetti animation shoots from both bottom corners of the screen. The
   pieces rise, slow down, then fall while fading out.
@@ -104,6 +114,34 @@ members only; others get a not-found page.
 
 - Shows a chart of each player's completed count over time, as defined in
   spec 23. It is one component, shared with the archived game page (spec 18).
+
+### 5. Personal Tab
+
+The caller's own resolutions for the game (spec 03):
+- A counter `y/target` at the top: `y` is the number of the caller's personal
+  resolutions of the game and `target` is `X − N − 1` (spec 03, Personal
+  Target). It goes up when a resolution is added and down when one is deleted.
+- An **Add resolution** button, which opens the resolution dialog (spec 03,
+  Create Dialog), and a **Browse ideas** button, which opens the prepared
+  resolutions dialog (spec 17).
+- The list of the caller's personal resolutions of the game, newest first.
+  Each row shows the title, a type badge, the subtask count or target, an
+  **Edit** button (opens the dialog with the resolution) and a **Delete**
+  button.
+- A placeholder message when the list is empty.
+
+The list and the counter are loaded on the server with the page and re-render
+after every change.
+
+### 6. Teammates Tab
+
+The resolutions the caller writes for the other players (spec 16,
+Member-Provided Resolutions):
+- One row per other player of the game: "For {name}", then the caller's
+  resolution for them with its type badge, or "No resolution proposed yet".
+- Each row has a button that opens the resolution dialog for that player, to
+  write the resolution or edit the existing one.
+- A placeholder message when the caller is the only player.
 
 ---
 
@@ -167,8 +205,15 @@ Persists per-user, per-game leaderboard data for efficient retrieval.
 
 ## Acceptance Criteria
 
-- [ ] Game page renders four tabs: Cards, Leaderboard, Threads and Progress;
-      it has no Members tab.
+- [ ] During the preparation phase the game page renders only the Personal
+      and Teammates tabs, with Personal selected.
+- [ ] Once started, the game page renders Cards, Leaderboard, Threads,
+      Progress, Personal and Teammates, with Cards selected; it has no
+      Members tab.
+- [ ] The Personal tab shows the counter `y/target`, the caller's resolutions
+      with Edit and Delete, and the Add resolution and Browse ideas buttons.
+- [ ] The Teammates tab lists every other player with the caller's resolution
+      for them and a button to write or edit it.
 - [ ] Threads tab lists the game's archived threads (spec 07).
 - [ ] Cards tab contains the bingo-card layout.
 - [ ] Leaderboard tab shows positions 1–3 as podium cards: 1 at the top with

@@ -28,22 +28,24 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/(app)/profile/ProfilePageClient.tsx` — Profile Page Client Component
 - `app/(app)/profile/[userId]/page.tsx` — Public Profile Page
 - `app/(app)/profile/page.tsx` — Profile Page
-- `app/(app)/resolutions/page.tsx` — Resolutions Page
-- `app/(app)/resolutions/resolutions-page-client.tsx` — Resolutions Page
 - `app/api/profile/route.ts` — Profile API
 - `lib/db/types.ts` — TypeScript Types for Database Entities
 - `lib/db/user-repository.ts` — User Repository - Database operations for users [Profile Data; Verification status]
 
 ## 03-personal-resolutions.md — Personal Resolutions and Resolution Types
 
-- `app/(app)/resolutions/page.tsx` — Resolutions Page
-- `app/(app)/resolutions/resolutions-page-client.tsx` — Resolutions Page
-- `app/api/resolutions/compound/route.ts` — Compound Resolutions API
-- `app/api/resolutions/handlers.ts` — Shared handlers for the personal resolution routes. [Read]
-- `app/api/resolutions/iterative/route.ts` — Iterative Resolutions API
-- `app/api/resolutions/route.ts` — Personal Resolutions API
-- `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions
+- `app/(app)/games/[gameId]/page.tsx` — Game Page [Read]
+- `app/(app)/resolutions/page.tsx` — Resolutions Page - the obsolete, read-only list of legacy personal resolutions
+- `app/(app)/resolutions/resolutions-page-client.tsx` — Resolutions Page - the obsolete, read-only list of legacy personal resolutions, with a notice and Delete only.
+- `app/api/games/[gameId]/personal-resolutions/route.ts` — Personal Resolutions of a Game API - the caller's own resolutions for a game [Read]
+- `app/api/resolutions/route.ts` — Resolutions API - delete one of the caller's resolutions [Delete]
+- `app/api/resolutions/save/route.ts` — Unified Resolution Save API [Create and Update]
+- `components/dialogs/resolution-create-edit-dialog.tsx` — Resolution Create/Edit Dialog [Create Dialog]
+- `components/resolutions/resolution-list.tsx` — A list of resolution definitions with their type, subtask count or target, and optional Edit and Delete buttons. [Read]
+- `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions [Read]
 - `lib/db/types.ts` — TypeScript Types for Database Entities
+- `lib/shared/personal-target.ts` — The number of personal resolutions a player needs to fill their card. [Personal Target]
+- `lib/shared/resolution-form.ts` — Mappers that build ResolutionFormData and the initial form state for the resolution create/edit dialog. [Create Dialog]
 - `lib/shared/types.ts`
 
 ## 04-bingo-teams.md — Bingo Teams
@@ -73,16 +75,15 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/(app)/games/[gameId]/game-detail-page-client.tsx` — Game Page
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
 - `app/api/games/[gameId]/cards/route.ts` — Game Bingo Cards API
-- `app/api/games/[gameId]/start/route.ts` — Game Start Bingo API
 - `components/cell/joker.tsx` — The Joker at the center of a card: a plain cell with a purple outline star. [Assumptions]
-- `hooks/use-edit-cell-options.ts`
+- `hooks/use-edit-cell-options.ts` — Loads the replacement options of a cell in card editing.
 - `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game
 - `lib/db/bingo-card-repository.ts` — Bingo Card Repository - Reading bingo cards
 - `lib/db/bingo-card-rows.ts` — Row types and mappers shared by the bingo card modules.
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells
 - `lib/db/cell-snapshot.ts` — Cell Snapshot - The copy of a resolution's definition that a bingo cell holds [Data Model Notes]
 - `lib/db/prepared-resolution-repository.ts` — Prepared Resolution Repository - Reads the shared pool and copies entries out of it [Generation Rules]
-- `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions
+- `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions [Generation Rules]
 - `lib/db/types.ts` — TypeScript Types for Database Entities
 - `lib/shared/shuffle.ts` — Shuffle an array in place with the Fisher-Yates algorithm.
 - `lib/shared/types.ts` [Assumptions]
@@ -137,6 +138,7 @@ Files that cite each spec (header or inline `Spec:` comments). Spec sections the
 - `app/api/cells/[cellId]/edit/route.ts` — Cell Edit API
 - `app/api/games/[gameId]/resolutions/route.ts` — Member-Provided Resolutions API
 - `components/cell/resolution-cell.tsx`
+- `hooks/use-edit-cell-options.ts` — Loads the replacement options of a cell in card editing.
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells [Backend Rules]
 
 ## 10-voting-mechanic.md — Voting Mechanic
@@ -157,6 +159,9 @@ _No file references this spec._
 
 ## 12-team-tabs.md — Game Tabs & Leaderboard
 
+- `app/(app)/games/[gameId]/_components/MemberResolutionRow.tsx` — One teammate in the Teammates tab: the caller's resolution for them, or a prompt to write one.
+- `app/(app)/games/[gameId]/_components/PersonalTab.tsx` — The Personal tab: the caller's own resolutions for the game, with a y/target counter, Add and Browse ideas.
+- `app/(app)/games/[gameId]/_components/TeammatesTab.tsx` — The Teammates tab: every other player with the resolution the caller writes for them, and the dialog to write it.
 - `app/(app)/games/[gameId]/game-detail-page-client.tsx` — Game Page
 - `app/(app)/games/[gameId]/leaderboard-podium.tsx` — Leaderboard Podium — positions 1–3 as cards in a triangle (1 on top, 2 and 3 below).
 - `app/(app)/games/[gameId]/leaderboard-rank.ts` — Leaderboard rank colours — gold / silver / bronze accents for positions 1–3.
@@ -184,9 +189,11 @@ _No file references this spec._
 
 ## 16-games.md — Games
 
+- `app/(app)/games/[gameId]/_components/DeadlineInfo.tsx` — The game header's deadline information: the preparation countdown and the last day, styled by how close they are. [Countdown]
 - `app/(app)/games/[gameId]/_components/GameActionsMenu.tsx` [Game Page]
 - `app/(app)/games/[gameId]/_components/GameConfigDialog.tsx` [Game Configuration]
 - `app/(app)/games/[gameId]/_components/MissingTeamGoalNotice.tsx` [Game Page]
+- `app/(app)/games/[gameId]/_components/ReadyButton.tsx` — The Ready / Not ready toggle of the preparation phase, with how many players are ready. [Ready]
 - `app/(app)/games/[gameId]/game-detail-page-client.tsx` — Game Page
 - `app/(app)/games/[gameId]/page.tsx` — Game Page
 - `app/(app)/games/[gameId]/types.ts` — Shared types for the game page and its tab components.
@@ -195,9 +202,9 @@ _No file references this spec._
 - `app/api/cells/cell-progress.ts` — Checks and follow-up shared by the cell progress routes. [Ending a Game]
 - `app/api/games/[gameId]/end/route.ts` — End Game API [Ending a Game]
 - `app/api/games/[gameId]/leave/route.ts` — Leave Game API [Leaving a Game]
+- `app/api/games/[gameId]/ready/route.ts` — Ready API - a player signals they are done preparing, or no longer done [Ready]
 - `app/api/games/[gameId]/resolutions/route.ts` — Member-Provided Resolutions API [Member-Provided Resolutions]
 - `app/api/games/[gameId]/route.ts` — Game Detail API [Deleting a Game; Game Configuration]
-- `app/api/games/[gameId]/start/route.ts` — Game Start Bingo API [Start Conditions]
 - `app/api/games/route.ts` — Games API [Listing and Reading Games]
 - `app/api/join/route.ts` — Team Join API (via invite code) [Joining After Start]
 - `app/api/resolutions/save/route.ts` — Unified Resolution Save API
@@ -205,15 +212,20 @@ _No file references this spec._
 - `components/actions-menu.tsx` — More actions menu: a "⋯" button that opens a menu of the less used actions of a page header. [Game Page]
 - `components/bingo-card/card-grid.tsx` — The N x N grid that lays out the cells of a live or archived bingo card. [Game Model]
 - `components/team/game-list.tsx` — Grid of running games; each card links to its game page. [Game Page]
-- `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game [Joining After Start; Start Conditions]
+- `components/team/game-status-badge.tsx` [Lifecycle]
+- `instrumentation.ts` — Server startup hook, called once by Next.js. [Automatic Start]
+- `lib/db/bingo-card-generation.ts` — Bingo Card Generation - Builds the cards of a started game [Automatic Start; Joining After Start]
 - `lib/db/bingo-cell-repository.ts` — Bingo Cell Repository - State and content changes on bingo cells [Ending a Game]
-- `lib/db/game-repository.ts` — Game Repository - Database operations for games [Deleting a Game; Ending a Game; Game Configuration; Game Creation; Joining After Start; Listing and Reading Games; Member-Provided Resolutions; Start Conditions]
+- `lib/db/game-repository.ts` — Game Repository - Database operations for games [Automatic Start; Deleting a Game; Ending a Game; Game Configuration; Game Creation; Joining After Start; Listing and Reading Games; Member-Provided Resolutions; Ready]
 - `lib/db/leave-repository.ts` — Leave Repository - Leaving a game or a team [Leaving a Game]
+- `lib/db/prepared-resolution-repository.ts` — Prepared Resolution Repository - Reads the shared pool and copies entries out of it [Automatic Start]
 - `lib/db/resolution-repository.ts` — Unified Resolution Repository - Database operations for ALL resolutions [Ending a Game]
 - `lib/db/review-thread-repository.ts` — Review Thread Repository - Database operations for proof review threads [Ending a Game]
 - `lib/db/types.ts` — TypeScript Types for Database Entities
 - `lib/game-ending.ts` — Ending a game, by the leader or at its deadline, and archiving it. [Ending a Game]
+- `lib/game-starting.ts` — Starting a game at the end of its preparation phase: when every player is ready, or at its preparation deadline. [Automatic Start]
 - `lib/shared/cell-source.ts` [Leaving a Game]
+- `lib/shared/deadline.ts` — Deadline helpers: parsing the preparation deadline, the countdown to it, and how urgent a deadline looks. [Game Creation]
 - `lib/shared/types.ts`
 
 ## 17-prepared-resolutions.md — Prepared Resolutions
@@ -245,7 +257,6 @@ _No file references this spec._
 - `app/api/notifications/read-all/route.ts` — Mark All Notifications Read API [API]
 - `app/api/notifications/route.ts` — Notifications API [API]
 - `app/api/notifications/settings/route.ts` — Notification Settings API [Settings]
-- `instrumentation.ts` — Server startup hook, called once by Next.js. [Release]
 - `lib/notifications/dispatcher.ts` — Releasing pending notification events to their recipients (spec 19). [Events]
 - `lib/ws-client.ts` — Browser WebSocket client shared by the team socket and the notification socket:
 
@@ -257,8 +268,10 @@ _No file references this spec._
 
 - `app/api/cells/[cellId]/request-proof/route.ts` — Request Proof API
 - `app/api/cells/card-owner.ts` — Ownership check shared by the cell routes.
-- `app/api/games/[gameId]/start/route.ts` — Game Start Bingo API
+- `app/api/games/[gameId]/personal-resolutions/route.ts` — Personal Resolutions of a Game API - the caller's own resolutions for a game
+- `app/api/games/[gameId]/ready/route.ts` — Ready API - a player signals they are done preparing, or no longer done
 - `app/api/games/game-access.ts` — Access check shared by the game routes. [Status Rules]
+- `app/api/resolutions/prepared/[id]/add/route.ts` — Add Prepared Resolution API
 - `app/api/resolutions/save/route.ts` — Unified Resolution Save API
 - `app/api/teams/[teamId]/games/route.ts` — Team Games API
 - `app/api/teams/route.ts` — Teams API
@@ -321,12 +334,38 @@ _No file references this spec._
 - `lib/theme/config.ts` — Theme settings shared by the server and the browser. [Themes]
 - `lib/theme/get-theme.ts` — Server helper that reads the stored theme. [Selection and Persistence]
 
-## Unmapped files (92)
+## 26-guided-tour.md — Guided Tour (Proof of Concept)
+
+- `app/(app)/guides/guides-page-client.tsx` — Client side of the Guides page: its title and the list of guides. [Guides Page]
+- `app/(app)/guides/page.tsx` — Guides Page - the guided tours the user can start [Guides Page]
+- `components/guide/bingo-card/bingo-tour.tsx` — The bingo tour: shows the demo card and walks through it with the tour library. [Tour Steps]
+- `components/guide/bingo-card/demo-card.tsx` — The demo card the guided tour runs on, shown above the page; it calls no API. [Demo Card]
+- `components/guide/bingo-card/demo-cell-detail.tsx` — Details of the demo card's target cell, shown by the guided tour; it calls no API. [Tour Steps]
+- `components/guide/bingo-card/demo-data.ts` — Sample content of the guided tour's demo card, and the elements the tour highlights. [Demo Card]
+- `components/guide/engine/intro-adapter.ts` — Adapter around the Intro.js tour library: the only file that imports it. [Module Boundary]
+- `components/guide/engine/tour-selector.ts` — Selector of the elements a tour highlights, marked with a `data-tour` attribute. [Module Boundary]
+- `components/guide/engine/use-guided-tour.ts` — Hook that runs any tour with the tour library and reports its current step. [Module Boundary]
+- `components/guide/guide-entry.tsx` — One entry of the Guides page: a title that expands to a description and a Play button. [Guides Page]
+- `components/guide/guide-list.tsx` — List of every available guide, shown on the Guides page. [Guides Page]
+- `components/guide/guides.ts` — The guides listed on the Guides page, in display order. [Guides Page]
+- `components/guide/leaderboard/leaderboard-tour.tsx` — The leaderboard tour: where the leaderboard is and what its columns mean, on sample players. [Other Tours]
+- `components/guide/progress/progress-tour.tsx` — The progress tour: where the progress chart is, its Day / Month toggle and its legend, on sample players. [Other Tours]
+- `components/guide/proof-thread-owner/owner-thread-tour.tsx` — The owner's proof-thread tour: the thread seen by the card owner, with no action asked. [Other Tours]
+- `components/guide/proof-thread-voter/voter-thread-tour.tsx` — The teammate's proof-thread tour: voting, when the thread closes, and where closed threads go. [Other Tours]
+- `components/guide/request-proof/demo-proof-cards.tsx` — The request-proof tour's demo: the user's card, a teammate's card, and the dialogs drawn over them. [Other Tours]
+- `components/guide/request-proof/request-proof-tour.tsx` — The request-proof tour: ask proof for a teammate's completed cell, on demo cards. [Other Tours]
+- `components/guide/sandbox/demo-cells.ts` — Sample cells shared by the tours' demo cards. [Demo Card]
+- `components/guide/sandbox/demo-game-tabs.tsx` — The game page's tabs, drawn for a tour to show where a feature is. [Other Tours]
+- `components/guide/sandbox/demo-grid.tsx` — Grid of a demo card, drawn like a real card; it calls no API. [Demo Card]
+- `components/guide/sandbox/demo-thread.tsx` — A demo review thread, drawn like the real thread dialog; it calls no API. [Other Tours]
+- `components/guide/sandbox/demo-vote.tsx` — Vote section of a demo review thread, drawn like the real one; it calls no API. [Other Tours]
+- `components/guide/sandbox/sandbox-layer.tsx` — Full-screen layer that shows a tour's demo content above the page. [Demo Card]
+- `components/guide/types.ts` — Contract every guide follows, so any listed tour starts the same way. [Module Boundary]
+
+## Unmapped files (85)
 
 No spec reference in the file. See `files.md` for their purpose.
 
-- `app/(app)/games/[gameId]/_components/GameActionDialog.tsx`
-- `app/(app)/games/[gameId]/_components/ProposeResolutionsDialog.tsx`
 - `app/(app)/games/[gameId]/_components/use-game-actions.ts`
 - `app/(app)/games/[gameId]/_components/use-last-loaded.ts`
 - `app/(app)/layout.tsx`
@@ -336,7 +375,6 @@ No spec reference in the file. See `files.md` for their purpose.
 - `app/(auth)/register/page.tsx`
 - `app/api/cells/[cellId]/undo-complete/route.ts`
 - `app/api/games/[gameId]/goal/route.ts`
-- `app/api/resolutions/all/route.ts`
 - `app/api/threads/[threadId]/files/route.ts`
 - `app/api/threads/[threadId]/messages/route.ts`
 - `app/api/threads/[threadId]/vote/route.ts`
@@ -359,12 +397,10 @@ No spec reference in the file. See `files.md` for their purpose.
 - `components/dashboard/dashboard-game-card-client.tsx`
 - `components/dashboard/dashboard-page-shell.tsx`
 - `components/dialogs/cell-dialog.tsx`
-- `components/dialogs/complete-dialog.tsx`
 - `components/dialogs/confirm-action-dialog.tsx`
 - `components/dialogs/edit-cell.tsx`
 - `components/dialogs/edit-option-row.tsx`
 - `components/dialogs/request-proof.tsx`
-- `components/dialogs/resolution-create-edit-dialog.tsx`
 - `components/dialogs/resolution-detail-dialog.tsx`
 - `components/dialogs/resolution-detail/compound-checklist.tsx`
 - `components/dialogs/resolution-detail/iterative-counter.tsx`
@@ -384,7 +420,6 @@ No spec reference in the file. See `files.md` for their purpose.
 - `components/profile/public-profile-page-shell.tsx`
 - `components/team-members-context.tsx`
 - `components/team-ws-provider.tsx`
-- `components/team/game-status-badge.tsx`
 - `components/user-avatar-button.tsx`
 - `hooks/AppContext.tsx`
 - `hooks/use-api-error-toast.ts`
@@ -407,7 +442,6 @@ No spec reference in the file. See `files.md` for their purpose.
 - `lib/placeholder-images.ts`
 - `lib/shared/bingo-lines.ts`
 - `lib/shared/dates.ts`
-- `lib/shared/resolution-form.ts`
 - `lib/shared/resolution-type.ts`
 - `lib/shared/ws-messages.ts`
 - `lib/team-signals.ts`

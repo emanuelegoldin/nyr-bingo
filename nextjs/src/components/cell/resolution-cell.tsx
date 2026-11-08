@@ -3,7 +3,6 @@ import { BingoCellDetail, BingoCellWithThread } from "@/lib/db/types";
 import { getSourceLabel } from "@/lib/shared/cell-source";
 import { CellSourceType, CellState, ResolutionType } from "@/lib/shared/types";
 import { useEffect, useRef, useState } from "react";
-import { MarkCellCompleteDialog } from "../dialogs/complete-dialog";
 import { EditCellDialog } from "../dialogs/edit-cell";
 import { RequestProofDialog } from "../dialogs/request-proof";
 import {
@@ -17,7 +16,7 @@ import { useTeamMembers } from "../team-members-context";
 import { CellFace } from "./cell-face";
 
 /** The dialog currently opened from a cell, or null when none is open. */
-type ActiveDialog = 'complete' | 'request_proof' | 'thread' | 'edit_cell' | 'detail' | 'history' | null;
+type ActiveDialog = 'request_proof' | 'thread' | 'edit_cell' | 'detail' | 'history' | null;
 
 /** Cell states whose stamp or hourglass animates in on the card (spec 06, Card Display Rules). */
 const ANIMATED_MARK_STATES: ReadonlySet<string> = new Set([CellState.COMPLETED, CellState.ACCOMPLISHED, CellState.PENDING_REVIEW]);
@@ -154,16 +153,6 @@ export const ResolutionCell = ({
                 // The mark waits, hidden, for the cell's dialogs to close, so the user sees it land
                 markMotion={!markPending ? "still" : activeDialog === null ? "stamping" : "waiting"}
                 onMarkAnimationEnd={() => setMarkPending(false)} />
-            {activeDialog === "complete" &&
-                <MarkCellCompleteDialog
-                    cell={{
-                        id: cell.id,
-                        resolutionText: cell.resolutionText
-                    }}
-                    open={true}
-                    setIsOpen={handleDialogOpenChange}
-                    onUpdate={onUpdate} />
-            }
             {activeDialog === "request_proof" &&
                 <RequestProofDialog
                     cell={{

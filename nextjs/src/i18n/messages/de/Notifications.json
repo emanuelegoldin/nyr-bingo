@@ -5,7 +5,7 @@
   "empty": "Nichts Neues",
   "someone": "Jemand",
   "memberJoined": "{actor} ist dem Team beigetreten",
-  "gameStarted": "{actor} hat das Spiel gestartet",
+  "gameStarted": "Das Spiel hat begonnen",
   "gameEnded": "{actor} hat das Spiel beendet",
   "gameEndedAtDeadline": "Die Frist des Spiels ist abgelaufen",
   "bingoScored": "{actor} hat ein BINGO erzielt!",

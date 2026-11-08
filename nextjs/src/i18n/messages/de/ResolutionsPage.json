@@ -1,15 +1,8 @@
 {
-  "title": "Deine persönlichen Vorsätze",
-  "description": "Verwalte deine persönlichen Vorsätze. Mit ihnen kannst du deine Bingo-Karten füllen.",
+  "title": "Deine alten persönlichen Vorsätze",
+  "description": "Die Vorsätze, die du geschrieben hast, bevor sie zu einem Spiel gehörten.",
   "headerTitle": "Vorsätze",
-  "browseIdeas": "Ideen entdecken",
-  "loadError": "Vorsätze konnten nicht geladen werden",
-  "deleted": "Vorsatz gelöscht",
-  "deleteError": "Vorsatz konnte nicht gelöscht werden",
-  "addAriaLabel": "Vorsatz hinzufügen",
-  "editAriaLabel": "Vorsatz bearbeiten",
-  "deleteAriaLabel": "Vorsatz löschen",
-  "empty": "Du hast noch keine Vorsätze hinzugefügt. Klicke auf die +-Schaltfläche, um einen zu erstellen.",
-  "subtaskCount": "{count, plural, one {# Teilaufgabe} other {# Teilaufgaben}}",
-  "repetitionTarget": "Ziel: {count, plural, one {# Wiederholung} other {# Wiederholungen}}"
+  "obsoleteTitle": "Diese Seite wird entfernt",
+  "obsoleteNotice": "Persönliche Vorsätze gehören jetzt zu einem Spiel: Du schreibst sie im Tab Persönlich eines Spiels, solange es in Vorbereitung ist, bevor es beginnt. Diese Liste ist schreibgeschützt und füllt deine Karten nicht mehr. Kopiere, was du behalten möchtest: Die Seite wird nach dem 8. Mai 2027 entfernt.",
+  "empty": "Du hast keine früheren Vorsätze."
 }

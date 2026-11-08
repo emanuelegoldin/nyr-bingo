@@ -2,10 +2,6 @@
   "empty": "Empty",
   "joker": "Joker",
   "markComplete": "Mark Complete",
-  "completeDialog": {
-    "title": "Mark as Completed?",
-    "description": "You are about to mark \"{text}\" as completed."
-  },
   "editOption": {
     "member": "Member"
   },

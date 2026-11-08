@@ -1,15 +1,17 @@
 /**
  * Server startup hook, called once by Next.js.
  * Spec Reference: 07-proof-and-approval.md - Closure by Deadline, 16-games.md - Ending a Game,
- * 19-notifications.md - Release
+ * 16-games.md - Automatic Start, 19-notifications.md - Release
  */
 
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000;
+const START_SWEEP_INTERVAL_MS = 60 * 1000;
 const NOTIFICATION_RELEASE_INTERVAL_MS = 5 * 1000;
 
 /**
- * Start the hourly sweep that ends games and closes review threads past their deadline, and the
- * loop that releases notifications.
+ * Start the hourly sweep that ends games and closes review threads past their deadline, the
+ * per-minute sweep that starts games whose preparation is over, and the loop that releases
+ * notifications.
  */
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
@@ -18,6 +20,7 @@ export async function register(): Promise<void> {
   const { notifyThreadClosed } = await import('@/lib/team-signals');
   const { archiveEndedGames, finishExpiredGames } = await import('@/lib/game-ending');
   const { releaseDueNotifications } = await import('@/lib/notifications/dispatcher');
+  const { startDueGames } = await import('@/lib/game-starting');
 
   const sweep = async (): Promise<void> => {
     try {
@@ -42,6 +45,14 @@ export async function register(): Promise<void> {
 
   void sweep();
   setInterval(sweep, SWEEP_INTERVAL_MS);
+
+  const startSweep = (): void => {
+    startDueGames().catch((error) => {
+      console.error('Failed to sweep games due to start:', error);
+    });
+  };
+  startSweep();
+  setInterval(startSweep, START_SWEEP_INTERVAL_MS);
 
   setInterval(() => {
     releaseDueNotifications().catch((error) => {

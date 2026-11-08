@@ -5,7 +5,7 @@
 
 import type { TeamMember } from "@/components/team/types";
 import type { Resolution } from "@/lib/db/types";
-import type { GameStatus } from "@/lib/shared/types";
+import type { GameStatus, GridSize } from "@/lib/shared/types";
 
 /** Game shape as returned by the game API. */
 export interface Game {
@@ -19,7 +19,13 @@ export interface Game {
   startedAt: string | null;
   /** Last playable day as YYYY-MM-DD, or null when the game only ends manually. */
   deadline: string | null;
+  /** End of the preparation phase, ISO 8601 in UTC; null for games started before it existed. */
+  preparationDeadline: string | null;
+  /** Side length of the game's cards. */
+  gridSize: GridSize;
   members: TeamMember[];
+  /** The players who are ready, during the preparation phase. */
+  readyPlayerIds: string[];
 }
 
 /** Team-provided resolution shape (from unified Resolution entity). */

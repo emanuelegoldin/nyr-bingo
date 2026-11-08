@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   Archive,
+  CircleHelp,
   LayoutGrid,
   ListCheck,
   Swords,
@@ -43,6 +44,7 @@ const menuItems = [
     labelKey: "profile",
     icon: User,
   },
+  // LEGACY-PERSONAL-RESOLUTIONS: remove this link with the /resolutions page after 2027-05-08 (spec 03).
   {
     href: "/resolutions",
     labelKey: "resolutions",
@@ -52,7 +54,12 @@ const menuItems = [
     href: "/archive",
     labelKey: "archive",
     icon: Archive,
-  }
+  },
+  {
+    href: "/guides",
+    labelKey: "guides",
+    icon: CircleHelp,
+  },
 ] as const;
 
 export function AppSidebar() {

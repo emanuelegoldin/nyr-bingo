@@ -34,6 +34,7 @@ export type TeamPermission =
 export type GamePermission =
   | 'game.view'
   | 'game.propose'
+  | 'game.ready'
   | 'game.leave'
   | 'thread.request'
   | 'thread.view'
@@ -43,7 +44,6 @@ export type GamePermission =
   | 'card.arrange'
   | 'cell.react'
   | 'game.configure'
-  | 'game.start'
   | 'game.end'
   | 'game.delete'
   | 'game.goal.set';
@@ -68,6 +68,7 @@ export const GAME_ROLE_PERMISSIONS: Record<GameScopeRole, readonly GamePermissio
   leader: [
     'game.view',
     'game.propose',
+    'game.ready',
     'game.leave',
     'thread.request',
     'thread.view',
@@ -77,7 +78,6 @@ export const GAME_ROLE_PERMISSIONS: Record<GameScopeRole, readonly GamePermissio
     'card.arrange',
     'cell.react',
     'game.configure',
-    'game.start',
     'game.end',
     'game.delete',
     'game.goal.set',
@@ -85,6 +85,7 @@ export const GAME_ROLE_PERMISSIONS: Record<GameScopeRole, readonly GamePermissio
   player: [
     'game.view',
     'game.propose',
+    'game.ready',
     'game.leave',
     'thread.request',
     'thread.view',
@@ -106,5 +107,4 @@ export const VERIFIED_PERMISSIONS: ReadonlySet<Permission> = new Set<Permission>
   'team.create',
   'team.join',
   'game.create',
-  'game.start',
 ]);

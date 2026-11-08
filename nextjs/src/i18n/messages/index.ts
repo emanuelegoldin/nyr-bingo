@@ -10,6 +10,7 @@ import enCell from './en/Cell.json';
 import enCommon from './en/Common.json';
 import enDashboard from './en/Dashboard.json';
 import enGames from './en/Games.json';
+import enGuide from './en/Guide.json';
 import enHome from './en/Home.json';
 import enLabels from './en/Labels.json';
 import enLoginPage from './en/LoginPage.json';
@@ -20,6 +21,7 @@ import enProfile from './en/Profile.json';
 import enRegisterPage from './en/RegisterPage.json';
 import enResolutionForm from './en/ResolutionForm.json';
 import enResolutionHistoryDialog from './en/ResolutionHistoryDialog.json';
+import enResolutionList from './en/ResolutionList.json';
 import enResolutionsPage from './en/ResolutionsPage.json';
 import enTeams from './en/Teams.json';
 import enThreads from './en/Threads.json';
@@ -31,6 +33,7 @@ import deCell from './de/Cell.json';
 import deCommon from './de/Common.json';
 import deDashboard from './de/Dashboard.json';
 import deGames from './de/Games.json';
+import deGuide from './de/Guide.json';
 import deHome from './de/Home.json';
 import deLabels from './de/Labels.json';
 import deLoginPage from './de/LoginPage.json';
@@ -41,6 +44,7 @@ import deProfile from './de/Profile.json';
 import deRegisterPage from './de/RegisterPage.json';
 import deResolutionForm from './de/ResolutionForm.json';
 import deResolutionHistoryDialog from './de/ResolutionHistoryDialog.json';
+import deResolutionList from './de/ResolutionList.json';
 import deResolutionsPage from './de/ResolutionsPage.json';
 import deTeams from './de/Teams.json';
 import deThreads from './de/Threads.json';
@@ -52,6 +56,7 @@ import itCell from './it/Cell.json';
 import itCommon from './it/Common.json';
 import itDashboard from './it/Dashboard.json';
 import itGames from './it/Games.json';
+import itGuide from './it/Guide.json';
 import itHome from './it/Home.json';
 import itLabels from './it/Labels.json';
 import itLoginPage from './it/LoginPage.json';
@@ -62,6 +67,7 @@ import itProfile from './it/Profile.json';
 import itRegisterPage from './it/RegisterPage.json';
 import itResolutionForm from './it/ResolutionForm.json';
 import itResolutionHistoryDialog from './it/ResolutionHistoryDialog.json';
+import itResolutionList from './it/ResolutionList.json';
 import itResolutionsPage from './it/ResolutionsPage.json';
 import itTeams from './it/Teams.json';
 import itThreads from './it/Threads.json';
@@ -75,6 +81,7 @@ const en = {
   Common: enCommon,
   Dashboard: enDashboard,
   Games: enGames,
+  Guide: enGuide,
   Home: enHome,
   Labels: enLabels,
   LoginPage: enLoginPage,
@@ -85,6 +92,7 @@ const en = {
   RegisterPage: enRegisterPage,
   ResolutionForm: enResolutionForm,
   ResolutionHistoryDialog: enResolutionHistoryDialog,
+  ResolutionList: enResolutionList,
   ResolutionsPage: enResolutionsPage,
   Teams: enTeams,
   Threads: enThreads,
@@ -99,6 +107,7 @@ const de = {
   Common: deCommon,
   Dashboard: deDashboard,
   Games: deGames,
+  Guide: deGuide,
   Home: deHome,
   Labels: deLabels,
   LoginPage: deLoginPage,
@@ -109,6 +118,7 @@ const de = {
   RegisterPage: deRegisterPage,
   ResolutionForm: deResolutionForm,
   ResolutionHistoryDialog: deResolutionHistoryDialog,
+  ResolutionList: deResolutionList,
   ResolutionsPage: deResolutionsPage,
   Teams: deTeams,
   Threads: deThreads,
@@ -123,6 +133,7 @@ const it = {
   Common: itCommon,
   Dashboard: itDashboard,
   Games: itGames,
+  Guide: itGuide,
   Home: itHome,
   Labels: itLabels,
   LoginPage: itLoginPage,
@@ -133,6 +144,7 @@ const it = {
   RegisterPage: itRegisterPage,
   ResolutionForm: itResolutionForm,
   ResolutionHistoryDialog: itResolutionHistoryDialog,
+  ResolutionList: itResolutionList,
   ResolutionsPage: itResolutionsPage,
   Teams: itTeams,
   Threads: itThreads,

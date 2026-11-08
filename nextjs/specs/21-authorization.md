@@ -60,6 +60,7 @@ Every role is listed with the full set of permissions it holds; there is no inhe
 | `game.create` | team | `leader` | yes |
 | `game.view` | game | `leader`, `player` | – |
 | `game.propose` | game | `leader`, `player` | – |
+| `game.ready` | game | `leader`, `player` | – |
 | `game.leave` | game | `leader`, `player` | – |
 | `thread.request` | game | `leader`, `player` | – |
 | `thread.view` | game | `leader`, `player` | – |
@@ -69,7 +70,6 @@ Every role is listed with the full set of permissions it holds; there is no inhe
 | `card.arrange` | game | `leader`, `player` | – |
 | `cell.react` | game | `leader`, `player` | – |
 | `game.configure` | game | `leader` | – |
-| `game.start` | game | `leader` | yes |
 | `game.end` | game | `leader` | – |
 | `game.delete` | game | `leader` | – |
 | `game.goal.set` | game | `leader` | – |
@@ -81,7 +81,8 @@ Where they are used:
 
 - `team.view`: the team route `GET /api/teams/[teamId]`, the team's game list `GET /api/teams/[teamId]/games` and the team page.
 - `game.view`: every read under `/api/games/[gameId]` (the game, its cards, goal and resolutions) and the game page.
-- `game.propose`: saving a member-provided resolution (spec 16). The target must also be a player of the game.
+- `game.propose`: saving a member-provided resolution or one of the caller's own game resolutions (specs 03, 16). The target of a member-provided resolution must also be a player of the game.
+- `game.ready`: marking the caller ready, or no longer ready, during the preparation phase (spec 16).
 - `thread.*`: a cell's or thread's game is resolved first, and the role is the caller's role in that game (spec 07). The game is resolved whatever its status; what an ended game's cells and threads allow is a game status rule (spec 16).
 - `game.goal.set`: saving the team goal of a game (spec 16).
 - `card.arrange`: shuffling and locking the caller's own card (spec 22).

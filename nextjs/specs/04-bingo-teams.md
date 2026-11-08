@@ -39,7 +39,7 @@ Unverified users:
 - Cannot create teams
 - Cannot join teams
 - Cannot accept invitations
-- Cannot create or start bingo games
+- Cannot create bingo games
 
 These checks are server-side (see spec 01). Team pages do not hide these actions; the API response is shown as an error.
 

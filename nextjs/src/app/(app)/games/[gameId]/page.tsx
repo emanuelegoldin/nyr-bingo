@@ -1,6 +1,7 @@
 /**
  * Game Page
- * Spec Reference: 16-games.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md, 23-progress-chart.md
+ * Spec Reference: 16-games.md, 05-bingo-card-generation.md, 06-bingo-gameplay.md, 12-team-tabs.md, 23-progress-chart.md,
+ * 03-personal-resolutions.md - Read
  *
  * Server-first implementation:
  * - Authentication and team membership checks run on the server
@@ -20,12 +21,20 @@ import {
   getGameProgress,
   getGameWithMembers,
   getMemberProvidedResolutionsByUser,
+  getPlayerGameResolutions,
+  getReadyPlayerIds,
   type BingoCardWithCells,
   type GameWithMembers,
   type Resolution,
 } from '@/lib/db';
-import { resolutionToFormData } from '@/lib/shared/resolution-form';
-import type { ArchivedThread, LeaderboardEntry, ProgressPoint, ResolutionFormData } from '@/lib/shared/types';
+import { resolutionToFormData, toUnifiedResolution } from '@/lib/shared/resolution-form';
+import type {
+  ArchivedThread,
+  LeaderboardEntry,
+  ProgressPoint,
+  ResolutionFormData,
+  UnifiedResolution,
+} from '@/lib/shared/types';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import GameDetailPageClient from './game-detail-page-client';
@@ -41,7 +50,7 @@ function GameDetailLoadingFallback() {
   );
 }
 
-function mapGame(game: GameWithMembers): Game {
+function mapGame(game: GameWithMembers, readyPlayerIds: string[]): Game {
   return {
     id: game.id,
     teamId: game.teamId,
@@ -51,7 +60,10 @@ function mapGame(game: GameWithMembers): Game {
     status: game.status,
     startedAt: game.startedAt ? game.startedAt.toISOString() : null,
     deadline: game.deadline,
+    preparationDeadline: game.preparationDeadline,
+    gridSize: game.gridSize,
     members: game.members.map(toTeamMember),
+    readyPlayerIds,
   };
 }
 
@@ -81,20 +93,33 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
 
   const capabilities = await getGameCapabilities(currentUser, game);
 
-  const [cardsResult, goalResult, resolutionsResult, leaderboardResult, threadsResult, progressResult] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
+  const [
+    cardsResult,
+    goalResult,
+    resolutionsResult,
+    personalResult,
+    leaderboardResult,
+    threadsResult,
+    progressResult,
+  ] = await Promise.allSettled([   // Return result for each promise individually so one failure does not reject the whole batch
     cardPromise,
     getGameGoalResolution(gameId),
     getMemberProvidedResolutionsByUser(gameId, currentUser.id),
+    getPlayerGameResolutions(gameId, currentUser.id),
     getGameLeaderboard(gameId),
     getClosedGameThreads(gameId),
     getGameProgress(gameId),
   ]);
+  const readyPlayerIds = await getReadyPlayerIds(gameId);
 
   // undefined marks a failed read, so a refresh keeps the data already on screen
   const initialCards = cardsResult.status === 'fulfilled' ? cardsResult.value : undefined;
   const initialTeamGoal = goalResult.status === 'fulfilled' ? mapGoalToFormData(goalResult.value) : undefined;
   const initialExistingResolutions = resolutionsResult.status === 'fulfilled'
     ? resolutionsResult.value
+    : undefined;
+  const initialPersonalResolutions: UnifiedResolution[] | undefined = personalResult.status === 'fulfilled'
+    ? personalResult.value.map(toUnifiedResolution)
     : undefined;
   const initialLeaderboardEntries: LeaderboardEntry[] | undefined =
     leaderboardResult.status === 'fulfilled' ? leaderboardResult.value : undefined;
@@ -105,12 +130,13 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
 
   return (
     <GameDetailPageClient
-      initialGame={mapGame(game)}
+      initialGame={mapGame(game, readyPlayerIds)}
       initialCards={initialCards}
       initialCurrentUserId={currentUser.id}
       capabilities={capabilities}
       initialTeamGoal={initialTeamGoal}
       initialExistingResolutions={initialExistingResolutions}
+      initialPersonalResolutions={initialPersonalResolutions}
       initialLeaderboardEntries={initialLeaderboardEntries}
       initialArchivedThreads={initialArchivedThreads}
       initialProgressPoints={initialProgressPoints}
