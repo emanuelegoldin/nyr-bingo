@@ -45,7 +45,7 @@ const VALID_FROM_STATES: Record<CellState.PENDING | CellState.COMPLETED | CellSt
  * @param sourceType The source the client selected
  * @param userId The card owner
  * @param gameId The game of the card
- * @returns True for the owner's personal resolutions and for resolutions proposed to them in this game
+ * @returns True for the owner's personal resolutions of this game and for resolutions proposed to them in it
  */
 function canPlaceResolution(
   resolution: Resolution,
@@ -54,7 +54,7 @@ function canPlaceResolution(
   gameId: string
 ): boolean {
   if (sourceType === CellSourceType.PERSONAL) {
-    return resolution.scope === 'personal' && resolution.ownerUserId === userId;
+    return resolution.scope === 'personal' && resolution.ownerUserId === userId && resolution.gameId === gameId;
   }
   return resolution.scope === 'member_provided'
     && resolution.toUserId === userId

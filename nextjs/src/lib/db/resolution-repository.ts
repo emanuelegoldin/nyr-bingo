@@ -69,11 +69,15 @@ function rowToResolution(row: ResolutionRow): Resolution {
 
 /**
  * Get a resolution by ID.
+ * @param id The resolution
+ * @param executor Where to read it, e.g. a transaction that just created it (default the pool)
+ * @returns The resolution, or null if it does not exist
  */
-export async function getResolutionById(id: string): Promise<Resolution | null> {
+export async function getResolutionById(id: string, executor?: Executor): Promise<Resolution | null> {
   const rows = await query<ResolutionRow[]>(
     `SELECT * FROM resolutions WHERE id = ?`,
-    [id]
+    [id],
+    executor
   );
   return rows.length > 0 ? rowToResolution(rows[0]) : null;
 }
@@ -249,46 +253,58 @@ export async function changeResolutionType(
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Get all personal resolutions for a user.
- * Spec: 03-personal-resolutions.md – Read
+ * List a player's personal resolutions of a game, newest first.
+ * Spec: 03-personal-resolutions.md - Read
+ * @param gameId The game
+ * @param userId The player
+ * @returns Their resolutions
  */
-export async function getResolutionsByUser(userId: string): Promise<Resolution[]> {
+export async function getPlayerGameResolutions(gameId: string, userId: string): Promise<Resolution[]> {
   const rows = await query<ResolutionRow[]>(
-    `SELECT * FROM resolutions WHERE owner_user_id = ? AND scope = 'personal' ORDER BY created_at DESC`,
+    `SELECT * FROM resolutions
+     WHERE game_id = ? AND owner_user_id = ? AND scope = 'personal'
+     ORDER BY created_at DESC, id`,
+    [gameId, userId]
+  );
+  return rows.map(rowToResolution);
+}
+
+/**
+ * List a user's legacy personal resolutions, which belong to no game, newest first.
+ * LEGACY-PERSONAL-RESOLUTIONS: remove after 2027-05-08, with the /resolutions page.
+ * Spec: 03-personal-resolutions.md - Legacy Personal Resolutions
+ * @param userId The user
+ * @returns Their legacy resolutions
+ */
+export async function getLegacyPersonalResolutions(userId: string): Promise<Resolution[]> {
+  const rows = await query<ResolutionRow[]>(
+    `SELECT * FROM resolutions
+     WHERE owner_user_id = ? AND scope = 'personal' AND game_id IS NULL
+     ORDER BY created_at DESC, id`,
     [userId]
   );
   return rows.map(rowToResolution);
 }
 
 /**
- * Get personal resolutions filtered by type.
- */
-async function getResolutionsByUserAndType(
-  userId: string,
-  resolutionType: ResolutionType
-): Promise<Resolution[]> {
-  const rows = await query<ResolutionRow[]>(
-    `SELECT * FROM resolutions
-     WHERE owner_user_id = ? AND scope = 'personal' AND resolution_type = ?
-     ORDER BY created_at DESC`,
-    [userId, resolutionType]
-  );
-  return rows.map(rowToResolution);
-}
-
-/**
- * Get random personal resolutions for bingo card filling.
- * Spec: 05-bingo-card-generation.md – fallback from personal resolutions
+ * Pick random personal resolutions of a player in a game, to fill their card.
+ * Spec: 05-bingo-card-generation.md - Generation Rules (step 5)
+ * @param gameId The game
+ * @param userId The card owner
+ * @param limit How many to pick at most
+ * @param excludeTexts Texts already on the card, which are left out
+ * @returns The picked resolutions
  */
 export async function getRandomResolutions(
+  gameId: string,
   userId: string,
   limit: number,
   excludeTexts: string[] = []
 ): Promise<Resolution[]> {
   if (limit <= 0) return [];
 
-  let sql = `SELECT * FROM resolutions WHERE owner_user_id = ? AND scope = 'personal'`;
-  const params: unknown[] = [userId];
+  let sql = `SELECT * FROM resolutions WHERE game_id = ? AND owner_user_id = ? AND scope = 'personal'`;
+  const params: unknown[] = [gameId, userId];
 
   if (excludeTexts.length > 0) {
     sql += ` AND COALESCE(description, title) NOT IN (${excludeTexts.map(() => '?').join(', ')})`;
@@ -300,44 +316,6 @@ export async function getRandomResolutions(
 
   const rows = await query<ResolutionRow[]>(sql, params);
   return rows.map(rowToResolution);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// Compound resolutions (resolution_type = compound)
-// ═══════════════════════════════════════════════════════════════════
-
-/**
- * Get compound resolutions for a user (personal scope).
- */
-export async function getCompoundResolutionsByUser(userId: string): Promise<Resolution[]> {
-  return getResolutionsByUserAndType(userId, ResolutionType.COMPOUND);
-}
-
-/**
- * Get a compound resolution by ID.
- */
-export async function getCompoundResolutionById(id: string): Promise<Resolution | null> {
-  const row = await getResolutionById(id);
-  return row && row.resolutionType === ResolutionType.COMPOUND ? row : null;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// Iterative resolutions (resolution_type = iterative)
-// ═══════════════════════════════════════════════════════════════════
-
-/**
- * Get iterative resolutions for a user (personal scope).
- */
-export async function getIterativeResolutionsByUser(userId: string): Promise<Resolution[]> {
-  return getResolutionsByUserAndType(userId, ResolutionType.ITERATIVE);
-}
-
-/**
- * Get an iterative resolution by ID.
- */
-export async function getIterativeResolutionById(id: string): Promise<Resolution | null> {
-  const row = await getResolutionById(id);
-  return row && row.resolutionType === ResolutionType.ITERATIVE ? row : null;
 }
 
 // ═══════════════════════════════════════════════════════════════════

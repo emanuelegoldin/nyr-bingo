@@ -88,6 +88,11 @@ async function removePlayerFromGame(
     [gameId, userId],
     connection
   );
+  await execute(
+    `DELETE FROM resolutions WHERE game_id = ? AND scope = 'personal' AND owner_user_id = ?`,
+    [gameId, userId],
+    connection
+  );
   await execute(`DELETE FROM game_players WHERE game_id = ? AND user_id = ?`, [gameId, userId], connection);
 }
 

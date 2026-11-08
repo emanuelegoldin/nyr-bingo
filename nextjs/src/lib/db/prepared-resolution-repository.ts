@@ -6,7 +6,7 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { PreparedResolutionCategory, ResolutionScope, ResolutionType } from '../shared/types';
 import type { PreparedResolution, Subtask } from '../shared/types';
-import { query } from './connection';
+import { query, type Executor } from './connection';
 import { createResolution, parseSubtasks, type ResolutionContent } from './resolution-repository';
 
 interface PreparedResolutionRow extends RowDataPacket {
@@ -19,7 +19,7 @@ interface PreparedResolutionRow extends RowDataPacket {
   number_of_repetition: number | null;
 }
 
-/** Why an entry could not be added to a user's personal resolutions. */
+/** Why an entry could not be added to a player's personal resolutions of a game. */
 export type AddPreparedResolutionError = 'not_found' | 'already_added';
 
 /**
@@ -92,31 +92,53 @@ export async function getRandomPreparedResolutions(
 }
 
 /**
- * Add a copy of a pool entry to a user's personal resolutions.
+ * Pick one random entry of the whole pool, whatever its category.
+ * Spec: 16-games.md - Automatic Start (a game without a goal gets one from the pool)
+ * @param executor Where to read it, e.g. the start transaction (default the pool)
+ * @returns The entry, or null if the pool is empty
+ */
+export async function getRandomPreparedEntry(executor?: Executor): Promise<PreparedResolution | null> {
+  const rows = await query<PreparedResolutionRow[]>(
+    `SELECT * FROM prepared_resolutions ORDER BY RAND() LIMIT 1`,
+    [],
+    executor
+  );
+  return rows.length > 0 ? rowToPreparedResolution(rows[0]) : null;
+}
+
+/**
+ * Add a copy of a pool entry to a player's personal resolutions of a game.
+ * The caller checks that the user plays the game and that it is running.
  * Spec: 17-prepared-resolutions.md - Adding to Personal Resolutions
  * @param preparedId The pool entry to copy
- * @param userId The user receiving the copy
+ * @param userId The player receiving the copy
+ * @param gameId The game the copy belongs to
  * @returns The id of the copy, or why it was not created
  */
-export async function addPreparedResolutionToUser(
+export async function addPreparedResolutionToGame(
   preparedId: string,
-  userId: string
+  userId: string,
+  gameId: string
 ): Promise<{ id: string } | { error: AddPreparedResolutionError }> {
   const rows = await query<PreparedResolutionRow[]>(
     `SELECT * FROM prepared_resolutions WHERE id = ?`,
     [preparedId]
   );
-  if (rows.length === 0) {
+  const games = await query<Array<RowDataPacket & { team_id: string }>>(
+    `SELECT team_id FROM games WHERE id = ?`,
+    [gameId]
+  );
+  if (rows.length === 0 || games.length === 0) {
     return { error: 'not_found' };
   }
 
   const prepared = rowToPreparedResolution(rows[0]);
   const duplicates = await query<RowDataPacket[]>(
     `SELECT id FROM resolutions
-     WHERE owner_user_id = ? AND scope = 'personal'
+     WHERE owner_user_id = ? AND game_id = ? AND scope = 'personal'
        AND LOWER(COALESCE(description, title)) = LOWER(?)
      LIMIT 1`,
-    [userId, prepared.description || prepared.title]
+    [userId, gameId, prepared.description || prepared.title]
   );
   if (duplicates.length > 0) {
     return { error: 'already_added' };
@@ -124,6 +146,8 @@ export async function addPreparedResolutionToUser(
 
   const id = await createResolution(userId, preparedResolutionToContent(prepared), {
     scope: ResolutionScope.PERSONAL,
+    teamId: games[0].team_id,
+    gameId,
   });
   return { id };
 }
