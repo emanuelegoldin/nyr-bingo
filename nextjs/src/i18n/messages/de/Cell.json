@@ -2,10 +2,6 @@
   "empty": "Leer",
   "joker": "Joker",
   "markComplete": "Als erledigt markieren",
-  "completeDialog": {
-    "title": "Als erledigt markieren?",
-    "description": "Du bist dabei, „{text}“ als erledigt zu markieren."
-  },
   "editOption": {
     "member": "Mitglied"
   },

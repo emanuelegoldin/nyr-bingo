@@ -362,7 +362,7 @@ _No file references this spec._
 - `components/guide/sandbox/sandbox-layer.tsx` — Full-screen layer that shows a tour's demo content above the page. [Demo Card]
 - `components/guide/types.ts` — Contract every guide follows, so any listed tour starts the same way. [Module Boundary]
 
-## Unmapped files (86)
+## Unmapped files (85)
 
 No spec reference in the file. See `files.md` for their purpose.
 
@@ -397,7 +397,6 @@ No spec reference in the file. See `files.md` for their purpose.
 - `components/dashboard/dashboard-game-card-client.tsx`
 - `components/dashboard/dashboard-page-shell.tsx`
 - `components/dialogs/cell-dialog.tsx`
-- `components/dialogs/complete-dialog.tsx`
 - `components/dialogs/confirm-action-dialog.tsx`
 - `components/dialogs/edit-cell.tsx`
 - `components/dialogs/edit-option-row.tsx`

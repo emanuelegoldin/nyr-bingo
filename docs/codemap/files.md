@@ -396,7 +396,6 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 ## components/dialogs
 
 - `cell-dialog.tsx`
-- `complete-dialog.tsx`
 - `confirm-action-dialog.tsx`
 - `edit-cell.tsx`
 - `edit-option-row.tsx`
