@@ -1,11 +1,15 @@
 /**
  * Unified Resolution Save API
- * Handles creation, updates, and type changes for all personal resolution types.
+ * Handles creation, updates, and type changes of the personal, team and member-provided resolutions of a game.
+ * Spec Reference: 03-personal-resolutions.md - Create and Update
  *
  * POST /api/resolutions/save — create or update a resolution (supports type changes)
  *
  * Body:
  *   - id?: string               — if provided, this is an update; otherwise a create
+ *   - scope?: 'personal' | 'team' | 'member_provided' (default personal)
+ *   - gameId: string            — required to create; an update takes the game from the resolution
+ *   - toUserId?: string         — required for member_provided
  *   - type: 'base' | 'compound' | 'iterative'
  *   - title: string
  *   - text?: string             — description / text (called "text" for base, "description" for others)
@@ -128,16 +132,24 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     numberOfRepetition,
   };
 
+  // ── UPDATE (with id): the resolution's own game applies ─────
+  if (id) {
+    return handleUpdate(id, currentUser.id, content);
+  }
+
   // ── Scope authorization ────────────────────────────────────
-  let game: Game | null = null;
-  if (scope === 'team' || scope === 'member_provided') {
-    if (!gameId) {
-      return errorResponse('Game ID is required for this scope', 400);
-    }
-    game = await getRunningGame(gameId);
-    if (!game) {
-      return errorResponse('Game not found', 404);
-    }
+  // Spec: 03-personal-resolutions.md - every resolution belongs to a running game the caller plays
+  if (!gameId) {
+    return errorResponse('Game ID is required', 400);
+  }
+  const game = await getRunningGame(gameId);
+  if (!game) {
+    return errorResponse('Game not found', 404);
+  }
+
+  if (scope === 'personal') {
+    const denied = await requirePermission(currentUser, 'game.propose', { scope: 'game', game });
+    if (denied) return denied;
   }
 
   if (scope === 'team') {
@@ -155,41 +167,28 @@ export const POST = withAuth(async (request: NextRequest, { currentUser }: AuthC
     const denied = await requirePermission(currentUser, 'game.propose', { scope: 'game', game });
     if (denied) return denied;
     // Spec: 16-games.md - the target must also be a player of the game
-    if (!(await getGameRole(game!.id, toUserId))) {
+    if (!(await getGameRole(game.id, toUserId))) {
       return errorResponse('Target user is not a player of this game', 400);
     }
   }
 
   // ── CREATE (no id) ─────────────────────────────────────────
-  if (!id) {
-    // For team scope, if a goal already exists, update it instead
-    if (scope === 'team') {
-      const existingGoal = await getGameGoalResolution(game!.id);
-      if (existingGoal) {
-        return updateExisting(existingGoal, currentUser.id, content);
-      }
+  // For team scope, if a goal already exists, update it instead
+  if (scope === 'team') {
+    const existingGoal = await getGameGoalResolution(game.id);
+    if (existingGoal) {
+      return updateExisting(existingGoal, currentUser.id, content);
     }
-    // For member_provided scope, if a resolution from→to already exists, update it
-    if (scope === 'member_provided') {
-      const provided = await getMemberProvidedResolutionsByUser(game!.id, currentUser.id);
-      const existingMp = provided.find((resolution) => resolution.toUserId === toUserId);
-      if (existingMp) {
-        return updateExisting(existingMp, currentUser.id, content);
-      }
+  }
+  // For member_provided scope, if a resolution from→to already exists, update it
+  if (scope === 'member_provided') {
+    const provided = await getMemberProvidedResolutionsByUser(game.id, currentUser.id);
+    const existingMp = provided.find((resolution) => resolution.toUserId === toUserId);
+    if (existingMp) {
+      return updateExisting(existingMp, currentUser.id, content);
     }
-    return handleCreate(currentUser.id, content, scope as ResolutionScope, game, toUserId);
   }
-
-  // ── UPDATE (with id) ───────────────────────────────────────
-  const owned = await loadOwnedResolution(id, currentUser.id);
-  if ('response' in owned) return owned.response;
-
-  const existing = owned.resolution;
-  if (await isResolutionFrozen(existing)) {
-    return errorResponse('This game has ended', 400);
-  }
-
-  return updateExisting(existing, currentUser.id, content);
+  return handleCreate(currentUser.id, content, scope as ResolutionScope, game, toUserId);
 });
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
@@ -199,6 +198,32 @@ interface SaveEvent {
   key: string;
   content: string;
   metadata: Record<string, unknown>;
+}
+
+/**
+ * Update a resolution the user owns. A legacy personal resolution (no game) is read-only, and a resolution of an
+ * ended game is frozen.
+ * Spec: 03-personal-resolutions.md - Create and Update, Legacy Personal Resolutions
+ *
+ * @param id - The resolution to update.
+ * @param userId - The user saving it.
+ * @param content - The submitted content.
+ * @returns The route response.
+ */
+async function handleUpdate(id: string, userId: string, content: ResolutionContent) {
+  const owned = await loadOwnedResolution(id, userId);
+  if ('response' in owned) return owned.response;
+
+  const existing = owned.resolution;
+  // LEGACY-PERSONAL-RESOLUTIONS: remove after 2027-05-08, when no resolution without a game is left.
+  if (!existing.gameId) {
+    return errorResponse('Resolutions without a game can no longer be changed', 400);
+  }
+  if (await isResolutionFrozen(existing)) {
+    return errorResponse('This game has ended', 400);
+  }
+
+  return updateExisting(existing, userId, content);
 }
 
 /**
@@ -251,13 +276,13 @@ async function handleCreate(
   userId: string,
   content: ResolutionContent,
   scope: ResolutionScope,
-  game: Game | null,
+  game: Game,
   toUserId?: string,
 ) {
   const id = await createResolution(userId, content, {
     scope,
-    teamId: game?.teamId,
-    gameId: game?.id,
+    teamId: game.teamId,
+    gameId: game.id,
     toUserId,
   });
 

@@ -45,7 +45,7 @@ Prepared fallbacks on a card (specs 05, 17) have no scope and no resolution row:
 - Without `id` the request creates a resolution; with `id` it updates one.
 - Body: `type`, `title`, optional `text`, `subtasks` (compound), `numberOfRepetition` (iterative), `previousType` (when changing type), `scope`, `gameId`, and `toUserId` for `member_provided`. The team is taken from the game.
 - `scope` defaults to `personal`.
-- Every scope requires `gameId` (`400` otherwise). The game must be running (`404` otherwise) and the caller must be one of its players (`403` otherwise, permission `game.propose`, spec 21).
+- Creating a resolution of any scope requires `gameId` (`400` otherwise). The game must be running (`404` otherwise) and the caller must be one of its players (`403` otherwise, permission `game.propose`, spec 21). An update (with `id`) takes the game from the stored resolution and ignores `gameId`.
 - A personal resolution can be created and changed in the preparation phase and after the game has started (spec 16). One created after the start is not added to the card automatically: the player can place it through card editing (spec 09).
 - A legacy personal resolution (no `gameId`) cannot be updated (`400`).
 

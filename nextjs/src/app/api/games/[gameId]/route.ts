@@ -8,6 +8,7 @@ import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import {
   deleteGame,
   getGameWithMembers,
+  isDeadlineBeforePreparation,
   isDeadlinePast,
   setGameDeadline,
 } from '@/lib/db';
@@ -63,6 +64,11 @@ export const PATCH = withAuth(async (
 
   if (deadline !== null && await isDeadlinePast(deadline)) {
     return errorResponse('Deadline cannot be in the past', 400);
+  }
+
+  // Spec: 16-games.md - Game Configuration. The last day cannot come before the preparation ends.
+  if (deadline !== null && await isDeadlineBeforePreparation(gameId, deadline)) {
+    return errorResponse('Deadline cannot be before the end of the preparation phase', 400);
   }
 
   const updated = await setGameDeadline(gameId, deadline);

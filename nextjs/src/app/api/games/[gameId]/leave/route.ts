@@ -1,10 +1,12 @@
 /**
  * Leave Game API
- * Spec Reference: 16-games.md - Leaving a Game
+ * Spec Reference: 16-games.md - Leaving a Game, Automatic Start
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { leaveGame } from '@/lib/db';
+import { startGameIfAllReady } from '@/lib/game-starting';
+import { GameStatus } from '@/lib/shared/types';
 import { notifyTeams } from '@/lib/team-signals';
 import { AuthContext, errorResponse, withAuth } from '@/app/api/utils';
 import { authorizeGameAction } from '@/app/api/games/game-access';
@@ -28,6 +30,11 @@ export const POST = withAuth(async (
   }
 
   await notifyTeams([game.teamId]);
+
+  // Spec: 16-games.md - Leaving a Game: the game starts if every remaining player is ready
+  if (game.status === GameStatus.FORMING) {
+    await startGameIfAllReady(game.id);
+  }
 
   return NextResponse.json({ message: 'You left the game' });
 });
