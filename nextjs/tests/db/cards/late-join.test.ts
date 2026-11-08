@@ -12,7 +12,7 @@ import { createFormingGame, readCardCells, countSource } from './helpers';
 
 describe('cards – late join', () => {
   describe('operations', () => {
-    it('gives a late joiner a card with the goal, no prepared cells and empty filler (05-bingo-card-generation.md – Generation Rules)', async () => {
+    it('gives a late joiner a card with the goal, no prepared or legacy personal cells and empty filler (05-bingo-card-generation.md – Generation Rules, Inputs)', async () => {
       // Arrange
       const { team, game } = await createFormingGame(1);
       await startGameWithCards(game.id);
@@ -28,9 +28,9 @@ describe('cards – late join', () => {
       const cells = await readCardCells(game, joiner);
       expect(cells).toHaveLength(24);
       expect(countSource(cells, CellSourceType.TEAM)).toBe(1);
-      expect(countSource(cells, CellSourceType.PERSONAL)).toBe(1);
+      expect(countSource(cells, CellSourceType.PERSONAL)).toBe(0);
       expect(countSource(cells, CellSourceType.PREPARED)).toBe(0);
-      expect(countSource(cells, CellSourceType.EMPTY)).toBe(22);
+      expect(countSource(cells, CellSourceType.EMPTY)).toBe(23);
       expect(await countRows('team_leaderboard', 'game_id = ? AND user_id = ?', [game.id, joiner.id])).toBe(1);
     });
   });

@@ -5,7 +5,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { PATCH as configure } from '@/app/api/games/[gameId]/route';
-import { query } from '../../support/db/test-connection';
+import { GameStatus } from '@/lib/shared/types';
+import { execute, query } from '../../support/db/test-connection';
 import { callRoute } from '../../support/api/call-route';
 import { signInAs } from '../../support/api/session';
 import { createGameSetup } from './helpers';
@@ -71,6 +72,20 @@ describe('games – configure', () => {
 
       // Act
       const result = await callRoute(configure, { method: 'PATCH', body: { deadline: await dbDate(-1) }, params: { gameId: game.id } });
+
+      // Assert
+      expect(result.status).toBe(400);
+      expect(await readDeadline(game.id)).toBeNull();
+    });
+
+    it('a deadline before the date of the preparation deadline, with 400 (16-games.md – Game Configuration)', async () => {
+      // Arrange
+      const { admin, game } = await createGameSetup(GameStatus.FORMING);
+      await execute('UPDATE games SET preparation_deadline = UTC_TIMESTAMP() + INTERVAL 3 DAY WHERE id = ?', [game.id]);
+      await signInAs(admin);
+
+      // Act
+      const result = await callRoute(configure, { method: 'PATCH', body: { deadline: await dbDate(1) }, params: { gameId: game.id } });
 
       // Assert
       expect(result.status).toBe(400);

@@ -12,6 +12,7 @@ import {
   createGame as seedGame,
   createLeaderboardRow,
   createMemberResolution,
+  createPersonalResolution,
   createTeam as seedTeam,
   createTeamGoal,
   createUser,
@@ -21,7 +22,7 @@ import { query } from '../../support/db/test-connection';
 
 describe('games – leaving', () => {
   describe('operations', () => {
-    it('removes a leaving player with their card, leaderboard row and the resolutions written for them (16-games.md – Leaving a Game)', async () => {
+    it('removes a leaving player with their card, leaderboard row, their personal resolutions of the game and the resolutions written for them (16-games.md – Leaving a Game)', async () => {
       // Arrange
       const leader = await createUser();
       const team = await seedTeam(leader);
@@ -32,6 +33,9 @@ describe('games – leaving', () => {
       await createLeaderboardRow(game, member);
       const writtenForMember = await createMemberResolution(game, leader, member);
       const writtenByMember = await createMemberResolution(game, member, leader);
+      const memberPersonal = await createPersonalResolution(member, 'Mine', game);
+      const memberLegacy = await createPersonalResolution(member, 'Mine from the old list');
+      const leaderPersonal = await createPersonalResolution(leader, 'Leader\'s', game);
 
       // Act
       const result = await leaveGame({ id: game.id, name: 'Game' }, member.id, false);
@@ -43,6 +47,8 @@ describe('games – leaving', () => {
       expect(await countRows('team_leaderboard', 'game_id = ? AND user_id = ?', [game.id, member.id])).toBe(0);
       expect(await countRows('resolutions', 'id = ?', [writtenForMember])).toBe(0);
       expect(await countRows('resolutions', 'id = ?', [writtenByMember])).toBe(1);
+      expect(await countRows('resolutions', 'id = ?', [memberPersonal])).toBe(0);
+      expect(await countRows('resolutions', 'id IN (?, ?)', [memberLegacy, leaderPersonal])).toBe(2);
       expect(await countRows('team_memberships', 'team_id = ? AND user_id = ?', [team.id, member.id])).toBe(1);
     });
 
