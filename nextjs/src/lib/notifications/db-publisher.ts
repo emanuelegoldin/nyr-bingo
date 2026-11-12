@@ -79,6 +79,19 @@ async function loadContext(event: NotificationEvent): Promise<EventContext | nul
 }
 
 /**
+ * The one recipient of an event, for the types that have one.
+ *
+ * @param event - The event.
+ * @param cardOwnerUserId - The owner of the event's card, if it concerns a cell.
+ * @returns The recipient's id, or null when the event goes to the team or the game's players.
+ */
+function targetUserIdOf(event: NotificationEvent, cardOwnerUserId: string | null): string | null {
+  if (event.type === 'proof_requested') return cardOwnerUserId;
+  if (event.type === 'game_invited') return event.targetUserId;
+  return null;
+}
+
+/**
  * Whether a player's bingo in a game was already announced, or is about to be.
  *
  * @param gameId - The game.
@@ -114,7 +127,7 @@ export const dbPublisher: NotificationPublisher = {
         context.gameId,
         context.gameName,
         event.actorUserId,
-        event.type === 'proof_requested' ? context.cardOwnerUserId : null,
+        targetUserIdOf(event, context.cardOwnerUserId),
         'cellId' in event ? event.cellId : null,
       ]
     );
