@@ -51,6 +51,7 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 - `DeadlineInfo.tsx` — The game header's deadline information: the preparation countdown and the last day, styled by how close they are.
 - `GameActionsMenu.tsx`
 - `GameConfigDialog.tsx`
+- `InviteToGameDialog.tsx`
 - `MemberResolutionRow.tsx` — One teammate in the Teammates tab: the caller's resolution for them, or a prompt to write one.
 - `MissingTeamGoalNotice.tsx`
 - `PersonalTab.tsx` — The Personal tab: the caller's own resolutions for the game, with a y/target counter, Add and Browse ideas.
@@ -226,6 +227,10 @@ Paths are relative to `nextjs/src/` unless they start with `ws-server/`. Files w
 ## app/api/games/[gameId]/personal-resolutions
 
 - `route.ts` — Personal Resolutions of a Game API - the caller's own resolutions for a game
+
+## app/api/games/[gameId]/players
+
+- `route.ts` — Game Players API - an admin invites a team member to a running game
 
 ## app/api/games/[gameId]/ready
 
