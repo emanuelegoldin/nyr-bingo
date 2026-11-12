@@ -46,7 +46,8 @@ export type GamePermission =
   | 'game.configure'
   | 'game.end'
   | 'game.delete'
-  | 'game.goal.set';
+  | 'game.goal.set'
+  | 'game.invite';
 
 /** Permissions held through a role in an archived game. */
 export type ArchivePermission = 'archive.view' | 'archive.delete' | 'archive.thread.delete';
@@ -81,6 +82,7 @@ export const GAME_ROLE_PERMISSIONS: Record<GameScopeRole, readonly GamePermissio
     'game.end',
     'game.delete',
     'game.goal.set',
+    'game.invite',
   ],
   player: [
     'game.view',

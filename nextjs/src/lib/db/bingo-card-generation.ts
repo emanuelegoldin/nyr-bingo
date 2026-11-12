@@ -378,7 +378,7 @@ async function generateCardForUser(
 
 /**
  * Ensure a user has a bingo card for a started game.
- * Spec: 16-games.md - Joining After Start
+ * Spec: 16-games.md - Inviting a Player
  */
 export async function ensureBingoCardForUser(
   gameId: string,

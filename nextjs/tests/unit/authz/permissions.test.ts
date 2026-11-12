@@ -50,7 +50,7 @@ describe('permission table', () => {
   it('gives a game admin the player permissions plus the management ones (21-authorization.md – Permission Table)', () => {
     // Assert
     expect(sorted(GAME_ROLE_PERMISSIONS.leader)).toEqual(
-      sorted([...GAME_PLAYER, 'thread.delete', 'game.configure', 'game.end', 'game.delete', 'game.goal.set'])
+      sorted([...GAME_PLAYER, 'thread.delete', 'game.configure', 'game.end', 'game.delete', 'game.goal.set', 'game.invite'])
     );
   });
 
