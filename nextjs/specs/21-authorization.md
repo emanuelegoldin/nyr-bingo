@@ -73,6 +73,7 @@ Every role is listed with the full set of permissions it holds; there is no inhe
 | `game.end` | game | `leader` | – |
 | `game.delete` | game | `leader` | – |
 | `game.goal.set` | game | `leader` | – |
+| `game.invite` | game | `leader` | – |
 | `archive.view` | archive | `leader`, `player` | – |
 | `archive.delete` | archive | `leader` | – |
 | `archive.thread.delete` | archive | `leader` | – |
@@ -85,6 +86,7 @@ Where they are used:
 - `game.ready`: marking the caller ready, or no longer ready, during the preparation phase (spec 16).
 - `thread.*`: a cell's or thread's game is resolved first, and the role is the caller's role in that game (spec 07). The game is resolved whatever its status; what an ended game's cells and threads allow is a game status rule (spec 16).
 - `game.goal.set`: saving the team goal of a game (spec 16).
+- `game.invite`: inviting a team member who is not a player to the game (spec 16).
 - `card.arrange`: shuffling and locking the caller's own card (spec 22).
 - `cell.react`: adding, changing or removing the caller's reaction on a teammate's cell (spec 24).
 - `thread.delete`: deleting a closed (archived) thread of a running game (spec 07).
