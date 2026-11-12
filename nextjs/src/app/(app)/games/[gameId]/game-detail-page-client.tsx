@@ -139,6 +139,7 @@ export default function GameDetailPageClient({
               can={can}
               onSetGoal={() => setGoalDialogOpen(true)}
               onConfigured={refreshGame}
+              onInvited={refreshGame}
               onEndGame={handleEndGame}
               isEnding={isEnding}
               onDeleteGame={handleDeleteGame}
