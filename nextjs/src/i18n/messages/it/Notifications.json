@@ -10,6 +10,7 @@
   "gameEndedAtDeadline": "La partita ha raggiunto la scadenza",
   "bingoScored": "{actor} ha fatto BINGO!",
   "proofRequested": "{actor} ha chiesto una prova del tuo obiettivo",
+  "gameInvited": "{actor} ti ha aggiunto alla partita",
   "settingLabel": "Notifiche",
   "settingDescription": "Mostra gli aggiornamenti dei tuoi team nella campanella. Quando è disattivato, gli aggiornamenti non vengono conservati.",
   "settingError": "Impossibile aggiornare le notifiche",

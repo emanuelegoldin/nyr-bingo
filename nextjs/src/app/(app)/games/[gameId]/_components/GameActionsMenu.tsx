@@ -1,14 +1,15 @@
 import { ActionsMenu, type ActionsMenuItem } from "@/components/actions-menu";
 import { ConfirmActionDialog } from "@/components/dialogs/confirm-action-dialog";
 import type { GamePermission } from "@/lib/authz/permissions";
-import { Flag, LogOut, Settings, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Flag, LogOut, Settings, SlidersHorizontal, Trash2, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import type { Game } from "../types";
 import { GameConfigDialog } from "./GameConfigDialog";
+import { InviteToGameDialog } from "./InviteToGameDialog";
 
 /** The dialog opened from the menu, or null when none is open. */
-type GameActionDialog = "configure" | "end" | "delete" | "leave" | null;
+type GameActionDialog = "configure" | "invite" | "end" | "delete" | "leave" | null;
 
 interface GameActionsMenuProps {
   game: Game;
@@ -18,6 +19,8 @@ interface GameActionsMenuProps {
   onSetGoal: () => void;
   /** Reloads the game after its configuration is saved. */
   onConfigured: () => void;
+  /** Reloads the game after a team member is invited to it. */
+  onInvited: () => void;
   onEndGame: () => void;
   isEnding: boolean;
   onDeleteGame: () => void;
@@ -39,6 +42,7 @@ export function GameActionsMenu({
   can,
   onSetGoal,
   onConfigured,
+  onInvited,
   onEndGame,
   isEnding,
   onDeleteGame,
@@ -61,6 +65,7 @@ export function GameActionsMenu({
 
   const canSetGoal = can('game.goal.set');
   const canConfigure = can('game.configure') && game.status !== 'ended';
+  const canInvite = can('game.invite') && game.status !== 'ended';
   const canEnd = can('game.end') && game.status === 'started';
   const canDelete = can('game.delete');
 
@@ -68,6 +73,9 @@ export function GameActionsMenu({
     ...(canSetGoal ? [{ key: 'goal', label: t("setGoal"), icon: Settings, onSelect: onSetGoal }] : []),
     ...(canConfigure
       ? [{ key: 'configure', label: t("configure"), icon: SlidersHorizontal, onSelect: () => setOpenDialog('configure') }]
+      : []),
+    ...(canInvite
+      ? [{ key: 'invite', label: t("invite"), icon: UserPlus, onSelect: () => setOpenDialog('invite') }]
       : []),
     ...(canEnd ? [{ key: 'end', label: t("endGame"), icon: Flag, onSelect: () => setOpenDialog('end') }] : []),
   ];
@@ -90,6 +98,17 @@ export function GameActionsMenu({
           open={openDialog === 'configure'}
           onOpenChange={dialogOpenChange('configure')}
           onSaved={onConfigured}
+        />
+      )}
+
+      {canInvite && (
+        <InviteToGameDialog
+          gameId={game.id}
+          teamId={game.teamId}
+          players={game.members}
+          open={openDialog === 'invite'}
+          onOpenChange={dialogOpenChange('invite')}
+          onInvited={onInvited}
         />
       )}
 

@@ -36,6 +36,7 @@
   "actionsMenu": {
     "setGoal": "Set Goal",
     "configure": "Configure",
+    "invite": "Invite to Game",
     "endGame": "End Game",
     "leaveGame": "Leave Game",
     "deleteGame": "Delete Game",
@@ -51,9 +52,17 @@
     },
     "leaveDialog": {
       "title": "Leave this game?",
-      "description": "Your bingo card, your leaderboard entry, your resolutions for this game and the resolutions written for you in it will be deleted. The resolutions you wrote for other players stay on their cards. You cannot rejoin this game. If you are its only Team Admin, promote another player on the team page first.",
+      "description": "Your bingo card, your leaderboard entry, your resolutions for this game and the resolutions written for you in it will be deleted. The resolutions you wrote for other players stay on their cards. You can only rejoin if a Team Admin invites you again. If you are its only Team Admin, promote another player on the team page first.",
       "confirm": "Leave Game"
     }
+  },
+  "inviteDialog": {
+    "title": "Invite to Game",
+    "description": "Team members who do not play this game. They join it right away and are notified.",
+    "invite": "Invite",
+    "nobody": "Every team member already plays this game.",
+    "loadFailed": "Failed to load the team members",
+    "failed": "Failed to invite the member"
   },
   "configDialog": {
     "title": "Configure Game",

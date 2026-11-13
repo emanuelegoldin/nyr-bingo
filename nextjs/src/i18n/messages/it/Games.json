@@ -36,6 +36,7 @@
   "actionsMenu": {
     "setGoal": "Imposta obiettivo",
     "configure": "Configura",
+    "invite": "Invita alla partita",
     "endGame": "Termina partita",
     "leaveGame": "Abbandona partita",
     "deleteGame": "Elimina partita",
@@ -51,9 +52,17 @@
     },
     "leaveDialog": {
       "title": "Abbandonare questa partita?",
-      "description": "La tua carta, la tua posizione in classifica, i tuoi obiettivi per questa partita e gli obiettivi scritti per te verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Non potrai rientrare in questa partita. Se sei l'unico Admin della squadra, promuovi prima un altro giocatore dalla pagina della squadra.",
+      "description": "La tua carta, la tua posizione in classifica, i tuoi obiettivi per questa partita e gli obiettivi scritti per te verranno eliminati. Gli obiettivi che hai scritto per gli altri giocatori restano sulle loro carte. Potrai rientrare solo se un Admin della squadra ti invita di nuovo. Se sei l'unico Admin della squadra, promuovi prima un altro giocatore dalla pagina della squadra.",
       "confirm": "Abbandona partita"
     }
+  },
+  "inviteDialog": {
+    "title": "Invita alla partita",
+    "description": "I membri della squadra che non giocano questa partita. Entrano subito e ricevono una notifica.",
+    "invite": "Invita",
+    "nobody": "Tutti i membri della squadra giocano già questa partita.",
+    "loadFailed": "Impossibile caricare i membri della squadra",
+    "failed": "Impossibile invitare il membro"
   },
   "configDialog": {
     "title": "Configura partita",

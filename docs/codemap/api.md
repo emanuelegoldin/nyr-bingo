@@ -29,6 +29,7 @@ Paths are under `nextjs/src/app`. Helpers shared by routes live next to them (se
 | GET | `/api/games/:gameId/goal` | Team Goal Resolution API |
 | POST | `/api/games/:gameId/leave` | Leave Game API |
 | GET | `/api/games/:gameId/personal-resolutions` | Personal Resolutions of a Game API - the caller's own resolutions for a game |
+| POST | `/api/games/:gameId/players` | Game Players API - an admin invites a team member to a running game |
 | POST | `/api/games/:gameId/ready` | Ready API - a player signals they are done preparing, or no longer done |
 | GET | `/api/games/:gameId/resolutions` | Member-Provided Resolutions API |
 | GET PATCH DELETE | `/api/games/:gameId` | Game Detail API |

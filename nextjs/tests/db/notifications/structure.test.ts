@@ -18,7 +18,7 @@ describe('notifications – structure', () => {
         { name: 'id', type: 'varchar(36)', nullable: false, generated: false },
         {
           name: 'type',
-          type: "enum('card_progress','member_joined','game_started','bingo_scored','game_ended','proof_requested')",
+          type: "enum('card_progress','member_joined','game_started','bingo_scored','game_ended','proof_requested','game_invited')",
           nullable: false,
           generated: false,
         },

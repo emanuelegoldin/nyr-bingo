@@ -35,6 +35,8 @@ export function notificationText(notification: UserNotification, t: Notification
       return t('bingoScored', { actor });
     case 'proof_requested':
       return t('proofRequested', { actor });
+    case 'game_invited':
+      return t('gameInvited', { actor });
   }
 }
 

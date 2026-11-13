@@ -110,7 +110,7 @@ The header keeps only the most used actions visible, as on the game page (spec 1
 - The `/join/[inviteCode]` page has an **Accept Invitation** button that calls `POST /api/join` with `{ inviteCode }`. On success it redirects to the team page.
 - Joining requires a logged-in, verified user.
 - Joining fails for an invalid, expired or used code, and for a user who is already a member.
-- A verified user MAY join a team whose games have started. They become a player of each running game and receive a card in each started game (spec 16).
+- A verified user MAY join a team whose games have started. Joining does not make them a player of any game: an admin of a game invites them to it (spec 16).
 
 ---
 

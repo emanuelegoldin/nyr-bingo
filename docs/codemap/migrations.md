@@ -34,3 +34,4 @@ Base schema: `database/`. What each migration does: `docs/database/migrations.md
 | V5_13_0 | `V5_13_0__cell_reactions.sql` |
 | V5_13_1 | `V5_13_1__reaction_tilt_and_scale.sql` |
 | V5_14_0 | `V5_14_0__game_preparation_phase.sql` |
+| V5_15_0 | `V5_15_0__game_invited_notification.sql` |

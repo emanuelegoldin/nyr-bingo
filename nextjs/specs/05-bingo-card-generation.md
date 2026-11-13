@@ -1,7 +1,7 @@
 # 05 — Bingo Card Generation
 
 ## Purpose
-Define the rules for generating each player's bingo card (spec 16) when a game is started, or when a member joins a team with a started game.
+Define the rules for generating each player's bingo card (spec 16) when a game is started, or when a team member is invited to a started game.
 
 ## User Stories Covered
 - Cards generated automatically at start
@@ -48,7 +48,7 @@ Define the rules for generating each player's bingo card (spec 16) when a game i
 8. Shuffle the N²−1 cells across the non-center positions.
 9. Every stored cell starts in state `pending`.
 
-Generation runs in a transaction. Cards are generated once: at game start for all players, and at join time for a member joining a team, in each of its started games. A user has at most one card per game, and cards are never regenerated.
+Generation runs in a transaction. Cards are generated once: at game start for all players, and at invitation time for a team member invited to a started game. A user has at most one card per game, and cards are never regenerated.
 
 Steps 4 and 6 apply only at game start. A card generated at join time uses no prepared resolutions, so it can contain `empty` cells; its owner can fill them through card editing (spec 09).
 
@@ -65,7 +65,7 @@ Steps 4 and 6 apply only at game start. A card generated at join time uses no pr
 
 ## Acceptance Criteria
 - Starting the game generates a card for each player.
-- Joining a team generates a card for the new member in each of its started games.
+- Inviting a team member to a started game generates a card for them.
 - A card has the grid size of its game: 3×3, 5×5 or 9×9.
 - Center cell is the Joker.
 - The team goal is on every card, whatever its size.
