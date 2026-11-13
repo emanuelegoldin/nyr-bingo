@@ -83,7 +83,7 @@ Every mutating API route, and the deadline sweep (spec 07), signals the rooms it
 | Archived thread deleted (spec 07) | The team's card room |
 | Subtask or counter change on a cell, manual history note on a cell | The card room of the cell's team |
 | Reaction added, changed or removed (spec 24) | The team's card room |
-| Join, game creation, start, end or deletion, team deletion | The team's card room |
+| Join, game creation, invitation to a game, start, end or deletion, team deletion | The team's card room |
 | Profile update | The card room of each of the user's teams |
 | Notifications released (spec 19) | The user room of each recipient |
 

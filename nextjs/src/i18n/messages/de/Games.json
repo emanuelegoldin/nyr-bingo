@@ -36,6 +36,7 @@
   "actionsMenu": {
     "setGoal": "Ziel festlegen",
     "configure": "Konfigurieren",
+    "invite": "Zum Spiel einladen",
     "endGame": "Spiel beenden",
     "leaveGame": "Spiel verlassen",
     "deleteGame": "Spiel löschen",
@@ -51,9 +52,17 @@
     },
     "leaveDialog": {
       "title": "Dieses Spiel verlassen?",
-      "description": "Deine Bingo-Karte, dein Ranglisteneintrag, deine Vorsätze für dieses Spiel und die für dich geschriebenen Vorsätze werden gelöscht. Die Vorsätze, die du für andere geschrieben hast, bleiben auf deren Karten. Du kannst diesem Spiel nicht wieder beitreten. Bist du der einzige Team-Admin, ernenne zuerst auf der Teamseite einen anderen Spieler.",
+      "description": "Deine Bingo-Karte, dein Ranglisteneintrag, deine Vorsätze für dieses Spiel und die für dich geschriebenen Vorsätze werden gelöscht. Die Vorsätze, die du für andere geschrieben hast, bleiben auf deren Karten. Du kannst nur wieder beitreten, wenn ein Team-Admin dich erneut einlädt. Bist du der einzige Team-Admin, ernenne zuerst auf der Teamseite einen anderen Spieler.",
       "confirm": "Spiel verlassen"
     }
+  },
+  "inviteDialog": {
+    "title": "Zum Spiel einladen",
+    "description": "Teammitglieder, die dieses Spiel nicht spielen. Sie treten sofort bei und werden benachrichtigt.",
+    "invite": "Einladen",
+    "nobody": "Alle Teammitglieder spielen dieses Spiel bereits.",
+    "loadFailed": "Teammitglieder konnten nicht geladen werden",
+    "failed": "Mitglied konnte nicht eingeladen werden"
   },
   "configDialog": {
     "title": "Spiel konfigurieren",

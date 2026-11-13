@@ -153,17 +153,19 @@ export async function getGamePlayerIds(gameId: string): Promise<string[]> {
 }
 
 /**
- * Add a user to the roster of every running game of a team. Used when a user joins the team.
- * Spec: 16-games.md - Joining After Start
- * @param teamId The team
- * @param userId The new member
+ * Add a team member to the roster of a running game, not ready. Used when an admin invites them.
+ * Spec: 16-games.md - Inviting a Player
+ * @param gameId The game
+ * @param userId The invited team member
+ * @returns True if they were added, false if the game is not running or they already play it
  */
-export async function addPlayerToRunningGames(teamId: string, userId: string): Promise<void> {
-  await query(
+export async function addPlayerToGame(gameId: string, userId: string): Promise<boolean> {
+  const result = await execute(
     `INSERT IGNORE INTO game_players (game_id, user_id)
-     SELECT id, ? FROM games WHERE team_id = ? AND status <> 'ended'`,
-    [userId, teamId]
+     SELECT id, ? FROM games WHERE id = ? AND status <> 'ended'`,
+    [userId, gameId]
   );
+  return result.affectedRows > 0;
 }
 
 /**

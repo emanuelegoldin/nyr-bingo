@@ -10,6 +10,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 
 - Start a new game with the same people, without inviting them again
 - Choose which team members play a new game
+- Invite a team member to a running game
 - Leave a game
 - Run several games with one team at the same time
 - See the games I am playing in one list
@@ -27,7 +28,7 @@ Separate a bingo game from the group of people playing it. A **team** (spec 04) 
 ## In Scope
 
 - Game creation, listing and deletion
-- Game roster and leaving a game
+- Game roster, inviting a player and leaving a game
 - Game lifecycle
 - Preparation phase and automatic start
 - Game page
@@ -151,6 +152,7 @@ The header holds the game name, the team name as plain text (it does not link to
 | ------ | --- | ---- |
 | **Set Goal** | Admin | Always |
 | **Configure** | Admin | Running (`forming` or `started`) |
+| **Invite to Game** | Admin | Running |
 | **Ready** / **Not ready** | Any player | `forming` |
 | **End Game** | Admin | `started`, after confirmation |
 | **Delete Game** | Admin | Always, after confirmation |
@@ -158,7 +160,7 @@ The header holds the game name, the team name as plain text (it does not link to
 
 The header keeps only the most used actions visible, so it stays readable for admins:
 - **Ready** (during the preparation phase) is a button, with the `x/y ready` count next to it.
-- The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Set Goal, Configure, End Game, a separator, Leave Game and Delete Game, which is styled as destructive. The menu lists only the actions the caller can use in the current state, as in the table above.
+- The other actions are in a **More actions** menu, opened by a "⋯" button labelled "More actions". Its items, in this order, are Set Goal, Configure, Invite to Game, End Game, a separator, Leave Game and Delete Game, which is styled as destructive. The menu lists only the actions the caller can use in the current state, as in the table above.
 - Choosing a menu item opens the same dialog or confirmation as the action's button did.
 - While no goal is set, the header says so, and an admin also sees a **Set Goal** button next to that notice. During the preparation phase the notice also says that a prepared resolution will be used as the goal if none is set before the start. Once a goal is set, the notice and its button go away: the goal is changed through **Set Goal** in the More actions menu.
 
@@ -194,7 +196,7 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 - A game has one goal. Saving a new goal without an `id` when one already exists updates the existing goal, keeping its stored type (spec 03).
 - The goal belongs to the admin who set it: only they edit it. When they leave the game, it passes to another admin of the game.
 - The goal is one definition row per game. Each player's goal cell has its own snapshot and its own progress, tracked by that player, not by the admin.
-- The goal can be edited at any time, including after the game has started. Cards copy it when they are generated (spec 05), so an edit after the start affects only cards generated after it, for players who join late. Existing cards are unchanged.
+- The goal can be edited at any time, including after the game has started. Cards copy it when they are generated (spec 05), so an edit after the start affects only cards generated after it, for players invited later. Existing cards are unchanged.
 - `GET /api/games/[gameId]/goal` returns it to team members.
 - The goal is shown on the game page and appears as a normal `team` cell on the cards (spec 05). It is **not** the Joker.
 
@@ -222,13 +224,21 @@ The deadline is a calendar date with no time or time zone. "Today" is the date o
 
 ---
 
-### Joining After Start
+### Inviting a Player
 
-A user who joins a team (spec 04) becomes a player of **every** running game of that team, not ready, and receives a card in every `started` one:
-- The game stays in `started` status.
-- The card is generated at join time under the rules of spec 05. This requires the team goal to still exist; a failure to generate a card is not reported to the user and does not affect the other games.
-- The new member's goal cell is a snapshot of the goal as it is at join time, with progress at zero.
-- Existing members' cards are not regenerated.
+Joining a team (spec 04) does not make the user a player of any game. An admin invites team members to a game instead.
+
+`POST /api/games/[gameId]/players` with `{ "userId": "<id>" }`
+
+- Only the admin can invite (permission `game.invite`, spec 21; `403` otherwise). The game must be running (`404` otherwise, as for every game route).
+- `userId` must be a member of the game's team who is not a player of the game (`400` otherwise). This includes a member who left the game.
+- The invited member becomes a player at once, not ready. There is no accept step: a player who does not want to play leaves the game (Leaving a Game).
+- In a `started` game they receive a card at once:
+  - The card is generated under the rules of spec 05. This requires the team goal to still exist; a failure to generate the card is not reported to the admin.
+  - The new player's goal cell is a snapshot of the goal as it is at that moment, with progress at zero.
+  - Existing players' cards are not regenerated.
+- The invited member receives a `game_invited` notification (spec 19), and open team and game pages refresh (spec 11).
+- The **Invite to Game** dialog lists the team members who are not players of the game, each with an **Invite** button. It says so when there is nobody to invite.
 
 ---
 
@@ -279,7 +289,7 @@ Until it is archived, after a game has ended:
   - Leaves no prepared resolutions to delete, because prepared fallbacks create no resolution rows (spec 05)
 - Resolutions they wrote **for** other players stay in those players' Teammates lists, and their snapshots stay on those players' cards. Their badge reads "Former Teammates" (spec 05). The leaver can no longer edit them.
 - Votes they cast on other players' threads stay.
-- A user who left a game cannot return to it while they stay in the team. A user who leaves the team and joins it again is a new member (Joining After Start), with a new card.
+- A user who left a game returns to it only if an admin invites them again (Inviting a Player), as a new player with a new card.
 - Leaving a team (spec 04) leaves each of its running games the user plays.
 - During the preparation phase, if every remaining player is ready, the game starts (Automatic Start).
 
@@ -293,6 +303,7 @@ The role-to-permission table and the status of every refusal are defined in spec
 - Only a Team Admin can create a game.
 - Only an admin of the game (a Team Admin who plays it) can:
   - Configure, end and delete a game
+  - Invite team members to the game
   - Define the team goal
 - Players can:
   - Provide resolutions for other players
@@ -357,7 +368,8 @@ The primary key is `(game_id, user_id)`.
 - The game deadline cannot be set before the date of the preparation deadline.
 - Once started, the last day is shown in the user's locale, bold and `warning` from 3 days before it and `destructive` on the day itself.
 - `/games` lists the caller's running games.
-- A member joining a team receives a card in each of its started games.
+- Joining a team does not make the user a player of any game.
+- An admin can invite a team member who is not a player to a running game; the member becomes a player, receives a card if the game has started, and is notified.
 - Ending a game closes its open review threads, archives it and removes it from every list of running games.
 - An ended game cannot be changed and its routes return `404`.
 - Deleting a game leaves its team and sibling games intact.
@@ -373,5 +385,5 @@ The primary key is `(game_id, user_id)`.
 
 ## Known Gaps
 
-- A user who joins after a game has started gets a card built only from resolutions that exist at that moment, normally the team goal and empty cells, because they had no preparation phase. They can write personal resolutions in the Personal tab and place them through card editing (spec 09).
+- A player invited after a game has started gets a card built only from resolutions that exist at that moment, normally the team goal and empty cells, because they had no preparation phase. They can write personal resolutions in the Personal tab and place them through card editing (spec 09).
 - Card rooms stay per team (spec 11), so activity in one game also refreshes pages of its sibling games, and team members who do not play a game can receive its refresh signals (never its data).

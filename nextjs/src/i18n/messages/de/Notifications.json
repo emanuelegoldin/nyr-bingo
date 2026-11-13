@@ -10,6 +10,7 @@
   "gameEndedAtDeadline": "Die Frist des Spiels ist abgelaufen",
   "bingoScored": "{actor} hat ein BINGO erzielt!",
   "proofRequested": "{actor} möchte einen Nachweis für deinen Vorsatz",
+  "gameInvited": "{actor} hat dich zum Spiel hinzugefügt",
   "settingLabel": "Benachrichtigungen",
   "settingDescription": "Zeigt Neuigkeiten aus deinen Teams an der Glocke. Solange dies ausgeschaltet ist, werden Neuigkeiten nicht aufbewahrt.",
   "settingError": "Benachrichtigungen konnten nicht geändert werden",

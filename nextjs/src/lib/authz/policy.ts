@@ -67,6 +67,7 @@ const LEADER_ONLY_ERRORS: Partial<Record<Permission, string>> = {
   'game.end': 'Only a Team Admin playing the game can end it',
   'game.delete': 'Only a Team Admin playing the game can delete it',
   'game.goal.set': 'Only a Team Admin playing the game can set the team goal',
+  'game.invite': 'Only a Team Admin playing the game can invite players',
   'archive.delete': 'Only a Team Admin playing the game can delete it',
 };
 

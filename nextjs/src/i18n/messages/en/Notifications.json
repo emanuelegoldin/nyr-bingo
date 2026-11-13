@@ -10,6 +10,7 @@
   "gameEndedAtDeadline": "The game reached its deadline",
   "bingoScored": "{actor} scored a BINGO!",
   "proofRequested": "{actor} asked for proof of your resolution",
+  "gameInvited": "{actor} added you to the game",
   "settingLabel": "Notifications",
   "settingDescription": "Show updates from your teams in the bell. While this is off, updates are not kept for later.",
   "settingError": "Failed to update notifications",

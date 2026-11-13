@@ -618,3 +618,21 @@ So the Personal and Teammates tabs of games started before the change show what 
 Checked by hand on `mariadb:11`: a started game with personal base, compound (two subtasks) and
 iterative cells, a member-provided cell whose source was deleted, empty and prepared cells, plus a
 forming and an ended game. Running the migration twice gave the same rows and links.
+
+## 5.15.0 - Game Invited Notification
+
+Joining a team no longer makes the user a player of every running game. An admin of a game
+invites team members to it instead, and the invited member is notified (specs 16 and 19).
+
+### Schema changes
+
+- `notification_events.type` gains the value `game_invited`, sent to a team member an admin invites
+  to a game.
+
+### Data migration
+
+None. Existing events keep their type.
+
+### Idempotency
+
+`MODIFY` with the full value list gives the same column on every run.

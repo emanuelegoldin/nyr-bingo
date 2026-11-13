@@ -47,6 +47,7 @@ Let users see what happened in their teams since they last looked: after logging
 | `bingo_scored` | A player's `first_bingo_at` (spec 12) goes from empty to set | The player | The game's players |
 | `game_ended` | A game ends (spec 16) | The admin, or nobody at the deadline | The game's players |
 | `proof_requested` | A member requests proof on a cell (spec 07) | The requester | The card owner |
+| `game_invited` | An admin invites a team member to a game (spec 16) | The admin | The invited player |
 
 - The team means its members when the notification is released. The game's players means its roster (spec 16) when the notification is released, or the players of its archive (spec 18) once the game has been archived.
 - An actor never receives their own event.
@@ -125,7 +126,7 @@ All endpoints require authentication and act only on the caller's own notificati
 - A pending `card_progress` event has one row per cell. At release the batch collapses into its oldest row, with `item_count` set.
 - Only the type is stored, never text.
 
-**Migration:** `V5_5_0__notifications.sql`
+**Migration:** `V5_5_0__notifications.sql`. `V5_15_0__game_invited_notification.sql` adds the `game_invited` type.
 
 ---
 
@@ -143,6 +144,7 @@ All endpoints require authentication and act only on the caller's own notificati
 - A completion undone within the delay produces no notification.
 - Actors do not receive their own events.
 - A proof request reaches the card owner only.
+- An invitation to a game reaches the invited player only, and links to the game.
 - A bingo is announced once, even if a proof request clears it and acceptance sets it again.
 - `game_ended` survives archiving, and links to the archived game for its players.
 - A notification reaches each recipient once, even if the release loop runs again.
